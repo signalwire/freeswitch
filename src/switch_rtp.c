@@ -77,6 +77,7 @@
 #define RTP_MAGIC_NUMBER 42
 #define WARN_SRTP_ERRS 10
 #define MAX_SRTP_ERRS 100
+#define MAX_ROC_CARRY_MISSES 500
 #define NTP_TIME_OFFSET 2208988800UL
 static const switch_payload_t INVALID_PT = 255;
 
@@ -405,6 +406,14 @@ struct switch_rtp {
 
 	srtp_ctx_t *send_ctx[2];
 	srtp_ctx_t *recv_ctx[2];
+	srtp_ctx_t *recv_ctx_carry[2];
+	uint32_t recv_carry_ssrc[2];
+	uint32_t recv_carry_roc[2];
+	uint16_t recv_carry_seq[2];
+	uint32_t recv_carry_misses[2];
+	uint32_t recv_srtp_ssrc[2];
+	uint16_t recv_srtp_seq[2];
+	rtp_msg_t *recv_carry_msg;
 
 	srtp_policy_t send_policy[2];
 	srtp_policy_t recv_policy[2];
@@ -1596,6 +1605,158 @@ SWITCH_DECLARE(void) switch_srtp_err_to_txt(srtp_err_status_t stat, char **msg)
 	else if (stat == srtp_err_status_pkt_idx_old) *msg="packet index is too old to consider";
 	else if (stat == srtp_err_status_pkt_idx_adv) *msg="packet index advanced, reset needed";
 	else *msg="";
+}
+
+static srtp_err_status_t rtp_unprotect(switch_rtp_t *rtp_session, srtp_ctx_t *ctx, void *hdr, int *len)
+{
+	if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
+		return srtp_unprotect(ctx, hdr, len);
+	}
+
+	return srtp_unprotect_mki(ctx, hdr, len, 1);
+}
+
+/* Remember the SSRC and highest sequence number of the packets that authenticate, for the next re-key. */
+static void rtp_note_srtp_recv(switch_rtp_t *rtp_session, int idx)
+{
+	uint32_t ssrc = ntohl(rtp_session->recv_msg.header.ssrc);
+	uint16_t seq = ntohs(rtp_session->recv_msg.header.seq);
+
+	if (ssrc != rtp_session->recv_srtp_ssrc[idx] || (int16_t) (seq - rtp_session->recv_srtp_seq[idx]) > 0) {
+		rtp_session->recv_srtp_ssrc[idx] = ssrc;
+		rtp_session->recv_srtp_seq[idx] = seq;
+	}
+}
+
+static void rtp_drop_roc_carry(switch_rtp_t *rtp_session, int idx)
+{
+	if (rtp_session->recv_ctx_carry[idx]) {
+		srtp_dealloc(rtp_session->recv_ctx_carry[idx]);
+		rtp_session->recv_ctx_carry[idx] = NULL;
+	}
+}
+
+/* The ROC of a packet with sequence number seq from a sender that kept counting from roc and last_seq (RFC 3711 3.3.1). */
+static uint32_t rtp_roc_carry_estimate(uint32_t roc, uint16_t last_seq, uint16_t seq)
+{
+	if (last_seq < 0x8000) {
+		if (seq > last_seq && seq - last_seq > 0x8000) {
+			return roc ? roc - 1 : 0;
+		}
+	} else if (seq < last_seq - 0x8000) {
+		return roc + 1;
+	}
+
+	return roc;
+}
+
+/*
+ * RFC 3711 3.3.1 says a re-key keeps the rollover counter (ROC), but some peers reset it, and a new
+ * libsrtp receive context always starts at 0.  When the re-keyed SSRC has wrapped its sequence number,
+ * or may wrap before its next packet arrives, keep a second context that carries the old ROC and let
+ * the first packet from that SSRC that authenticates decide which context stays.
+ */
+static void rtp_add_roc_carry(switch_rtp_t *rtp_session, int idx, const srtp_policy_t *policy,
+							  uint32_t ssrc, uint32_t roc, uint16_t last_seq)
+{
+	srtp_policy_t specific = *policy;
+	srtp_policy_t any = *policy;
+
+	rtp_drop_roc_carry(rtp_session, idx);
+
+	if (!roc && last_seq < 0x8000) {
+		return;
+	}
+
+	specific.ssrc.type = ssrc_specific;
+	specific.ssrc.value = ssrc;
+	specific.next = &any;
+	any.next = NULL;
+
+	if (srtp_create(&rtp_session->recv_ctx_carry[idx], &specific) || !rtp_session->recv_ctx_carry[idx]) {
+		rtp_drop_roc_carry(rtp_session, idx);
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+						  "Unable to carry SRTP RECV rollover counter %u for SSRC %#x\n", roc, ssrc);
+		return;
+	}
+
+	if (!rtp_session->recv_carry_msg) {
+		rtp_session->recv_carry_msg = switch_core_alloc(rtp_session->pool, sizeof(rtp_msg_t));
+	}
+
+	rtp_session->recv_carry_ssrc[idx] = ssrc;
+	rtp_session->recv_carry_roc[idx] = roc;
+	rtp_session->recv_carry_seq[idx] = last_seq;
+	rtp_session->recv_carry_misses[idx] = 0;
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), roc ? SWITCH_LOG_INFO : SWITCH_LOG_DEBUG,
+					  "SRTP RECV re-key on SSRC %#x after rollover %u, trying carried and reset counters\n", ssrc, roc);
+}
+
+/*
+ * Try the carried ROC on a copy of the packet; if it authenticates, its context replaces the reset one.
+ * Only packets from the carried SSRC are tried, so another SSRC cannot decide for it, and only when the
+ * carried counter differs from the 0 the reset context already tries.
+ */
+static switch_bool_t rtp_try_roc_carry(switch_rtp_t *rtp_session, int *sbytes)
+{
+	int idx = rtp_session->srtp_idx_rtp;
+	uint32_t ssrc = ntohl(rtp_session->recv_msg.header.ssrc);
+	uint32_t roc;
+	int len = *sbytes;
+
+	if (ssrc != rtp_session->recv_carry_ssrc[idx]) {
+		return SWITCH_FALSE;
+	}
+
+	roc = rtp_roc_carry_estimate(rtp_session->recv_carry_roc[idx], rtp_session->recv_carry_seq[idx],
+								 ntohs(rtp_session->recv_msg.header.seq));
+
+	if (!roc || srtp_set_stream_roc(rtp_session->recv_ctx_carry[idx], ssrc, roc)) {
+		return SWITCH_FALSE;
+	}
+
+	memcpy(rtp_session->recv_carry_msg, &rtp_session->recv_msg, len);
+
+	if (rtp_unprotect(rtp_session, rtp_session->recv_ctx_carry[idx], &rtp_session->recv_carry_msg->header, &len)) {
+		return SWITCH_FALSE;
+	}
+
+	memcpy(&rtp_session->recv_msg, rtp_session->recv_carry_msg, len);
+	*sbytes = len;
+	srtp_dealloc(rtp_session->recv_ctx[idx]);
+	rtp_session->recv_ctx[idx] = rtp_session->recv_ctx_carry[idx];
+	rtp_session->recv_ctx_carry[idx] = NULL;
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
+					  "SRTP RECV peer kept its rollover counter across the re-key\n");
+
+	return SWITCH_TRUE;
+}
+
+/* After the reset context has tried a packet from the carried SSRC: settle the carry, or give up on it. */
+static void rtp_check_roc_carry(switch_rtp_t *rtp_session, srtp_err_status_t stat)
+{
+	int idx = rtp_session->srtp_idx_rtp;
+	uint32_t ssrc = ntohl(rtp_session->recv_msg.header.ssrc);
+
+	if (!rtp_session->recv_ctx_carry[idx] || ssrc != rtp_session->recv_carry_ssrc[idx]) {
+		return;
+	}
+
+	if (!stat) {
+		if (rtp_roc_carry_estimate(rtp_session->recv_carry_roc[idx], rtp_session->recv_carry_seq[idx],
+								   ntohs(rtp_session->recv_msg.header.seq))) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO,
+							  "SRTP RECV peer reset its rollover counter on the re-key\n");
+		}
+		rtp_drop_roc_carry(rtp_session, idx);
+	} else if (++rtp_session->recv_carry_misses[idx] >= MAX_ROC_CARRY_MISSES) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING,
+						  "SRTP RECV SSRC %#x failed with both the carried and the reset rollover counter %u times, "
+						  "no longer trying the carried one\n", ssrc, rtp_session->recv_carry_misses[idx]);
+		rtp_drop_roc_carry(rtp_session, idx);
+	}
 }
 #endif
 
@@ -3884,6 +4045,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 				srtp_dealloc(rtp_session->recv_ctx[x]);
 				rtp_session->recv_ctx[x] = NULL;
 			}
+			rtp_drop_roc_carry(rtp_session, x);
 		}
 	}
 #endif
@@ -5456,6 +5618,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 				srtp_dealloc((*rtp_session)->recv_ctx[x]);
 				(*rtp_session)->recv_ctx[x] = NULL;
 			}
+			rtp_drop_roc_carry(*rtp_session, x);
 		}
 		(*rtp_session)->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
 	}
@@ -6797,13 +6960,30 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				srtp_err_status_t stat = 0;
 
 				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_RESET] || !rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
+					srtp_policy_t policy = rtp_session->recv_policy[rtp_session->srtp_idx_rtp];
+					uint32_t ssrc = rtp_session->recv_srtp_ssrc[rtp_session->srtp_idx_rtp];
+					uint16_t last_seq = rtp_session->recv_srtp_seq[rtp_session->srtp_idx_rtp];
+					uint32_t roc = 0;
+
+					if (rtp_session->recv_ctx_carry[rtp_session->srtp_idx_rtp]) {
+						/* an earlier re-key is still undecided: carry what it carried */
+						ssrc = rtp_session->recv_carry_ssrc[rtp_session->srtp_idx_rtp];
+						roc = rtp_session->recv_carry_roc[rtp_session->srtp_idx_rtp];
+						last_seq = rtp_session->recv_carry_seq[rtp_session->srtp_idx_rtp];
+					} else if (!rtp_session->recv_ctx[rtp_session->srtp_idx_rtp] ||
+							   srtp_get_stream_roc(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], ssrc, &roc) != srtp_err_status_ok) {
+						roc = 0;
+						last_seq = 0;
+					}
+
 					switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_SECURE_RECV_RESET);
 					srtp_dealloc(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]);
 					rtp_session->recv_ctx[rtp_session->srtp_idx_rtp] = NULL;
-					if ((stat = srtp_create(&rtp_session->recv_ctx[rtp_session->srtp_idx_rtp],
-											&rtp_session->recv_policy[rtp_session->srtp_idx_rtp])) || !rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
+					if ((stat = srtp_create(&rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &policy)) ||
+						!rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
 
 						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
+						rtp_drop_roc_carry(rtp_session, rtp_session->srtp_idx_rtp);
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "Error! RE-Activating Secure RTP RECV\n");
 						rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
 						switch_mutex_unlock(rtp_session->ice_mutex);
@@ -6812,14 +6992,20 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_INFO, "RE-Activating Secure RTP RECV\n");
 						rtp_session->srtp_errs[rtp_session->srtp_idx_rtp] = 0;
+						rtp_add_roc_carry(rtp_session, rtp_session->srtp_idx_rtp, &policy, ssrc, roc, last_seq);
 					}
 				}
 
 				if (!(*flags & SFF_PLC) && rtp_session->recv_ctx[rtp_session->srtp_idx_rtp]) {
-					if (!rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV_MKI]) {
-						stat = srtp_unprotect(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
+					if (rtp_session->recv_ctx_carry[rtp_session->srtp_idx_rtp] && rtp_try_roc_carry(rtp_session, &sbytes)) {
+						stat = srtp_err_status_ok;
 					} else {
-						stat = srtp_unprotect_mki(rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes, 1);
+						stat = rtp_unprotect(rtp_session, rtp_session->recv_ctx[rtp_session->srtp_idx_rtp], &rtp_session->recv_msg.header, &sbytes);
+						rtp_check_roc_carry(rtp_session, stat);
+					}
+
+					if (!stat) {
+						rtp_note_srtp_recv(rtp_session, rtp_session->srtp_idx_rtp);
 					}
 
 					if (rtp_session->flags[SWITCH_RTP_FLAG_NACK] && stat == srtp_err_status_replay_fail) {
