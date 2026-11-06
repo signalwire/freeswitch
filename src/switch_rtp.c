@@ -8301,10 +8301,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto recvfrom;
 		}
 
+		/* A marker bit after a timestamp gap starts a new talkspurt after silence suppression
+		 * (RFC 3551 section 4.1). Flushing there discards the next packets of the talkspurt,
+		 * so only flush without a gap, like the check in read_rtp_packet(). */
 		if (bytes && rtp_session->last_rtp_hdr.m && rtp_session->last_rtp_hdr.pt != rtp_session->recv_te &&
 			!rtp_session->flags[SWITCH_RTP_FLAG_VIDEO] &&
 			!rtp_session->flags[SWITCH_RTP_FLAG_TEXT] &&
-			!(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT)) {
+			!(rtp_session->rtp_bugs & RTP_BUG_IGNORE_MARK_BIT) &&
+			rtp_session->last_read_ts - rtp_session->prev_read_ts < rtp_session->samples_per_interval * 3) {
 			rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 

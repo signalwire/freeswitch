@@ -294,6 +294,29 @@ static dtls_state_t run_client_cert_verify_case(const char *verify_mode, int pre
 	return state;
 }
 
+static void send_test_rtp_packet(int sock, struct sockaddr_in *dst, uint16_t seq, uint32_t ts, int marker)
+{
+	uint8_t pkt[12 + 160];
+
+	memset(pkt, 0xd5, sizeof(pkt));
+	pkt[0] = 0x80;
+	pkt[1] = (uint8_t) ((marker ? 0x80 : 0x00) | TEST_PT);
+	pkt[2] = (uint8_t) (seq >> 8);
+	pkt[3] = (uint8_t) (seq & 0xff);
+	pkt[4] = (uint8_t) (ts >> 24);
+	pkt[5] = (uint8_t) ((ts >> 16) & 0xff);
+	pkt[6] = (uint8_t) ((ts >> 8) & 0xff);
+	pkt[7] = (uint8_t) (ts & 0xff);
+	pkt[8] = 0x12;
+	pkt[9] = 0x34;
+	pkt[10] = 0x56;
+	pkt[11] = 0x78;
+
+	if (sendto(sock, pkt, sizeof(pkt), 0, (struct sockaddr *) dst, sizeof(*dst)) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "sendto() failed: %s\n", strerror(errno));
+	}
+}
+
 FST_CORE_BEGIN("./conf")
 {
 FST_SUITE_BEGIN(switch_rtp)
@@ -558,6 +581,78 @@ FST_TEARDOWN_END()
 		 * rather than silently accepted the way none would. */
 		state = run_client_cert_verify_case("bogus", 1, REMOTE_FP_DIFFERENT);
 		fst_xcheck(state == DS_FAIL, "unrecognized mode falls back to fingerprint and rejects a mismatch");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_marker_after_timestamp_gap_does_not_flush)
+	{
+		switch_rtp_t *dtx_rtp = NULL;
+		switch_frame_t frame = { 0 };
+		struct sockaddr_in src_addr, dst_addr;
+		uint16_t seq = 1000;
+		uint32_t ts = 160000;
+		int sock, i;
+
+		switch_core_new_memory_pool(&pool);
+
+		/* 160 samples per 20 ms interval at 8 kHz, so the timestamp gap below is a real pause. */
+		dtx_rtp = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 160, 20 * 1000, flags, "soft", &err, pool, 0, 0);
+		fst_requires(dtx_rtp);
+		fst_requires(switch_rtp_ready(dtx_rtp));
+		switch_rtp_set_default_payload(dtx_rtp, TEST_PT);
+
+		sock = socket(AF_INET, SOCK_DGRAM, 0);
+		fst_requires(sock >= 0);
+
+		memset(&src_addr, 0, sizeof(src_addr));
+		src_addr.sin_family = AF_INET;
+		src_addr.sin_port = htons(tx_port);
+		inet_pton(AF_INET, tx_host, &src_addr.sin_addr);
+		fst_requires(bind(sock, (struct sockaddr *) &src_addr, sizeof(src_addr)) == 0);
+
+		memset(&dst_addr, 0, sizeof(dst_addr));
+		dst_addr.sin_family = AF_INET;
+		dst_addr.sin_port = htons(rx_port);
+		inet_pton(AF_INET, rx_host, &dst_addr.sin_addr);
+
+		/* switch_rtp_new() flushes on the first read, start without that. */
+		switch_rtp_clear_flag(dtx_rtp, SWITCH_RTP_FLAG_FLUSH);
+
+		/* A first talkspurt of five packets, sent in real time. */
+		for (i = 0; i < 5; i++) {
+			send_test_rtp_packet(sock, &dst_addr, seq++, ts, i == 0);
+			ts += 160;
+			switch_yield(20 * 1000);
+			frame.flags = 0;
+			fst_requires(switch_rtp_zerocopy_read_frame(dtx_rtp, &frame, SWITCH_IO_FLAG_NONE) == SWITCH_STATUS_SUCCESS);
+		}
+
+		switch_rtp_clear_flag(dtx_rtp, SWITCH_RTP_FLAG_FLUSH);
+
+		/* Silence suppression: no packets for 200 ms. The next talkspurt starts with
+		 * the marker bit and a timestamp gap, as RFC 3551 section 4.1 asks for. */
+		switch_yield(200 * 1000);
+		ts += 10 * 160;
+
+		send_test_rtp_packet(sock, &dst_addr, seq++, ts, 1);
+		ts += 160;
+		switch_yield(20 * 1000);
+		frame.flags = 0;
+		fst_requires(switch_rtp_zerocopy_read_frame(dtx_rtp, &frame, SWITCH_IO_FLAG_NONE) == SWITCH_STATUS_SUCCESS);
+		fst_xcheck(!(frame.flags & SFF_CNG), "first packet of the talkspurt is read as audio");
+		fst_xcheck(!switch_rtp_test_flag(dtx_rtp, SWITCH_RTP_FLAG_FLUSH), "marker after a timestamp gap does not flush");
+
+		/* The second packet of the talkspurt must not be discarded. */
+		send_test_rtp_packet(sock, &dst_addr, seq++, ts, 0);
+		ts += 160;
+		switch_yield(20 * 1000);
+		frame.flags = 0;
+		fst_requires(switch_rtp_zerocopy_read_frame(dtx_rtp, &frame, SWITCH_IO_FLAG_NONE) == SWITCH_STATUS_SUCCESS);
+		fst_xcheck(!(frame.flags & SFF_CNG), "second packet of the talkspurt is read as audio");
+
+		close(sock);
+		switch_rtp_destroy(&dtx_rtp);
+		switch_core_destroy_memory_pool(&pool);
 	}
 	FST_TEST_END()
 
