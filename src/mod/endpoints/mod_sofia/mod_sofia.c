@@ -571,6 +571,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					/* tech_pvt->nh is non-NULL here (the enclosing "else if (tech_pvt->nh ...)" branch); nua_handle_ref does not check for NULL. */
 					nua_handle_t *cancel_nh = nua_handle_ref(tech_pvt->nh);
 					sofia_private_t *cancel_pvt = tech_pvt->sofia_private;
+					sofia_cancel_gap_hook_t *gap_hook = switch_channel_get_private(channel, SOFIA_CANCEL_GAP_HOOK_PRIVATE);
 					int destroy_nh = 0;
 
 					if (cancel_nh) {
@@ -580,6 +581,9 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 							cancel_pvt->uuid = NULL;
 							switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 							uuid_cleared = 1;
+							if (gap_hook && gap_hook->func) {
+								gap_hook->func(session, tech_pvt->profile, cancel_pvt, gap_hook->user_data);
+							}
 						}
 						nua_cancel(cancel_nh,
 								   SIPTAG_CONTACT(SIP_NONE),
