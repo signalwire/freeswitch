@@ -27,6 +27,82 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+/* SDP media sections for the Opus offer tests. RFC 7587 fixes the rtpmap at opus/48000/2; the
+   audio rate a peer wants is carried by maxplaybackrate/sprop-maxcapturerate in the fmtp. */
+#define OPUS_16K_ATTRS "a=rtpmap:96 opus/48000/2\r\n" \
+	"a=fmtp:96 useinbandfec=1;maxplaybackrate=16000;sprop-maxcapturerate=16000\r\n"
+#define OPUS_8K_ATTRS "a=rtpmap:96 opus/48000/2\r\n" \
+	"a=fmtp:96 useinbandfec=1;maxplaybackrate=8000;sprop-maxcapturerate=8000\r\n"
+#define OPUS_24K_ATTRS "a=rtpmap:96 opus/48000/2\r\n" \
+	"a=fmtp:96 useinbandfec=1;maxplaybackrate=24000;sprop-maxcapturerate=24000\r\n"
+#define OPUS_PLAIN_ATTRS "a=rtpmap:96 opus/48000/2\r\n"
+#define OPUS_WEBRTC_ATTRS "a=rtpmap:96 opus/48000/2\r\na=fmtp:96 minptime=10;useinbandfec=1\r\n"
+#define PCMU_ATTRS "a=rtpmap:0 PCMU/8000\r\n"
+
+#define OFFER_OPUS_16K "m=audio 11114 RTP/AVP 96\r\n" OPUS_16K_ATTRS
+#define OFFER_OPUS_16K_PTIME40 "m=audio 11114 RTP/AVP 96\r\n" OPUS_16K_ATTRS "a=ptime:40\r\n"
+#define OFFER_OPUS_16K_PCMU "m=audio 11114 RTP/AVP 96 0\r\n" OPUS_16K_ATTRS PCMU_ATTRS
+#define OFFER_PCMU_OPUS_16K "m=audio 11114 RTP/AVP 0 96\r\n" PCMU_ATTRS OPUS_16K_ATTRS
+#define OFFER_OPUS_8K "m=audio 11114 RTP/AVP 96\r\n" OPUS_8K_ATTRS
+#define OFFER_OPUS_24K "m=audio 11114 RTP/AVP 96\r\n" OPUS_24K_ATTRS
+#define OFFER_OPUS_24K_PCMU "m=audio 11114 RTP/AVP 96 0\r\n" OPUS_24K_ATTRS PCMU_ATTRS
+#define OFFER_OPUS_PLAIN "m=audio 11114 RTP/AVP 96\r\n" OPUS_PLAIN_ATTRS
+#define OFFER_OPUS_PLAIN_PCMU "m=audio 11114 RTP/AVP 96 0\r\n" OPUS_PLAIN_ATTRS PCMU_ATTRS
+#define OFFER_OPUS_WEBRTC_PCMU "m=audio 11114 RTP/AVP 96 0\r\n" OPUS_WEBRTC_ATTRS PCMU_ATTRS
+#define OFFER_ILBC "m=audio 11114 RTP/AVP 97\r\na=rtpmap:97 iLBC/8000\r\n"
+
+/* Negotiate one remote offer against a codec preference string on a fresh session and report the
+   audio codec it selected. Returns the switch_core_media_negotiate_sdp() result. */
+static uint8_t negotiate_audio_offer(const char *prefs, const char *mode, const char *media,
+									 char *codec, size_t codec_len, int *rate)
+{
+	switch_core_session_t *session = NULL;
+	switch_channel_t *channel;
+	switch_media_handle_t *smh = NULL;
+	switch_core_media_params_t *mparams;
+	switch_call_cause_t cause;
+	const char *val;
+	char *sdp;
+	uint8_t match = 0, proceed = 0;
+
+	*codec = '\0';
+	*rate = 0;
+
+	switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE,
+						 NULL, NULL);
+	if (!session) {
+		return 0;
+	}
+
+	channel = switch_core_session_get_channel(session);
+	mparams = switch_core_session_alloc(session, sizeof(*mparams));
+	mparams->rtpip = switch_core_session_strdup(session, "127.0.0.1");
+
+	if (switch_media_handle_create(&smh, session, mparams) == SWITCH_STATUS_SUCCESS) {
+		switch_channel_set_variable(channel, "absolute_codec_string", prefs);
+		switch_channel_set_variable(channel, "rtp_codec_negotiation", mode);
+		switch_core_media_prepare_codecs(session, SWITCH_TRUE);
+
+		sdp = switch_core_session_sprintf(session, "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=-\r\n"
+										  "c=IN IP4 127.0.0.1\r\nt=0 0\r\n%s", media);
+		match = switch_core_media_negotiate_sdp(session, sdp, &proceed, SDP_OFFER);
+
+		if (match) {
+			if ((val = switch_channel_get_variable(channel, "rtp_use_codec_name"))) {
+				switch_copy_string(codec, val, codec_len);
+			}
+			if ((val = switch_channel_get_variable(channel, "rtp_use_codec_rate"))) {
+				*rate = atoi(val);
+			}
+		}
+	}
+
+	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	switch_core_session_rwunlock(session);
+
+	return match;
+}
+
 FST_CORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_core_media)
@@ -135,6 +211,79 @@ FST_CORE_BEGIN("./conf")
 			if (session) {
 				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
 				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_opus_offer_negotiation)
+		{
+			/* Opus offers against stock, multi-rate and 16k-only preferences in each negotiation mode. Opus must
+			   win over PCMU whenever any Opus implementation is configured (GH #2226): the one configured at the
+			   offered rate, otherwise the first configured, moved down to the offered rate when the offer caps
+			   it lower and an implementation exists there. Scrooge keeps the configured implementation. */
+			const char *stock = "OPUS,PCMU,PCMA";
+			const char *multi = "OPUS@16000h,OPUS@8000h,OPUS,PCMU,PCMA";
+			const char *only16k = "OPUS@16000h,PCMU,PCMA";
+			struct {
+				const char *desc;
+				const char *prefs;
+				const char *mode;
+				const char *offer;
+				uint8_t match;
+				const char *codec;
+				int rate;
+			} cases[] = {
+				{ "stock prefs, 16k Opus",              stock,   "generous", OFFER_OPUS_16K,         1, "opus", 16000 },
+				{ "stock prefs, 16k Opus",              stock,   "greedy",   OFFER_OPUS_16K,         1, "opus", 16000 },
+				{ "stock prefs, 16k Opus",              stock,   "scrooge",  OFFER_OPUS_16K,         1, "opus", 48000 },
+				{ "stock prefs, 16k Opus + PCMU",       stock,   "generous", OFFER_OPUS_16K_PCMU,    1, "opus", 16000 },
+				{ "stock prefs, 16k Opus + PCMU",       stock,   "greedy",   OFFER_OPUS_16K_PCMU,    1, "opus", 16000 },
+				{ "stock prefs, 16k Opus + PCMU",       stock,   "scrooge",  OFFER_OPUS_16K_PCMU,    1, "opus", 48000 },
+				{ "stock prefs, 8k Opus",               stock,   "generous", OFFER_OPUS_8K,          1, "opus", 8000 },
+				{ "stock prefs, 24k Opus",              stock,   "generous", OFFER_OPUS_24K,         1, "opus", 48000 },
+				{ "stock prefs, plain Opus",            stock,   "generous", OFFER_OPUS_PLAIN,       1, "opus", 48000 },
+				{ "multi prefs, 16k Opus",              multi,   "generous", OFFER_OPUS_16K,         1, "opus", 16000 },
+				{ "multi prefs, 16k Opus, ptime 40",    multi,   "generous", OFFER_OPUS_16K_PTIME40, 1, "opus", 16000 },
+				{ "multi prefs, 16k Opus + PCMU",       multi,   "generous", OFFER_OPUS_16K_PCMU,    1, "opus", 16000 },
+				{ "multi prefs, 16k Opus + PCMU",       multi,   "greedy",   OFFER_OPUS_16K_PCMU,    1, "opus", 16000 },
+				{ "multi prefs, 16k Opus + PCMU",       multi,   "scrooge",  OFFER_OPUS_16K_PCMU,    1, "opus", 16000 },
+				{ "multi prefs, PCMU + 16k Opus",       multi,   "generous", OFFER_PCMU_OPUS_16K,    1, "PCMU", 8000 },
+				{ "multi prefs, PCMU + 16k Opus",       multi,   "greedy",   OFFER_PCMU_OPUS_16K,    1, "opus", 16000 },
+				{ "multi prefs, 8k Opus",               multi,   "generous", OFFER_OPUS_8K,          1, "opus", 8000 },
+				{ "multi prefs, 24k Opus",              multi,   "generous", OFFER_OPUS_24K,         1, "opus", 16000 },
+				{ "multi prefs, 24k Opus + PCMU",       multi,   "generous", OFFER_OPUS_24K_PCMU,    1, "opus", 16000 },
+				{ "multi prefs, plain Opus + PCMU",     multi,   "generous", OFFER_OPUS_PLAIN_PCMU,  1, "opus", 48000 },
+				{ "16k-only prefs, 16k Opus + PCMU",    only16k, "generous", OFFER_OPUS_16K_PCMU,    1, "opus", 16000 },
+				{ "16k-only prefs, 8k Opus",            only16k, "generous", OFFER_OPUS_8K,          1, "opus", 8000 },
+				{ "16k-only prefs, plain Opus",         only16k, "generous", OFFER_OPUS_PLAIN,       1, "opus", 16000 },
+				{ "16k-only prefs, plain Opus + PCMU",  only16k, "generous", OFFER_OPUS_PLAIN_PCMU,  1, "opus", 16000 },
+				{ "16k-only prefs, plain Opus + PCMU",  only16k, "greedy",   OFFER_OPUS_PLAIN_PCMU,  1, "opus", 16000 },
+				{ "16k-only prefs, WebRTC Opus + PCMU", only16k, "generous", OFFER_OPUS_WEBRTC_PCMU, 1, "opus", 16000 },
+				{ "PCMU-only prefs, 16k Opus + PCMU",   "PCMU",  "generous", OFFER_OPUS_16K_PCMU,    1, "PCMU", 8000 },
+				{ "stock prefs, no common codec",       stock,   "generous", OFFER_ILBC,             0, NULL,   0 },
+			};
+			int i;
+
+			fst_requires_module("mod_opus");
+
+			for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); i++) {
+				char codec[64];
+				int rate;
+				uint8_t match = negotiate_audio_offer(cases[i].prefs, cases[i].mode, cases[i].offer,
+													  codec, sizeof(codec), &rate);
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opus offer [%s, %s]: match=%d %s/%d\n",
+								  cases[i].desc, cases[i].mode, match, codec, rate);
+
+				fst_xcheck(match == cases[i].match,
+					switch_core_sprintf(fst_pool, "%s (%s): match=%d, expected %d",
+										cases[i].desc, cases[i].mode, match, cases[i].match));
+
+				if (match && cases[i].codec) {
+					fst_xcheck(!strcasecmp(codec, cases[i].codec) && rate == cases[i].rate,
+						switch_core_sprintf(fst_pool, "%s (%s): got %s/%d, expected %s/%d",
+											cases[i].desc, cases[i].mode, codec, rate, cases[i].codec, cases[i].rate));
+				}
 			}
 		}
 		FST_TEST_END()
