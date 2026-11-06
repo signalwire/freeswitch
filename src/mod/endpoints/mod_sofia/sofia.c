@@ -4086,7 +4086,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 			gateway->auth_username = switch_core_strdup(gateway->pool, auth_username);
 			gateway->register_password = switch_core_strdup(gateway->pool, password);
 			gateway->distinct_to = distinct_to;
-			gateway->options_user_agent = options_user_agent;
+			/* options_user_agent points into the XML tree; reloadxml frees that tree while the gateway lives on */
+			gateway->options_user_agent = switch_core_strdup(gateway->pool, options_user_agent);
 
 			if (switch_true(caller_id_in_from)) {
 				sofia_set_flag(gateway, REG_FLAG_CALLERID);
