@@ -188,6 +188,11 @@ struct sofia_private {
 	int is_static;
 	switch_time_t ping_sent;
 	char *rfc7989_uuid;
+	/* sofia_on_hangup's CANCEL branch: set from the uuid detach until nua_cancel has been
+	 * queued; a session-less 180/183/200 in that gap sets destroy_after_cancel instead of
+	 * destroying the handle. Both under profile->flag_mutex. */
+	int cancel_gap;
+	int destroy_after_cancel;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
