@@ -217,13 +217,15 @@ FST_CORE_BEGIN("./conf")
 
 		FST_TEST_BEGIN(test_opus_offer_negotiation)
 		{
-			/* Opus offers against stock, multi-rate and 16k-only preferences in each negotiation mode. Opus must
-			   win over PCMU whenever any Opus implementation is configured (GH #2226): the one configured at the
-			   offered rate, otherwise the first configured, moved down to the offered rate when the offer caps
-			   it lower and an implementation exists there. Scrooge keeps the configured implementation. */
+			/* Opus offers against stock, multi-rate, 16k-only and 8k-only preferences in each negotiation mode.
+			   Opus must win over PCMU whenever any Opus implementation is configured (GH #2226): the one
+			   configured at the offered rate, otherwise the first configured, moved down to the offered rate
+			   when the offer caps it lower and an implementation exists there. Scrooge keeps the configured
+			   implementation. */
 			const char *stock = "OPUS,PCMU,PCMA";
 			const char *multi = "OPUS@16000h,OPUS@8000h,OPUS,PCMU,PCMA";
 			const char *only16k = "OPUS@16000h,PCMU,PCMA";
+			const char *only8k = "OPUS@8000h,PCMU";
 			struct {
 				const char *desc;
 				const char *prefs;
@@ -259,12 +261,23 @@ FST_CORE_BEGIN("./conf")
 				{ "16k-only prefs, plain Opus + PCMU",  only16k, "generous", OFFER_OPUS_PLAIN_PCMU,  1, "opus", 16000 },
 				{ "16k-only prefs, plain Opus + PCMU",  only16k, "greedy",   OFFER_OPUS_PLAIN_PCMU,  1, "opus", 16000 },
 				{ "16k-only prefs, WebRTC Opus + PCMU", only16k, "generous", OFFER_OPUS_WEBRTC_PCMU, 1, "opus", 16000 },
+				{ "8k-only prefs, 16k Opus",            only8k,  "generous", OFFER_OPUS_16K,         1, "opus", 8000 },
+				{ "8k-only prefs, 16k Opus + PCMU",     only8k,  "generous", OFFER_OPUS_16K_PCMU,    1, "opus", 8000 },
+				{ "8k-only prefs, 16k Opus + PCMU",     only8k,  "greedy",   OFFER_OPUS_16K_PCMU,    1, "opus", 8000 },
+				{ "8k-only prefs, plain Opus",          only8k,  "generous", OFFER_OPUS_PLAIN,       1, "opus", 8000 },
+				{ "8k-only prefs, plain Opus + PCMU",   only8k,  "generous", OFFER_OPUS_PLAIN_PCMU,  1, "opus", 8000 },
+				{ "8k-only prefs, 8k Opus",             only8k,  "generous", OFFER_OPUS_8K,          1, "opus", 8000 },
 				{ "PCMU-only prefs, 16k Opus + PCMU",   "PCMU",  "generous", OFFER_OPUS_16K_PCMU,    1, "PCMU", 8000 },
 				{ "stock prefs, no common codec",       stock,   "generous", OFFER_ILBC,             0, NULL,   0 },
 			};
-			int i;
+			int i, sps = 1000;
 
 			fst_requires_module("mod_opus");
+
+			/* Each case originates a session and FreeSWITCH starts at most 30 a second by default, so raise
+			   the limit; it takes effect at the next one-second refresh. */
+			switch_core_session_ctl(SCSC_SPS, &sps);
+			switch_yield(1100000);
 
 			for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); i++) {
 				char codec[64];
