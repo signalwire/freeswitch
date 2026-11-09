@@ -1020,6 +1020,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 
 	switch_core_media_hard_mute(session, SWITCH_FALSE);
 
+	/**
+	* The INIT callback above may have started a thread that holds a session read lock
+	* (record_callback starts recording_thread). If the session thread ran
+	* switch_core_media_bug_remove_all() after hangup before this bug was linked, nothing
+	* will ever close it: the thread never releases its read lock and the session waits in
+	* switch_core_session_write_lock() forever (zombie channel, signalwire/freeswitch#1673, #2067).
+	* remove_all() only runs once the channel is down, so if it is down now, close the bug here.
+	* Keep returning SUCCESS and keep *new_bug: the caller still writes fields of the bug
+	* (session pool memory), and on failure it would destroy user_data again after CLOSE did.
+	**/
+	if (switch_channel_down_nosig(session->channel)) {
+		switch_media_bug_t *self = bug;
+
+		switch_core_media_bug_remove(session, &self);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
