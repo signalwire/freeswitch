@@ -16,7 +16,7 @@ jobs:
   scan-build:
     runs-on: ubuntu-latest
     container:
-      image: signalwire/freeswitch-public-ci-base:bookworm-amd64
+      image: signalwire/freeswitch-public-ci-base:trixie-amd64
       options: --privileged
     env:
       DEBIAN_FRONTEND: noninteractive
