@@ -9,11 +9,12 @@
  */
 #include <climits>
 #include <vector>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 #include "test/util.h"
+#include "vpx_config.h"
 
 namespace {
 
@@ -22,15 +23,15 @@ class BordersTest
       public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
  protected:
   BordersTest() : EncoderTest(GET_PARAM(0)) {}
-  virtual ~BordersTest() {}
+  ~BordersTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(GET_PARAM(1));
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
     if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, 1);
       encoder->Control(VP8E_SET_ENABLEAUTOALTREF, 1);
@@ -40,7 +41,7 @@ class BordersTest
     }
   }
 
-  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
+  void FramePktHook(const vpx_codec_cx_pkt_t *pkt) override {
     if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
     }
   }
@@ -79,6 +80,11 @@ TEST_P(BordersTest, TestLowBitrate) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
+#if CONFIG_REALTIME_ONLY
+VP9_INSTANTIATE_TEST_SUITE(BordersTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
+#else
 VP9_INSTANTIATE_TEST_SUITE(BordersTest,
                            ::testing::Values(::libvpx_test::kTwoPassGood));
+#endif
 }  // namespace

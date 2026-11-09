@@ -1,5 +1,3 @@
-v1.12.0 Torrent Duck
-
 Welcome to the WebM VP8/VP9 Codec SDK!
 
 COMPILING THE APPLICATIONS/LIBRARIES:
@@ -9,7 +7,7 @@ COMPILING THE APPLICATIONS/LIBRARIES:
 
   1. Prerequisites
 
-    * All x86 targets require the Yasm[1] assembler be installed[2].
+    * All x86 targets require the NASM[0] or Yasm[1] assembler be installed[2].
     * All Windows builds require that Cygwin[3] or MSYS2[4] be installed.
     * Building the documentation requires Doxygen[5]. If you do not
       have this package, the install-docs option will be disabled.
@@ -20,11 +18,15 @@ COMPILING THE APPLICATIONS/LIBRARIES:
       source[7]. These requirements are optional if not running the unit
       tests.
 
+    [0]: https://www.nasm.us/
     [1]: http://www.tortall.net/projects/yasm
     [2]: For Visual Studio the base yasm binary (not vsyasm) should be in the
          PATH for Visual Studio. For VS2017 it is sufficient to rename
          yasm-<version>-<arch>.exe to yasm.exe and place it in:
          Program Files (x86)/Microsoft Visual Studio/2017/<level>/Common7/Tools/
+         The MSYS2 version of the yasm binary can also be used and avoids an
+         issue caused by a missing Visual C++ Redistributable install (Visual
+         Studio 2010, MSVCR100.dll).
     [3]: http://www.cygwin.com
     [4]: http://www.msys2.org/
     [5]: http://www.doxygen.org
@@ -64,9 +66,20 @@ COMPILING THE APPLICATIONS/LIBRARIES:
     arm64-android-gcc
     arm64-darwin-gcc
     arm64-darwin20-gcc
+    arm64-darwin21-gcc
+    arm64-darwin22-gcc
+    arm64-darwin23-gcc
+    arm64-darwin24-gcc
+    arm64-darwin25-gcc
     arm64-linux-gcc
     arm64-win64-gcc
     arm64-win64-vs15
+    arm64-win64-vs16
+    arm64-win64-vs16-clangcl
+    arm64-win64-vs17
+    arm64-win64-vs17-clangcl
+    arm64-win64-vs18
+    arm64-win64-vs18-clangcl
     armv7-android-gcc
     armv7-darwin-gcc
     armv7-linux-rvct
@@ -75,8 +88,12 @@ COMPILING THE APPLICATIONS/LIBRARIES:
     armv7-win32-gcc
     armv7-win32-vs14
     armv7-win32-vs15
+    armv7-win32-vs16
+    armv7-win32-vs17
     armv7s-darwin-gcc
     armv8-linux-gcc
+    loongarch32-linux-gcc
+    loongarch64-linux-gcc
     mips32-linux-gcc
     mips64-linux-gcc
     ppc64le-linux-gcc
@@ -104,6 +121,7 @@ COMPILING THE APPLICATIONS/LIBRARIES:
     x86-win32-vs15
     x86-win32-vs16
     x86-win32-vs17
+    x86-win32-vs18
     x86_64-android-gcc
     x86_64-darwin9-gcc
     x86_64-darwin10-gcc
@@ -117,6 +135,11 @@ COMPILING THE APPLICATIONS/LIBRARIES:
     x86_64-darwin18-gcc
     x86_64-darwin19-gcc
     x86_64-darwin20-gcc
+    x86_64-darwin21-gcc
+    x86_64-darwin22-gcc
+    x86_64-darwin23-gcc
+    x86_64-darwin24-gcc
+    x86_64-darwin25-gcc
     x86_64-iphonesimulator-gcc
     x86_64-linux-gcc
     x86_64-linux-icc
@@ -126,6 +149,7 @@ COMPILING THE APPLICATIONS/LIBRARIES:
     x86_64-win64-vs15
     x86_64-win64-vs16
     x86_64-win64-vs17
+    x86_64-win64-vs18
     generic-gnu
 
   The generic-gnu target, in conjunction with the CROSS environment variable,
@@ -138,8 +162,8 @@ COMPILING THE APPLICATIONS/LIBRARIES:
     $ CROSS=mipsel-linux-uclibc- ../libvpx/configure
 
   In addition, the executables to be invoked can be overridden by specifying the
-  environment variables: CC, AR, LD, AS, STRIP, NM. Additional flags can be
-  passed to these executables with CFLAGS, LDFLAGS, and ASFLAGS.
+  environment variables: AR, AS, CC, CXX, LD, STRIP. Additional flags can be
+  passed to these executables with ASFLAGS, CFLAGS, CXXFLAGS, and LDFLAGS.
 
   6. Configuration errors
   If the configuration step fails, the first step is to look in the error log.
@@ -169,7 +193,49 @@ CODE STYLE:
 
   See also: http://clang.llvm.org/docs/ClangFormat.html
 
+PROFILE GUIDED OPTIMIZATION (PGO)
+  Profile Guided Optimization can be enabled for Clang builds using the
+  commands:
+
+  $ export CC=clang
+  $ export CXX=clang++
+  $ ../libvpx/configure  --enable-profile
+  $ make
+
+  Generate one or multiple PGO profile files by running vpxdec or vpxenc. For
+  example:
+
+  $ ./vpxdec ../vpx/out_ful/vp90-2-sintel_1280x546_tile_1x4_1257kbps.webm \
+    -o - > /dev/null
+
+  To convert and merge the raw profile files, use the llvm-profdata tool:
+
+  $ llvm-profdata merge -o perf.profdata default_8382761441159425451_0.profraw
+
+  Then, rebuild the project with the new profile file:
+
+  $ make clean
+  $ ../libvpx/configure --use-profile=perf.profdata
+  $ make
+
+  Note: Always use the llvm-profdata from the toolchain that is used for
+  compiling the PGO-enabled binary.
+
+  To observe the improvements from a PGO-enabled build, enable and compare the
+  list of failed optimizations by using the -Rpass-missed compiler flag. For
+  example, to list the failed loop vectorizations:
+
+  $ ../libvpx/configure --use-profile=perf.profdata \
+    --extra-cflags=-Rpass-missed=loop-vectorize
+
+  For guidance on utilizing PGO files to identify potential optimization
+  opportunities, see: tools/README.pgo.md
+
 SUPPORT
   This library is an open source project supported by its community. Please
   email webm-discuss@webmproject.org for help.
 
+BUG REPORTS
+  Bug reports can be filed in the libvpx component of the issue tracker:
+  https://issues.webmproject.org/issues/new?component=1618984&template=2023833.
+  For security reports, select 'Security report' from the Template dropdown.

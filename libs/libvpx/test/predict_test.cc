@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vp8_rtcd.h"
 #include "./vpx_config.h"
@@ -21,20 +22,21 @@
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
+#include "vp8/common/blockd.h"
+#include "vp8/common/reconinter.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_mem/vpx_mem.h"
-#include "vpx_ports/msvc.h"
 
 namespace {
 
 using libvpx_test::ACMRandom;
 using std::make_tuple;
 
-typedef void (*PredictFunc)(uint8_t *src_ptr, int src_pixels_per_line,
-                            int xoffset, int yoffset, uint8_t *dst_ptr,
-                            int dst_pitch);
+using PredictFunc = void (*)(uint8_t *src_ptr, int src_pixels_per_line,
+                             int xoffset, int yoffset, uint8_t *dst_ptr,
+                             int dst_pitch);
 
-typedef std::tuple<int, int, PredictFunc> PredictParam;
+using PredictParam = std::tuple<int, int, PredictFunc>;
 
 class PredictTestBase : public AbstractBench,
                         public ::testing::TestWithParam<PredictParam> {
@@ -43,7 +45,7 @@ class PredictTestBase : public AbstractBench,
       : width_(GET_PARAM(0)), height_(GET_PARAM(1)), predict_(GET_PARAM(2)),
         src_(nullptr), padded_dst_(nullptr), dst_(nullptr), dst_c_(nullptr) {}
 
-  virtual void SetUp() {
+  void SetUp() override {
     src_ = new uint8_t[kSrcSize];
     ASSERT_NE(src_, nullptr);
 
@@ -64,7 +66,7 @@ class PredictTestBase : public AbstractBench,
     memset(dst_c_, 0, 16 * 16);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     delete[] src_;
     src_ = nullptr;
     vpx_free(padded_dst_);
@@ -209,7 +211,7 @@ class PredictTestBase : public AbstractBench,
     }
   }
 
-  void Run() {
+  void Run() override {
     for (int xoffset = 0; xoffset < 8; ++xoffset) {
       for (int yoffset = 0; yoffset < 8; ++yoffset) {
         if (xoffset == 0 && yoffset == 0) {
@@ -312,19 +314,19 @@ INSTANTIATE_TEST_SUITE_P(
                       make_tuple(8, 4, &vp8_sixtap_predict8x4_neon),
                       make_tuple(4, 4, &vp8_sixtap_predict4x4_neon)));
 #endif
-#if HAVE_MMX
+#if HAVE_MMX && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(
     MMX, SixtapPredictTest,
     ::testing::Values(make_tuple(4, 4, &vp8_sixtap_predict4x4_mmx)));
 #endif
-#if HAVE_SSE2
+#if HAVE_SSE2 && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(
     SSE2, SixtapPredictTest,
     ::testing::Values(make_tuple(16, 16, &vp8_sixtap_predict16x16_sse2),
                       make_tuple(8, 8, &vp8_sixtap_predict8x8_sse2),
                       make_tuple(8, 4, &vp8_sixtap_predict8x4_sse2)));
 #endif
-#if HAVE_SSSE3
+#if HAVE_SSSE3 && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(
     SSSE3, SixtapPredictTest,
     ::testing::Values(make_tuple(16, 16, &vp8_sixtap_predict16x16_ssse3),
@@ -348,6 +350,14 @@ INSTANTIATE_TEST_SUITE_P(
                       make_tuple(8, 8, &vp8_sixtap_predict8x8_mmi),
                       make_tuple(8, 4, &vp8_sixtap_predict8x4_mmi),
                       make_tuple(4, 4, &vp8_sixtap_predict4x4_mmi)));
+#endif
+
+#if HAVE_LSX
+INSTANTIATE_TEST_SUITE_P(
+    LSX, SixtapPredictTest,
+    ::testing::Values(make_tuple(16, 16, &vp8_sixtap_predict16x16_lsx),
+                      make_tuple(8, 8, &vp8_sixtap_predict8x8_lsx),
+                      make_tuple(4, 4, &vp8_sixtap_predict4x4_lsx)));
 #endif
 
 class BilinearPredictTest : public PredictTestBase {};
@@ -389,7 +399,7 @@ INSTANTIATE_TEST_SUITE_P(
                       make_tuple(8, 4, &vp8_bilinear_predict8x4_sse2),
                       make_tuple(4, 4, &vp8_bilinear_predict4x4_sse2)));
 #endif
-#if HAVE_SSSE3
+#if HAVE_SSSE3 && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(
     SSSE3, BilinearPredictTest,
     ::testing::Values(make_tuple(16, 16, &vp8_bilinear_predict16x16_ssse3),
@@ -403,4 +413,110 @@ INSTANTIATE_TEST_SUITE_P(
                       make_tuple(8, 4, &vp8_bilinear_predict8x4_msa),
                       make_tuple(4, 4, &vp8_bilinear_predict4x4_msa)));
 #endif
+class BuildInterPredictorTest : public ::testing::Test {
+ protected:
+  enum {
+    kYStride = 64,
+    kYSize = kYStride * kYStride,
+    kUVStride = kYStride >> 1,
+    kUVSize = kUVStride * kUVStride,
+    kRef = 0x80,
+    kFill = 0xcd
+  };
+
+  void SetUp() override {
+    xd_ =
+        reinterpret_cast<MACROBLOCKD *>(vpx_memalign(32, sizeof(MACROBLOCKD)));
+    ASSERT_NE(xd_, nullptr);
+    memset(xd_, 0, sizeof(*xd_));
+
+    pre_y_ = reinterpret_cast<uint8_t *>(vpx_memalign(32, kYSize));
+    pre_u_ = reinterpret_cast<uint8_t *>(vpx_memalign(32, kUVSize));
+    pre_v_ = reinterpret_cast<uint8_t *>(vpx_memalign(32, kUVSize));
+    dst_y_ = reinterpret_cast<uint8_t *>(vpx_memalign(32, kYSize));
+    dst_u_ = reinterpret_cast<uint8_t *>(vpx_memalign(32, kUVSize));
+    dst_v_ = reinterpret_cast<uint8_t *>(vpx_memalign(32, kUVSize));
+    ASSERT_NE(pre_y_, nullptr);
+    ASSERT_NE(pre_u_, nullptr);
+    ASSERT_NE(pre_v_, nullptr);
+    ASSERT_NE(dst_y_, nullptr);
+    ASSERT_NE(dst_u_, nullptr);
+    ASSERT_NE(dst_v_, nullptr);
+    memset(pre_y_, kRef, kYSize);
+    memset(pre_u_, kRef, kUVSize);
+    memset(pre_v_, kRef, kUVSize);
+
+    memset(&mi_, 0, sizeof(mi_));
+    xd_->mode_info_context = &mi_;
+    xd_->pre.y_buffer = pre_y_ + (kYStride >> 1) * kYStride + (kYStride >> 1);
+    xd_->pre.u_buffer =
+        pre_u_ + (kUVStride >> 1) * kUVStride + (kUVStride >> 1);
+    xd_->pre.v_buffer =
+        pre_v_ + (kUVStride >> 1) * kUVStride + (kUVStride >> 1);
+    xd_->pre.y_stride = kYStride;
+  }
+
+  void TearDown() override {
+    vpx_free(xd_);
+    vpx_free(pre_y_);
+    vpx_free(pre_u_);
+    vpx_free(pre_v_);
+    vpx_free(dst_y_);
+    vpx_free(dst_u_);
+    vpx_free(dst_v_);
+    libvpx_test::ClearSystemState();
+  }
+
+  void RunAndCheck(int row, int col) {
+    memset(dst_y_, kFill, kYSize);
+    memset(dst_u_, kFill, kUVSize);
+    memset(dst_v_, kFill, kUVSize);
+
+    mi_.mbmi.mv.as_mv.row = static_cast<short>(row);
+    mi_.mbmi.mv.as_mv.col = static_cast<short>(col);
+    mi_.mbmi.need_to_clamp_mvs = 1;
+
+    uint8_t *const dst_y =
+        dst_y_ + (kYStride >> 1) * kYStride + (kYStride >> 1);
+    uint8_t *const dst_u =
+        dst_u_ + (kUVStride >> 1) * kUVStride + (kUVStride >> 1);
+    uint8_t *const dst_v =
+        dst_v_ + (kUVStride >> 1) * kUVStride + (kUVStride >> 1);
+
+    vp8_build_inter16x16_predictors_mb(xd_, dst_y, dst_u, dst_v, kYStride,
+                                       kUVStride);
+
+    for (int r = 0; r < 8; ++r) {
+      for (int c = 0; c < 8; ++c) {
+        ASSERT_EQ(kRef, dst_u[r * kUVStride + c])
+            << "U[" << r << "][" << c << "] mv=(" << row << "," << col << ")";
+        ASSERT_EQ(kRef, dst_v[r * kUVStride + c])
+            << "V[" << r << "][" << c << "] mv=(" << row << "," << col << ")";
+      }
+    }
+  }
+
+  MACROBLOCKD *xd_;
+  MODE_INFO mi_;
+  uint8_t *pre_y_;
+  uint8_t *pre_u_;
+  uint8_t *pre_v_;
+  uint8_t *dst_y_;
+  uint8_t *dst_u_;
+  uint8_t *dst_v_;
+};
+
+// With full-pixel-only chroma motion (fullpixel_mask == ~7), rounding the
+// derived chroma MV down can move it just past the border tap window. The
+// chroma destination must still be written from a clamped reference position.
+TEST_F(BuildInterPredictorTest, FullPixelChromaMVAlwaysWritesUV) {
+  xd_->mb_to_left_edge = 0;
+  xd_->mb_to_right_edge = 0;
+  xd_->mb_to_top_edge = 0;
+  xd_->mb_to_bottom_edge = 0;
+  xd_->fullpixel_mask = ~7;
+
+  RunAndCheck(0, -152);
+  RunAndCheck(-152, 0);
+}
 }  // namespace

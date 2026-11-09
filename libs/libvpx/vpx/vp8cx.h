@@ -166,6 +166,7 @@ enum vp8e_enc_control_id {
    *
    * \note Valid range for VP8: -16..16
    * \note Valid range for VP9: -9..9
+   * \note A negative value (-n) is treated as its absolute value (n) in VP9.
    *
    * Supported in codecs: VP8, VP9
    */
@@ -302,7 +303,7 @@ enum vp8e_enc_control_id {
    * the feature is off, i.e., no golden frame boost in CBR mode and
    * average bitrate target is used.
    *
-   * For example, to allow 100% more bits, i.e, 2X, in a golden frame
+   * For example, to allow 100% more bits, i.e., 2X, in a golden frame
    * than average frame, set this to 100.
    *
    * Supported in codecs: VP9
@@ -598,7 +599,7 @@ enum vp8e_enc_control_id {
    * the feature is off, i.e., no golden frame boost in CBR mode and
    * average bitrate target is used.
    *
-   * For example, to allow 100% more bits, i.e, 2X, in a golden frame
+   * For example, to allow 100% more bits, i.e., 2X, in a golden frame
    * than average frame, set this to 100.
    *
    * Supported in codecs: VP8
@@ -672,7 +673,7 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_TPL,
 
-  /*!\brief Codec control function to enable postencode frame drop.
+  /*!\brief Codec control function to enable post encode frame drop.
    *
    * This will allow encoder to drop frame after it's encoded.
    *
@@ -757,6 +758,34 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP8
    */
   VP8E_SET_RTC_EXTERNAL_RATECTRL,
+
+  /*!\brief Codec control to set quantizer for the next frame.
+   *
+   * This will turn off cyclic refresh. Only applicable to 1-pass without
+   * spatial layers.
+   *
+   * Supported in codecs: VP9
+   *
+   */
+  VP9E_SET_QUANTIZER_ONE_PASS,
+
+  /*!\brief Codec control function to enable key frame temporal filtering.
+   *
+   * Vp9 allows the encoder to run key frame temporal filtering and use it to
+   * improve the compression performance. To enable, set this parameter to be
+   * 1. The default value is set to be 0.
+   */
+  VP9E_SET_KEY_FRAME_FILTERING,
+
+  /*!\brief Codec control function to validate HBD input, int parameter.
+   *
+   * VP9 allows the encoder to validate the high bitdepth (HBD) input and
+   * ensure that every pixel is within the valid range. To disable/enable,
+   * set this parameter to 0/1. The default value is set to be 1.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_VALIDATE_HBD_INPUT,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -783,8 +812,7 @@ typedef enum vp9e_temporal_layering_mode {
   VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING = 0,
 
   /*!\brief Bypass mode.
-   * Used when application needs to control temporal layering.
-   * This will only work when the number of spatial layers equals 1.
+   * Used when application needs to control spatial and temporal layering.
    */
   VP9E_TEMPORAL_LAYERING_MODE_BYPASS = 1,
 
@@ -858,7 +886,7 @@ typedef enum {
   VP8_EIGHT_TOKENPARTITION = 3
 } vp8e_token_partitions;
 
-/*!brief VP9 encoder content type */
+/*!\brief VP9 encoder content type */
 typedef enum {
   VP9E_CONTENT_DEFAULT,
   VP9E_CONTENT_SCREEN,
@@ -1085,6 +1113,12 @@ VPX_CTRL_USE_TYPE(VP9E_GET_LAST_QUANTIZER_SVC_LAYERS, int *)
 #define VPX_CTRL_VP9E_GET_LAST_QUANTIZER_SVC_LAYERS
 VPX_CTRL_USE_TYPE(VP8E_SET_RTC_EXTERNAL_RATECTRL, int)
 #define VPX_CTRL_VP8E_SET_RTC_EXTERNAL_RATECTRL
+VPX_CTRL_USE_TYPE(VP9E_SET_QUANTIZER_ONE_PASS, int)
+#define VPX_CTRL_VP9E_SET_QUANTIZER_ONE_PASS
+VPX_CTRL_USE_TYPE(VP9E_SET_KEY_FRAME_FILTERING, int)
+#define VPX_CTRL_VP9E_SET_KEY_FRAME_FILTERING
+VPX_CTRL_USE_TYPE(VP9E_SET_VALIDATE_HBD_INPUT, int)
+#define VPX_CTRL_VP9E_SET_VALIDATE_HBD_INPUT
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */

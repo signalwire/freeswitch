@@ -15,7 +15,7 @@
 #include <string>
 #include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "../tools_common.h"
 #include "./vpx_config.h"
 #include "test/codec_factory.h"
@@ -35,20 +35,14 @@ const int kThreads = 0;
 const int kMtMode = 1;
 const int kFileName = 2;
 
-typedef std::tuple<int, int, const char *> DecodeParam;
+using DecodeParam = std::tuple<int, int, const char *>;
 
 class TestVectorTest : public ::libvpx_test::DecoderTest,
                        public ::libvpx_test::CodecTestWithParam<DecodeParam> {
  protected:
-  TestVectorTest() : DecoderTest(GET_PARAM(0)), md5_file_(nullptr) {
-#if CONFIG_VP9_DECODER
-    resize_clips_.insert(::libvpx_test::kVP9TestVectorsResize,
-                         ::libvpx_test::kVP9TestVectorsResize +
-                             ::libvpx_test::kNumVP9TestVectorsResize);
-#endif
-  }
+  TestVectorTest() : DecoderTest(GET_PARAM(0)), md5_file_(nullptr) {}
 
-  virtual ~TestVectorTest() {
+  ~TestVectorTest() override {
     if (md5_file_) fclose(md5_file_);
   }
 
@@ -59,9 +53,8 @@ class TestVectorTest : public ::libvpx_test::DecoderTest,
   }
 
 #if CONFIG_VP9_DECODER
-  virtual void PreDecodeFrameHook(
-      const libvpx_test::CompressedVideoSource &video,
-      libvpx_test::Decoder *decoder) {
+  void PreDecodeFrameHook(const libvpx_test::CompressedVideoSource &video,
+                          libvpx_test::Decoder *decoder) override {
     if (video.frame_number() == 0 && mt_mode_ >= 0) {
       if (mt_mode_ == 1) {
         decoder->Control(VP9D_SET_LOOP_FILTER_OPT, 1);
@@ -77,8 +70,8 @@ class TestVectorTest : public ::libvpx_test::DecoderTest,
   }
 #endif
 
-  virtual void DecompressedFrameHook(const vpx_image_t &img,
-                                     const unsigned int frame_number) {
+  void DecompressedFrameHook(const vpx_image_t &img,
+                             const unsigned int frame_number) override {
     ASSERT_NE(md5_file_, nullptr);
     char expected_md5[33];
     char junk[128];
@@ -97,9 +90,6 @@ class TestVectorTest : public ::libvpx_test::DecoderTest,
         << "Md5 checksums don't match: frame number = " << frame_number;
   }
 
-#if CONFIG_VP9_DECODER
-  std::set<std::string> resize_clips_;
-#endif
   int mt_mode_;
 
  private:

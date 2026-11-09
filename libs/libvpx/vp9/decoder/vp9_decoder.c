@@ -16,11 +16,14 @@
 #include "./vpx_dsp_rtcd.h"
 #include "./vpx_scale_rtcd.h"
 
+#include "vpx/internal/vpx_codec_internal.h"
+#include "vpx/vpx_codec.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/system_state.h"
 #include "vpx_ports/vpx_once.h"
 #include "vpx_ports/vpx_timer.h"
 #include "vpx_scale/vpx_scale.h"
+#include "vpx_util/vpx_pthread.h"
 #include "vpx_util/vpx_thread.h"
 
 #include "vp9/common/vp9_alloccommon.h"
@@ -58,15 +61,18 @@ static void vp9_dec_setup_mi(VP9_COMMON *cm) {
 void vp9_dec_alloc_row_mt_mem(RowMTWorkerData *row_mt_worker_data,
                               VP9_COMMON *cm, int num_sbs, int max_threads,
                               int num_jobs) {
-  int plane;
-  const size_t dqcoeff_size = (num_sbs << DQCOEFFS_PER_SB_LOG2) *
+  if ((size_t)num_sbs > SIZE_MAX / (sizeof(*row_mt_worker_data->dqcoeff[0])
+                                    << DQCOEFFS_PER_SB_LOG2)) {
+    vpx_internal_error(&cm->error, VPX_CODEC_ERROR, "num_sbs too big");
+  }
+  const size_t dqcoeff_size = ((size_t)num_sbs << DQCOEFFS_PER_SB_LOG2) *
                               sizeof(*row_mt_worker_data->dqcoeff[0]);
   row_mt_worker_data->num_jobs = num_jobs;
 #if CONFIG_MULTITHREAD
   {
     int i;
     CHECK_MEM_ERROR(
-        cm, row_mt_worker_data->recon_sync_mutex,
+        &cm->error, row_mt_worker_data->recon_sync_mutex,
         vpx_malloc(sizeof(*row_mt_worker_data->recon_sync_mutex) * num_jobs));
     if (row_mt_worker_data->recon_sync_mutex) {
       for (i = 0; i < num_jobs; ++i) {
@@ -75,7 +81,7 @@ void vp9_dec_alloc_row_mt_mem(RowMTWorkerData *row_mt_worker_data,
     }
 
     CHECK_MEM_ERROR(
-        cm, row_mt_worker_data->recon_sync_cond,
+        &cm->error, row_mt_worker_data->recon_sync_cond,
         vpx_malloc(sizeof(*row_mt_worker_data->recon_sync_cond) * num_jobs));
     if (row_mt_worker_data->recon_sync_cond) {
       for (i = 0; i < num_jobs; ++i) {
@@ -85,25 +91,25 @@ void vp9_dec_alloc_row_mt_mem(RowMTWorkerData *row_mt_worker_data,
   }
 #endif
   row_mt_worker_data->num_sbs = num_sbs;
-  for (plane = 0; plane < 3; ++plane) {
-    CHECK_MEM_ERROR(cm, row_mt_worker_data->dqcoeff[plane],
-                    vpx_memalign(16, dqcoeff_size));
+  for (int plane = 0; plane < 3; ++plane) {
+    CHECK_MEM_ERROR(&cm->error, row_mt_worker_data->dqcoeff[plane],
+                    vpx_memalign(32, dqcoeff_size));
     memset(row_mt_worker_data->dqcoeff[plane], 0, dqcoeff_size);
-    CHECK_MEM_ERROR(cm, row_mt_worker_data->eob[plane],
-                    vpx_calloc(num_sbs << EOBS_PER_SB_LOG2,
+    CHECK_MEM_ERROR(&cm->error, row_mt_worker_data->eob[plane],
+                    vpx_calloc((size_t)num_sbs << EOBS_PER_SB_LOG2,
                                sizeof(*row_mt_worker_data->eob[plane])));
   }
-  CHECK_MEM_ERROR(cm, row_mt_worker_data->partition,
-                  vpx_calloc(num_sbs * PARTITIONS_PER_SB,
+  CHECK_MEM_ERROR(&cm->error, row_mt_worker_data->partition,
+                  vpx_calloc((size_t)num_sbs * PARTITIONS_PER_SB,
                              sizeof(*row_mt_worker_data->partition)));
-  CHECK_MEM_ERROR(cm, row_mt_worker_data->recon_map,
+  CHECK_MEM_ERROR(&cm->error, row_mt_worker_data->recon_map,
                   vpx_calloc(num_sbs, sizeof(*row_mt_worker_data->recon_map)));
 
   // allocate memory for thread_data
   if (row_mt_worker_data->thread_data == NULL) {
     const size_t thread_size =
         max_threads * sizeof(*row_mt_worker_data->thread_data);
-    CHECK_MEM_ERROR(cm, row_mt_worker_data->thread_data,
+    CHECK_MEM_ERROR(&cm->error, row_mt_worker_data->thread_data,
                     vpx_memalign(32, thread_size));
   }
 }
@@ -181,9 +187,10 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
 
   cm->error.setjmp = 1;
 
-  CHECK_MEM_ERROR(cm, cm->fc, (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc)));
+  CHECK_MEM_ERROR(&cm->error, cm->fc,
+                  (FRAME_CONTEXT *)vpx_calloc(1, sizeof(*cm->fc)));
   CHECK_MEM_ERROR(
-      cm, cm->frame_contexts,
+      &cm->error, cm->frame_contexts,
       (FRAME_CONTEXT *)vpx_calloc(FRAME_CONTEXTS, sizeof(*cm->frame_contexts)));
 
   pbi->need_resync = 1;
@@ -209,6 +216,7 @@ VP9Decoder *vp9_decoder_create(BufferPool *const pool) {
   cm->error.setjmp = 0;
 
   vpx_get_worker_interface()->init(&pbi->lf_worker);
+  pbi->lf_worker.thread_name = "vpx lf worker";
 
   return pbi;
 }
@@ -509,16 +517,27 @@ int vp9_get_raw_frame(VP9Decoder *pbi, YV12_BUFFER_CONFIG *sd,
   pbi->ready_for_new_data = 1;
 
 #if CONFIG_VP9_POSTPROC
+  if (setjmp(cm->error.jmp)) {
+    cm->error.setjmp = 0;
+    vpx_clear_system_state();
+    return -1;
+  }
+
+  cm->error.setjmp = 1;
+
   if (!cm->show_existing_frame) {
     ret = vp9_post_proc_frame(cm, sd, flags, cm->width);
   } else {
     *sd = *cm->frame_to_show;
     ret = 0;
   }
+
+  cm->error.setjmp = 0;
 #else
   *sd = *cm->frame_to_show;
   ret = 0;
 #endif /*!CONFIG_POSTPROC*/
+
   vpx_clear_system_state();
   return ret;
 }

@@ -65,6 +65,7 @@ static void free_seg_map(VP9_COMMON *cm) {
     vpx_free(cm->seg_map_array[i]);
     cm->seg_map_array[i] = NULL;
   }
+  cm->seg_map_alloc_size = 0;
 
   cm->current_frame_seg_map = NULL;
   cm->last_frame_seg_map = NULL;
@@ -96,6 +97,7 @@ void vp9_free_postproc_buffers(VP9_COMMON *cm) {
   cm->postproc_state.limits = NULL;
   vpx_free(cm->postproc_state.generated_noise);
   cm->postproc_state.generated_noise = NULL;
+  cm->postproc_state.generated_noise_size = 0;
 #else
   (void)cm;
 #endif
@@ -108,6 +110,7 @@ void vp9_free_context_buffers(VP9_COMMON *cm) {
   cm->above_context = NULL;
   vpx_free(cm->above_seg_context);
   cm->above_seg_context = NULL;
+  cm->above_context_alloc_cols = 0;
   vpx_free(cm->lf.lfm);
   cm->lf.lfm = NULL;
 }
@@ -133,7 +136,6 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
     cm->free_mi(cm);
     if (cm->alloc_mi(cm, new_mi_size)) goto fail;
   }
-
   if (cm->above_context_alloc_cols < cm->mi_cols) {
     vpx_free(cm->above_context);
     cm->above_context = (ENTROPY_CONTEXT *)vpx_calloc(

@@ -1,3 +1,362 @@
+2026-08-07 v1.17.0 "Yellowbilled Duck"
+  This release includes a new encoder control to validate high bitdepth input,
+  additional Neon and AVX2/AVX512 optimizations, support for the C11 standard,
+  and numerous bug fixes.
+
+  - Upgrading:
+    This release is ABI compatible with the previous release.
+
+    ISO C11 standard is now enforced for C files.
+
+    SVC is now strictly disallowed for 2-pass encoding; enabling it will return
+    VPX_CODEC_INVALID_PARAM.
+
+    VP9 High Bitdepth (HBD) input validation is now enabled by default. If the
+    input contains values outside the valid range, the encoder will return
+    VPX_CODEC_INVALID_PARAM. Use the new VP9E_SET_VALIDATE_HBD_INPUT control
+    (or vpxenc --validate-hbd-input=0) to disable this validation.
+
+    VP9 now sets the returned image width (w) and height (h) to the actual
+    width and height, rather than the stride and aligned height. This is a
+    behavior change that may affect applications relying on w being equal to the
+    stride or h being the aligned height.
+
+    Strict validation has been added to some APIs:
+    - Encoders (VP8/VP9) now reject input images with unequal U and V strides.
+    - vpx_img_alloc() and vpx_img_wrap() now strictly validate the image format.
+    - External rate control (RTC) API now validates configuration inputs.
+    - VP9 SVC now validates spatial layer ID input.
+
+  - Enhancement:
+    Added Arm Neon DotProd subpel variance paths.
+    Optimized Neon HBD sadx4d and sad_skipx4d functions.
+    Added AVX2/AVX512 implementations for various vpx_highbd predictor
+    functions.
+    Added support for MSVC v145 (Visual Studio 2026).
+    Added configure option --disable-x86-asm.
+
+  - Bug fixes:
+    Fix to heap buffer overflow / out-of-bounds write in vp9_postproc,
+    vp8-multi-res-encoding, vpx_setup_noise, set_mb_ssim_rdmult_scaling,
+    vp9_change_config (resolution change), vp9_dec_alloc_row_mt_mem (decode
+    coeffs), and vp8_sixtap_predict (LoongArch).
+
+    Fix to integer overflow in vp9-svc (layer resolution, duration),
+    set_mb_ssim_rdmult_scaling, vp8_encode_frame, calc_pframe_target_size,
+    y4minput buffer size calculations, and get_token_alloc.
+
+    Fix to VP8 decoder crash on flush with no fragments.
+    Fix to VP8 decoder potential hang/slowdown with corrupt partition 0 size.
+    Fix to VP9 decoder crash with invalid reference frame index.
+    Fix to VP9 highbitdepth encoder format mismatch.
+    Fix to VP9 float-to-int overflow in validate_config (EOS count) and with
+    zero bitrate.
+
+    Fix to VP8 decoder multithreading corruption flag reset at start of
+    frame.
+    Fix to VP8 decoder accepting inter frames on resolution change before
+    keyframe.
+    Fix to VP8 encoder reference frame dimension validation.
+    Fix to VP8 encoder temporal layer ID validation.
+    Fix to VP8 encoder missing setjmp in VP8E_SET_SCALEMODE.
+
+    Fix to VP9 SVC encoder crash with dynamic resize and cyclic refresh
+    (aq_mode=3).
+    Fix to VP9 1-pass rate control last_boosted_qindex clamping and
+    VP9E_SET_QUANTIZER_ONE_PASS validation.
+
+    Fix to NV12 x_chroma_shift calculation in vpx_image and image2yuvconfig.
+    Fix to AVX-512 CPU feature detection on older x86 CPUs.
+    Fix to x86_abi_support.asm placing read-only data tables in .rdata for
+    Windows.
+    Fix to configure disabling _FORTIFY_SOURCE on Linux.
+    Fix to file leaks on error paths in vpxdec and video reader/writer
+    utilities.
+
+    Fix to crash/undefined behavior in vpx_img_flip with formats without alpha.
+
+2026-01-06 v1.16.0 "Xenonetta Duck"
+  This release includes Arm SVE2 and Neon optimizations for 12-tap filters,
+  AVX512 implementations for SAD, support for per-frame and per-spatial-layer
+  PSNR calculation, and numerous bug fixes.
+
+  - Upgrading:
+    This release is ABI incompatible with the previous release.
+
+    Unit tests require C++17 to build.
+
+    Support for 32-bit iOS targets (armv7, armv7s, and i386) has been removed.
+
+  - Enhancement:
+    Optimized Arm SVE2 and Neon implementations for 12-tap convolution filters.
+    Optimized Neon High Bitdepth (HBD) SAD and sad_avg functions.
+    Added Arm Neon DotProd and I8MM implementations for vpx_convolve12.
+    Added AVX512 implementations for SAD64 and sad_skip functions.
+    Added SSSE3 and AVX2 implementations for 12-tap temporal filter prediction.
+    Added support for per-frame and per-spatial-layer PSNR calculation.
+
+    Adjusted temporal filter strength to improve visual quality and reduce block
+    artifacts.
+
+    Added support for darwin24 (macOS 15) and darwin25 (macOS 26).
+    libwebm is upgraded to commit b4f01ea.
+
+  - Bug fixes:
+    Fix to heap buffer overflow in vp9_deblock, vp9_post_proc_frame, and
+    vp9_pack_bitstream.
+
+    Fix to integer overflow in vp9_highbd_post_proc, vp9_rc_regulate_q,
+    tiny_ssim, and vp9_calc_pframe_target_size_one_pass_cbr.
+
+    Fix to use-of-uninitialized-value in vp9_highbd_post_proc, mfqe, and
+    vp8_datarate_test.
+
+    Fix to out-of-bounds in log_tile_cols_from_picsize_level.
+    Fix to double free on initialization failure in vpx_codec_enc_init_multi.
+    Fix to division-by-zero crash in vpxenc with 0 FPS numerator input.
+
+    Fix to various build failures for Arm/SVE2, macOS cross-compilation, and
+    Xcode 16.
+
+2025-05-28 v1.15.2 "Wigeon Duck"
+  This release fixes CVE-2025-5283 (bug webm:413411335), and is ABI compatible
+  with the previous release.
+
+2025-01-09 v1.15.1 "Wigeon Duck"
+  This release bumps up the SO major version and fixes the language about ABI
+  compatibility in the previous release changelog.
+
+2024-10-22 v1.15.0 "Wigeon Duck"
+  This release includes new codec control for key frame filtering, more Neon
+  optimizations, improvements to RTC encoding and bug fixes.
+
+  - Upgrading:
+    This release is ABI incompatible with the previous release.
+
+    It is strongly recommended to skip this release and upgrade to v1.15.1 since
+    the shared object was versioned incorrectly, as shown in
+    https://issues.webmproject.org/issues/384672478.
+
+    Temporal filtering improvement that can be turned on with the new codec
+    control VP9E_SET_KEY_FRAME_FILTERING, which gives 1+% BD-rate saving with
+    minimal encoder time increase.
+
+    libwebm is upgraded to libwebm-1.0.0.31-10-g3b63004
+
+  - Enhancement:
+    Neon optimization speed up
+      1-3% speed up across speed 5 to 10 for RTC
+      3% speed up for speed 0 and 1 for VoD in standard bitdepth
+      3% and 7% speed up for speed 0 and 1 respectively for VoD in high bitdepth
+    Scene detection is allowed for all RTC speeds (>=5)
+    Support profile guided optimizations
+
+    Delta quantization parameters for UV channels for vp8 is supported in RTC
+    rate control library
+
+    Rate control parameters are reset and maximum QP is enforced on scene
+    changes in SVC when there is no inter-layer prediction
+
+  - Bug fixes:
+    Fix to Uninitialized scalar variable in `vp9_rd_pick_inter_mode_sb()`
+    Fix to Integer-overflow in `resize_multistep`
+    Fix to Heap-buffer-overflow in `vpx_sad64x64_avx2`
+    Fix to Crash in `vpx_sad8x8_sse2`
+    Fix to Assertion in `write_modes`
+    Support profile guided optimizations
+    Fix to Integer-overflow in `encode_frame_to_data_rate`
+    Fix to Integer-overflow in `vp9_svc_check_reset_layer_rc_flag`
+    Fix to core dump error from /usr/bin/tools/tiny_ssim --help
+    Fix to use-of-uninitialized-value in `vp9_setup_tpl_stats`
+    Fix to Undefined-shift in `vp9_cyclic_refresh_setup`
+    Fix to redundant `&& __GNUC__` preproc check
+    Fix to valgrind warning in EncodeAPI.OssFuzz69906
+    Fix to Index-out-of-bounds in `vp8_rd_pick_inter_mode`
+    Fix to Integer-overflow in `vp8_pick_frame_size`
+    Fix to Use-of-uninitialized-value in `vpx_codec_peek_stream_info`
+    Fix to log clutters with the message "Warning: Desired height too large"
+    Fix to Integer-overflow in `vp9_svc_adjust_avg_frame_qindex`
+
+    Fix to integer overflows caused by huge target bitrate, frame rate, or
+    g_timebase numerator or denominator
+
+    Fix to missing license headers
+    Fix to build failure for Android Armv7
+    Fix to integer overflows in image helpers
+    Fix to Integer-overflow in `vp9_calc_iframe_target_size_one_pass_cbr`
+    Fix to Heap-buffer-overflow in `vp9_pick_inter_mode`
+    Fix to Segv in `vp9_multi_thread_tile_init`
+    Fix to Use-of-uninitialized-value in `vp9_row_mt_sync_mem_dealloc`
+    Fix to Crash in `mbloop_filter_vertical_edge_c`
+    Fix to Check failed in CheckUnwind
+    Fix to Heap-buffer-overflow in `write_modes_b` and `vpx_write`
+    Fix to Possible signed integer overflow found in `vpx_codec_encode`
+    Fix to build conflicts between Abseil and libaom/libvpx in Win ARM64 builds
+    Fix to build failures on aarch64
+    Fix to Data race in libvpx ARM NEON
+    Fix to Heap-buffer-overflow in `scale_plane_1_to_2_phase_0`
+    Fix to integer overflow in `encode_mb_row`
+    Fix to Floating-point-exception in `vp8_pick_frame_size`
+    Fix to Heap-buffer-overflow in `vp9_enc_setup_mi`
+    Fix to build failure with --target=arm64-win64-vs17
+    Fix to heap-buffer-overflow write in `vpx_img_read()`
+    Fix to C vs armv8-linux-gcc encode mismatches for `y4m_360p_10bit_input`
+    Fix to Null-dereference READ in `ml_predict_var_rd_partitioning`
+    Fix to Heap-buffer-overflow in `vpx_scaled_2d_ssse3`
+    Fix to Crash in `convolve_horiz`
+    Fix to Ill in `vpx_scaled_2d_ssse3`
+    Fix to Global-buffer-overflow in `cost_coeffs`
+
+2024-05-21 v1.14.1 "Venetian Duck"
+  This release includes enhancements and bug fixes.
+
+  - Upgrading:
+    This release is ABI compatible with the previous release.
+
+  - Enhancement:
+    Improved the detection of compiler support for AArch64 extensions,
+    particularly SVE.
+
+    Added vpx_codec_get_global_headers() support for VP9.
+
+  - Bug fixes:
+    Added buffer bounds checks to vpx_writer and vpx_write_bit_buffer.
+    Fix to GetSegmentationData() crash in aq_mode=0 for RTC rate control.
+    Fix to alloc for row_base_thresh_freq_fac.
+    Free row mt memory before freeing cpi->tile_data.
+    Fix to buffer alloc for vp9_bitstream_worker_data.
+    Fix to VP8 race issue for multi-thread with pnsr_calc.
+    Fix to uv width/height in vp9_scale_and_extend_frame_ssse3.
+    Fix to integer division by zero and overflow in calc_pframe_target_size().
+    Fix to integer overflow in vpx_img_alloc() & vpx_img_wrap()(CVE-2024-5197).
+    Fix to UBSan error in vp9_rc_update_framerate().
+    Fix to UBSan errors in vp8_new_framerate().
+    Fix to integer overflow in vp8 encodeframe.c.
+    Handle EINTR from sem_wait().
+
+2024-01-02 v1.14.0 "Venetian Duck"
+  This release drops support for old C compilers, such as Visual Studio 2012
+  and older, that disallow mixing variable declarations and statements (a C99
+  feature). It adds support for run-time CPU feature detection for Arm
+  platforms, as well as support for darwin23 (macOS 14).
+
+  - Upgrading:
+    This release is ABI incompatible with the previous release.
+
+    Various new features for rate control library for real-time: SVC parallel
+    encoding, loopfilter level, support for frame dropping, and screen content.
+
+    New callback function send_tpl_gop_stats for vp9 external rate control
+    library, which can be used to transmit TPL stats for a group of pictures. A
+    public header vpx_tpl.h is added for the definition of TPL stats used in
+    this callback.
+
+    libwebm is upgraded to libwebm-1.0.0.29-9-g1930e3c.
+
+  - Enhancement:
+    Improvements on Neon optimizations: VoD: 12-35% speed up for bitdepth 8,
+    68%-151% speed up for high bitdepth.
+
+    Improvements on AVX2 and SSE optimizations.
+    Improvements on LSX optimizations for LoongArch.
+    42-49% speedup on speed 0 VoD encoding.
+    Android API level predicates.
+
+  - Bug fixes:
+    Fix to missing prototypes from the rtcd header.
+    Fix to segfault when total size is enlarged but width is smaller.
+    Fix to the build for arm64ec using MSVC.
+    Fix to copy BLOCK_8X8's mi to PICK_MODE_CONTEXT::mic.
+    Fix to -Wshadow warnings.
+    Fix to heap overflow in vpx_get4x4sse_cs_neon.
+    Fix to buffer overrun in highbd Neon subpel variance filters.
+    Added bitexact encode test script.
+    Fix to -Wl,-z,defs with Clang's sanitizers.
+    Fix to decoder stability after error & continued decoding.
+    Fix to mismatch of VP9 encode with NEON intrinsics with C only version.
+    Fix to Arm64 MSVC compile vpx_highbd_fdct4x4_neon.
+    Fix to fragments count before use.
+    Fix to a case where target bandwidth is 0 for SVC.
+    Fix mask in vp9_quantize_avx2,highbd_get_max_lane_eob.
+    Fix to int overflow in vp9_calc_pframe_target_size_one_pass_cbr.
+    Fix to integer overflow in vp8,ratectrl.c.
+    Fix to integer overflow in vp9 svc.
+    Fix to avg_frame_bandwidth overflow.
+    Fix to per frame qp for temporal layers.
+    Fix to unsigned integer overflow in sse computation.
+    Fix to uninitialized mesh feature for BEST mode.
+    Fix to overflow in highbd temporal_filter.
+    Fix to unaligned loads w/w==4 in vpx_convolve_copy_neon.
+    Skip arm64_neon.h workaround w/VS >= 2019.
+    Fix to c vs avx mismatch of diamond_search_sad().
+    Fix to c vs intrinsic mismatch of vpx_hadamard_32x32() function.
+    Fix to a bug in vpx_hadamard_32x32_neon().
+    Fix to Clang -Wunreachable-code-aggressive warnings.
+    Fix to a bug in vpx_highbd_hadamard_32x32_neon().
+    Fix to -Wunreachable-code in mfqe_partition.
+    Force mode search on 64x64 if no mode is selected.
+    Fix to ubsan failure caused by left shift of negative.
+    Fix to integer overflow in calc_pframe_target_size.
+    Fix to float-cast-overflow in vp8_change_config().
+    Fix to a null ptr before use.
+    Conditionally skip using inter frames in speed features.
+    Remove invalid reference frames.
+    Disable intra mode search speed features conditionally.
+    Set nonrd keyframe under dynamic change of deadline for rtc.
+    Fix to scaled reference offsets.
+    Set skip_recode=0 in nonrd_pick_sb_modes.
+    Fix to an edge case when downsizing to one.
+    Fix to a bug in frame scaling.
+    Fix to pred buffer stride.
+    Fix to a bug in simple motion search.
+    Update frame size in actual encoding.
+
+2023-09-29 v1.13.1 "Ugly Duckling"
+  This release contains two security related fixes. One each for VP8 and VP9.
+
+  - Upgrading:
+    This release is ABI compatible with the previous release.
+
+  - Bug fixes:
+    https://crbug.com/1486441 (CVE-2023-5217)
+    Fix to a crash related to VP9 encoding (#1642, CVE-2023-6349)
+
+2023-01-31 v1.13.0 "Ugly Duckling"
+  This release includes more Neon and AVX2 optimizations, adds a new codec
+  control to set per frame QP, upgrades GoogleTest to v1.12.1, and includes
+  numerous bug fixes.
+
+  - Upgrading:
+    This release is ABI incompatible with the previous release.
+
+    New codec control VP9E_SET_QUANTIZER_ONE_PASS to set per frame QP.
+
+    GoogleTest is upgraded to v1.12.1.
+
+    .clang-format is upgraded to clang-format-11.
+
+    VPX_EXT_RATECTRL_ABI_VERSION was bumped due to incompatible changes to the
+    feature of using external rate control models for vp9.
+
+  - Enhancement:
+    Numerous improvements on Neon optimizations.
+    Numerous improvements on AVX2 optimizations.
+    Additional ARM targets added for Visual Studio.
+
+  - Bug fixes:
+    Fix to calculating internal stats when frame dropped.
+    Fix to segfault for external resize test in vp9.
+    Fix to build system with replacing egrep with grep -E.
+    Fix to a few bugs with external RTC rate control library.
+    Fix to make SVC work with VBR.
+    Fix to key frame setting in VP9 external RC.
+    Fix to -Wimplicit-int (Clang 16).
+    Fix to VP8 external RC for buffer levels.
+    Fix to VP8 external RC for dynamic update of layers.
+    Fix to VP9 auto level.
+    Fix to off-by-one error of max w/h in validate_config.
+    Fix to make SVC work for Profile 1.
+
 2022-06-17 v1.12.0 "Torrent Duck"
   This release adds optimizations for Loongarch, adds support for vp8 in the
   real-time rate control library, upgrades GoogleTest to v1.11.0, updates
@@ -36,6 +395,7 @@
   levels, and includes several improvements to NEON and numerous bug fixes.
 
   - Upgrading:
+    This release is ABI incompatible with the previous release.
     New codec control is added to get quantization parameters and loop filter
     levels.
 
@@ -61,6 +421,7 @@
   well as numerous bug fixes.
 
   - Upgrading:
+    This release is ABI incompatible with the previous release.
     New codec control is added to disable loopfilter for VP9.
 
     New encoder control is added to disable feature to increase Q on overshoot
@@ -91,6 +452,7 @@
   well as incremental improvements.
 
   - Upgrading:
+    This release is ABI compatible with the previous release.
     NV12 support is added to this release.
     A new interface is added for VP9 rate control. The new library libvp9rc.a
     must be linked by applications.
@@ -114,12 +476,14 @@
   This release collects incremental improvements to many aspects of the library.
 
   - Upgrading:
+    This release is ABI compatible with the previous release.
     ARCH_* defines have been removed in favor of VPX_ARCH_*.
 
 2019-07-15 v1.8.1 "Orpington Duck"
   This release collects incremental improvements to many aspects of the library.
 
   - Upgrading:
+    This release is ABI incompatible with the previous release.
     VP8E_SET_CPUUSED now accepts values up to 9 for vp9.
     VPX_CTRL_VP9E_SET_MAX_INTER_BITRATE_PCT had a spelling fix (was VP8E).
     The --sdk-path option has been removed. If you were using it to build for
@@ -138,7 +502,8 @@
   This release focused on encoding performance for realtime and VOD use cases.
 
   - Upgrading:
-    This adds and improves several vp9 controls. Most are related to SVC:
+    This release is ABI incompatible with the previous release. This adds and
+    improves several vp9 controls. Most are related to SVC:
       VP9E_SET_SVC_FRAME_DROP_LAYER:
         - Frame dropping in SVC.
       VP9E_SET_SVC_INTER_LAYER_PRED:

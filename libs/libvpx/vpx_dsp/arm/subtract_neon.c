@@ -16,6 +16,13 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/arm/mem_neon.h"
 
+// Prefer the explicit high-half operation to preserve full-width loads in GCC.
+#if VPX_ARCH_AARCH64
+#define VSUBL_HIGH_U8(a, b) vsubl_high_u8((a), (b))
+#else
+#define VSUBL_HIGH_U8(a, b) vsubl_u8(vget_high_u8((a)), vget_high_u8((b)))
+#endif
+
 void vpx_subtract_block_neon(int rows, int cols, int16_t *diff,
                              ptrdiff_t diff_stride, const uint8_t *src,
                              ptrdiff_t src_stride, const uint8_t *pred,
@@ -30,9 +37,9 @@ void vpx_subtract_block_neon(int rows, int cols, int16_t *diff,
         const uint8x16_t p0 = vld1q_u8(&pred[c + 0]);
         const uint8x16_t p1 = vld1q_u8(&pred[c + 16]);
         const uint16x8_t d0 = vsubl_u8(vget_low_u8(s0), vget_low_u8(p0));
-        const uint16x8_t d1 = vsubl_u8(vget_high_u8(s0), vget_high_u8(p0));
+        const uint16x8_t d1 = VSUBL_HIGH_U8(s0, p0);
         const uint16x8_t d2 = vsubl_u8(vget_low_u8(s1), vget_low_u8(p1));
-        const uint16x8_t d3 = vsubl_u8(vget_high_u8(s1), vget_high_u8(p1));
+        const uint16x8_t d3 = VSUBL_HIGH_U8(s1, p1);
         vst1q_s16(&diff[c + 0], vreinterpretq_s16_u16(d0));
         vst1q_s16(&diff[c + 8], vreinterpretq_s16_u16(d1));
         vst1q_s16(&diff[c + 16], vreinterpretq_s16_u16(d2));
@@ -47,7 +54,7 @@ void vpx_subtract_block_neon(int rows, int cols, int16_t *diff,
       const uint8x16_t s = vld1q_u8(&src[0]);
       const uint8x16_t p = vld1q_u8(&pred[0]);
       const uint16x8_t d0 = vsubl_u8(vget_low_u8(s), vget_low_u8(p));
-      const uint16x8_t d1 = vsubl_u8(vget_high_u8(s), vget_high_u8(p));
+      const uint16x8_t d1 = VSUBL_HIGH_U8(s, p);
       vst1q_s16(&diff[0], vreinterpretq_s16_u16(d0));
       vst1q_s16(&diff[8], vreinterpretq_s16_u16(d1));
       diff += diff_stride;
@@ -79,3 +86,61 @@ void vpx_subtract_block_neon(int rows, int cols, int16_t *diff,
     } while (r);
   }
 }
+
+#undef VSUBL_HIGH_U8
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void vpx_highbd_subtract_block_neon(int rows, int cols, int16_t *diff_ptr,
+                                    ptrdiff_t diff_stride,
+                                    const uint8_t *src8_ptr,
+                                    ptrdiff_t src_stride,
+                                    const uint8_t *pred8_ptr,
+                                    ptrdiff_t pred_stride, int bd) {
+  int r = rows, c;
+  uint16_t *src = CONVERT_TO_SHORTPTR(src8_ptr);
+  uint16_t *pred = CONVERT_TO_SHORTPTR(pred8_ptr);
+  (void)bd;
+
+  if (cols >= 16) {
+    do {
+      for (c = 0; c < cols; c += 16) {
+        const uint16x8_t s0 = vld1q_u16(&src[c + 0]);
+        const uint16x8_t s1 = vld1q_u16(&src[c + 8]);
+        const uint16x8_t p0 = vld1q_u16(&pred[c + 0]);
+        const uint16x8_t p1 = vld1q_u16(&pred[c + 8]);
+        const uint16x8_t d0 = vsubq_u16(s0, p0);
+        const uint16x8_t d1 = vsubq_u16(s1, p1);
+        vst1q_s16(&diff_ptr[c + 0], vreinterpretq_s16_u16(d0));
+        vst1q_s16(&diff_ptr[c + 8], vreinterpretq_s16_u16(d1));
+      }
+      diff_ptr += diff_stride;
+      pred += pred_stride;
+      src += src_stride;
+    } while (--r);
+  } else if (cols >= 8) {
+    do {
+      for (c = 0; c < cols; c += 8) {
+        const uint16x8_t s = vld1q_u16(&src[c]);
+        const uint16x8_t p = vld1q_u16(&pred[c]);
+        const uint16x8_t d0 = vsubq_u16(s, p);
+        vst1q_s16(&diff_ptr[c], vreinterpretq_s16_u16(d0));
+      }
+      diff_ptr += diff_stride;
+      pred += pred_stride;
+      src += src_stride;
+    } while (--r);
+  } else if (cols >= 4) {
+    do {
+      for (c = 0; c < cols; c += 4) {
+        const uint16x4_t s = vld1_u16(&src[c]);
+        const uint16x4_t p = vld1_u16(&pred[c]);
+        const uint16x4_t v_diff = vsub_u16(s, p);
+        vst1_s16(&diff_ptr[c], vreinterpret_s16_u16(v_diff));
+      }
+      diff_ptr += diff_stride;
+      pred += pred_stride;
+      src += src_stride;
+    } while (--r);
+  }
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH

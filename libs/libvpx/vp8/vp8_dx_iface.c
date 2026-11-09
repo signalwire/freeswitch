@@ -20,6 +20,7 @@
 #include "vpx_version.h"
 #include "common/alloccommon.h"
 #include "common/common.h"
+#include "common/onyxc_int.h"
 #include "common/onyxd.h"
 #include "decoder/onyxd_int.h"
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -123,20 +124,14 @@ static vpx_codec_err_t vp8_destroy(vpx_codec_alg_priv_t *ctx) {
   return VPX_CODEC_OK;
 }
 
-#ifdef __clang_analyzer__
-#define FUNC_ATTR_NONNULL(...) __attribute__((nonnull(__VA_ARGS__)))
-#else
-#define FUNC_ATTR_NONNULL(...)
-#endif
-
 static vpx_codec_err_t vp8_peek_si_internal(const uint8_t *data,
                                             unsigned int data_sz,
                                             vpx_codec_stream_info_t *si,
                                             vpx_decrypt_cb decrypt_cb,
-                                            void *decrypt_state) FUNC_ATTR_NONNULL(1) {
+                                            void *decrypt_state) {
   vpx_codec_err_t res = VPX_CODEC_OK;
 
-  assert(data != NULL);
+  if (data == NULL) return VPX_CODEC_INVALID_PARAM;
 
   if (data + data_sz <= data) {
     res = VPX_CODEC_INVALID_PARAM;
@@ -168,7 +163,10 @@ static vpx_codec_err_t vp8_peek_si_internal(const uint8_t *data,
       si->h = (clear[8] | (clear[9] << 8)) & 0x3fff;
 
       /*printf("w=%d, h=%d\n", si->w, si->h);*/
-      if (!(si->h && si->w)) res = VPX_CODEC_CORRUPT_FRAME;
+      if (!(si->h && si->w)) {
+        si->w = si->h = 0;
+        res = VPX_CODEC_CORRUPT_FRAME;
+      }
     } else {
       res = VPX_CODEC_UNSUP_BITSTREAM;
     }
@@ -248,18 +246,26 @@ static int update_fragments(vpx_codec_alg_priv_t *ctx, const uint8_t *data,
     memset((void *)ctx->fragments.ptrs, 0, sizeof(ctx->fragments.ptrs));
     memset(ctx->fragments.sizes, 0, sizeof(ctx->fragments.sizes));
   }
+
+  /* Flush signal in fragment mode but no fragments were accumulated yet.
+   * Nothing to decode; treat as a no-op. */
+  if (ctx->fragments.enabled && data == NULL && data_sz == 0 &&
+      ctx->fragments.count == 0) {
+    return 0;
+  }
+
   if (ctx->fragments.enabled && !(data == NULL && data_sz == 0)) {
     /* Store a pointer to this fragment and return. We haven't
      * received the complete frame yet, so we will wait with decoding.
      */
-    ctx->fragments.ptrs[ctx->fragments.count] = data;
-    ctx->fragments.sizes[ctx->fragments.count] = data_sz;
-    ctx->fragments.count++;
-    if (ctx->fragments.count > (1 << EIGHT_PARTITION) + 1) {
+    if (ctx->fragments.count >= MAX_PARTITIONS) {
       ctx->fragments.count = 0;
       *res = VPX_CODEC_INVALID_PARAM;
       return -1;
     }
+    ctx->fragments.ptrs[ctx->fragments.count] = data;
+    ctx->fragments.sizes[ctx->fragments.count] = data_sz;
+    ctx->fragments.count++;
     return 0;
   }
 
@@ -278,10 +284,10 @@ static int update_fragments(vpx_codec_alg_priv_t *ctx, const uint8_t *data,
 
 static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
                                   const uint8_t *data, unsigned int data_sz,
-                                  void *user_priv, long deadline) {
-  volatile vpx_codec_err_t res = VPX_CODEC_INVALID_PARAM;
+                                  void *user_priv) {
+  volatile vpx_codec_err_t res;
   volatile unsigned int resolution_change = 0;
-  unsigned int w, h;
+  volatile unsigned int w, h;
 
   if (!ctx->fragments.enabled && (data == NULL && data_sz == 0)) {
     return 0;
@@ -297,10 +303,8 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
   w = ctx->si.w;
   h = ctx->si.h;
 
-  if (ctx->fragments.ptrs[0]) {
-      res = vp8_peek_si_internal(ctx->fragments.ptrs[0], ctx->fragments.sizes[0],
+  res = vp8_peek_si_internal(ctx->fragments.ptrs[0], ctx->fragments.sizes[0],
                              &ctx->si, ctx->decrypt_cb, ctx->decrypt_state);
-  }
 
   if ((res == VPX_CODEC_UNSUP_BITSTREAM) && !ctx->si.is_kf) {
     /* the peek function returns an error for non keyframes, however for
@@ -308,19 +312,44 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
     res = VPX_CODEC_OK;
   }
 
+#if CONFIG_SIZE_LIMIT
+  // Reject oversized keyframes before decoder initialization allocates frame
+  // buffers.
+  if (!res && ctx->si.is_kf &&
+      (ctx->si.w > DECODE_WIDTH_LIMIT || ctx->si.h > DECODE_HEIGHT_LIMIT)) {
+    ctx->si.w = 0;
+    ctx->si.h = 0;
+    res = VPX_CODEC_CORRUPT_FRAME;
+  }
+#endif
+
   if (!ctx->decoder_init && !ctx->si.is_kf) res = VPX_CODEC_UNSUP_BITSTREAM;
+  if (!res && ctx->decoder_init && w == 0 && h == 0 && ctx->si.h == 0 &&
+      ctx->si.w == 0) {
+    VP8D_COMP *pbi = ctx->yv12_frame_buffers.pbi[0];
+    assert(pbi != NULL);
+    assert(!pbi->common.error.setjmp);
+    res = VPX_CODEC_CORRUPT_FRAME;
+    vpx_internal_error(&pbi->common.error, res,
+                       "Keyframe / intra-only frame required to reset decoder"
+                       " state");
+  }
 
   if ((ctx->si.h != h) || (ctx->si.w != w)) resolution_change = 1;
 
 #if CONFIG_MULTITHREAD
   if (!res && ctx->restart_threads) {
-    struct frame_buffers *fb = &ctx->yv12_frame_buffers;
     VP8D_COMP *pbi = ctx->yv12_frame_buffers.pbi[0];
     VP8_COMMON *const pc = &pbi->common;
     if (setjmp(pbi->common.error.jmp)) {
-      vp8_remove_decoder_instances(fb);
-      vp8_zero(fb->pbi);
+      pbi->common.error.setjmp = 0;
+      /* on failure clear the cached resolution to ensure a full
+       * reallocation is attempted on resync. */
+      ctx->si.w = 0;
+      ctx->si.h = 0;
+      vp8_decoder_remove_threads(pbi);
       vpx_clear_system_state();
+      ctx->fragments.count = 0;
       return VPX_CODEC_ERROR;
     }
     pbi->common.error.setjmp = 1;
@@ -357,7 +386,14 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
     }
 
     res = vp8_create_decoder_instances(&ctx->yv12_frame_buffers, &oxcf);
-    if (res == VPX_CODEC_OK) ctx->decoder_init = 1;
+    if (res == VPX_CODEC_OK) {
+      ctx->decoder_init = 1;
+    } else {
+      /* on failure clear the cached resolution to ensure a full
+       * reallocation is attempted on resync. */
+      ctx->si.w = 0;
+      ctx->si.h = 0;
+    }
   }
 
   /* Set these even if already initialized.  The caller may have changed the
@@ -387,6 +423,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
           ctx->si.h = 0;
           vpx_clear_system_state();
           /* same return value as used in vp8dx_receive_compressed_data */
+          ctx->fragments.count = 0;
           return -1;
         }
 
@@ -410,6 +447,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
         }
 #endif
 
+        pbi->decoded_key_frame = 0;
         if (vp8_alloc_frame_buffers(pc, pc->Width, pc->Height)) {
           vpx_internal_error(&pc->error, VPX_CODEC_MEM_ERROR,
                              "Failed to allocate frame buffers");
@@ -476,7 +514,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
       if (pc->fb_idx_ref_cnt[pc->new_fb_idx] > 0) {
         pc->fb_idx_ref_cnt[pc->new_fb_idx]--;
       }
-      pc->error.setjmp = 0;
+      pbi->common.error.setjmp = 0;
 #if CONFIG_MULTITHREAD
       if (pbi->restart_threads) {
         ctx->si.w = 0;
@@ -485,6 +523,7 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
       }
 #endif
       res = update_error_state(ctx, &pbi->common.error);
+      ctx->fragments.count = 0;
       return res;
     }
 
@@ -496,14 +535,15 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
     pbi->restart_threads = 0;
 #endif
     ctx->user_priv = user_priv;
-    if (vp8dx_receive_compressed_data(pbi, deadline)) {
+    if (vp8dx_receive_compressed_data(pbi)) {
       res = update_error_state(ctx, &pbi->common.error);
     }
 
-    /* get ready for the next series of fragments */
-    ctx->fragments.count = 0;
+    pbi->common.error.setjmp = 0;
   }
 
+  /* A complete fragment sequence is consumed even when decoding fails. */
+  ctx->fragments.count = 0;
   return res;
 }
 
@@ -516,7 +556,6 @@ static vpx_image_t *vp8_get_frame(vpx_codec_alg_priv_t *ctx,
    */
   if (!(*iter) && ctx->yv12_frame_buffers.pbi[0]) {
     YV12_BUFFER_CONFIG sd;
-    int64_t time_stamp = 0, time_end_stamp = 0;
     vp8_ppflags_t flags;
     vp8_zero(flags);
 
@@ -526,8 +565,7 @@ static vpx_image_t *vp8_get_frame(vpx_codec_alg_priv_t *ctx,
       flags.noise_level = ctx->postproc_cfg.noise_level;
     }
 
-    if (0 == vp8dx_get_raw_frame(ctx->yv12_frame_buffers.pbi[0], &sd,
-                                 &time_stamp, &time_end_stamp, &flags)) {
+    if (0 == vp8dx_get_raw_frame(ctx->yv12_frame_buffers.pbi[0], &sd, &flags)) {
       yuvconfig2image(&ctx->img, &sd, ctx->user_priv);
 
       img = &ctx->img;
@@ -573,7 +611,15 @@ static vpx_codec_err_t vp8_set_reference(vpx_codec_alg_priv_t *ctx,
     vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
     YV12_BUFFER_CONFIG sd;
 
+    if (frame->img.planes[VPX_PLANE_Y] == NULL ||
+        frame->img.planes[VPX_PLANE_U] == NULL ||
+        frame->img.planes[VPX_PLANE_V] == NULL) {
+      return VPX_CODEC_INVALID_PARAM;
+    }
+
     image2yuvconfig(&frame->img, &sd);
+
+    if (ctx->yv12_frame_buffers.pbi[0] == NULL) return VPX_CODEC_CORRUPT_FRAME;
 
     return vp8dx_set_reference(ctx->yv12_frame_buffers.pbi[0],
                                frame->frame_type, &sd);
@@ -590,7 +636,15 @@ static vpx_codec_err_t vp8_get_reference(vpx_codec_alg_priv_t *ctx,
     vpx_ref_frame_t *frame = (vpx_ref_frame_t *)data;
     YV12_BUFFER_CONFIG sd;
 
+    if (frame->img.planes[VPX_PLANE_Y] == NULL ||
+        frame->img.planes[VPX_PLANE_U] == NULL ||
+        frame->img.planes[VPX_PLANE_V] == NULL) {
+      return VPX_CODEC_INVALID_PARAM;
+    }
+
     image2yuvconfig(&frame->img, &sd);
+
+    if (ctx->yv12_frame_buffers.pbi[0] == NULL) return VPX_CODEC_CORRUPT_FRAME;
 
     return vp8dx_get_reference(ctx->yv12_frame_buffers.pbi[0],
                                frame->frame_type, &sd);
@@ -736,6 +790,7 @@ CODEC_INTERFACE(vpx_codec_vp8_dx) = {
       NULL,    /* vpx_codec_enc_config_set_fn_t */
       NULL,    /* vpx_codec_get_global_headers_fn_t */
       NULL,    /* vpx_codec_get_preview_frame_fn_t */
-      NULL     /* vpx_codec_enc_mr_get_mem_loc_fn_t */
+      NULL,    /* vpx_codec_enc_mr_get_mem_loc_fn_t */
+      NULL     /* vpx_codec_enc_mr_free_mem_loc_fn_t */
   }
 };

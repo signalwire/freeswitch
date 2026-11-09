@@ -13,7 +13,7 @@
 #include <string>
 #include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #include "./vp9_rtcd.h"
@@ -31,17 +31,17 @@ using libvpx_test::ACMRandom;
 namespace {
 const int kNumIterations = 1000;
 
-typedef int64_t (*HBDBlockErrorFunc)(const tran_low_t *coeff,
-                                     const tran_low_t *dqcoeff,
-                                     intptr_t block_size, int64_t *ssz,
-                                     int bps);
+using HBDBlockErrorFunc = int64_t (*)(const tran_low_t *coeff,
+                                      const tran_low_t *dqcoeff,
+                                      intptr_t block_size, int64_t *ssz,
+                                      int bps);
 
-typedef std::tuple<HBDBlockErrorFunc, HBDBlockErrorFunc, vpx_bit_depth_t>
-    BlockErrorParam;
+using BlockErrorParam =
+    std::tuple<HBDBlockErrorFunc, HBDBlockErrorFunc, vpx_bit_depth_t>;
 
-typedef int64_t (*BlockErrorFunc)(const tran_low_t *coeff,
-                                  const tran_low_t *dqcoeff,
-                                  intptr_t block_size, int64_t *ssz);
+using BlockErrorFunc = int64_t (*)(const tran_low_t *coeff,
+                                   const tran_low_t *dqcoeff,
+                                   intptr_t block_size, int64_t *ssz);
 
 template <BlockErrorFunc fn>
 int64_t BlockError8BitWrapper(const tran_low_t *coeff,
@@ -53,14 +53,14 @@ int64_t BlockError8BitWrapper(const tran_low_t *coeff,
 
 class BlockErrorTest : public ::testing::TestWithParam<BlockErrorParam> {
  public:
-  virtual ~BlockErrorTest() {}
-  virtual void SetUp() {
+  ~BlockErrorTest() override = default;
+  void SetUp() override {
     error_block_op_ = GET_PARAM(0);
     ref_error_block_op_ = GET_PARAM(1);
     bit_depth_ = GET_PARAM(2);
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   vpx_bit_depth_t bit_depth_;
@@ -172,7 +172,7 @@ TEST_P(BlockErrorTest, ExtremeValues) {
 
 using std::make_tuple;
 
-#if HAVE_SSE2
+#if HAVE_SSE2 && (CONFIG_VP9_HIGHBITDEPTH || HAVE_X86_ASM)
 const BlockErrorParam sse2_block_error_tests[] = {
 #if CONFIG_VP9_HIGHBITDEPTH
   make_tuple(&vp9_highbd_block_error_sse2, &vp9_highbd_block_error_c,
@@ -182,8 +182,10 @@ const BlockErrorParam sse2_block_error_tests[] = {
   make_tuple(&vp9_highbd_block_error_sse2, &vp9_highbd_block_error_c,
              VPX_BITS_8),
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+#if HAVE_X86_ASM
   make_tuple(&BlockError8BitWrapper<vp9_block_error_sse2>,
              &BlockError8BitWrapper<vp9_block_error_c>, VPX_BITS_8)
+#endif
 };
 
 INSTANTIATE_TEST_SUITE_P(SSE2, BlockErrorTest,
@@ -197,4 +199,31 @@ INSTANTIATE_TEST_SUITE_P(
                                  &BlockError8BitWrapper<vp9_block_error_c>,
                                  VPX_BITS_8)));
 #endif  // HAVE_AVX2
+
+#if HAVE_NEON
+const BlockErrorParam neon_block_error_tests[] = {
+#if CONFIG_VP9_HIGHBITDEPTH
+  make_tuple(&vp9_highbd_block_error_neon, &vp9_highbd_block_error_c,
+             VPX_BITS_10),
+  make_tuple(&vp9_highbd_block_error_neon, &vp9_highbd_block_error_c,
+             VPX_BITS_12),
+  make_tuple(&vp9_highbd_block_error_neon, &vp9_highbd_block_error_c,
+             VPX_BITS_8),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+  make_tuple(&BlockError8BitWrapper<vp9_block_error_neon>,
+             &BlockError8BitWrapper<vp9_block_error_c>, VPX_BITS_8)
+};
+
+INSTANTIATE_TEST_SUITE_P(NEON, BlockErrorTest,
+                         ::testing::ValuesIn(neon_block_error_tests));
+#endif  // HAVE_NEON
+
+#if HAVE_SVE
+const BlockErrorParam sve_block_error_tests[] = { make_tuple(
+    &BlockError8BitWrapper<vp9_block_error_sve>,
+    &BlockError8BitWrapper<vp9_block_error_c>, VPX_BITS_8) };
+
+INSTANTIATE_TEST_SUITE_P(SVE, BlockErrorTest,
+                         ::testing::ValuesIn(sve_block_error_tests));
+#endif  // HAVE_SVE
 }  // namespace

@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <limits.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
@@ -23,7 +24,6 @@
 #include "vpx/vpx_codec.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem.h"
-#include "vpx_ports/msvc.h"
 #include "vpx_ports/vpx_timer.h"
 
 // const[expr] should be sufficient for DECLARE_ALIGNED but early
@@ -38,23 +38,32 @@ struct TestParams {
   Function func;
 };
 
-typedef unsigned int (*SadMxNFunc)(const uint8_t *src_ptr, int src_stride,
-                                   const uint8_t *ref_ptr, int ref_stride);
-typedef TestParams<SadMxNFunc> SadMxNParam;
+using SadMxNFunc = unsigned int (*)(const uint8_t *src_ptr, int src_stride,
+                                    const uint8_t *ref_ptr, int ref_stride);
+using SadMxNParam = TestParams<SadMxNFunc>;
 
-typedef unsigned int (*SadMxNAvgFunc)(const uint8_t *src_ptr, int src_stride,
-                                      const uint8_t *ref_ptr, int ref_stride,
-                                      const uint8_t *second_pred);
-typedef TestParams<SadMxNAvgFunc> SadMxNAvgParam;
+using SadSkipMxNFunc = unsigned int (*)(const uint8_t *src_ptr, int src_stride,
+                                        const uint8_t *ref_ptr, int ref_stride);
+using SadSkipMxNParam = TestParams<SadSkipMxNFunc>;
 
-typedef void (*SadMxNx4Func)(const uint8_t *src_ptr, int src_stride,
-                             const uint8_t *const ref_ptr[], int ref_stride,
-                             unsigned int *sad_array);
-typedef TestParams<SadMxNx4Func> SadMxNx4Param;
+using SadMxNAvgFunc = unsigned int (*)(const uint8_t *src_ptr, int src_stride,
+                                       const uint8_t *ref_ptr, int ref_stride,
+                                       const uint8_t *second_pred);
+using SadMxNAvgParam = TestParams<SadMxNAvgFunc>;
 
-typedef void (*SadMxNx8Func)(const uint8_t *src_ptr, int src_stride,
-                             const uint8_t *ref_ptr, int ref_stride,
-                             unsigned int *sad_array);
+using SadMxNx4Func = void (*)(const uint8_t *src_ptr, int src_stride,
+                              const uint8_t *const ref_ptr[], int ref_stride,
+                              unsigned int *sad_array);
+using SadMxNx4Param = TestParams<SadMxNx4Func>;
+
+using SadSkipMxNx4Func = void (*)(const uint8_t *src_ptr, int src_stride,
+                                  const uint8_t *const ref_ptr[],
+                                  int ref_stride, unsigned int *sad_array);
+using SadSkipMxNx4Param = TestParams<SadSkipMxNx4Func>;
+
+using SadMxNx8Func = void (*)(const uint8_t *src_ptr, int src_stride,
+                              const uint8_t *ref_ptr, int ref_stride,
+                              unsigned int *sad_array);
 
 using libvpx_test::ACMRandom;
 
@@ -64,7 +73,7 @@ class SADTestBase : public ::testing::TestWithParam<ParamType> {
  public:
   explicit SADTestBase(const ParamType &params) : params_(params) {}
 
-  virtual void SetUp() {
+  void SetUp() override {
     source_data8_ = reinterpret_cast<uint8_t *>(
         vpx_memalign(kDataAlignment, kDataBlockSize));
     reference_data8_ = reinterpret_cast<uint8_t *>(
@@ -99,7 +108,7 @@ class SADTestBase : public ::testing::TestWithParam<ParamType> {
     rnd_.Reset(ACMRandom::DeterministicSeed());
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     vpx_free(source_data8_);
     source_data8_ = nullptr;
     vpx_free(reference_data8_);
@@ -168,6 +177,34 @@ class SADTestBase : public ::testing::TestWithParam<ParamType> {
       }
     }
     return sad;
+  }
+
+  // Sum of Absolute Differences Skip rows. Given two blocks, calculate the
+  // absolute difference between two pixels in the same relative location every
+  // other row; accumulate and double the result at the end.
+  uint32_t ReferenceSADSkip(int ref_offset) const {
+    uint32_t sad = 0;
+    const uint8_t *const reference8 = GetReferenceFromOffset(ref_offset);
+    const uint8_t *const source8 = source_data_;
+#if CONFIG_VP9_HIGHBITDEPTH
+    const uint16_t *const reference16 =
+        CONVERT_TO_SHORTPTR(GetReferenceFromOffset(ref_offset));
+    const uint16_t *const source16 = CONVERT_TO_SHORTPTR(source_data_);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    for (int h = 0; h < params_.height; h += 2) {
+      for (int w = 0; w < params_.width; ++w) {
+        if (!use_high_bit_depth_) {
+          sad += abs(source8[h * source_stride_ + w] -
+                     reference8[h * reference_stride_ + w]);
+#if CONFIG_VP9_HIGHBITDEPTH
+        } else {
+          sad += abs(source16[h * source_stride_ + w] -
+                     reference16[h * reference_stride_ + w]);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+        }
+      }
+    }
+    return sad * 2;
   }
 
   // Sum of Absolute Differences Average. Given two blocks, and a prediction
@@ -290,6 +327,32 @@ class SADx4Test : public SADTestBase<SadMxNx4Param> {
   }
 };
 
+class SADSkipx4Test : public SADTestBase<SadMxNx4Param> {
+ public:
+  SADSkipx4Test() : SADTestBase(GetParam()) {}
+
+ protected:
+  void SADs(unsigned int *results) const {
+    const uint8_t *references[] = { GetReference(0), GetReference(1),
+                                    GetReference(2), GetReference(3) };
+
+    ASM_REGISTER_STATE_CHECK(params_.func(
+        source_data_, source_stride_, references, reference_stride_, results));
+  }
+
+  void CheckSADs() const {
+    uint32_t reference_sad;
+    DECLARE_ALIGNED(kDataAlignment, uint32_t, exp_sad[4]);
+
+    SADs(exp_sad);
+    for (int block = 0; block < 4; ++block) {
+      reference_sad = ReferenceSADSkip(GetBlockRefOffset(block));
+
+      EXPECT_EQ(reference_sad, exp_sad[block]) << "block " << block;
+    }
+  }
+};
+
 class SADTest : public AbstractBench, public SADTestBase<SadMxNParam> {
  public:
   SADTest() : SADTestBase(GetParam()) {}
@@ -311,13 +374,40 @@ class SADTest : public AbstractBench, public SADTestBase<SadMxNParam> {
     ASSERT_EQ(reference_sad, exp_sad);
   }
 
-  void Run() {
+  void Run() override {
     params_.func(source_data_, source_stride_, reference_data_,
                  reference_stride_);
   }
 };
 
-class SADavgTest : public SADTestBase<SadMxNAvgParam> {
+class SADSkipTest : public AbstractBench, public SADTestBase<SadMxNParam> {
+ public:
+  SADSkipTest() : SADTestBase(GetParam()) {}
+
+ protected:
+  unsigned int SAD(int block_idx) const {
+    unsigned int ret;
+    const uint8_t *const reference = GetReference(block_idx);
+
+    ASM_REGISTER_STATE_CHECK(ret = params_.func(source_data_, source_stride_,
+                                                reference, reference_stride_));
+    return ret;
+  }
+
+  void CheckSAD() const {
+    const unsigned int reference_sad = ReferenceSADSkip(GetBlockRefOffset(0));
+    const unsigned int exp_sad = SAD(0);
+
+    ASSERT_EQ(reference_sad, exp_sad);
+  }
+
+  void Run() override {
+    params_.func(source_data_, source_stride_, reference_data_,
+                 reference_stride_);
+  }
+};
+
+class SADavgTest : public AbstractBench, public SADTestBase<SadMxNAvgParam> {
  public:
   SADavgTest() : SADTestBase(GetParam()) {}
 
@@ -337,6 +427,11 @@ class SADavgTest : public SADTestBase<SadMxNAvgParam> {
     const unsigned int exp_sad = SAD_avg(0);
 
     ASSERT_EQ(reference_sad, exp_sad);
+  }
+
+  void Run() override {
+    params_.func(source_data_, source_stride_, reference_data_,
+                 reference_stride_, second_pred_);
   }
 };
 
@@ -392,6 +487,58 @@ TEST_P(SADTest, DISABLED_Speed) {
   PrintMedian(title);
 }
 
+TEST_P(SADSkipTest, MaxRef) {
+  FillConstant(source_data_, source_stride_, 0);
+  FillConstant(reference_data_, reference_stride_, mask_);
+  CheckSAD();
+}
+
+TEST_P(SADSkipTest, MaxSrc) {
+  FillConstant(source_data_, source_stride_, mask_);
+  FillConstant(reference_data_, reference_stride_, 0);
+  CheckSAD();
+}
+
+TEST_P(SADSkipTest, ShortRef) {
+  const int tmp_stride = reference_stride_;
+  reference_stride_ >>= 1;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(reference_data_, reference_stride_);
+  CheckSAD();
+  reference_stride_ = tmp_stride;
+}
+
+TEST_P(SADSkipTest, UnalignedRef) {
+  // The reference frame, but not the source frame, may be unaligned for
+  // certain types of searches.
+  const int tmp_stride = reference_stride_;
+  reference_stride_ -= 1;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(reference_data_, reference_stride_);
+  CheckSAD();
+  reference_stride_ = tmp_stride;
+}
+
+TEST_P(SADSkipTest, ShortSrc) {
+  const int tmp_stride = source_stride_;
+  source_stride_ >>= 1;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(reference_data_, reference_stride_);
+  CheckSAD();
+  source_stride_ = tmp_stride;
+}
+
+TEST_P(SADSkipTest, DISABLED_Speed) {
+  const int kCountSpeedTestBlock = 50000000 / (params_.width * params_.height);
+  FillRandom(source_data_, source_stride_);
+
+  RunNTimes(kCountSpeedTestBlock);
+
+  char title[16];
+  snprintf(title, sizeof(title), "%dx%d", params_.width, params_.height);
+  PrintMedian(title);
+}
+
 TEST_P(SADavgTest, MaxRef) {
   FillConstant(source_data_, source_stride_, 0);
   FillConstant(reference_data_, reference_stride_, mask_);
@@ -435,6 +582,19 @@ TEST_P(SADavgTest, ShortSrc) {
   FillRandom(second_pred_, params_.width);
   CheckSAD();
   source_stride_ = tmp_stride;
+}
+
+TEST_P(SADavgTest, DISABLED_Speed) {
+  const int kCountSpeedTestBlock = 50000000 / (params_.width * params_.height);
+  FillRandom(source_data_, source_stride_);
+  FillRandom(reference_data_, reference_stride_);
+  FillRandom(second_pred_, params_.width);
+
+  RunNTimes(kCountSpeedTestBlock);
+
+  char title[16];
+  snprintf(title, sizeof(title), "%dx%d", params_.width, params_.height);
+  PrintMedian(title);
 }
 
 TEST_P(SADx4Test, MaxRef) {
@@ -517,22 +677,117 @@ TEST_P(SADx4Test, DISABLED_Speed) {
   uint32_t reference_sad[4];
   DECLARE_ALIGNED(kDataAlignment, uint32_t, exp_sad[4]);
   vpx_usec_timer timer;
-
-  memset(reference_sad, 0, sizeof(reference_sad));
-  SADs(exp_sad);
+  for (int block = 0; block < 4; ++block) {
+    reference_sad[block] = ReferenceSAD(GetBlockRefOffset(block));
+  }
   vpx_usec_timer_start(&timer);
   for (int i = 0; i < kCountSpeedTestBlock; ++i) {
-    for (int block = 0; block < 4; ++block) {
-      reference_sad[block] = ReferenceSAD(GetBlockRefOffset(block));
-    }
+    SADs(exp_sad);
   }
   vpx_usec_timer_mark(&timer);
   for (int block = 0; block < 4; ++block) {
     EXPECT_EQ(reference_sad[block], exp_sad[block]) << "block " << block;
   }
-  const int elapsed_time =
-      static_cast<int>(vpx_usec_timer_elapsed(&timer) / 1000);
-  printf("sad%dx%dx4 (%2dbit) time: %5d ms\n", params_.width, params_.height,
+  const double elapsed_time = vpx_usec_timer_elapsed(&timer) / 1000.0;
+  printf("sad%dx%dx4 (%2dbit) time: %8.3f ms\n", params_.width, params_.height,
+         bit_depth_, elapsed_time);
+
+  reference_stride_ = tmp_stride;
+}
+
+TEST_P(SADSkipx4Test, MaxRef) {
+  FillConstant(source_data_, source_stride_, 0);
+  FillConstant(GetReference(0), reference_stride_, mask_);
+  FillConstant(GetReference(1), reference_stride_, mask_);
+  FillConstant(GetReference(2), reference_stride_, mask_);
+  FillConstant(GetReference(3), reference_stride_, mask_);
+  CheckSADs();
+}
+
+TEST_P(SADSkipx4Test, MaxSrc) {
+  FillConstant(source_data_, source_stride_, mask_);
+  FillConstant(GetReference(0), reference_stride_, 0);
+  FillConstant(GetReference(1), reference_stride_, 0);
+  FillConstant(GetReference(2), reference_stride_, 0);
+  FillConstant(GetReference(3), reference_stride_, 0);
+  CheckSADs();
+}
+
+TEST_P(SADSkipx4Test, ShortRef) {
+  int tmp_stride = reference_stride_;
+  reference_stride_ >>= 1;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(GetReference(0), reference_stride_);
+  FillRandom(GetReference(1), reference_stride_);
+  FillRandom(GetReference(2), reference_stride_);
+  FillRandom(GetReference(3), reference_stride_);
+  CheckSADs();
+  reference_stride_ = tmp_stride;
+}
+
+TEST_P(SADSkipx4Test, UnalignedRef) {
+  // The reference frame, but not the source frame, may be unaligned for
+  // certain types of searches.
+  int tmp_stride = reference_stride_;
+  reference_stride_ -= 1;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(GetReference(0), reference_stride_);
+  FillRandom(GetReference(1), reference_stride_);
+  FillRandom(GetReference(2), reference_stride_);
+  FillRandom(GetReference(3), reference_stride_);
+  CheckSADs();
+  reference_stride_ = tmp_stride;
+}
+
+TEST_P(SADSkipx4Test, ShortSrc) {
+  int tmp_stride = source_stride_;
+  source_stride_ >>= 1;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(GetReference(0), reference_stride_);
+  FillRandom(GetReference(1), reference_stride_);
+  FillRandom(GetReference(2), reference_stride_);
+  FillRandom(GetReference(3), reference_stride_);
+  CheckSADs();
+  source_stride_ = tmp_stride;
+}
+
+TEST_P(SADSkipx4Test, SrcAlignedByWidth) {
+  uint8_t *tmp_source_data = source_data_;
+  source_data_ += params_.width;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(GetReference(0), reference_stride_);
+  FillRandom(GetReference(1), reference_stride_);
+  FillRandom(GetReference(2), reference_stride_);
+  FillRandom(GetReference(3), reference_stride_);
+  CheckSADs();
+  source_data_ = tmp_source_data;
+}
+
+TEST_P(SADSkipx4Test, DISABLED_Speed) {
+  int tmp_stride = reference_stride_;
+  reference_stride_ -= 1;
+  FillRandom(source_data_, source_stride_);
+  FillRandom(GetReference(0), reference_stride_);
+  FillRandom(GetReference(1), reference_stride_);
+  FillRandom(GetReference(2), reference_stride_);
+  FillRandom(GetReference(3), reference_stride_);
+  const int kCountSpeedTestBlock = 500000000 / (params_.width * params_.height);
+  uint32_t reference_sad[4];
+  DECLARE_ALIGNED(kDataAlignment, uint32_t, exp_sad[4]);
+  vpx_usec_timer timer;
+  for (int block = 0; block < 4; ++block) {
+    reference_sad[block] = ReferenceSADSkip(GetBlockRefOffset(block));
+  }
+  vpx_usec_timer_start(&timer);
+  for (int i = 0; i < kCountSpeedTestBlock; ++i) {
+    SADs(exp_sad);
+  }
+  vpx_usec_timer_mark(&timer);
+  for (int block = 0; block < 4; ++block) {
+    EXPECT_EQ(reference_sad[block], exp_sad[block]) << "block " << block;
+  }
+  const double elapsed_time = vpx_usec_timer_elapsed(&timer) / 1000.0;
+  printf("sad%dx%dx4 (%2dbit) time: %8.3f ms\n", params_.width, params_.height,
          bit_depth_, elapsed_time);
 
   reference_stride_ = tmp_stride;
@@ -597,6 +852,56 @@ const SadMxNParam c_tests[] = {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(C, SADTest, ::testing::ValuesIn(c_tests));
+
+const SadSkipMxNParam skip_c_tests[] = {
+  SadSkipMxNParam(64, 64, &vpx_sad_skip_64x64_c),
+  SadSkipMxNParam(64, 32, &vpx_sad_skip_64x32_c),
+  SadSkipMxNParam(32, 64, &vpx_sad_skip_32x64_c),
+  SadSkipMxNParam(32, 32, &vpx_sad_skip_32x32_c),
+  SadSkipMxNParam(32, 16, &vpx_sad_skip_32x16_c),
+  SadSkipMxNParam(16, 32, &vpx_sad_skip_16x32_c),
+  SadSkipMxNParam(16, 16, &vpx_sad_skip_16x16_c),
+  SadSkipMxNParam(16, 8, &vpx_sad_skip_16x8_c),
+  SadSkipMxNParam(8, 16, &vpx_sad_skip_8x16_c),
+  SadSkipMxNParam(8, 8, &vpx_sad_skip_8x8_c),
+  SadSkipMxNParam(4, 8, &vpx_sad_skip_4x8_c),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_c, 8),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_c, 8),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_c, 8),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_c, 8),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_c, 8),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_c, 8),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_c, 8),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_c, 8),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_c, 8),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_c, 8),
+  SadSkipMxNParam(4, 8, &vpx_highbd_sad_skip_4x8_c, 8),
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_c, 10),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_c, 10),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_c, 10),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_c, 10),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_c, 10),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_c, 10),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_c, 10),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_c, 10),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_c, 10),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_c, 10),
+  SadSkipMxNParam(4, 8, &vpx_highbd_sad_skip_4x8_c, 10),
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_c, 12),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_c, 12),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_c, 12),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_c, 12),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_c, 12),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_c, 12),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_c, 12),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_c, 12),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_c, 12),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_c, 12),
+  SadSkipMxNParam(4, 8, &vpx_highbd_sad_skip_4x8_c, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(C, SADSkipTest, ::testing::ValuesIn(skip_c_tests));
 
 const SadMxNAvgParam avg_c_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_c),
@@ -714,6 +1019,57 @@ const SadMxNx4Param x4d_c_tests[] = {
 };
 INSTANTIATE_TEST_SUITE_P(C, SADx4Test, ::testing::ValuesIn(x4d_c_tests));
 
+const SadSkipMxNx4Param skip_x4d_c_tests[] = {
+  SadSkipMxNx4Param(64, 64, &vpx_sad_skip_64x64x4d_c),
+  SadSkipMxNx4Param(64, 32, &vpx_sad_skip_64x32x4d_c),
+  SadSkipMxNx4Param(32, 64, &vpx_sad_skip_32x64x4d_c),
+  SadSkipMxNx4Param(32, 32, &vpx_sad_skip_32x32x4d_c),
+  SadSkipMxNx4Param(32, 16, &vpx_sad_skip_32x16x4d_c),
+  SadSkipMxNx4Param(16, 32, &vpx_sad_skip_16x32x4d_c),
+  SadSkipMxNx4Param(16, 16, &vpx_sad_skip_16x16x4d_c),
+  SadSkipMxNx4Param(16, 8, &vpx_sad_skip_16x8x4d_c),
+  SadSkipMxNx4Param(8, 16, &vpx_sad_skip_8x16x4d_c),
+  SadSkipMxNx4Param(8, 8, &vpx_sad_skip_8x8x4d_c),
+  SadSkipMxNx4Param(4, 8, &vpx_sad_skip_4x8x4d_c),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_c, 8),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_c, 8),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_c, 8),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_c, 8),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_c, 8),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_c, 8),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_c, 8),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_c, 8),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_c, 8),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_c, 8),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_c, 8),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_c, 10),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_c, 10),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_c, 10),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_c, 10),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_c, 10),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_c, 10),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_c, 10),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_c, 10),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_c, 10),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_c, 10),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_c, 10),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_c, 12),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_c, 12),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_c, 12),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_c, 12),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_c, 12),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_c, 12),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_c, 12),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_c, 12),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_c, 12),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_c, 12),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_c, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(C, SADSkipx4Test,
+                         ::testing::ValuesIn(skip_x4d_c_tests));
+
 //------------------------------------------------------------------------------
 // ARM functions
 #if HAVE_NEON
@@ -729,8 +1085,136 @@ const SadMxNParam neon_tests[] = {
   SadMxNParam(8, 4, &vpx_sad8x4_neon),
   SadMxNParam(4, 8, &vpx_sad4x8_neon),
   SadMxNParam(4, 4, &vpx_sad4x4_neon),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadMxNParam(4, 4, &vpx_highbd_sad4x4_neon, 8),
+  SadMxNParam(4, 8, &vpx_highbd_sad4x8_neon, 8),
+  SadMxNParam(8, 4, &vpx_highbd_sad8x4_neon, 8),
+  SadMxNParam(8, 8, &vpx_highbd_sad8x8_neon, 8),
+  SadMxNParam(8, 16, &vpx_highbd_sad8x16_neon, 8),
+  SadMxNParam(16, 8, &vpx_highbd_sad16x8_neon, 8),
+  SadMxNParam(16, 16, &vpx_highbd_sad16x16_neon, 8),
+  SadMxNParam(16, 32, &vpx_highbd_sad16x32_neon, 8),
+  SadMxNParam(32, 32, &vpx_highbd_sad32x32_neon, 8),
+  SadMxNParam(32, 64, &vpx_highbd_sad32x64_neon, 8),
+  SadMxNParam(64, 32, &vpx_highbd_sad64x32_neon, 8),
+  SadMxNParam(64, 64, &vpx_highbd_sad64x64_neon, 8),
+  SadMxNParam(4, 4, &vpx_highbd_sad4x4_neon, 10),
+  SadMxNParam(4, 8, &vpx_highbd_sad4x8_neon, 10),
+  SadMxNParam(8, 4, &vpx_highbd_sad8x4_neon, 10),
+  SadMxNParam(8, 8, &vpx_highbd_sad8x8_neon, 10),
+  SadMxNParam(8, 16, &vpx_highbd_sad8x16_neon, 10),
+  SadMxNParam(16, 8, &vpx_highbd_sad16x8_neon, 10),
+  SadMxNParam(16, 16, &vpx_highbd_sad16x16_neon, 10),
+  SadMxNParam(16, 32, &vpx_highbd_sad16x32_neon, 10),
+  SadMxNParam(32, 32, &vpx_highbd_sad32x32_neon, 10),
+  SadMxNParam(32, 64, &vpx_highbd_sad32x64_neon, 10),
+  SadMxNParam(64, 32, &vpx_highbd_sad64x32_neon, 10),
+  SadMxNParam(64, 64, &vpx_highbd_sad64x64_neon, 10),
+  SadMxNParam(4, 4, &vpx_highbd_sad4x4_neon, 12),
+  SadMxNParam(4, 8, &vpx_highbd_sad4x8_neon, 12),
+  SadMxNParam(8, 4, &vpx_highbd_sad8x4_neon, 12),
+  SadMxNParam(8, 8, &vpx_highbd_sad8x8_neon, 12),
+  SadMxNParam(8, 16, &vpx_highbd_sad8x16_neon, 12),
+  SadMxNParam(16, 8, &vpx_highbd_sad16x8_neon, 12),
+  SadMxNParam(16, 16, &vpx_highbd_sad16x16_neon, 12),
+  SadMxNParam(16, 32, &vpx_highbd_sad16x32_neon, 12),
+  SadMxNParam(32, 32, &vpx_highbd_sad32x32_neon, 12),
+  SadMxNParam(32, 64, &vpx_highbd_sad32x64_neon, 12),
+  SadMxNParam(64, 32, &vpx_highbd_sad64x32_neon, 12),
+  SadMxNParam(64, 64, &vpx_highbd_sad64x64_neon, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
 };
 INSTANTIATE_TEST_SUITE_P(NEON, SADTest, ::testing::ValuesIn(neon_tests));
+
+#if HAVE_NEON_DOTPROD
+const SadMxNParam neon_dotprod_tests[] = {
+  SadMxNParam(64, 64, &vpx_sad64x64_neon_dotprod),
+  SadMxNParam(64, 32, &vpx_sad64x32_neon_dotprod),
+  SadMxNParam(32, 64, &vpx_sad32x64_neon_dotprod),
+  SadMxNParam(32, 32, &vpx_sad32x32_neon_dotprod),
+  SadMxNParam(32, 16, &vpx_sad32x16_neon_dotprod),
+  SadMxNParam(16, 32, &vpx_sad16x32_neon_dotprod),
+  SadMxNParam(16, 16, &vpx_sad16x16_neon_dotprod),
+  SadMxNParam(16, 8, &vpx_sad16x8_neon_dotprod),
+};
+INSTANTIATE_TEST_SUITE_P(NEON_DOTPROD, SADTest,
+                         ::testing::ValuesIn(neon_dotprod_tests));
+#endif  // HAVE_NEON_DOTPROD
+
+const SadSkipMxNParam skip_neon_tests[] = {
+  SadSkipMxNParam(64, 64, &vpx_sad_skip_64x64_neon),
+  SadSkipMxNParam(64, 32, &vpx_sad_skip_64x32_neon),
+  SadSkipMxNParam(32, 64, &vpx_sad_skip_32x64_neon),
+  SadSkipMxNParam(32, 32, &vpx_sad_skip_32x32_neon),
+  SadSkipMxNParam(32, 16, &vpx_sad_skip_32x16_neon),
+  SadSkipMxNParam(16, 32, &vpx_sad_skip_16x32_neon),
+  SadSkipMxNParam(16, 16, &vpx_sad_skip_16x16_neon),
+  SadSkipMxNParam(16, 8, &vpx_sad_skip_16x8_neon),
+  SadSkipMxNParam(8, 16, &vpx_sad_skip_8x16_neon),
+  SadSkipMxNParam(8, 8, &vpx_sad_skip_8x8_neon),
+  SadSkipMxNParam(8, 4, &vpx_sad_skip_8x4_neon),
+  SadSkipMxNParam(4, 8, &vpx_sad_skip_4x8_neon),
+  SadSkipMxNParam(4, 4, &vpx_sad_skip_4x4_neon),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNParam(4, 4, &vpx_highbd_sad_skip_4x4_neon, 8),
+  SadSkipMxNParam(4, 8, &vpx_highbd_sad_skip_4x8_neon, 8),
+  SadSkipMxNParam(8, 4, &vpx_highbd_sad_skip_8x4_neon, 8),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_neon, 8),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_neon, 8),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_neon, 8),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_neon, 8),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_neon, 8),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_neon, 8),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_neon, 8),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_neon, 8),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_neon, 8),
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_neon, 8),
+  SadSkipMxNParam(4, 4, &vpx_highbd_sad_skip_4x4_neon, 10),
+  SadSkipMxNParam(4, 8, &vpx_highbd_sad_skip_4x8_neon, 10),
+  SadSkipMxNParam(8, 4, &vpx_highbd_sad_skip_8x4_neon, 10),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_neon, 10),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_neon, 10),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_neon, 10),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_neon, 10),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_neon, 10),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_neon, 10),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_neon, 10),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_neon, 10),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_neon, 10),
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_neon, 10),
+  SadSkipMxNParam(4, 4, &vpx_highbd_sad_skip_4x4_neon, 12),
+  SadSkipMxNParam(4, 8, &vpx_highbd_sad_skip_4x8_neon, 12),
+  SadSkipMxNParam(8, 4, &vpx_highbd_sad_skip_8x4_neon, 12),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_neon, 12),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_neon, 12),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_neon, 12),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_neon, 12),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_neon, 12),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_neon, 12),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_neon, 12),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_neon, 12),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_neon, 12),
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_neon, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(NEON, SADSkipTest,
+                         ::testing::ValuesIn(skip_neon_tests));
+
+#if HAVE_NEON_DOTPROD
+const SadSkipMxNParam skip_neon_dotprod_tests[] = {
+  SadSkipMxNParam(64, 64, &vpx_sad_skip_64x64_neon_dotprod),
+  SadSkipMxNParam(64, 32, &vpx_sad_skip_64x32_neon_dotprod),
+  SadSkipMxNParam(32, 64, &vpx_sad_skip_32x64_neon_dotprod),
+  SadSkipMxNParam(32, 32, &vpx_sad_skip_32x32_neon_dotprod),
+  SadSkipMxNParam(32, 16, &vpx_sad_skip_32x16_neon_dotprod),
+  SadSkipMxNParam(16, 32, &vpx_sad_skip_16x32_neon_dotprod),
+  SadSkipMxNParam(16, 16, &vpx_sad_skip_16x16_neon_dotprod),
+  SadSkipMxNParam(16, 8, &vpx_sad_skip_16x8_neon_dotprod),
+};
+INSTANTIATE_TEST_SUITE_P(NEON_DOTPROD, SADSkipTest,
+                         ::testing::ValuesIn(skip_neon_dotprod_tests));
+#endif  // HAVE_NEON_DOTPROD
 
 const SadMxNAvgParam avg_neon_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_neon),
@@ -746,8 +1230,64 @@ const SadMxNAvgParam avg_neon_tests[] = {
   SadMxNAvgParam(8, 4, &vpx_sad8x4_avg_neon),
   SadMxNAvgParam(4, 8, &vpx_sad4x8_avg_neon),
   SadMxNAvgParam(4, 4, &vpx_sad4x4_avg_neon),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadMxNAvgParam(4, 4, &vpx_highbd_sad4x4_avg_neon, 8),
+  SadMxNAvgParam(4, 8, &vpx_highbd_sad4x8_avg_neon, 8),
+  SadMxNAvgParam(8, 4, &vpx_highbd_sad8x4_avg_neon, 8),
+  SadMxNAvgParam(8, 8, &vpx_highbd_sad8x8_avg_neon, 8),
+  SadMxNAvgParam(8, 16, &vpx_highbd_sad8x16_avg_neon, 8),
+  SadMxNAvgParam(16, 8, &vpx_highbd_sad16x8_avg_neon, 8),
+  SadMxNAvgParam(16, 16, &vpx_highbd_sad16x16_avg_neon, 8),
+  SadMxNAvgParam(16, 32, &vpx_highbd_sad16x32_avg_neon, 8),
+  SadMxNAvgParam(32, 16, &vpx_highbd_sad32x16_avg_neon, 8),
+  SadMxNAvgParam(32, 32, &vpx_highbd_sad32x32_avg_neon, 8),
+  SadMxNAvgParam(32, 64, &vpx_highbd_sad32x64_avg_neon, 8),
+  SadMxNAvgParam(64, 32, &vpx_highbd_sad64x32_avg_neon, 8),
+  SadMxNAvgParam(64, 64, &vpx_highbd_sad64x64_avg_neon, 8),
+  SadMxNAvgParam(4, 4, &vpx_highbd_sad4x4_avg_neon, 10),
+  SadMxNAvgParam(4, 8, &vpx_highbd_sad4x8_avg_neon, 10),
+  SadMxNAvgParam(8, 4, &vpx_highbd_sad8x4_avg_neon, 10),
+  SadMxNAvgParam(8, 8, &vpx_highbd_sad8x8_avg_neon, 10),
+  SadMxNAvgParam(8, 16, &vpx_highbd_sad8x16_avg_neon, 10),
+  SadMxNAvgParam(16, 8, &vpx_highbd_sad16x8_avg_neon, 10),
+  SadMxNAvgParam(16, 16, &vpx_highbd_sad16x16_avg_neon, 10),
+  SadMxNAvgParam(16, 32, &vpx_highbd_sad16x32_avg_neon, 10),
+  SadMxNAvgParam(32, 16, &vpx_highbd_sad32x16_avg_neon, 10),
+  SadMxNAvgParam(32, 32, &vpx_highbd_sad32x32_avg_neon, 10),
+  SadMxNAvgParam(32, 64, &vpx_highbd_sad32x64_avg_neon, 10),
+  SadMxNAvgParam(64, 32, &vpx_highbd_sad64x32_avg_neon, 10),
+  SadMxNAvgParam(64, 64, &vpx_highbd_sad64x64_avg_neon, 10),
+  SadMxNAvgParam(4, 4, &vpx_highbd_sad4x4_avg_neon, 12),
+  SadMxNAvgParam(4, 8, &vpx_highbd_sad4x8_avg_neon, 12),
+  SadMxNAvgParam(8, 4, &vpx_highbd_sad8x4_avg_neon, 12),
+  SadMxNAvgParam(8, 8, &vpx_highbd_sad8x8_avg_neon, 12),
+  SadMxNAvgParam(8, 16, &vpx_highbd_sad8x16_avg_neon, 12),
+  SadMxNAvgParam(16, 8, &vpx_highbd_sad16x8_avg_neon, 12),
+  SadMxNAvgParam(16, 16, &vpx_highbd_sad16x16_avg_neon, 12),
+  SadMxNAvgParam(16, 32, &vpx_highbd_sad16x32_avg_neon, 12),
+  SadMxNAvgParam(32, 16, &vpx_highbd_sad32x16_avg_neon, 12),
+  SadMxNAvgParam(32, 32, &vpx_highbd_sad32x32_avg_neon, 12),
+  SadMxNAvgParam(32, 64, &vpx_highbd_sad32x64_avg_neon, 12),
+  SadMxNAvgParam(64, 32, &vpx_highbd_sad64x32_avg_neon, 12),
+  SadMxNAvgParam(64, 64, &vpx_highbd_sad64x64_avg_neon, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(NEON, SADavgTest, ::testing::ValuesIn(avg_neon_tests));
+
+#if HAVE_NEON_DOTPROD
+const SadMxNAvgParam avg_neon_dotprod_tests[] = {
+  SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_neon_dotprod),
+  SadMxNAvgParam(64, 32, &vpx_sad64x32_avg_neon_dotprod),
+  SadMxNAvgParam(32, 64, &vpx_sad32x64_avg_neon_dotprod),
+  SadMxNAvgParam(32, 32, &vpx_sad32x32_avg_neon_dotprod),
+  SadMxNAvgParam(32, 16, &vpx_sad32x16_avg_neon_dotprod),
+  SadMxNAvgParam(16, 32, &vpx_sad16x32_avg_neon_dotprod),
+  SadMxNAvgParam(16, 16, &vpx_sad16x16_avg_neon_dotprod),
+  SadMxNAvgParam(16, 8, &vpx_sad16x8_avg_neon_dotprod),
+};
+INSTANTIATE_TEST_SUITE_P(NEON_DOTPROD, SADavgTest,
+                         ::testing::ValuesIn(avg_neon_dotprod_tests));
+#endif  // HAVE_NEON_DOTPROD
 
 const SadMxNx4Param x4d_neon_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_neon),
@@ -763,13 +1303,137 @@ const SadMxNx4Param x4d_neon_tests[] = {
   SadMxNx4Param(8, 4, &vpx_sad8x4x4d_neon),
   SadMxNx4Param(4, 8, &vpx_sad4x8x4d_neon),
   SadMxNx4Param(4, 4, &vpx_sad4x4x4d_neon),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadMxNx4Param(4, 4, &vpx_highbd_sad4x4x4d_neon, 8),
+  SadMxNx4Param(4, 8, &vpx_highbd_sad4x8x4d_neon, 8),
+  SadMxNx4Param(8, 4, &vpx_highbd_sad8x4x4d_neon, 8),
+  SadMxNx4Param(8, 8, &vpx_highbd_sad8x8x4d_neon, 8),
+  SadMxNx4Param(8, 16, &vpx_highbd_sad8x16x4d_neon, 8),
+  SadMxNx4Param(16, 8, &vpx_highbd_sad16x8x4d_neon, 8),
+  SadMxNx4Param(16, 16, &vpx_highbd_sad16x16x4d_neon, 8),
+  SadMxNx4Param(16, 32, &vpx_highbd_sad16x32x4d_neon, 8),
+  SadMxNx4Param(32, 32, &vpx_highbd_sad32x32x4d_neon, 8),
+  SadMxNx4Param(32, 64, &vpx_highbd_sad32x64x4d_neon, 8),
+  SadMxNx4Param(64, 32, &vpx_highbd_sad64x32x4d_neon, 8),
+  SadMxNx4Param(64, 64, &vpx_highbd_sad64x64x4d_neon, 8),
+  SadMxNx4Param(4, 4, &vpx_highbd_sad4x4x4d_neon, 10),
+  SadMxNx4Param(4, 8, &vpx_highbd_sad4x8x4d_neon, 10),
+  SadMxNx4Param(8, 4, &vpx_highbd_sad8x4x4d_neon, 10),
+  SadMxNx4Param(8, 8, &vpx_highbd_sad8x8x4d_neon, 10),
+  SadMxNx4Param(8, 16, &vpx_highbd_sad8x16x4d_neon, 10),
+  SadMxNx4Param(16, 8, &vpx_highbd_sad16x8x4d_neon, 10),
+  SadMxNx4Param(16, 16, &vpx_highbd_sad16x16x4d_neon, 10),
+  SadMxNx4Param(16, 32, &vpx_highbd_sad16x32x4d_neon, 10),
+  SadMxNx4Param(32, 32, &vpx_highbd_sad32x32x4d_neon, 10),
+  SadMxNx4Param(32, 64, &vpx_highbd_sad32x64x4d_neon, 10),
+  SadMxNx4Param(64, 32, &vpx_highbd_sad64x32x4d_neon, 10),
+  SadMxNx4Param(64, 64, &vpx_highbd_sad64x64x4d_neon, 10),
+  SadMxNx4Param(4, 4, &vpx_highbd_sad4x4x4d_neon, 12),
+  SadMxNx4Param(4, 8, &vpx_highbd_sad4x8x4d_neon, 12),
+  SadMxNx4Param(8, 4, &vpx_highbd_sad8x4x4d_neon, 12),
+  SadMxNx4Param(8, 8, &vpx_highbd_sad8x8x4d_neon, 12),
+  SadMxNx4Param(8, 16, &vpx_highbd_sad8x16x4d_neon, 12),
+  SadMxNx4Param(16, 8, &vpx_highbd_sad16x8x4d_neon, 12),
+  SadMxNx4Param(16, 16, &vpx_highbd_sad16x16x4d_neon, 12),
+  SadMxNx4Param(16, 32, &vpx_highbd_sad16x32x4d_neon, 12),
+  SadMxNx4Param(32, 32, &vpx_highbd_sad32x32x4d_neon, 12),
+  SadMxNx4Param(32, 64, &vpx_highbd_sad32x64x4d_neon, 12),
+  SadMxNx4Param(64, 32, &vpx_highbd_sad64x32x4d_neon, 12),
+  SadMxNx4Param(64, 64, &vpx_highbd_sad64x64x4d_neon, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(NEON, SADx4Test, ::testing::ValuesIn(x4d_neon_tests));
+
+#if HAVE_NEON_DOTPROD
+const SadMxNx4Param x4d_neon_dotprod_tests[] = {
+  SadMxNx4Param(64, 64, &vpx_sad64x64x4d_neon_dotprod),
+  SadMxNx4Param(64, 32, &vpx_sad64x32x4d_neon_dotprod),
+  SadMxNx4Param(32, 64, &vpx_sad32x64x4d_neon_dotprod),
+  SadMxNx4Param(32, 32, &vpx_sad32x32x4d_neon_dotprod),
+  SadMxNx4Param(32, 16, &vpx_sad32x16x4d_neon_dotprod),
+  SadMxNx4Param(16, 32, &vpx_sad16x32x4d_neon_dotprod),
+  SadMxNx4Param(16, 16, &vpx_sad16x16x4d_neon_dotprod),
+  SadMxNx4Param(16, 8, &vpx_sad16x8x4d_neon_dotprod),
+};
+INSTANTIATE_TEST_SUITE_P(NEON_DOTPROD, SADx4Test,
+                         ::testing::ValuesIn(x4d_neon_dotprod_tests));
+#endif  // HAVE_NEON_DOTPROD
+
+const SadSkipMxNx4Param skip_x4d_neon_tests[] = {
+  SadSkipMxNx4Param(64, 64, &vpx_sad_skip_64x64x4d_neon),
+  SadSkipMxNx4Param(64, 32, &vpx_sad_skip_64x32x4d_neon),
+  SadSkipMxNx4Param(32, 64, &vpx_sad_skip_32x64x4d_neon),
+  SadSkipMxNx4Param(32, 32, &vpx_sad_skip_32x32x4d_neon),
+  SadSkipMxNx4Param(32, 16, &vpx_sad_skip_32x16x4d_neon),
+  SadSkipMxNx4Param(16, 32, &vpx_sad_skip_16x32x4d_neon),
+  SadSkipMxNx4Param(16, 16, &vpx_sad_skip_16x16x4d_neon),
+  SadSkipMxNx4Param(16, 8, &vpx_sad_skip_16x8x4d_neon),
+  SadSkipMxNx4Param(8, 16, &vpx_sad_skip_8x16x4d_neon),
+  SadSkipMxNx4Param(8, 8, &vpx_sad_skip_8x8x4d_neon),
+  SadSkipMxNx4Param(8, 4, &vpx_sad_skip_8x4x4d_neon),
+  SadSkipMxNx4Param(4, 8, &vpx_sad_skip_4x8x4d_neon),
+  SadSkipMxNx4Param(4, 4, &vpx_sad_skip_4x4x4d_neon),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNx4Param(4, 4, &vpx_highbd_sad_skip_4x4x4d_neon, 8),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_neon, 8),
+  SadSkipMxNx4Param(8, 4, &vpx_highbd_sad_skip_8x4x4d_neon, 8),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_neon, 8),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_neon, 8),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_neon, 8),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_neon, 8),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_neon, 8),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_neon, 8),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_neon, 8),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_neon, 8),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_neon, 8),
+  SadSkipMxNx4Param(4, 4, &vpx_highbd_sad_skip_4x4x4d_neon, 10),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_neon, 10),
+  SadSkipMxNx4Param(8, 4, &vpx_highbd_sad_skip_8x4x4d_neon, 10),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_neon, 10),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_neon, 10),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_neon, 10),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_neon, 10),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_neon, 10),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_neon, 10),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_neon, 10),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_neon, 10),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_neon, 10),
+  SadSkipMxNx4Param(4, 4, &vpx_highbd_sad_skip_4x4x4d_neon, 12),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_neon, 12),
+  SadSkipMxNx4Param(8, 4, &vpx_highbd_sad_skip_8x4x4d_neon, 12),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_neon, 12),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_neon, 12),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_neon, 12),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_neon, 12),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_neon, 12),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_neon, 12),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_neon, 12),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_neon, 12),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_neon, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(NEON, SADSkipx4Test,
+                         ::testing::ValuesIn(skip_x4d_neon_tests));
+
+#if HAVE_NEON_DOTPROD
+const SadSkipMxNx4Param skip_x4d_neon_dotprod_tests[] = {
+  SadSkipMxNx4Param(64, 64, &vpx_sad_skip_64x64x4d_neon_dotprod),
+  SadSkipMxNx4Param(64, 32, &vpx_sad_skip_64x32x4d_neon_dotprod),
+  SadSkipMxNx4Param(32, 64, &vpx_sad_skip_32x64x4d_neon_dotprod),
+  SadSkipMxNx4Param(32, 32, &vpx_sad_skip_32x32x4d_neon_dotprod),
+  SadSkipMxNx4Param(32, 16, &vpx_sad_skip_32x16x4d_neon_dotprod),
+  SadSkipMxNx4Param(16, 32, &vpx_sad_skip_16x32x4d_neon_dotprod),
+  SadSkipMxNx4Param(16, 16, &vpx_sad_skip_16x16x4d_neon_dotprod),
+  SadSkipMxNx4Param(16, 8, &vpx_sad_skip_16x8x4d_neon_dotprod),
+};
+INSTANTIATE_TEST_SUITE_P(NEON_DOTPROD, SADSkipx4Test,
+                         ::testing::ValuesIn(skip_x4d_neon_dotprod_tests));
+#endif  // HAVE_NEON_DOTPROD
 #endif  // HAVE_NEON
 
 //------------------------------------------------------------------------------
 // x86 functions
-#if HAVE_SSE2
+#if HAVE_SSE2 && HAVE_X86_ASM
 const SadMxNParam sse2_tests[] = {
   SadMxNParam(64, 64, &vpx_sad64x64_sse2),
   SadMxNParam(64, 32, &vpx_sad64x32_sse2),
@@ -821,6 +1485,54 @@ const SadMxNParam sse2_tests[] = {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(SSE2, SADTest, ::testing::ValuesIn(sse2_tests));
+
+const SadSkipMxNParam skip_sse2_tests[] = {
+  SadSkipMxNParam(64, 64, &vpx_sad_skip_64x64_sse2),
+  SadSkipMxNParam(64, 32, &vpx_sad_skip_64x32_sse2),
+  SadSkipMxNParam(32, 64, &vpx_sad_skip_32x64_sse2),
+  SadSkipMxNParam(32, 32, &vpx_sad_skip_32x32_sse2),
+  SadSkipMxNParam(32, 16, &vpx_sad_skip_32x16_sse2),
+  SadSkipMxNParam(16, 32, &vpx_sad_skip_16x32_sse2),
+  SadSkipMxNParam(16, 16, &vpx_sad_skip_16x16_sse2),
+  SadSkipMxNParam(16, 8, &vpx_sad_skip_16x8_sse2),
+  SadSkipMxNParam(8, 16, &vpx_sad_skip_8x16_sse2),
+  SadSkipMxNParam(8, 8, &vpx_sad_skip_8x8_sse2),
+  SadSkipMxNParam(4, 8, &vpx_sad_skip_4x8_sse2),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_sse2, 8),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_sse2, 8),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_sse2, 8),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_sse2, 8),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_sse2, 8),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_sse2, 8),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_sse2, 8),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_sse2, 8),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_sse2, 8),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_sse2, 8),
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_sse2, 10),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_sse2, 10),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_sse2, 10),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_sse2, 10),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_sse2, 10),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_sse2, 10),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_sse2, 10),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_sse2, 10),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_sse2, 10),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_sse2, 10),
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_sse2, 12),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_sse2, 12),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_sse2, 12),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_sse2, 12),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_sse2, 12),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_sse2, 12),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_sse2, 12),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_sse2, 12),
+  SadSkipMxNParam(8, 16, &vpx_highbd_sad_skip_8x16_sse2, 12),
+  SadSkipMxNParam(8, 8, &vpx_highbd_sad_skip_8x8_sse2, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(SSE2, SADSkipTest,
+                         ::testing::ValuesIn(skip_sse2_tests));
 
 const SadMxNAvgParam avg_sse2_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_sse2),
@@ -931,7 +1643,58 @@ const SadMxNx4Param x4d_sse2_tests[] = {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(SSE2, SADx4Test, ::testing::ValuesIn(x4d_sse2_tests));
-#endif  // HAVE_SSE2
+
+const SadSkipMxNx4Param skip_x4d_sse2_tests[] = {
+  SadSkipMxNx4Param(64, 64, &vpx_sad_skip_64x64x4d_sse2),
+  SadSkipMxNx4Param(64, 32, &vpx_sad_skip_64x32x4d_sse2),
+  SadSkipMxNx4Param(32, 64, &vpx_sad_skip_32x64x4d_sse2),
+  SadSkipMxNx4Param(32, 32, &vpx_sad_skip_32x32x4d_sse2),
+  SadSkipMxNx4Param(32, 16, &vpx_sad_skip_32x16x4d_sse2),
+  SadSkipMxNx4Param(16, 32, &vpx_sad_skip_16x32x4d_sse2),
+  SadSkipMxNx4Param(16, 16, &vpx_sad_skip_16x16x4d_sse2),
+  SadSkipMxNx4Param(16, 8, &vpx_sad_skip_16x8x4d_sse2),
+  SadSkipMxNx4Param(8, 16, &vpx_sad_skip_8x16x4d_sse2),
+  SadSkipMxNx4Param(8, 8, &vpx_sad_skip_8x8x4d_sse2),
+  SadSkipMxNx4Param(4, 8, &vpx_sad_skip_4x8x4d_sse2),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_sse2, 8),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_sse2, 8),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_sse2, 8),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_sse2, 8),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_sse2, 8),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_sse2, 8),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_sse2, 8),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_sse2, 8),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_sse2, 8),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_sse2, 8),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_sse2, 8),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_sse2, 10),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_sse2, 10),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_sse2, 10),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_sse2, 10),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_sse2, 10),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_sse2, 10),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_sse2, 10),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_sse2, 10),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_sse2, 10),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_sse2, 10),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_sse2, 10),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_sse2, 12),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_sse2, 12),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_sse2, 12),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_sse2, 12),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_sse2, 12),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_sse2, 12),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_sse2, 12),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_sse2, 12),
+  SadSkipMxNx4Param(8, 16, &vpx_highbd_sad_skip_8x16x4d_sse2, 12),
+  SadSkipMxNx4Param(8, 8, &vpx_highbd_sad_skip_8x8x4d_sse2, 12),
+  SadSkipMxNx4Param(4, 8, &vpx_highbd_sad_skip_4x8x4d_sse2, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(SSE2, SADSkipx4Test,
+                         ::testing::ValuesIn(skip_x4d_sse2_tests));
+#endif  // HAVE_SSE2 && HAVE_X86_ASM
 
 #if HAVE_SSE3
 // Only functions are x3, which do not have tests.
@@ -948,8 +1711,74 @@ const SadMxNParam avx2_tests[] = {
   SadMxNParam(32, 64, &vpx_sad32x64_avx2),
   SadMxNParam(32, 32, &vpx_sad32x32_avx2),
   SadMxNParam(32, 16, &vpx_sad32x16_avx2),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadMxNParam(64, 64, &vpx_highbd_sad64x64_avx2, 8),
+  SadMxNParam(64, 32, &vpx_highbd_sad64x32_avx2, 8),
+  SadMxNParam(32, 64, &vpx_highbd_sad32x64_avx2, 8),
+  SadMxNParam(32, 32, &vpx_highbd_sad32x32_avx2, 8),
+  SadMxNParam(32, 16, &vpx_highbd_sad32x16_avx2, 8),
+  SadMxNParam(16, 32, &vpx_highbd_sad16x32_avx2, 8),
+  SadMxNParam(16, 16, &vpx_highbd_sad16x16_avx2, 8),
+  SadMxNParam(16, 8, &vpx_highbd_sad16x8_avx2, 8),
+
+  SadMxNParam(64, 64, &vpx_highbd_sad64x64_avx2, 10),
+  SadMxNParam(64, 32, &vpx_highbd_sad64x32_avx2, 10),
+  SadMxNParam(32, 64, &vpx_highbd_sad32x64_avx2, 10),
+  SadMxNParam(32, 32, &vpx_highbd_sad32x32_avx2, 10),
+  SadMxNParam(32, 16, &vpx_highbd_sad32x16_avx2, 10),
+  SadMxNParam(16, 32, &vpx_highbd_sad16x32_avx2, 10),
+  SadMxNParam(16, 16, &vpx_highbd_sad16x16_avx2, 10),
+  SadMxNParam(16, 8, &vpx_highbd_sad16x8_avx2, 10),
+
+  SadMxNParam(64, 64, &vpx_highbd_sad64x64_avx2, 12),
+  SadMxNParam(64, 32, &vpx_highbd_sad64x32_avx2, 12),
+  SadMxNParam(32, 64, &vpx_highbd_sad32x64_avx2, 12),
+  SadMxNParam(32, 32, &vpx_highbd_sad32x32_avx2, 12),
+  SadMxNParam(32, 16, &vpx_highbd_sad32x16_avx2, 12),
+  SadMxNParam(16, 32, &vpx_highbd_sad16x32_avx2, 12),
+  SadMxNParam(16, 16, &vpx_highbd_sad16x16_avx2, 12),
+  SadMxNParam(16, 8, &vpx_highbd_sad16x8_avx2, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(AVX2, SADTest, ::testing::ValuesIn(avx2_tests));
+
+const SadSkipMxNParam skip_avx2_tests[] = {
+  SadSkipMxNParam(64, 64, &vpx_sad_skip_64x64_avx2),
+  SadSkipMxNParam(64, 32, &vpx_sad_skip_64x32_avx2),
+  SadSkipMxNParam(32, 64, &vpx_sad_skip_32x64_avx2),
+  SadSkipMxNParam(32, 32, &vpx_sad_skip_32x32_avx2),
+  SadSkipMxNParam(32, 16, &vpx_sad_skip_32x16_avx2),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_avx2, 8),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_avx2, 8),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_avx2, 8),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_avx2, 8),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_avx2, 8),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_avx2, 8),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_avx2, 8),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_avx2, 8),
+
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_avx2, 10),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_avx2, 10),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_avx2, 10),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_avx2, 10),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_avx2, 10),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_avx2, 10),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_avx2, 10),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_avx2, 10),
+
+  SadSkipMxNParam(64, 64, &vpx_highbd_sad_skip_64x64_avx2, 12),
+  SadSkipMxNParam(64, 32, &vpx_highbd_sad_skip_64x32_avx2, 12),
+  SadSkipMxNParam(32, 64, &vpx_highbd_sad_skip_32x64_avx2, 12),
+  SadSkipMxNParam(32, 32, &vpx_highbd_sad_skip_32x32_avx2, 12),
+  SadSkipMxNParam(32, 16, &vpx_highbd_sad_skip_32x16_avx2, 12),
+  SadSkipMxNParam(16, 32, &vpx_highbd_sad_skip_16x32_avx2, 12),
+  SadSkipMxNParam(16, 16, &vpx_highbd_sad_skip_16x16_avx2, 12),
+  SadSkipMxNParam(16, 8, &vpx_highbd_sad_skip_16x8_avx2, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(AVX2, SADSkipTest,
+                         ::testing::ValuesIn(skip_avx2_tests));
 
 const SadMxNAvgParam avg_avx2_tests[] = {
   SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_avx2),
@@ -957,23 +1786,138 @@ const SadMxNAvgParam avg_avx2_tests[] = {
   SadMxNAvgParam(32, 64, &vpx_sad32x64_avg_avx2),
   SadMxNAvgParam(32, 32, &vpx_sad32x32_avg_avx2),
   SadMxNAvgParam(32, 16, &vpx_sad32x16_avg_avx2),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadMxNAvgParam(64, 64, &vpx_highbd_sad64x64_avg_avx2, 8),
+  SadMxNAvgParam(64, 32, &vpx_highbd_sad64x32_avg_avx2, 8),
+  SadMxNAvgParam(32, 64, &vpx_highbd_sad32x64_avg_avx2, 8),
+  SadMxNAvgParam(32, 32, &vpx_highbd_sad32x32_avg_avx2, 8),
+  SadMxNAvgParam(32, 16, &vpx_highbd_sad32x16_avg_avx2, 8),
+  SadMxNAvgParam(16, 32, &vpx_highbd_sad16x32_avg_avx2, 8),
+  SadMxNAvgParam(16, 16, &vpx_highbd_sad16x16_avg_avx2, 8),
+  SadMxNAvgParam(16, 8, &vpx_highbd_sad16x8_avg_avx2, 8),
+  SadMxNAvgParam(64, 64, &vpx_highbd_sad64x64_avg_avx2, 10),
+  SadMxNAvgParam(64, 32, &vpx_highbd_sad64x32_avg_avx2, 10),
+  SadMxNAvgParam(32, 64, &vpx_highbd_sad32x64_avg_avx2, 10),
+  SadMxNAvgParam(32, 32, &vpx_highbd_sad32x32_avg_avx2, 10),
+  SadMxNAvgParam(32, 16, &vpx_highbd_sad32x16_avg_avx2, 10),
+  SadMxNAvgParam(16, 32, &vpx_highbd_sad16x32_avg_avx2, 10),
+  SadMxNAvgParam(16, 16, &vpx_highbd_sad16x16_avg_avx2, 10),
+  SadMxNAvgParam(16, 8, &vpx_highbd_sad16x8_avg_avx2, 10),
+  SadMxNAvgParam(64, 64, &vpx_highbd_sad64x64_avg_avx2, 12),
+  SadMxNAvgParam(64, 32, &vpx_highbd_sad64x32_avg_avx2, 12),
+  SadMxNAvgParam(32, 64, &vpx_highbd_sad32x64_avg_avx2, 12),
+  SadMxNAvgParam(32, 32, &vpx_highbd_sad32x32_avg_avx2, 12),
+  SadMxNAvgParam(32, 16, &vpx_highbd_sad32x16_avg_avx2, 12),
+  SadMxNAvgParam(16, 32, &vpx_highbd_sad16x32_avg_avx2, 12),
+  SadMxNAvgParam(16, 16, &vpx_highbd_sad16x16_avg_avx2, 12),
+  SadMxNAvgParam(16, 8, &vpx_highbd_sad16x8_avg_avx2, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(AVX2, SADavgTest, ::testing::ValuesIn(avg_avx2_tests));
 
 const SadMxNx4Param x4d_avx2_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_avx2),
   SadMxNx4Param(32, 32, &vpx_sad32x32x4d_avx2),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadMxNx4Param(64, 64, &vpx_highbd_sad64x64x4d_avx2, 8),
+  SadMxNx4Param(64, 32, &vpx_highbd_sad64x32x4d_avx2, 8),
+  SadMxNx4Param(32, 64, &vpx_highbd_sad32x64x4d_avx2, 8),
+  SadMxNx4Param(32, 32, &vpx_highbd_sad32x32x4d_avx2, 8),
+  SadMxNx4Param(32, 16, &vpx_highbd_sad32x16x4d_avx2, 8),
+  SadMxNx4Param(16, 32, &vpx_highbd_sad16x32x4d_avx2, 8),
+  SadMxNx4Param(16, 16, &vpx_highbd_sad16x16x4d_avx2, 8),
+  SadMxNx4Param(16, 8, &vpx_highbd_sad16x8x4d_avx2, 8),
+  SadMxNx4Param(64, 64, &vpx_highbd_sad64x64x4d_avx2, 10),
+  SadMxNx4Param(64, 32, &vpx_highbd_sad64x32x4d_avx2, 10),
+  SadMxNx4Param(32, 64, &vpx_highbd_sad32x64x4d_avx2, 10),
+  SadMxNx4Param(32, 32, &vpx_highbd_sad32x32x4d_avx2, 10),
+  SadMxNx4Param(32, 16, &vpx_highbd_sad32x16x4d_avx2, 10),
+  SadMxNx4Param(16, 32, &vpx_highbd_sad16x32x4d_avx2, 10),
+  SadMxNx4Param(16, 16, &vpx_highbd_sad16x16x4d_avx2, 10),
+  SadMxNx4Param(16, 8, &vpx_highbd_sad16x8x4d_avx2, 10),
+  SadMxNx4Param(64, 64, &vpx_highbd_sad64x64x4d_avx2, 12),
+  SadMxNx4Param(64, 32, &vpx_highbd_sad64x32x4d_avx2, 12),
+  SadMxNx4Param(32, 64, &vpx_highbd_sad32x64x4d_avx2, 12),
+  SadMxNx4Param(32, 32, &vpx_highbd_sad32x32x4d_avx2, 12),
+  SadMxNx4Param(32, 16, &vpx_highbd_sad32x16x4d_avx2, 12),
+  SadMxNx4Param(16, 32, &vpx_highbd_sad16x32x4d_avx2, 12),
+  SadMxNx4Param(16, 16, &vpx_highbd_sad16x16x4d_avx2, 12),
+  SadMxNx4Param(16, 8, &vpx_highbd_sad16x8x4d_avx2, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 };
 INSTANTIATE_TEST_SUITE_P(AVX2, SADx4Test, ::testing::ValuesIn(x4d_avx2_tests));
+
+const SadSkipMxNx4Param skip_x4d_avx2_tests[] = {
+  SadSkipMxNx4Param(64, 64, &vpx_sad_skip_64x64x4d_avx2),
+  SadSkipMxNx4Param(64, 32, &vpx_sad_skip_64x32x4d_avx2),
+  SadSkipMxNx4Param(32, 64, &vpx_sad_skip_32x64x4d_avx2),
+  SadSkipMxNx4Param(32, 32, &vpx_sad_skip_32x32x4d_avx2),
+  SadSkipMxNx4Param(32, 16, &vpx_sad_skip_32x16x4d_avx2),
+#if CONFIG_VP9_HIGHBITDEPTH
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_avx2, 8),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_avx2, 8),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_avx2, 8),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_avx2, 8),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_avx2, 8),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_avx2, 8),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_avx2, 8),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_avx2, 8),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_avx2, 10),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_avx2, 10),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_avx2, 10),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_avx2, 10),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_avx2, 10),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_avx2, 10),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_avx2, 10),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_avx2, 10),
+  SadSkipMxNx4Param(64, 64, &vpx_highbd_sad_skip_64x64x4d_avx2, 12),
+  SadSkipMxNx4Param(64, 32, &vpx_highbd_sad_skip_64x32x4d_avx2, 12),
+  SadSkipMxNx4Param(32, 64, &vpx_highbd_sad_skip_32x64x4d_avx2, 12),
+  SadSkipMxNx4Param(32, 32, &vpx_highbd_sad_skip_32x32x4d_avx2, 12),
+  SadSkipMxNx4Param(32, 16, &vpx_highbd_sad_skip_32x16x4d_avx2, 12),
+  SadSkipMxNx4Param(16, 32, &vpx_highbd_sad_skip_16x32x4d_avx2, 12),
+  SadSkipMxNx4Param(16, 16, &vpx_highbd_sad_skip_16x16x4d_avx2, 12),
+  SadSkipMxNx4Param(16, 8, &vpx_highbd_sad_skip_16x8x4d_avx2, 12),
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+};
+INSTANTIATE_TEST_SUITE_P(AVX2, SADSkipx4Test,
+                         ::testing::ValuesIn(skip_x4d_avx2_tests));
 
 #endif  // HAVE_AVX2
 
 #if HAVE_AVX512
+const SadMxNParam avx512_tests[] = {
+  SadMxNParam(64, 64, &vpx_sad64x64_avx512),
+  SadMxNParam(64, 32, &vpx_sad64x32_avx512),
+};
+INSTANTIATE_TEST_SUITE_P(AVX512, SADTest, ::testing::ValuesIn(avx512_tests));
+
+const SadSkipMxNParam skip_avx512_tests[] = {
+  SadSkipMxNParam(64, 64, &vpx_sad_skip_64x64_avx512),
+  SadSkipMxNParam(64, 32, &vpx_sad_skip_64x32_avx512),
+};
+INSTANTIATE_TEST_SUITE_P(AVX512, SADSkipTest,
+                         ::testing::ValuesIn(skip_avx512_tests));
+
+const SadMxNAvgParam avg_avx512_tests[] = {
+  SadMxNAvgParam(64, 64, &vpx_sad64x64_avg_avx512),
+  SadMxNAvgParam(64, 32, &vpx_sad64x32_avg_avx512),
+};
+INSTANTIATE_TEST_SUITE_P(AVX512, SADavgTest,
+                         ::testing::ValuesIn(avg_avx512_tests));
+
 const SadMxNx4Param x4d_avx512_tests[] = {
   SadMxNx4Param(64, 64, &vpx_sad64x64x4d_avx512),
 };
 INSTANTIATE_TEST_SUITE_P(AVX512, SADx4Test,
                          ::testing::ValuesIn(x4d_avx512_tests));
+
+const SadSkipMxNx4Param skip_x4d_avx512_tests[] = {
+  SadSkipMxNx4Param(64, 64, &vpx_sad_skip_64x64x4d_avx512),
+  SadSkipMxNx4Param(64, 32, &vpx_sad_skip_64x32x4d_avx512),
+};
+INSTANTIATE_TEST_SUITE_P(AVX512, SADSkipx4Test,
+                         ::testing::ValuesIn(skip_x4d_avx512_tests));
 #endif  // HAVE_AVX512
 
 //------------------------------------------------------------------------------

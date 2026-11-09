@@ -14,8 +14,11 @@
  * that benefit from a scalable bitstream.
  */
 
+#include <assert.h>
+#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -24,14 +27,16 @@
 #include "../tools_common.h"
 #include "../video_writer.h"
 
+#include "../vpx_ports/bitops.h"
 #include "../vpx_ports/vpx_timer.h"
 #include "./svc_context.h"
 #include "vpx/vp8cx.h"
+#include "vpx/vpx_decoder.h"
 #include "vpx/vpx_encoder.h"
 #include "../vpxstats.h"
-#include "vp9/encoder/vp9_encoder.h"
 #include "./y4minput.h"
 
+#define OUTPUT_FRAME_STATS 0
 #define OUTPUT_RC_STATS 1
 
 #define SIMULCAST_MODE 0
@@ -88,6 +93,8 @@ static const arg_def_t bitrates_arg =
     ARG_DEF("bl", "bitrates", 1, "bitrates[sl * num_tl + tl]");
 static const arg_def_t dropframe_thresh_arg =
     ARG_DEF(NULL, "drop-frame", 1, "Temporal resampling threshold (buf %)");
+static const arg_def_t psnr_arg =
+    ARG_DEF(NULL, "psnr", 1, "Enable PSNR computation and statistics");
 static const struct arg_enum_list tune_content_enum[] = {
   { "default", VP9E_CONTENT_DEFAULT },
   { "screen", VP9E_CONTENT_SCREEN },
@@ -141,6 +148,7 @@ static const arg_def_t *svc_args[] = { &frames_arg,
                                        &dropframe_thresh_arg,
                                        &tune_content_arg,
                                        &inter_layer_pred_arg,
+                                       &psnr_arg,
                                        NULL };
 
 static const uint32_t default_frames_to_skip = 0;
@@ -200,6 +208,7 @@ static void parse_command_line(int argc, const char **argv_,
 #endif
   svc_ctx->speed = default_speed;
   svc_ctx->threads = default_threads;
+  svc_ctx->use_psnr = 0;
 
   // start with default encoder configuration
   res = vpx_codec_enc_config_default(vpx_codec_vp9_cx(), enc_cfg, 0);
@@ -315,7 +324,6 @@ static void parse_command_line(int argc, const char **argv_,
           break;
         default:
           die("Error: Invalid bit depth selected (%d)\n", enc_cfg->g_bit_depth);
-          break;
       }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     } else if (arg_match(&arg, &dropframe_thresh_arg, argi)) {
@@ -324,6 +332,8 @@ static void parse_command_line(int argc, const char **argv_,
       app_input->tune_content = arg_parse_uint(&arg);
     } else if (arg_match(&arg, &inter_layer_pred_arg, argi)) {
       app_input->inter_layer_pred = arg_parse_uint(&arg);
+    } else if (arg_match(&arg, &psnr_arg, argi)) {
+      svc_ctx->use_psnr = arg_parse_uint(&arg);
     } else {
       ++argj;
     }
@@ -776,8 +786,8 @@ static void svc_output_rc_stats(
   int count = 0;
   double sum_bitrate = 0.0;
   double sum_bitrate2 = 0.0;
-  vp9_zero(sizes);
-  vp9_zero(sizes_parsed);
+  memset(sizes, 0, sizeof(sizes));
+  memset(sizes_parsed, 0, sizeof(sizes_parsed));
   vpx_codec_control(codec, VP9E_GET_SVC_LAYER_ID, layer_id);
   parse_superframe_index(cx_pkt->data.frame.buf, cx_pkt->data.frame.sz,
                          sizes_parsed, &count);
@@ -880,7 +890,9 @@ int main(int argc, const char **argv) {
   int pts = 0;            /* PTS starts at 0 */
   int frame_duration = 1; /* 1 timebase tick per frame */
   int end_of_stream = 0;
+#if OUTPUT_FRAME_STATS
   int frames_received = 0;
+#endif
 #if OUTPUT_RC_STATS
   VpxVideoWriter *outfile[VPX_SS_MAX_LAYERS] = { NULL };
   struct RateControlStats rc;
@@ -1126,19 +1138,54 @@ int main(int argc, const char **argv) {
             }
 #endif
           }
-          /*
+#if OUTPUT_FRAME_STATS
           printf("SVC frame: %d, kf: %d, size: %d, pts: %d\n", frames_received,
                  !!(cx_pkt->data.frame.flags & VPX_FRAME_IS_KEY),
                  (int)cx_pkt->data.frame.sz, (int)cx_pkt->data.frame.pts);
-          */
-          if (enc_cfg.ss_number_layers == 1 && enc_cfg.ts_number_layers == 1)
-            si->bytes_sum[0] += (int)cx_pkt->data.frame.sz;
           ++frames_received;
+#endif
+          if (enc_cfg.ss_number_layers > 1) {
+            uint64_t sizes[8] = { 0 };
+            int count = 0;
+            int num_layers_encoded = 0;
+            parse_superframe_index(cx_pkt->data.frame.buf,
+                                   cx_pkt->data.frame.sz, sizes, &count);
+            for (sl = 0; sl < enc_cfg.ss_number_layers; ++sl) {
+              if (cx_pkt->data.frame.spatial_layer_encoded[sl]) {
+                si->bytes_sum[sl] += (int)sizes[num_layers_encoded];
+                num_layers_encoded++;
+              }
+            }
+          } else {
+            si->bytes_sum[0] += (int)cx_pkt->data.frame.sz;
+          }
 #if CONFIG_VP9_DECODER && !SIMULCAST_MODE
           if (vpx_codec_decode(&decoder, cx_pkt->data.frame.buf,
                                (unsigned int)cx_pkt->data.frame.sz, NULL, 0))
             die_codec(&decoder, "Failed to decode frame.");
+          vpx_codec_control(&encoder, VP9E_GET_SVC_LAYER_ID, &layer_id);
+          // Don't look for mismatch on top spatial and top temporal layers as
+          // they are non reference frames. Don't look at frames whose top
+          // spatial layer is dropped.
+          if ((enc_cfg.ss_number_layers > 1 || enc_cfg.ts_number_layers > 1) &&
+              cx_pkt->data.frame
+                  .spatial_layer_encoded[enc_cfg.ss_number_layers - 1] &&
+              !(layer_id.temporal_layer_id > 0 &&
+                layer_id.temporal_layer_id ==
+                    (int)enc_cfg.ts_number_layers - 1)) {
+            test_decode(&encoder, &decoder, frame_cnt, &mismatch_seen);
+          }
 #endif
+          break;
+        }
+        case VPX_CODEC_PSNR_PKT: {
+          SvcInternal_t *const si = (SvcInternal_t *)svc_ctx.internal;
+          sl = cx_pkt->data.psnr.spatial_layer_id;
+          si->number_of_frames[sl]++;
+          for (int j = 0; j < 4; ++j) {
+            si->psnr_sum[sl][j] += cx_pkt->data.psnr.psnr[j];
+            si->sse_sum[sl][j] += cx_pkt->data.psnr.sse[j];
+          }
           break;
         }
         case VPX_CODEC_STATS_PKT: {
@@ -1146,21 +1193,10 @@ int main(int argc, const char **argv) {
                       cx_pkt->data.twopass_stats.sz);
           break;
         }
-        default: { break; }
+        default: {
+          break;
+        }
       }
-
-#if CONFIG_VP9_DECODER && !SIMULCAST_MODE
-      vpx_codec_control(&encoder, VP9E_GET_SVC_LAYER_ID, &layer_id);
-      // Don't look for mismatch on top spatial and top temporal layers as they
-      // are non reference frames.
-      if ((enc_cfg.ss_number_layers > 1 || enc_cfg.ts_number_layers > 1) &&
-          !(layer_id.temporal_layer_id > 0 &&
-            layer_id.temporal_layer_id == (int)enc_cfg.ts_number_layers - 1 &&
-            cx_pkt->data.frame
-                .spatial_layer_encoded[enc_cfg.ss_number_layers - 1])) {
-        test_decode(&encoder, &decoder, frame_cnt, &mismatch_seen);
-      }
-#endif
     }
 
     if (!end_of_stream) {
