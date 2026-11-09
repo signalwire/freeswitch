@@ -25,7 +25,7 @@ on:
         description: 'Container image to use for running tests'
         required: false
         type: string
-        default: 'signalwire/freeswitch-public-ci-base:bookworm-amd64'
+        default: 'signalwire/freeswitch-public-ci-base:trixie-amd64'
       working-directory:
         description: 'Working directory for running tests'
         required: false

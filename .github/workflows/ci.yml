@@ -27,7 +27,7 @@ on:
         default: false
 
 env:
-  CI_BASE_STATIC_IMAGE: signalwire/freeswitch-public-ci-base:bookworm-amd64
+  CI_BASE_STATIC_IMAGE: signalwire/freeswitch-public-ci-base:trixie-amd64
   DOCKER_BUILD_SUMMARY: false
   DOCKER_BUILD_CHECKS_ANNOTATIONS: false
   DOCKER_BUILD_RECORD_UPLOAD: false

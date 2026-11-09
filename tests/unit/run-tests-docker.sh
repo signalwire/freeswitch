@@ -92,7 +92,7 @@ if ! docker build \
 	--build-arg BUILDER_IMAGE="$BASE_IMAGE" \
 	--build-context sofia-sip="$SOFIA_SIP_PATH" \
 	--build-context freeswitch="$FREESWITCH_PATH" \
-	--file "$FREESWITCH_PATH/.github/docker/debian/bookworm/amd64/CI/Dockerfile" \
+	--file "$FREESWITCH_PATH/.github/docker/debian/trixie/amd64/CI/Dockerfile" \
 	--tag "$IMAGE_TAG" \
 	"$FREESWITCH_PATH/.github/docker/debian" > "$BUILD_LOG" 2>&1; then
 	echo "Docker build failed! Build log:"

@@ -1,4 +1,4 @@
-ARG BUILDER_IMAGE=signalwire/freeswitch-public-ci-base:bookworm-amd64
+ARG BUILDER_IMAGE=signalwire/freeswitch-public-ci-base:trixie-amd64
 
 FROM ${BUILDER_IMAGE}
 
