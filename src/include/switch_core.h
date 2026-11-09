@@ -2625,27 +2625,16 @@ typedef struct switch_cache_db_handle switch_cache_db_handle_t;
 
 static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
 {
-	const char *type_str = "INVALID";
-
 	switch (type) {
 	case SCDB_TYPE_DATABASE_INTERFACE:
-		{
-			type_str = "DATABASE_INTERFACE";
-		}
-		break;
+		return "DATABASE_INTERFACE";
 	case SCDB_TYPE_ODBC:
-		{
-			type_str = "ODBC";
-		}
-		break;
+		return "ODBC";
 	case SCDB_TYPE_CORE_DB:
-		{
-			type_str = "CORE_DB";
-		}
-		break;
+		return "CORE_DB";
+	default:
+		return "INVALID";
 	}
-
-	return type_str;
 }
 
 SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_cache_db_get_type(switch_cache_db_handle_t *dbh);
