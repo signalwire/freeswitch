@@ -421,6 +421,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	const char *ps_cause = NULL, *use_my_cause;
 	const char *gateway_name = NULL;
 	sofia_gateway_t *gateway_ptr = NULL;
+	int uuid_cleared = 0;
 
 	if ((gateway_name = switch_channel_get_variable(channel, "sip_gateway_name"))) {
 		gateway_ptr = sofia_reg_find_gateway(gateway_name);
@@ -559,12 +560,51 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					switch_channel_set_variable(channel, "sip_invite_failure_phrase", "CANCEL");
 				}
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-					nua_cancel(tech_pvt->nh,
-							   SIPTAG_CONTACT(SIP_NONE),
-							   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
-							   TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
-							   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
-							   TAG_END());
+					/* Detach before nua_cancel so every reply to this CANCEL, and a 2xx that crosses it,
+					 * reaches the session-less teardown instead of being dropped. sofia_private lives in
+					 * the handle's home: hold a ref across the CANCEL, and touch sofia_private only while
+					 * it is held. A session-less 180/183/200 that a msg worker handles between the detach
+					 * and nua_cancel (the gap) would destroy the handle first: the stack would then send
+					 * its own CANCEL without our headers and ours would reach a destroyed handle. In the
+					 * gap that worker only sets destroy_after_cancel (sofia_handle_sip_r_invite), and we
+					 * destroy right after our CANCEL. profile->flag_mutex orders the handover. */
+					/* tech_pvt->nh is non-NULL here (the enclosing "else if (tech_pvt->nh ...)" branch); nua_handle_ref does not check for NULL. */
+					nua_handle_t *cancel_nh = nua_handle_ref(tech_pvt->nh);
+					sofia_private_t *cancel_pvt = tech_pvt->sofia_private;
+					sofia_cancel_gap_hook_t *gap_hook = switch_channel_get_private(channel, SOFIA_CANCEL_GAP_HOOK_PRIVATE);
+					int destroy_nh = 0;
+
+					if (cancel_nh) {
+						if (cancel_pvt) {
+							switch_mutex_lock(tech_pvt->profile->flag_mutex);
+							cancel_pvt->cancel_gap = 1;
+							cancel_pvt->uuid = NULL;
+							switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+							uuid_cleared = 1;
+							if (gap_hook && gap_hook->func) {
+								gap_hook->func(session, tech_pvt->profile, cancel_pvt, gap_hook->user_data);
+							}
+						}
+						nua_cancel(cancel_nh,
+								   SIPTAG_CONTACT(SIP_NONE),
+								   TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
+								   TAG_IF(!zstr(reason), SIPTAG_REASON_STR(reason)), TAG_IF(!zstr(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
+								   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+								   TAG_END());
+						if (cancel_pvt) {
+							switch_mutex_lock(tech_pvt->profile->flag_mutex);
+							cancel_pvt->cancel_gap = 0;
+							destroy_nh = cancel_pvt->destroy_after_cancel;
+							switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+						}
+						if (destroy_nh) {
+							/* what the msg worker would have done, now queued behind our CANCEL */
+							nua_handle_bind(cancel_nh, NULL);
+							nua_handle_destroy(cancel_nh);
+						}
+						/* not a stack thread: release through the stack, as sofia.c does for dispatch events */
+						nua_handle_unref_user(cancel_nh);
+					}
 				}
 			} else {
 				char *resp_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_RESPONSE_HEADER_PREFIX);
@@ -679,7 +719,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	sofia_clear_flag(tech_pvt, TFLAG_IO);
 
-	if (tech_pvt->sofia_private) {
+	if (tech_pvt->sofia_private && !uuid_cleared) {
 		/* set to NULL so that switch_core_session_locate no longer succeeds, but don't lose the UUID in uuid_str so we
 		 * can fire events with session UUID */
 		tech_pvt->sofia_private->uuid = NULL;

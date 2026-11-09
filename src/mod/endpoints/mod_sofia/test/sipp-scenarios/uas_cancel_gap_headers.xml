@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+
+<!--
+  UAS for sipp-based-tests.c cancel_gap_keeps_headers.
+  We ring, and 2 s later send a 183. By then the test has hung up the leg and holds
+  sofia_on_hangup between the uuid detach and nua_cancel, so FreeSWITCH handles the 183
+  without a session inside that gap. The CANCEL that follows must still be the one
+  sofia_on_hangup builds: it must carry the X-Cancel-Test header (sip_bye_h_X-Cancel-Test)
+  and the Reason header. A stack-generated CANCEL from an early nua_handle_destroy has
+  neither, and the ereg check_it fails the call.
+-->
+
+<scenario name="UAS CANCEL gap keeps headers">
+
+  <recv request="INVITE">
+    <action>
+      <ereg regexp="([0-9]+) INVITE" search_in="hdr" header="CSeq:" check_it="true" assign_to="inv_cseq_hdr,inv_cseq" />
+    </action>
+  </recv>
+
+  <send>
+    <![CDATA[
+
+      SIP/2.0 180 Ringing
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Contact: <sip:[local_ip]:[local_port];transport=[transport]>
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <pause milliseconds="2000" />
+
+  <send>
+    <![CDATA[
+
+      SIP/2.0 183 Session Progress
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Contact: <sip:[local_ip]:[local_port];transport=[transport]>
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <recv request="CANCEL" timeout="10000">
+    <action>
+      <ereg regexp="cancel-gap" search_in="hdr" header="X-Cancel-Test:" check_it="true" assign_to="x_cancel_test" />
+      <ereg regexp="cause=487" search_in="hdr" header="Reason:" check_it="true" assign_to="cancel_reason" />
+    </action>
+  </recv>
+
+  <send>
+    <![CDATA[
+
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <send>
+    <![CDATA[
+
+      SIP/2.0 487 Request Terminated
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      CSeq: [$inv_cseq] INVITE
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <recv request="ACK" timeout="5000" />
+
+  <!-- set only to check or capture: tell sipp they are deliberately not used again -->
+  <Reference variables="inv_cseq_hdr,x_cancel_test,cancel_reason" />
+
+  <ResponseTimeRepartition value="10, 20, 30, 40, 50, 100, 150, 200"/>
+  <CallLengthRepartition value="10, 50, 100, 500, 1000, 5000, 10000"/>
+</scenario>

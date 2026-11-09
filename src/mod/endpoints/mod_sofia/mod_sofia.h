@@ -188,6 +188,11 @@ struct sofia_private {
 	int is_static;
 	switch_time_t ping_sent;
 	char *rfc7989_uuid;
+	/* sofia_on_hangup's CANCEL branch: set from the uuid detach until nua_cancel has been
+	 * queued; a session-less 180/183/200 in that gap sets destroy_after_cancel instead of
+	 * destroying the handle. Both under profile->flag_mutex. */
+	int cancel_gap;
+	int destroy_after_cancel;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
@@ -1092,6 +1097,15 @@ uint8_t sofia_reg_handle_register_token(nua_t *nua, sofia_profile_t *profile, nu
 								  uint32_t keylen, switch_event_t **v_event, const char *is_nat, sofia_private_t **sofia_private_p, switch_xml_t *user_xml, const char *sw_acl_token);
 #define sofia_reg_handle_register(_nua_, _profile_, _nh_, _sip_, _de_, _regtype_, _key_, _keylen_, _v_event_, _is_nat_, _sofia_private_p_, _user_xml_) sofia_reg_handle_register_token(_nua_, _profile_, _nh_, _sip_, _de_, _regtype_, _key_, _keylen_, _v_event_, _is_nat_, _sofia_private_p_, _user_xml_, NULL)
 extern switch_endpoint_interface_t *sofia_endpoint_interface;
+/* Test seam for test/sipp-based-tests.c: if a channel private of this name holds a
+ * sofia_cancel_gap_hook_t, sofia_on_hangup calls it in the CANCEL branch between the uuid
+ * detach and nua_cancel, so a test can hold that gap open. A channel private (not a global)
+ * because the test binary and the loaded module may each carry their own copy of the code. */
+#define SOFIA_CANCEL_GAP_HOOK_PRIVATE "__sofia_cancel_gap_hook"
+typedef struct sofia_cancel_gap_hook_s {
+	void (*func)(switch_core_session_t *session, sofia_profile_t *profile, sofia_private_t *sofia_private, void *user_data);
+	void *user_data;
+} sofia_cancel_gap_hook_t;
 void sofia_presence_set_chat_hash(private_object_t *tech_pvt, sip_t const *sip);
 switch_status_t sofia_on_hangup(switch_core_session_t *session);
 char *sofia_glue_get_url_from_contact(char *buf, uint8_t to_dup);

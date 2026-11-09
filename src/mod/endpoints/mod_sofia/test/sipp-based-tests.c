@@ -33,6 +33,7 @@
 #include <switch.h>
 #include <test/switch_test.h>
 #include <stdlib.h>
+#include "../mod_sofia.h"
 
 int test_success = 0;
 int test_sofia_debug = 1;
@@ -167,6 +168,130 @@ static void kill_sipp(void)
 	switch_sleep(1000 * 1000);
 }
 
+typedef struct {
+	char *cmd;
+	int status;
+} sipp_job_t;
+
+static void *SWITCH_THREAD_FUNC sipp_job_run(switch_thread_t *thread, void *obj)
+{
+	sipp_job_t *job = (sipp_job_t *) obj;
+
+	job->status = switch_system(job->cmd, SWITCH_TRUE);
+
+	return NULL;
+}
+
+static switch_bool_t sipp_available(void)
+{
+	return switch_system("command -v sipp > /dev/null 2>&1", SWITCH_TRUE) == 0 ? SWITCH_TRUE : SWITCH_FALSE;
+}
+
+/* Run a sipp UAS in the foreground on its own thread, so the test can collect its exit status:
+ * 0 only if the scenario ran to the end (every recv matched, every check_it passed). */
+static switch_thread_t *start_sipp_uas_fg(switch_memory_pool_t *pool, sipp_job_t *job, const char *ip, int listen_port, const char *scenario_uas)
+{
+	switch_thread_t *thread = NULL;
+	switch_threadattr_t *thd_attr = NULL;
+
+	job->cmd = switch_core_sprintf(pool, "sipp %s -p %d -nr -m 1 -s 1001 -recv_timeout 10000 -timeout 20s -sf %s -nostdin -trace_err > /dev/null 2>&1",
+								   ip, listen_port, scenario_uas);
+	job->status = -1;
+	printf("%s\n", job->cmd);
+
+	switch_threadattr_create(&thd_attr, pool);
+	switch_thread_create(&thread, thd_attr, sipp_job_run, job, pool);
+	switch_sleep(1000 * 1000);
+
+	return thread;
+}
+
+static int wait_sipp_uas_fg(switch_thread_t *thread, sipp_job_t *job)
+{
+	switch_status_t st;
+
+	switch_thread_join(&st, thread);
+
+	return job->status;
+}
+
+/* originate an outbound sofia leg to sipp in the background, with a known uuid */
+static void originate_to_sipp_bg(const char *uuid, const char *vars, const char *ip, int port)
+{
+	switch_stream_handle_t stream = { 0 };
+	char *args = switch_mprintf("originate {origination_uuid=%s,originate_timeout=20%s%s}sofia/external/sipp@%s:%d &park",
+								uuid, zstr(vars) ? "" : ",", zstr(vars) ? "" : vars, ip, port);
+
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute("bgapi", args, NULL, &stream);
+	switch_safe_free(stream.data);
+	switch_safe_free(args);
+}
+
+/* wait for the leg to get the 180; returns it read-locked, or NULL */
+static switch_core_session_t *wait_for_ringing_session(const char *uuid)
+{
+	int loop_count = 100;
+
+	do {
+		switch_core_session_t *session = switch_core_session_locate(uuid);
+
+		if (session) {
+			if (switch_channel_test_flag(switch_core_session_get_channel(session), CF_RING_READY)) {
+				return session;
+			}
+			switch_core_session_rwunlock(session);
+		}
+		switch_sleep(100 * 1000);
+	} while (loop_count--);
+
+	return NULL;
+}
+
+static switch_bool_t wait_for_session_gone(const char *uuid)
+{
+	int loop_count = 100;
+
+	do {
+		switch_core_session_t *session = switch_core_session_locate(uuid);
+
+		if (!session) {
+			return SWITCH_TRUE;
+		}
+		switch_core_session_rwunlock(session);
+		switch_sleep(100 * 1000);
+	} while (loop_count--);
+
+	return SWITCH_FALSE;
+}
+
+typedef struct {
+	int called;
+	int deferred;
+} cancel_gap_probe_t;
+
+/* sofia_cancel_gap_hook_t: runs in sofia_on_hangup between the uuid detach and nua_cancel.
+ * Keep the gap open until a session-less 1xx/2xx has been handled in it (the worker then sets
+ * destroy_after_cancel instead of destroying the handle), or give up after 8 s. */
+static void cancel_gap_wait(switch_core_session_t *session, sofia_profile_t *profile, sofia_private_t *sofia_private, void *user_data)
+{
+	cancel_gap_probe_t *probe = (cancel_gap_probe_t *) user_data;
+	int loop_count = 80;
+
+	probe->called = 1;
+
+	do {
+		switch_mutex_lock(profile->flag_mutex);
+		probe->deferred = sofia_private->destroy_after_cancel;
+		switch_mutex_unlock(profile->flag_mutex);
+
+		if (probe->deferred) {
+			break;
+		}
+		switch_sleep(100 * 1000);
+	} while (loop_count--);
+}
+
 static void show_event(switch_event_t *event) {
 	char *str;
 	/*print the event*/
@@ -177,7 +302,7 @@ static void show_event(switch_event_t *event) {
 	}
 }
 
-static void event_handler(switch_event_t *event) 
+static void event_handler_digest(switch_event_t *event) 
 {
 	const char *new_ev = switch_event_get_header(event, "Event-Subclass");
 
@@ -373,7 +498,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
 			int sipp_ret;
 
-			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
+			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_digest, NULL);
 
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1001", "sipp-scenarios/uac_digest_leak.xml", "");
@@ -404,7 +529,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 					switch_core_session_rwunlock(session);
 					switch_sleep(1000 * 1000);
 
-					switch_event_unbind_callback(event_handler);
+					switch_event_unbind_callback(event_handler_digest);
 					/* sipp should timeout, attempt kill, just in case.*/
 					kill_sipp();
 					fst_check(test_success);
@@ -424,7 +549,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
 			int sipp_ret;
 
-			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
+			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_digest, NULL);
 
 			status = switch_ivr_originate(NULL, &session, &cause, "loopback/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			sipp_ret = start_sipp_uac(local_ip_v4, 5080, "1001", "sipp-scenarios/uac_digest_leak-tcp.xml", "-t t1");
@@ -455,7 +580,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 				switch_core_session_rwunlock(session);
 				switch_sleep(1000 * 1000);
 
-				switch_event_unbind_callback(event_handler);
+				switch_event_unbind_callback(event_handler_digest);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 				fst_check(test_success);
@@ -478,7 +603,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 			if (!has_ipv6()) {
 				goto skiptest;
 			}
-			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler, NULL);
+			switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_digest, NULL);
 
 			if (!strchr(local_ip_v6,'[')) {
 				ipv6 = switch_mprintf("[%s]", local_ip_v6);
@@ -518,7 +643,7 @@ FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
 				switch_core_session_rwunlock(session);
 				switch_sleep(1000 * 1000);
 
-				switch_event_unbind_callback(event_handler);
+				switch_event_unbind_callback(event_handler_digest);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 				switch_safe_free(ipv6);
@@ -694,6 +819,101 @@ skiptest:
 
 				switch_safe_free(to);
 				/* sipp should timeout, attempt kill, just in case.*/
+				kill_sipp();
+			}
+		}
+		FST_TEST_END()
+
+
+		/* FreeSWITCH CANCELs an unanswered outbound leg and the callee's 200 OK crosses that CANCEL.
+		 * The 2xx must be ACKed and BYEd (RFC 5407 3.1.2), or the callee is left on a dead dialog.
+		 * We hold tech_pvt->flag_mutex across the hangup: sofia_on_hangup takes it right after its
+		 * CANCEL branch (sofia_set_flag_locked TFLAG_BYE), so the 200 and the reply to the CANCEL
+		 * arrive while sofia_on_hangup is still running. Before the uuid was detached ahead of
+		 * nua_cancel, that is the window where the 200 found the session already hung up and was
+		 * dropped. */
+		FST_TEST_BEGIN(cancel_crossing_200)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			const int sipp_port = 6084;
+			char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
+			sipp_job_t *job = switch_core_alloc(fst_pool, sizeof(*job));
+			switch_thread_t *sipp_thread;
+			switch_core_session_t *session;
+
+			if (!sipp_available()) {
+				fst_check(!"sipp not found");
+			} else {
+				switch_uuid_str(uuid, sizeof(uuid));
+				sipp_thread = start_sipp_uas_fg(fst_pool, job, local_ip_v4, sipp_port, "sipp-scenarios/uas_cancel_crossing_200.xml");
+				originate_to_sipp_bg(uuid, NULL, local_ip_v4, sipp_port);
+
+				session = wait_for_ringing_session(uuid);
+				fst_xcheck(session != NULL, "Expect the outbound leg to ring");
+
+				if (session) {
+					switch_channel_t *channel = switch_core_session_get_channel(session);
+					private_object_t *tech_pvt = switch_core_session_get_private(session);
+
+					switch_mutex_lock(tech_pvt->flag_mutex);
+					switch_channel_hangup(channel, SWITCH_CAUSE_LOSE_RACE);
+					/* CANCEL out, sipp answers it with 200 OK to the CANCEL and then 200 OK to the INVITE */
+					switch_sleep(2000 * 1000);
+					switch_mutex_unlock(tech_pvt->flag_mutex);
+					switch_core_session_rwunlock(session);
+				}
+
+				/* sipp exits 0 only if it got the ACK for its 200 and then a BYE */
+				fst_xcheck(wait_sipp_uas_fg(sipp_thread, job) == 0, "Expect the crossing 200 OK to be ACKed and BYEd");
+				fst_xcheck(wait_for_session_gone(uuid), "Expect the leg to be destroyed");
+				kill_sipp();
+			}
+		}
+		FST_TEST_END()
+
+		/* sofia_on_hangup detaches the uuid before nua_cancel. A session-less 180/183/200 handled in
+		 * that gap must not destroy the handle before our CANCEL is queued, or the stack sends its
+		 * own CANCEL without our headers. The gap hook holds sofia_on_hangup in the gap until sipp's
+		 * 183 has been handled there; sipp then checks that the CANCEL still carries the
+		 * sip_bye_h_ header and the Reason header. */
+		FST_TEST_BEGIN(cancel_gap_keeps_headers)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			const int sipp_port = 6086;
+			char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1] = "";
+			sipp_job_t *job = switch_core_alloc(fst_pool, sizeof(*job));
+			cancel_gap_probe_t *probe = switch_core_alloc(fst_pool, sizeof(*probe));
+			sofia_cancel_gap_hook_t *hook = switch_core_alloc(fst_pool, sizeof(*hook));
+			switch_thread_t *sipp_thread;
+			switch_core_session_t *session;
+
+			hook->func = cancel_gap_wait;
+			hook->user_data = probe;
+
+			if (!sipp_available()) {
+				fst_check(!"sipp not found");
+			} else {
+				switch_uuid_str(uuid, sizeof(uuid));
+				sipp_thread = start_sipp_uas_fg(fst_pool, job, local_ip_v4, sipp_port, "sipp-scenarios/uas_cancel_gap_headers.xml");
+				originate_to_sipp_bg(uuid, "sip_bye_h_X-Cancel-Test=cancel-gap", local_ip_v4, sipp_port);
+
+				session = wait_for_ringing_session(uuid);
+				fst_xcheck(session != NULL, "Expect the outbound leg to ring");
+
+				if (session) {
+					switch_channel_t *channel = switch_core_session_get_channel(session);
+
+					switch_channel_set_private(channel, SOFIA_CANCEL_GAP_HOOK_PRIVATE, hook);
+					/* Reason: SIP;cause=487;text="ORIGINATOR_CANCEL" */
+					switch_channel_hangup(channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+					switch_core_session_rwunlock(session);
+				}
+
+				/* sipp exits 0 only if the CANCEL carried both headers and the 487 was ACKed */
+				fst_xcheck(wait_sipp_uas_fg(sipp_thread, job) == 0, "Expect the CANCEL to keep its headers");
+				fst_xcheck(wait_for_session_gone(uuid), "Expect the leg to be destroyed");
+				fst_xcheck(probe->called, "Expect sofia_on_hangup to reach the CANCEL gap");
+				fst_xcheck(probe->deferred, "Expect the 183 to be handled inside the gap (destroy deferred)");
 				kill_sipp();
 			}
 		}

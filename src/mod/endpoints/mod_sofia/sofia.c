@@ -7263,9 +7263,24 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 	}
 
 	if (!session && (status == 180 || status == 183 || status == 200)) {
-		/* nevermind */
-		nua_handle_bind(nh, NULL);
-		nua_handle_destroy(nh);
+		int defer = 0;
+
+		/* sofia_on_hangup is between detaching this leg and its nua_cancel: it destroys the
+		 * handle right after the CANCEL, so the CANCEL keeps its headers and goes out first. */
+		if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
+			switch_mutex_lock(profile->flag_mutex);
+			if (sofia_private->cancel_gap) {
+				sofia_private->destroy_after_cancel = 1;
+				defer = 1;
+			}
+			switch_mutex_unlock(profile->flag_mutex);
+		}
+
+		if (!defer) {
+			/* nevermind */
+			nua_handle_bind(nh, NULL);
+			nua_handle_destroy(nh);
+		}
 	}
 }
 
