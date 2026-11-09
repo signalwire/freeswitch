@@ -107,11 +107,27 @@ public class EventConsumer {
   }
 
   public EventConsumer(String event_name, String subclass_name, int len) {
-    this(freeswitchJNI.new_EventConsumer(event_name, subclass_name, len), true);
+    this(freeswitchJNI.new_EventConsumer__SWIG_0(event_name, subclass_name, len), true);
+  }
+
+  public EventConsumer(String event_name, String subclass_name) {
+    this(freeswitchJNI.new_EventConsumer__SWIG_1(event_name, subclass_name), true);
+  }
+
+  public EventConsumer(String event_name) {
+    this(freeswitchJNI.new_EventConsumer__SWIG_2(event_name), true);
+  }
+
+  public EventConsumer() {
+    this(freeswitchJNI.new_EventConsumer__SWIG_3(), true);
   }
 
   public int bind(String event_name, String subclass_name) {
-    return freeswitchJNI.EventConsumer_bind(swigCPtr, this, event_name, subclass_name);
+    return freeswitchJNI.EventConsumer_bind__SWIG_0(swigCPtr, this, event_name, subclass_name);
+  }
+
+  public int bind(String event_name) {
+    return freeswitchJNI.EventConsumer_bind__SWIG_1(swigCPtr, this, event_name);
   }
 
   public Event pop(int block, int timeout) {
