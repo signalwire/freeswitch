@@ -2511,7 +2511,8 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_UNHOLD:
 	case SWITCH_EVENT_CHANNEL_EXECUTE: {
 
-		new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
+		if (!runtime.ignore_application_channel_update) {
+			new_sql() = switch_mprintf("update channels set application='%q',application_data='%q',"
 								   "presence_id='%q',presence_data='%q',accountcode='%q' where uuid='%q'",
 								   switch_event_get_header_nil(event, "application"),
 								   switch_event_get_header_nil(event, "application-data"),
@@ -2520,7 +2521,7 @@ static void core_event_handler(switch_event_t *event)
 								   switch_event_get_header_nil(event, "variable_accountcode"),
 								   switch_event_get_header_nil(event, "unique-id")
 								   );
-
+			}
 	}
 		break;
 
