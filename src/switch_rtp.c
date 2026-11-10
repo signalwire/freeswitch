@@ -3393,6 +3393,29 @@ static int dtls_state_ready(switch_rtp_t *rtp_session, switch_dtls_t *dtls)
 		}
 		dtls->new_state = 0;
 	}
+
+	if (dtls->bytes > 0) {
+		/**
+		* We send the last flight in an ordinary handshake. If it was lost, the peer retransmits
+		* its last flight and we MUST retransmit ours (RFC 6347 section 4.2.4); otherwise the
+		* peer never completes the handshake and the call has no media. OpenSSL does this
+		* retransmission while processing the record in SSL_read(); do_dtls() then sends it.
+		**/
+		unsigned char buf[MAX_DTLS_MTU];
+		int ret;
+
+		ERR_clear_error();
+		ret = SSL_read(dtls->ssl, buf, sizeof(buf));
+
+		if (ret <= 0) {
+			int err = SSL_get_error(dtls->ssl, ret);
+
+			if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_ZERO_RETURN) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_WARNING, "%s DTLS read after handshake failed: SSL err %d\n", rtp_type(rtp_session), err);
+			}
+		}
+	}
+
 	return 0;
 }
 
