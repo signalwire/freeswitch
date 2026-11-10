@@ -4316,6 +4316,32 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 }
 
 
+typedef struct {
+    switch_mutex_t *outgoing_mutex;
+} mod_dptools_session_t;
+
+
+static mod_dptools_session_t *user_outgoing_get_session_data(switch_core_session_t *session)
+{
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    mod_dptools_session_t *sdata = NULL;
+
+    if (!channel) {
+        return NULL;
+    }
+
+    sdata = (mod_dptools_session_t *) switch_channel_get_private(channel, "mod_dptools.session");
+
+    if (!sdata) {
+        /* allocate in session pool so it's auto-freed */
+        sdata = (mod_dptools_session_t *) switch_core_session_alloc(session, sizeof(*sdata));
+        sdata->outgoing_mutex = NULL;
+        switch_mutex_init(&sdata->outgoing_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+        switch_channel_set_private(channel, "mod_dptools.session", sdata);
+    }
+
+    return sdata;
+}
 
 /* fake chan_user */
 switch_endpoint_interface_t *user_endpoint_interface;
@@ -4425,6 +4451,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		switch_originate_flag_t myflags = SOF_NONE;
 		char *cid_name_override = NULL;
 		char *cid_num_override = NULL;
+		mod_dptools_session_t *sdata = NULL;
 
 		if (var_event) {
 			cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
@@ -4433,6 +4460,13 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 		if (session) {
 			channel = switch_core_session_get_channel(session);
+			sdata = user_outgoing_get_session_data(session);
+
+			if (sdata && sdata->outgoing_mutex) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "User/%s@%s locking outgoing mutex\n", dialed_user, domain);
+				switch_mutex_lock(sdata->outgoing_mutex);
+			}
+
 			if ((varval = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))
 				|| (var_event && (varval = switch_event_get_header(var_event, "leg_timeout")))) {
 				timelimit = atoi(varval);
@@ -4442,6 +4476,12 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			switch_channel_set_variable(channel, "dialed_domain", domain);
 
 			d_dest = switch_channel_expand_variables(channel, dest);
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "User/%s@%s d_dest: %s\n", dialed_user, domain, d_dest);
+			if (sdata && sdata->outgoing_mutex) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "User/%s@%s unlocking outgoing mutex\n", dialed_user, domain);
+				switch_mutex_unlock(sdata->outgoing_mutex);
+			}
+
 
 		} else {
 			switch_event_t *event = NULL;
