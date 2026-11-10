@@ -198,6 +198,7 @@ struct switch_rtp_engine_s {
 	uint8_t reject_avp;
 	int t140_pt;
 	int red_pt;
+	int red_generations;
 	switch_rtp_text_factory_t *tf;
 
 	switch_engine_function_t engine_function;
@@ -4742,6 +4743,11 @@ SWITCH_DECLARE(void) switch_core_media_set_smode(switch_core_session_t *session,
 
 			if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
 				switch_core_media_set_smode(other_session, type, opp_smode, SDP_OFFER);
+
+				if (type == SWITCH_MEDIA_TYPE_TEXT) {
+					/* the partner has no text m-line yet so its re-offer would not carry one */
+					switch_channel_set_flag(other_session->channel, CF_WANT_RTT);
+				}
 				switch_channel_set_flag(session->channel, CF_STREAM_CHANGED);
 				switch_core_session_rwunlock(other_session);
 			}
@@ -5897,6 +5903,25 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 			sdp_rtpmap_t *map;
 			payload_map_t *red_pmap = NULL;
 
+			switch_core_media_set_rmode(smh->session, SWITCH_MEDIA_TYPE_TEXT, sdp_media_flow(m->m_mode), sdp_type);
+
+			if (sdp_type == SDP_OFFER) {
+				switch(t_engine->rmode) {
+				case SWITCH_MEDIA_FLOW_RECVONLY:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_SENDONLY, sdp_type);
+					break;
+				case SWITCH_MEDIA_FLOW_SENDONLY:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_RECVONLY, sdp_type);
+					break;
+				case SWITCH_MEDIA_FLOW_INACTIVE:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_INACTIVE, sdp_type);
+					break;
+				default:
+					switch_core_media_set_smode(smh->session, SWITCH_MEDIA_TYPE_TEXT, SWITCH_MEDIA_FLOW_SENDRECV, sdp_type);
+					break;
+				}
+			}
+
 			switch_channel_set_flag(session->channel, CF_RTT);
 
 			connection = sdp->sdp_connection;
@@ -5948,6 +5973,20 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 			if (red_pmap) {
 				t_engine->cur_payload_map = red_pmap;
+			}
+
+			/* red fmtp lists one payload type per generation: "96/96/96" is two redundant plus the primary */
+			if (red_pmap && !zstr(red_pmap->rm_fmtp)) {
+				const char *fp = red_pmap->rm_fmtp;
+				int generations = 1;
+
+				while (*fp) {
+					if (*fp++ == '/') generations++;
+				}
+
+				if (generations > 1 && generations <= MAX_RED_FRAMES) {
+					t_engine->red_generations = generations;
+				}
 			}
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {
@@ -8665,6 +8704,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 							  switch_channel_get_name(session->channel));
 			a_engine->cur_payload_map->negotiated = 1;
 			//XX
+			if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && !switch_rtp_ready(t_engine->rtp_session)) {
+				goto text;
+			}
+
 			goto video;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Audio params changed for %s from %s:%d to %s:%d\n",
@@ -8726,6 +8769,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 		if (session && a_engine) {
 			check_dtls_reinvite(session, a_engine);
+		}
+
+		if (switch_channel_test_flag(session->channel, CF_TEXT_POSSIBLE) && !switch_rtp_ready(t_engine->rtp_session)) {
+			goto text;
 		}
 
 		goto video;
@@ -9197,6 +9244,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_activate_rtp(switch_core_sessi
 
 				if (!t_engine->tf) {
 					switch_rtp_text_factory_create(&t_engine->tf, switch_core_session_get_pool(session));
+
+					/* only lower it, the factory allocated red_max buffers */
+					if (t_engine->tf && t_engine->red_generations > 0 && t_engine->red_generations < t_engine->tf->red_max) {
+						t_engine->tf->red_max = t_engine->red_generations;
+					}
 				}
 
 				switch_rtp_set_video_buffer_size(t_engine->rtp_session, 2, 2048);
