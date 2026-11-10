@@ -253,7 +253,6 @@ static void url_cache_clear(url_cache_t *cache, switch_core_session_t *session);
 static http_profile_t *url_cache_http_profile_find(url_cache_t *cache, const char *name);
 static http_profile_t *url_cache_http_profile_find_by_fqdn(url_cache_t *cache, const char *url);
 
-
 /**
  * Parse FQDN from URL
  */
@@ -1675,7 +1674,7 @@ static switch_status_t do_config(url_cache_t *cache)
 				switch_xml_t profile_xml;
 				switch_xml_t domains;
 
-				switch_strdup(profile_obj->name, name);
+				profile_obj->name = switch_core_strdup(cache->pool, name);
 				profile_obj->aws_s3_access_key_id = NULL;
 				profile_obj->secret_access_key = NULL;
 				profile_obj->base_domain = NULL;
@@ -1688,13 +1687,13 @@ static switch_status_t do_config(url_cache_t *cache)
 
 				profile_xml = switch_xml_child(profile, "aws-s3");
 				if (profile_xml) {
-					if (aws_s3_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
+					if (aws_s3_config_profile(profile_xml, profile_obj, cache->pool) == SWITCH_STATUS_FALSE) {
 						continue;
 					}
 				} else {
 					profile_xml = switch_xml_child(profile, "azure-blob");
 					if (profile_xml) {
-						if (azure_blob_config_profile(profile_xml, profile_obj) == SWITCH_STATUS_FALSE) {
+						if (azure_blob_config_profile(profile_xml, profile_obj, cache->pool) == SWITCH_STATUS_FALSE) {
 							continue;
 						}
 					} else {

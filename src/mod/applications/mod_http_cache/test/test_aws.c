@@ -35,7 +35,7 @@
 // Run test
 // make && libtool --mode=execute valgrind --leak-check=full  --log-file=vg.log ./test/test_aws && cat vg.log
 
-FST_BEGIN()
+FST_MINCORE_BEGIN("conf")
 {
 
 FST_SUITE_BEGIN(aws)
@@ -312,17 +312,13 @@ FST_TEST_BEGIN(parse_xml_config_with_aws)
 		aws_s3_profile = switch_xml_child(profile, "aws-s3");
 		fst_check(aws_s3_profile);
 
-		fst_check(aws_s3_config_profile(aws_s3_profile, &http_profile) == SWITCH_STATUS_SUCCESS);
+		fst_check(aws_s3_config_profile(aws_s3_profile, &http_profile, fst_pool) == SWITCH_STATUS_SUCCESS);
 
 		fst_check(!zstr(http_profile.region));
 		fst_check(!zstr(http_profile.aws_s3_access_key_id));
 		fst_check(!zstr(http_profile.secret_access_key));
 		printf("base domain: %s\n", http_profile.base_domain);
 		fst_check(!zstr(http_profile.base_domain));
-		switch_safe_free(http_profile.region);
-		switch_safe_free(http_profile.aws_s3_access_key_id);
-		switch_safe_free(http_profile.secret_access_key);
-		switch_safe_free(http_profile.base_domain);
 	}
 
 	fst_check(i == 2);      // test data contain two config
@@ -336,4 +332,4 @@ FST_TEST_END()
 FST_SUITE_END()
 
 }
-FST_END()
+FST_MINCORE_END()
