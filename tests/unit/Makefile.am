@@ -10,6 +10,8 @@ noinst_PROGRAMS += switch_core_media
 noinst_PROGRAMS += test_mod_verto
 noinst_PROGRAMS += test_mod_event_socket
 noinst_PROGRAMS += switch_timer
+noinst_PROGRAMS += switch_dialplan_xml
+switch_dialplan_xml_CFLAGS = $(AM_CFLAGS) -DSWITCH_MOD_BUILDDIR=\"${abs_top_builddir}/src/mod\"
 
 if HAVE_PCAP
 noinst_PROGRAMS += switch_rtp_pcap
