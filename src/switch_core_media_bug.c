@@ -678,6 +678,11 @@ static void *SWITCH_THREAD_FUNC video_bug_thread(switch_thread_t *thread, void *
 
 			if (switch_queue_trypop(other_q, &other_pop) == SWITCH_STATUS_SUCCESS) {
 				switch_img_free(&other_img);
+
+				if (!other_pop) {
+					goto end;
+				}
+
 				other_img = (switch_image_t *) other_pop;
 
 				if (IMG && !(other_last_w == other_img->d_w && other_last_h == other_img->d_h)) {
