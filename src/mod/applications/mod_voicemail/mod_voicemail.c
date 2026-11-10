@@ -1636,7 +1636,12 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 			cc.fh = &fh;
 			cc.playback_controls_active = 1;
 			if (switch_file_exists(cbt->file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-				TRY_CODE(switch_ivr_play_file(session, &fh, cbt->file_path, &args));
+				status = switch_ivr_play_file(session, &fh, cbt->file_path, &args);
+				if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
+									  "Failed to play message file [%s], skipping\n", cbt->file_path);
+					status = SWITCH_STATUS_SUCCESS;
+				}
 			}
 			cc.playback_controls_active = 0;
 		}
