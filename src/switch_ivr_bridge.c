@@ -1107,18 +1107,51 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bridge_bleg(switch_core_session_t *se
 static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session);
 static switch_status_t uuid_bridge_on_hibernate(switch_core_session_t *session);
 static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *session);
+static switch_status_t uuid_bridge_on_hangup(switch_core_session_t *session);
 
 static const switch_state_handler_table_t uuid_bridge_state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
 	/*.on_execute */ NULL,
-	/*.on_hangup */ NULL,
+	/*.on_hangup */ uuid_bridge_on_hangup,
 	/*.on_exchange_media */ NULL,
 	/*.on_soft_execute */ uuid_bridge_on_soft_execute,
 	/*.on_consume_media */ uuid_bridge_on_hibernate,
 	/*.on_hibernate */ uuid_bridge_on_hibernate,
 	/*.on_reset */ uuid_bridge_on_reset
 };
+
+/* The originator ended before the bridge was set up. Hang up the peer if it is
+ * still waiting for this originator, nothing else would ever move it on. */
+static void uuid_bridge_cancel_peer(switch_core_session_t *session, switch_channel_t *other_channel)
+{
+	switch_channel_state_t state = switch_channel_get_state(other_channel);
+	const char *bond = switch_channel_get_variable(other_channel, SWITCH_SIGNAL_BOND_VARIABLE);
+
+	if ((state == CS_RESET || state == CS_HIBERNATE || state == CS_CONSUME_MEDIA || state == CS_SOFT_EXECUTE) &&
+		!switch_channel_test_flag(other_channel, CF_UUID_BRIDGE_ORIGINATOR) &&
+		!zstr(bond) && !strcmp(bond, switch_core_session_get_uuid(session))) {
+		switch_channel_hangup(other_channel, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+	}
+}
+
+static switch_status_t uuid_bridge_on_hangup(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_core_session_t *other_session;
+	const char *other_uuid;
+
+	/* uuid_bridge_on_soft_execute() removes these handlers, so this only runs
+	 * when the originator hangs up before it got there */
+	if (switch_channel_test_flag(channel, CF_UUID_BRIDGE_ORIGINATOR) &&
+		(other_uuid = switch_channel_get_variable(channel, SWITCH_UUID_BRIDGE)) &&
+		(other_session = switch_core_session_locate(other_uuid))) {
+		uuid_bridge_cancel_peer(session, switch_core_session_get_channel(other_session));
+		switch_core_session_rwunlock(other_session);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 {
@@ -1203,6 +1236,10 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 		if (switch_ivr_wait_for_answer(session, other_session) != SWITCH_STATUS_SUCCESS) {
+			if (switch_channel_down_nosig(channel)) {
+				uuid_bridge_cancel_peer(session, other_channel);
+			}
+
 			if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_continue_on_cancel"))) {
 				switch_channel_set_state(channel, CS_EXECUTE);
 			} else if (switch_true(switch_channel_get_variable(channel, "uuid_bridge_park_on_cancel"))) {
