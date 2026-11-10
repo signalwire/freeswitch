@@ -1,0 +1,797 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../changes/_template/design.md:1 b9cfe530722049a2bc6c439a22c0fb34
+msgid "Design Document: [Title]"
+msgstr "设计文档：[Title]"
+
+#: ../../changes/_template/design.md:5 77b9628c62414c499339ed513b5f5658
+msgid "Metadata"
+msgstr "元数据"
+
+#: ../../changes/_template/design.md:7 55c2a072ea2e4244b163fa69fa201132
+msgid "**Change ID**: `[change-id]`"
+msgstr "**变更 ID**：`[change-id]`"
+
+#: ../../changes/_template/design.md:8 c56d07952c844d2bab8f85bb7bc73a3e
+msgid "**Author**: [Name/Email]"
+msgstr "**作者**：[Name/Email]"
+
+#: ../../changes/_template/design.md:9 99db4310b9d2415a8dcecd1d202bd709
+msgid "**Reviewers**: [Names]"
+msgstr "**评审人**：[Names]"
+
+#: ../../changes/_template/design.md:10 ed6606c449064e1dbca354aa8c9f4ee3
+msgid "**Status**: `Draft` | `In Review` | `Approved` | `Implemented`"
+msgstr "**状态**：`草稿` | `评审中` | `已批准` | `已实施`"
+
+#: ../../changes/_template/design.md:12 8294e2cfd85f42fb919df28ec6cca8c3
+msgid "Overview"
+msgstr "概述"
+
+#: ../../changes/_template/design.md:14 28acfb424b9b4414b87ae61e9c4aa8d4
+msgid "Problem"
+msgstr "问题"
+
+#: ../../changes/_template/design.md:16 c10183c2da3e49d8a84ffd4ae8f22871
+msgid "[Brief restatement of the problem from proposal.md]"
+msgstr "[简要重述 proposal.md 中的问题]"
+
+#: ../../changes/_template/design.md:18 524eb447b6bf499988aa3fad754cff5c
+msgid "Solution"
+msgstr "方案"
+
+#: ../../changes/_template/design.md:20 1e85aef4dd3d4c9ca1ed56e0fa30192d
+msgid "[High-level description of the proposed solution]"
+msgstr "[对拟议方案的高层描述]"
+
+#: ../../changes/_template/design.md:22 64c8ac1419c548babb7c7a371744f76f
+msgid "Goals"
+msgstr "目标"
+
+#: ../../changes/_template/design.md:24 78c405f678114741a3d3b916fd4e4c86
+msgid "Goal 1: [What we want to achieve]"
+msgstr "目标 1：[我们想达成什么]"
+
+#: ../../changes/_template/design.md:25 05863974c813472c843913fa74a5bcd2
+msgid "Goal 2: [What we want to achieve]"
+msgstr "目标 2：[我们想达成什么]"
+
+#: ../../changes/_template/design.md:26 e3f700542bc74c27ba7c58f7ce4409f1
+msgid "Goal 3: [What we want to achieve]"
+msgstr "目标 3：[我们想达成什么]"
+
+#: ../../changes/_template/design.md:28 6a8db7bea4464d219e7f730b13fc8c62
+msgid "Non-Goals"
+msgstr "非目标"
+
+#: ../../changes/_template/design.md:30 83d9b5e078714581867b31b19b38c2af
+msgid "Non-goal 1: [What we explicitly do NOT want to address]"
+msgstr "非目标 1：[我们明确不打算解决什么]"
+
+#: ../../changes/_template/design.md:31 3b79c25cbb0e4ea0972e88fcfb9c62eb
+msgid "Non-goal 2: [What we explicitly do NOT want to address]"
+msgstr "非目标 2：[我们明确不打算解决什么]"
+
+#: ../../changes/_template/design.md:33 6ad9a246abbd4d8cbf70bcc96c27fc2b
+msgid "Background"
+msgstr "背景"
+
+#: ../../changes/_template/design.md:35 c2fde0564a8947b98730f794d17f54ea
+msgid "Context"
+msgstr "上下文"
+
+#: ../../changes/_template/design.md:37 b2ca7d8ab1654168a5cb60dc71c6e139
+msgid "[Provide context needed to understand the design]"
+msgstr "[提供理解本设计所需的背景]"
+
+#: ../../changes/_template/design.md:39 cdacdd9035814817bc6d728fc5672133
+msgid "Existing System"
+msgstr "现有系统"
+
+#: ../../changes/_template/design.md:41 5b3e694b449d420abf99555d8ffc689b
+msgid "[Describe relevant parts of the current system]"
+msgstr "[描述当前系统中的相关部分]"
+
+#: ../../changes/_template/design.md:47 0be99a1819bd46939ef63cc8f7a98be8
+msgid "Constraints"
+msgstr "约束"
+
+#: ../../changes/_template/design.md:49 fd98ccf8dd564da2a30a8c233caf8632
+msgid "Constraint 1: [e.g., Must maintain backward compatibility]"
+msgstr "约束 1：[例如：必须保持向后兼容]"
+
+#: ../../changes/_template/design.md:50 e7ea266ede464a5288a4b45ebed010e2
+msgid "Constraint 2: [e.g., Cannot exceed X latency]"
+msgstr "约束 2：[例如：延迟不得超过 X]"
+
+#: ../../changes/_template/design.md:51 80510ee08f0e43ec99e74b837909a5c7
+msgid "Constraint 3: [e.g., Must use existing infrastructure]"
+msgstr "约束 3：[例如：必须使用现有基础设施]"
+
+#: ../../changes/_template/design.md:53 bdb034ed27d846f1b08f8cd20ed22762
+msgid "Design"
+msgstr "设计"
+
+#: ../../changes/_template/design.md:55 698225bab10b43c38f832b5d4c6273c4
+msgid "High-Level Architecture"
+msgstr "高层架构"
+
+#: ../../changes/_template/design.md:57 c2b73164308141098ecedf9b2a59f092
+msgid "[Describe the proposed architecture]"
+msgstr "[描述拟议架构]"
+
+#: ../../changes/_template/design.md:63 dce6cb6e29924932b66a8854e836fc77
+msgid "Components"
+msgstr "组件"
+
+#: ../../changes/_template/design.md:65 1a07da61cac44585a228f6cd6fccab29
+msgid "Component 1: [Name]"
+msgstr "组件 1：[Name]"
+
+#: ../../changes/_template/design.md:67 a8513b1c8fde4afcb9669c635aa44f1b
+msgid "**Purpose**: [What this component does]"
+msgstr "**目的**：[该组件做什么]"
+
+#: ../../changes/_template/design.md:68 505aafdda74e420c8d00c6ae7e8ce548
+msgid "**Responsibilities**: [List of responsibilities]"
+msgstr "**职责**：[职责列表]"
+
+#: ../../changes/_template/design.md:69 0768f4cd4c5d49a8b542b13708467647
+msgid "**Interfaces**: [APIs it exposes]"
+msgstr "**接口**：[它对外暴露的 API]"
+
+#: ../../changes/_template/design.md:70 d3a19aa9923b4ecfa63e499bc95d255c
+msgid "**Dependencies**: [What it depends on]"
+msgstr "**依赖**：[它依赖什么]"
+
+#: ../../changes/_template/design.md:72 d50c76141006467db30ed62a3ff307e5
+msgid "**Implementation details**:"
+msgstr "**实现细节**："
+
+#: ../../changes/_template/design.md:73 bd088d5fba4543a8988e10df4e1371db
+msgid "Detail 1"
+msgstr "细节 1"
+
+#: ../../changes/_template/design.md:74 16ce8e48c3a544198515e3fc4e690d2f
+msgid "Detail 2"
+msgstr "细节 2"
+
+#: ../../changes/_template/design.md:76 5e3b53326cce46cf920bc351722beda6
+msgid "Component 2: [Name]"
+msgstr "组件 2：[Name]"
+
+#: ../../changes/_template/design.md:78 b593c88152974a6cbf5d97891fe2eab6
+msgid "[Same structure as Component 1]"
+msgstr "[结构与组件 1 相同]"
+
+#: ../../changes/_template/design.md:80 b996ba4ab0394c509cbca7d4447348b3
+msgid "Data Model"
+msgstr "数据模型"
+
+#: ../../changes/_template/design.md:82 04a161a47e7e4f4e996b314f1ef8ac66
+msgid "New Entities"
+msgstr "新增实体"
+
+#: ../../changes/_template/design.md:94 d7caa822d848496a936115010bce4293
+msgid "Modified Entities"
+msgstr "修改的实体"
+
+#: ../../changes/_template/design.md:96 24bda629bbfa4c2186e2c24ffd22c2e4
+msgid "**Table**: `existing_table`"
+msgstr "**表**：`existing_table`"
+
+#: ../../changes/_template/design.md:97 8c64f9536c0e4cb1a3f225680e0eb6c5
+msgid "**Added fields**: `field3 VARCHAR(255)`"
+msgstr "**新增字段**：`field3 VARCHAR(255)`"
+
+#: ../../changes/_template/design.md:98 3079269424f642409343ca4bf6f35ea6
+msgid "**Migration**: [How to migrate existing data]"
+msgstr "**迁移**：[如何迁移现有数据]"
+
+#: ../../changes/_template/design.md:100 409f4e994ae9489f904885dc2b596cf2
+msgid "API Design"
+msgstr "API 设计"
+
+#: ../../changes/_template/design.md:102 1e559e7fdc024c17872a42ad19a8ff10
+msgid "New Endpoints"
+msgstr "新增端点"
+
+#: ../../changes/_template/design.md:104 8bccd8e48ca24e10937b43b07338409b
+msgid "`POST /api/v1/resource`"
+msgstr "`POST /api/v1/resource`"
+
+#: ../../changes/_template/design.md:106 4e26921bf0c64cd9a70ff062290f5fc1
+msgid "**Request**:"
+msgstr "**请求**："
+
+#: ../../changes/_template/design.md:114 dc3820b3cdc3490a9f334c7c6b306ec9
+msgid "**Response**:"
+msgstr "**响应**："
+
+#: ../../changes/_template/design.md:124 9e70e74fec4b4b7ebf6d229f5f6e1a84
+msgid "**Errors**:"
+msgstr "**错误**："
+
+#: ../../changes/_template/design.md:125 e86d146c69e0486993bf7d7126f1507a
+msgid "`400 Bad Request`: Invalid input"
+msgstr "`400 Bad Request`：无效输入"
+
+#: ../../changes/_template/design.md:126 6b00c150ff704d93836320d9acaf8561
+msgid "`401 Unauthorized`: Not authenticated"
+msgstr "`401 Unauthorized`：未认证"
+
+#: ../../changes/_template/design.md:127 b06fd38ad92d46b08e46a78cf88ec7d8
+msgid "`403 Forbidden`: Insufficient permissions"
+msgstr "`403 Forbidden`：权限不足"
+
+#: ../../changes/_template/design.md:129 bead800f53af4b178972bd255cc3eb1d
+msgid "Modified Endpoints"
+msgstr "修改的端点"
+
+#: ../../changes/_template/design.md:131 0f7c47d388974a65b10e39bd21761e6a
+#, python-brace-format
+msgid "`GET /api/v1/resource/{id}`"
+msgstr "`GET /api/v1/resource/{id}`"
+
+#: ../../changes/_template/design.md:133 46a71ab55d8c488db421b51e59a906f7
+msgid "**Changes**:"
+msgstr "**变更**："
+
+#: ../../changes/_template/design.md:134 6701297e7794428a999fee351393f4de
+msgid "Added query parameter: `include_related=true`"
+msgstr "新增查询参数：`include_related=true`"
+
+#: ../../changes/_template/design.md:135 e3ec27480a8d45e981c062fd14a82437
+msgid "Added response field: `related_items`"
+msgstr "新增响应字段：`related_items`"
+
+#: ../../changes/_template/design.md:137 ac21fa2a729f4af286ea668bd1d4efc0
+msgid "Data Flow"
+msgstr "数据流"
+
+#: ../../changes/_template/design.md:147 2b15690b284f416d909432218b6d1ced
+msgid "State Management"
+msgstr "状态管理"
+
+#: ../../changes/_template/design.md:149 be663ab249a64f5da974fa971ab5b32c
+msgid "[If applicable, describe state transitions]"
+msgstr "[如适用，描述状态转换]"
+
+#: ../../changes/_template/design.md:155 01dbdf20572345e086a816608c68009f
+msgid "Error Handling"
+msgstr "错误处理"
+
+#: ../../changes/_template/design.md:157 6a2ac69b3add4d47b0b96c40e1b575bb
+msgid "Error Scenarios"
+msgstr "错误场景"
+
+#: ../../changes/_template/design.md:159 6e380ab8e50f48be83f59ff25fe299cc
+msgid "**Scenario**: User provides invalid input"
+msgstr "**场景**：用户提供了无效输入"
+
+#: ../../changes/_template/design.md:160 5fcacf63ea4f4c8ab672e2116fa2c2f7
+msgid "**Detection**: Request validation"
+msgstr "**检测**：请求校验"
+
+#: ../../changes/_template/design.md:161 803745a932754be591891b8bb042b680
+msgid "**Response**: 400 with error details"
+msgstr "**响应**：返回 400 及错误详情"
+
+#: ../../changes/_template/design.md:162 de1c5b097e3a4d44971de1069b7c2930
+msgid "**Logging**: Warn level"
+msgstr "**日志**：Warn 级别"
+
+#: ../../changes/_template/design.md:164 b3f2dfeed1dd47ac9322567c1fa9d204
+msgid "**Scenario**: External service is down"
+msgstr "**场景**：外部服务不可用"
+
+#: ../../changes/_template/design.md:165 7d6e91339970454c86abe2ad854de4f2
+msgid "**Detection**: Timeout or connection error"
+msgstr "**检测**：超时或连接错误"
+
+#: ../../changes/_template/design.md:166 5fea96f659df4f05a527a4623e1d0c8a
+msgid "**Response**: 503 Service Unavailable"
+msgstr "**响应**：503 Service Unavailable"
+
+#: ../../changes/_template/design.md:167 6b1c7b3336554791a1e6ee3ea0ac2957
+msgid "**Retry**: Exponential backoff, max 3 attempts"
+msgstr "**重试**：指数退避，最多 3 次"
+
+#: ../../changes/_template/design.md:168 805bf30c3c444472b6034f1ddf6341a8
+msgid "**Logging**: Error level with trace ID"
+msgstr "**日志**：Error 级别，带 trace ID"
+
+#: ../../changes/_template/design.md:170 11d47caeca774e9db2d861cf54d9a08c
+msgid "Security Considerations"
+msgstr "安全考虑"
+
+#: ../../changes/_template/design.md:172 f7d1fc75c57042bf8b4c2fcf069bf154
+msgid "Authentication"
+msgstr "认证"
+
+#: ../../changes/_template/design.md:174 cf8c643ebada4e3b9e2be24445b7501f
+msgid "[How users/services authenticate]"
+msgstr "[用户/服务如何认证]"
+
+#: ../../changes/_template/design.md:176 d15834016d09414abb36e27293b4890a
+msgid "Authorization"
+msgstr "授权"
+
+#: ../../changes/_template/design.md:178 0076e1f6cafe43049b6e453dfedda9cb
+msgid "[How permissions are checked]"
+msgstr "[如何检查权限]"
+
+#: ../../changes/_template/design.md:180 c59e7bef3a8f4adb8226fe4a150d9b09
+msgid "Data Protection"
+msgstr "数据保护"
+
+#: ../../changes/_template/design.md:182 b08931efb53b40138ba9bfd756618a1a
+msgid "Encryption at rest: [Method]"
+msgstr "静态加密：[Method]"
+
+#: ../../changes/_template/design.md:183 e2e7981a0b104b21bf323c4a5fa0b190
+msgid "Encryption in transit: [TLS version]"
+msgstr "传输加密：[TLS version]"
+
+#: ../../changes/_template/design.md:184 a9337e4d7e1a47f7ae7aa721c9322ba1
+msgid "Sensitive data handling: [Approach]"
+msgstr "敏感数据处理：[Approach]"
+
+#: ../../changes/_template/design.md:186 f0af27019c864a2284f13237ae57a8e5
+msgid "Audit Logging"
+msgstr "审计日志"
+
+#: ../../changes/_template/design.md:188 e7b1437b02ce48c98c2052ca355f5318
+msgid "What is logged: [Events]"
+msgstr "记录内容：[Events]"
+
+#: ../../changes/_template/design.md:189 e568ac907e574bae9b5cabcbe2d48c74
+msgid "Where: [Log destination]"
+msgstr "存放位置：[Log destination]"
+
+#: ../../changes/_template/design.md:190 f45196d2fddd4e8c9e2b940426a05413
+msgid "Retention: [Duration]"
+msgstr "保留期限：[Duration]"
+
+#: ../../changes/_template/design.md:192 99b5d06028194507856724f4d4a418cf
+msgid "Performance Considerations"
+msgstr "性能考虑"
+
+#: ../../changes/_template/design.md:194 26a1098df3de42aaa139c3532ffdf486
+msgid "Expected Load"
+msgstr "预期负载"
+
+#: ../../changes/_template/design.md:196 9d686ba5988642878d2b30fcf8f9a4e5
+msgid "Requests per second: [Number]"
+msgstr "每秒请求数：[Number]"
+
+#: ../../changes/_template/design.md:197 77a362ffaaa44cb58d6fd2dc74848975
+msgid "Concurrent users: [Number]"
+msgstr "并发用户数：[Number]"
+
+#: ../../changes/_template/design.md:198 11f5adcb5c734f30810aec79fbeb440a
+msgid "Data volume: [Size]"
+msgstr "数据量：[Size]"
+
+#: ../../changes/_template/design.md:200 2cf94f22b5984d0fafd237b9eec8261a
+msgid "Optimization Strategies"
+msgstr "优化策略"
+
+#: ../../changes/_template/design.md:202 45be6202816c4853a9f7cb97c6c63772
+msgid "Caching: [Strategy and invalidation]"
+msgstr "缓存：[策略与失效]"
+
+#: ../../changes/_template/design.md:203 b42b6f24f98f428b9461540eecb2dbd6
+msgid "Database indexing: [Indexes to add]"
+msgstr "数据库索引：[要添加的索引]"
+
+#: ../../changes/_template/design.md:204 3203639f45954bd1bba2826513285397
+msgid "Query optimization: [Approach]"
+msgstr "查询优化：[Approach]"
+
+#: ../../changes/_template/design.md:206 e85bcbe90b614bc59f55d4ea85034057
+msgid "Performance Targets"
+msgstr "性能目标"
+
+#: ../../changes/_template/design.md:208 b05915c195ee4bf6b04856defbb5faa1
+msgid "API latency: p95 < [X]ms, p99 < [Y]ms"
+msgstr "API 延迟：p95 < [X]ms，p99 < [Y]ms"
+
+#: ../../changes/_template/design.md:209 f3d8631de4794e728f9fb86e8fae4784
+msgid "Database query time: p95 < [X]ms"
+msgstr "数据库查询时间：p95 < [X]ms"
+
+#: ../../changes/_template/design.md:210 21d5569b25954d5ea09eee9984b25837
+msgid "Throughput: [Z] requests/second"
+msgstr "吞吐量：[Z] 请求/秒"
+
+#: ../../changes/_template/design.md:212 ac814373b4ea4cbfba2675d5e516439c
+msgid "Scalability"
+msgstr "可扩展性"
+
+#: ../../changes/_template/design.md:214 95f0a2e411694ea4b45e95f512e9b8b5
+msgid "Horizontal scaling: [How to scale out]"
+msgstr "水平扩展：[如何横向扩展]"
+
+#: ../../changes/_template/design.md:215 79ed4783835a4fbea592bf746270a7f4
+msgid "Vertical scaling: [Resource limits]"
+msgstr "垂直扩展：[资源上限]"
+
+#: ../../changes/_template/design.md:216 c354ac8416154d05ad3eb7be5ca8350a
+msgid "Bottlenecks: [Known limitations]"
+msgstr "瓶颈：[已知限制]"
+
+#: ../../changes/_template/design.md:218 f456b0d285034337abb8c32d878c04b3
+msgid "Monitoring & Observability"
+msgstr "监控与可观测性"
+
+#: ../../changes/_template/design.md:220 d8a5f7cf640e4de78d5aeeaab6aab62c
+msgid "Metrics"
+msgstr "指标"
+
+#: ../../changes/_template/design.md:222 1e40f5b543ea4380b58149e006943471
+msgid "Metric 1: [What to measure]"
+msgstr "指标 1：[度量什么]"
+
+#: ../../changes/_template/design.md:223 3fdf02a4acd14980a17f885957089b2f
+msgid "Metric 2: [What to measure]"
+msgstr "指标 2：[度量什么]"
+
+#: ../../changes/_template/design.md:225 f98a40756d044a40b44a6f91bf5aa51c
+msgid "Logging"
+msgstr "日志"
+
+#: ../../changes/_template/design.md:227 7278c0a12b564aaf81a692dfde1a9d58
+msgid "Log level: [INFO, WARN, ERROR]"
+msgstr "日志级别：[INFO, WARN, ERROR]"
+
+#: ../../changes/_template/design.md:228 928fbcd020ff499cba423b7a3cd036be
+msgid "Log fields: [Standard fields to include]"
+msgstr "日志字段：[应包含的标准字段]"
+
+#: ../../changes/_template/design.md:229 29a841ef946749308758fa6e677091a5
+msgid "Trace ID: [How to generate and propagate]"
+msgstr "Trace ID：[如何生成与传递]"
+
+#: ../../changes/_template/design.md:231 4814ddfdedbc4cb48d868004398ac8de
+msgid "Alerts"
+msgstr "告警"
+
+#: ../../changes/_template/design.md:233 33931bac032f42f49336f96da53466f1
+msgid "Alert 1: [Condition and threshold]"
+msgstr "告警 1：[条件与阈值]"
+
+#: ../../changes/_template/design.md:234 acd03ef68ff64c928e37c40a89475bfd
+msgid "Alert 2: [Condition and threshold]"
+msgstr "告警 2：[条件与阈值]"
+
+#: ../../changes/_template/design.md:236 e0604bff994d47d49d993b03c3b656bf
+msgid "Reliability"
+msgstr "可靠性"
+
+#: ../../changes/_template/design.md:238 8079152d37134361a1089085fed154ec
+msgid "Failure Modes"
+msgstr "故障模式"
+
+#: ../../changes/_template/design.md:240 bf7bca7783674d878741771873d357df
+msgid "**Failure**: Database connection lost"
+msgstr "**故障**：数据库连接丢失"
+
+#: ../../changes/_template/design.md:241 dc00dd2a90504533bfd0f3d3af09bc62
+msgid "**Impact**: Cannot process requests"
+msgstr "**影响**：无法处理请求"
+
+#: ../../changes/_template/design.md:242 d084ae0df60a448e8361cb1dfbe8431b
+msgid "**Detection**: Health check fails"
+msgstr "**检测**：健康检查失败"
+
+#: ../../changes/_template/design.md:243 25f7b5bbe20049ab8668d8aad524b0c1
+msgid "**Recovery**: Automatic retry with circuit breaker"
+msgstr "**恢复**：带熔断器的自动重试"
+
+#: ../../changes/_template/design.md:245 d264935a65534954ba04db49207e9d46
+msgid "**Failure**: External API timeout"
+msgstr "**故障**：外部 API 超时"
+
+#: ../../changes/_template/design.md:246 68b3c353ef5141d7b2ebeac064cecb43
+msgid "**Impact**: Degraded functionality"
+msgstr "**影响**：功能降级"
+
+#: ../../changes/_template/design.md:247 00e71dc89ba249258c60058a76c8cd46
+msgid "**Detection**: Timeout exceeded"
+msgstr "**检测**：超时时间已超过"
+
+#: ../../changes/_template/design.md:248 23aac36b215041909e559dfc9c38d5cf
+msgid "**Recovery**: Return cached data or default value"
+msgstr "**恢复**：返回缓存数据或默认值"
+
+#: ../../changes/_template/design.md:250 c39df03f65564522b0afd1f2cfc3bcb7
+msgid "Circuit Breaker"
+msgstr "熔断器"
+
+#: ../../changes/_template/design.md:252 38a538bfea4642dc8a61be73fdd52a5b
+msgid "Threshold: [Number of failures]"
+msgstr "阈值：[失败次数]"
+
+#: ../../changes/_template/design.md:253 e1c7fef255df4e8c9d1b6258a01efe5e
+msgid "Timeout: [Duration]"
+msgstr "超时：[Duration]"
+
+#: ../../changes/_template/design.md:254 c85b64feebae41a8a459c06c7d5fac2f
+msgid "Half-open state: [How to recover]"
+msgstr "半开状态：[如何恢复]"
+
+#: ../../changes/_template/design.md:256 71ac7fe80ff749bfb2a65a554edfc7bc
+msgid "Testing Strategy"
+msgstr "测试策略"
+
+#: ../../changes/_template/design.md:258 f581ed1d0b9a49c79fb63e0af4e23032
+msgid "Unit Tests"
+msgstr "单元测试"
+
+#: ../../changes/_template/design.md:260 77f191243edb49b69fa014b8a66269b6
+msgid "Coverage target: [Percentage]"
+msgstr "覆盖率目标：[Percentage]"
+
+#: ../../changes/_template/design.md:261 a2bcd14e32884017abd6a527cd716bdb
+msgid "Key scenarios: [List]"
+msgstr "关键场景：[List]"
+
+#: ../../changes/_template/design.md:263 9c6d01be96004e50ad0a97b606d68da2
+msgid "Integration Tests"
+msgstr "集成测试"
+
+#: ../../changes/_template/design.md:265 d73fe7555b5f4bcab711eddc21f00172
+msgid "Test cases: [List]"
+msgstr "测试用例：[List]"
+
+#: ../../changes/_template/design.md:266 c7dda70ef1de4c9ebed00f2bef5a2490
+msgid "Test environment: [Description]"
+msgstr "测试环境：[Description]"
+
+#: ../../changes/_template/design.md:268 4fbb8879f4764bf08c4dd884385d4f4b
+msgid "E2E Tests"
+msgstr "端到端测试"
+
+#: ../../changes/_template/design.md:270 51f821f507df4e1ea558609123663618
+msgid "User flows: [List]"
+msgstr "用户流程：[List]"
+
+#: ../../changes/_template/design.md:271 892cca97f2444033ac1184a1b5c69e5b
+msgid "Test data: [How to generate]"
+msgstr "测试数据：[如何生成]"
+
+#: ../../changes/_template/design.md:273 ef1e4272dfb543e7a6f787fa9fef674f
+msgid "Performance Tests"
+msgstr "性能测试"
+
+#: ../../changes/_template/design.md:275 25de4b174320432198a06ea1e2205039
+msgid "Load test: [Scenario]"
+msgstr "负载测试：[Scenario]"
+
+#: ../../changes/_template/design.md:276 0cfb13969f7b4fd993ba67577bca0aa8
+msgid "Stress test: [Scenario]"
+msgstr "压力测试：[Scenario]"
+
+#: ../../changes/_template/design.md:277 0193f8291d5e416b9ca196ac22c26dda
+msgid "Endurance test: [Scenario]"
+msgstr "耐久测试：[Scenario]"
+
+#: ../../changes/_template/design.md:279 69e4122db8d044f8aa9f6c45b2298205
+msgid "Deployment Strategy"
+msgstr "部署策略"
+
+#: ../../changes/_template/design.md:281 2f68caf952d6486da00b1cb6b068c368
+msgid "Rollout Plan"
+msgstr "发布计划"
+
+#: ../../changes/_template/design.md:283 aca0940595c64536a71d4766e48fb330
+msgid "Phase 1: [Description]"
+msgstr "阶段 1：[Description]"
+
+#: ../../changes/_template/design.md:284 4e1f4a13b3934264bbda83ffa272b2a9
+msgid "Phase 2: [Description]"
+msgstr "阶段 2：[Description]"
+
+#: ../../changes/_template/design.md:285 e42d189484014418850b8a058ed4b4c7
+msgid "Phase 3: [Description]"
+msgstr "阶段 3：[Description]"
+
+#: ../../changes/_template/design.md:287 5576319bdeec4ab1b4e19bc8e4304d64
+msgid "Feature Flags"
+msgstr "功能开关"
+
+#: ../../changes/_template/design.md:289 f52c042092e245c98cfcbd68c64f3382
+msgid "Flag 1: [Name and purpose]"
+msgstr "开关 1：[名称与用途]"
+
+#: ../../changes/_template/design.md:290 9ab7a3ad2c43482bbbd9bbf56ab21349
+msgid "Flag 2: [Name and purpose]"
+msgstr "开关 2：[名称与用途]"
+
+#: ../../changes/_template/design.md:292 cac1ba0bb9a440a1bf041d2f2e05edb0
+msgid "Rollback Plan"
+msgstr "回滚计划"
+
+#: ../../changes/_template/design.md:294 cb5ffb37413c43ada61f7a3eec573923
+msgid "Detect issue: [Monitoring and alerts]"
+msgstr "发现问题：[监控与告警]"
+
+#: ../../changes/_template/design.md:295 4831f6b2e47e40e5ab55dc11d9feba91
+msgid "Disable feature: [Feature flag]"
+msgstr "关闭功能：[功能开关]"
+
+#: ../../changes/_template/design.md:296 80ff9a2e39684723baf11f1a63b20fa0
+msgid "Rollback deployment: [Process]"
+msgstr "回滚部署：[Process]"
+
+#: ../../changes/_template/design.md:297 190f760111d34266bab8bc8957ff91f5
+msgid "Restore data: [If needed]"
+msgstr "恢复数据：[如需要]"
+
+#: ../../changes/_template/design.md:299 ffb766f0526f460b9f072065326f2068
+msgid "Migration"
+msgstr "迁移"
+
+#: ../../changes/_template/design.md:301 8dda4a54c88f4562b60a375f3b54a7d9
+msgid "Data Migration"
+msgstr "数据迁移"
+
+#: ../../changes/_template/design.md:315 3cdd56429b174ce7a20fc50616e35fc1
+msgid "Code Migration"
+msgstr "代码迁移"
+
+#: ../../changes/_template/design.md:317 fd0d7919ed094257947da4b2da8a7356
+msgid "Step 1: [Deploy backward-compatible version]"
+msgstr "步骤 1：[部署向后兼容版本]"
+
+#: ../../changes/_template/design.md:318 fc46f03bb5264eb1b8fdf78eb38fd096
+msgid "Step 2: [Migrate data]"
+msgstr "步骤 2：[迁移数据]"
+
+#: ../../changes/_template/design.md:319 412edc4ddf6347cead9a89c29856731f
+msgid "Step 3: [Deploy new version]"
+msgstr "步骤 3：[部署新版本]"
+
+#: ../../changes/_template/design.md:320 d5fa73df06144bedbbe75b42bc6c29ad
+msgid "Step 4: [Remove deprecated code]"
+msgstr "步骤 4：[移除已废弃代码]"
+
+#: ../../changes/_template/design.md:322 dd57d14b330646bcaaeacb149d9cd8ad
+msgid "User Migration"
+msgstr "用户迁移"
+
+#: ../../changes/_template/design.md:324 8aa25a4aff7f4d32bec88a99ad88fca7
+msgid "Communication: [How to inform users]"
+msgstr "沟通：[如何通知用户]"
+
+#: ../../changes/_template/design.md:325 2eb80741873444f7b286c8076e31f7ac
+msgid "Timeline: [When changes take effect]"
+msgstr "时间线：[变更何时生效]"
+
+#: ../../changes/_template/design.md:326 f2387ecf7f894a1183777d5b75105b4b
+msgid "Support: [How users get help]"
+msgstr "支持：[用户如何获得帮助]"
+
+#: ../../changes/_template/design.md:328 589bf667626a4f188c75973fd30c0fcf
+msgid "Trade-offs"
+msgstr "权衡"
+
+#: ../../changes/_template/design.md:330 06c1f9969d944f68b560f3f8224aeb78
+msgid "Trade-off 1: [Description]"
+msgstr "权衡 1：[Description]"
+
+#: ../../changes/_template/design.md:332 f5432f0750a54f7d874ee1746878ee0b
+msgid "**Option A**: [Description]"
+msgstr "**方案 A**：[Description]"
+
+#: ../../changes/_template/design.md:333 ../../changes/_template/design.md:337
+#: 2885f5b3887e4b8da45100a6fcc73d5a e681f63662f94dc99a7e6733ddba77ba
+msgid "Pros: [List]"
+msgstr "优点：[List]"
+
+#: ../../changes/_template/design.md:334 ../../changes/_template/design.md:338
+#: a02131c29df545dc9a504617db289926 ca552c86d15d4b79af6c626668f6cdb4
+msgid "Cons: [List]"
+msgstr "缺点：[List]"
+
+#: ../../changes/_template/design.md:336 457aad7e888746f68dcb7f82cb935bb9
+msgid "**Option B**: [Description] (Chosen)"
+msgstr "**方案 B**：[Description]（已选）"
+
+#: ../../changes/_template/design.md:340 f990b70197a04eb9a0588b308d7e1347
+msgid "**Decision**: [Why Option B was chosen]"
+msgstr "**决策**：[为什么选择方案 B]"
+
+#: ../../changes/_template/design.md:342 a12b7615fccf4e06a760d48cc8d3e773
+msgid "Open Questions"
+msgstr "未决问题"
+
+#: ../../changes/_template/design.md:344 8e64b86e1208426cbe6e5966ba48cf42
+msgid "Question 1: [Description]"
+msgstr "问题 1：[Description]"
+
+#: ../../changes/_template/design.md:345 ../../changes/_template/design.md:349
+#: 082642c48c334e56a1671e040bc5c7b0 e7be5aac4e3f4927a4cc1593e2908762
+msgid "**Blocker**: Yes | No"
+msgstr "**阻塞项**：是 | 否"
+
+#: ../../changes/_template/design.md:346 ../../changes/_template/design.md:350
+#: 336d311fe0e34d209a025ccd08c719d3 be51887362054fff8b18dee7dc4723ae
+msgid "**Owner**: [Name]"
+msgstr "**负责人**：[Name]"
+
+#: ../../changes/_template/design.md:348 24f4b792bc7f439f968db856974a6fdb
+msgid "Question 2: [Description]"
+msgstr "问题 2：[Description]"
+
+#: ../../changes/_template/design.md:352 1a9951286697470698c3292916d46918
+msgid "Future Work"
+msgstr "后续工作"
+
+#: ../../changes/_template/design.md:354 684ec2c4590946f5976e82ec97690ec3
+msgid "Enhancement 1: [Description]"
+msgstr "增强 1：[Description]"
+
+#: ../../changes/_template/design.md:355 ca6e5f6a7a24453ba8056901c32fbb23
+msgid "Enhancement 2: [Description]"
+msgstr "增强 2：[Description]"
+
+#: ../../changes/_template/design.md:357 356bb18f49714c61ad82baacee346337
+msgid "References"
+msgstr "参考资料"
+
+#: ../../changes/_template/design.md:359 6115e35bc2fc431cb0efe35e9a50039a
+msgid "Proposal: [Link to proposal.md]"
+msgstr "提案：[Link to proposal.md]"
+
+#: ../../changes/_template/design.md:360 a059aab8b87b4260a86e2b888ff7f09d
+msgid "Tasks: [Link to tasks.md]"
+msgstr "任务：[Link to tasks.md]"
+
+#: ../../changes/_template/design.md:361 8de48dbde39a456ca407b42206b8561e
+msgid "ADR: [Link to related ADR]"
+msgstr "ADR：[Link to related ADR]"
+
+#: ../../changes/_template/design.md:362 154a45fd5c2b4eb29ada8b6aea5b6b02
+msgid "External docs: [Links]"
+msgstr "外部文档：[Links]"
+
+#: ../../changes/_template/design.md:366 ed07f8003d644fa0b8940cf93b9547ec
+msgid "Approval"
+msgstr "审批"
+
+#: ../../changes/_template/design.md:368 27a9ad9dda2441ffa0928aedf93c4cfc
+msgid "Technical Lead: [Name] - [Date]"
+msgstr "技术负责人：[Name] - [Date]"
+
+#: ../../changes/_template/design.md:369 4c3614600ca748088b83ff1e7f8dd607
+msgid "Security Review: [Name] - [Date]"
+msgstr "安全评审：[Name] - [Date]"
+
+#: ../../changes/_template/design.md:370 8dfa6c7562b24b33bc35def44bfabbf4
+msgid "Performance Review: [Name] - [Date]"
+msgstr "性能评审：[Name] - [Date]"
+
+#: ../../changes/_template/design.md:371 8df26e651d2b46bd898f1d1289fbd8e0
+msgid "Product Owner: [Name] - [Date]"
+msgstr "产品负责人：[Name] - [Date]"

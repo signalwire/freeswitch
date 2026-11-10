@@ -1,0 +1,670 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../08-build.md:1 dae1e435de2c4970b622aca6d41aea46
+msgid "08. Build, Release, and Publish"
+msgstr "08. 构建、发布与文档发布"
+
+#: ../../08-build.md:5 e4c6f960d8e849a59662edf3b6489d8a
+msgid ""
+"Local Autotools/Windows builds, GitHub Actions, Debian/Docker packaging, "
+"version fields, and PKB HTML. First-run commands live in [Quick "
+"Start](01-quick-start.md); this page is the pipeline map."
+msgstr ""
+"本地 Autotools/Windows 构建、GitHub Actions、Debian/Docker 打包、版本字段，以及 PKB "
+"HTML。首次运行命令见 [快速开始](01-quick-start.md)；本页是流水线地图。"
+
+#: ../../08-build.md:7 1c5c852231524f9485c94fd06d107377
+msgid "Scope"
+msgstr "范围"
+
+#: ../../08-build.md:9 613e5d3931484076a8f112c27e9dcce4
+msgid ""
+"Unix source build (`bootstrap.sh` → `configure` → `make` → `make install`)"
+msgstr "Unix 源码构建（`bootstrap.sh` → `configure` → `make` → `make install`）"
+
+#: ../../08-build.md:10 8780c751b29449d1a3dc41c86cbf2fe4
+msgid "Per-module rebuild, install layout, sounds"
+msgstr "按模块重建、安装布局、语音包"
+
+#: ../../08-build.md:11 b1e2d6bd420a4b529e78d186c4db5c4c
+msgid ""
+"GitHub Actions (unit tests, scan-build, Debian matrix, macOS, Windows, "
+"tarball)"
+msgstr "GitHub Actions（单元测试、scan-build、Debian 矩阵、macOS、Windows、tarball）"
+
+#: ../../08-build.md:12 13bc2c995f2a47b583f553b5e71536fd
+msgid "Packaged install (FSGET) and `.deb` build (FSDEB)"
+msgstr "打包安装（FSGET）与 `.deb` 构建（FSDEB）"
+
+#: ../../08-build.md:13 e44f5da8de74478b9c5991638f18f040
+msgid "Version strings and release branches"
+msgstr "版本字符串与发布分支"
+
+#: ../../08-build.md:14 6cfa775c27f9490aa5840cc440bc2fc0
+msgid "PKB Sphinx bilingual build / AgentBox publish"
+msgstr "PKB Sphinx 双语构建 / AgentBox 发布"
+
+#: ../../08-build.md:16 bb5dc60d770a49c4a0e01cfb803f0c6e
+msgid ""
+"Upstream operator docs: [FreeSWITCH Users "
+"Manual](https://developer.signalwire.com/freeswitch/) ([Ch 2 Getting "
+"Started](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)). Package downloads: "
+"[files.freeswitch.org](https://files.freeswitch.org/releases/freeswitch/). "
+"Historical wiki: [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)."
+msgstr ""
+"上游运维文档：[FreeSWITCH 用户手册](https://developer.signalwire.com/freeswitch/)（[第 2 "
+"章入门](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)）。软件包下载：[files.freeswitch.org](https://files.freeswitch.org/releases/freeswitch/)。历史"
+" wiki：[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)。"
+
+#: ../../08-build.md:18 38b812bdd1714f2b8ae2967585ab7d5d
+msgid "Local Build Paths"
+msgstr "本地构建路径"
+
+#: ../../08-build.md:20 fbfca322328d48d8af371a0f6336bb99
+msgid "Development (Unix / macOS)"
+msgstr "开发（Unix / macOS）"
+
+#: ../../08-build.md:22 555760e6219c4386a2c189af505b7c7b
+msgid ""
+"Prerequisites: Autotools floors in `scripts/ci/build-requirements.sh` "
+"(autoconf `>= 2.59`, automake `>= 1.7`, libtool `>= 1.5.14`) plus Sofia-SIP,"
+" SpanDSP, libks, signalwire-c as in [Tech Stack](03-tech-stack.md)."
+msgstr ""
+"前置条件：`scripts/ci/build-requirements.sh` 中的 Autotools 下限（autoconf `>= "
+"2.59`、automake `>= 1.7`、libtool `>= 1.5.14`），再加上 [技术栈](03-tech-stack.md) 中的 "
+"Sofia-SIP、SpanDSP、libks、signalwire-c。"
+
+#: ../../08-build.md:32 9a3ef522190d47789faa3be945e037be
+msgid ""
+"Debug CFLAGS (`-ggdb3 -O0`): `./devel-bootstrap.sh` then the same "
+"`configure`/`make`."
+msgstr ""
+"调试 CFLAGS（`-ggdb3 -O0`）：先 `./devel-bootstrap.sh`，再同样的 `configure`/`make`。"
+
+#: ../../08-build.md:34 8a65bab0eafc4c51a8de9df5e017bec4
+msgid "Rebuild one module after `modules.conf` is already in place:"
+msgstr "`modules.conf` 已就位后重建单个模块："
+
+#: ../../08-build.md:41 75020c2595ff4de6af3409f04e573f59
+msgid "(Top-level `Makefile.am` dispatches `mod_*` into `src/mod`.)"
+msgstr "（顶层 `Makefile.am` 把 `mod_*` 分发到 `src/mod`。）"
+
+#: ../../08-build.md:43 cca99b5f972649f6b8af469d7bca03f6
+msgid "ASAN unit-test configure used by CI:"
+msgstr "CI 使用的 ASAN 单元测试 configure："
+
+#: ../../08-build.md:51 6fd7b57d91404537aa541a4e97e33362
+msgid "(`ci.sh` also builds Sofia-SIP when `-c sofia-sip`.)"
+msgstr "（`ci.sh` 在 `-c sofia-sip` 时也会构建 Sofia-SIP。）"
+
+#: ../../08-build.md:53 245506ade24c48a3a93ab76354cc36dc
+msgid "Production / prefix install"
+msgstr "生产 / 前缀安装"
+
+#: ../../08-build.md:55 14115be99b1549d0be436db07048ad7d
+#, python-brace-format
+msgid ""
+"Same `configure && make && make install`. Default prefix is "
+"`/usr/local/freeswitch` (`AC_PREFIX_DEFAULT` in `configure.ac`). FHS layout "
+"(`--enable-fhs` when prefix is set) puts modules under "
+"`${libdir}/freeswitch/mod`."
+msgstr ""
+"同样是 `configure && make && make install`。默认前缀是 "
+"`/usr/local/freeswitch`（`configure.ac` 中的 `AC_PREFIX_DEFAULT`）。FHS "
+"布局（设置了前缀时用 `--enable-fhs`）把模块放到 `${libdir}/freeswitch/mod`。"
+
+#: ../../08-build.md:57 94d7e133c3c6413d941c42c17160a157
+msgid ""
+"Debian systemd unit (`debian/freeswitch-systemd.freeswitch.service`) starts:"
+msgstr "Debian systemd 单元（`debian/freeswitch-systemd.freeswitch.service`）启动："
+
+#: ../../08-build.md:63 e382fbf460ad4dc3a471aa520180f324
+msgid ""
+"Sounds are **not** in this git tree. `make sounds` / `make sounds-install` "
+"downloads Callie 8 kHz packages (`Makefile.am`, default `en-us-"
+"callie-8000`). Specs at repo root: `freeswitch-sounds-*.spec`."
+msgstr ""
+"语音包**不在**本 git 树中。`make sounds` / `make sounds-install` 会下载 Callie 8 kHz "
+"包（`Makefile.am`，默认 `en-us-callie-8000`）。规格文件在仓库根目录：`freeswitch-"
+"sounds-*.spec`。"
+
+#: ../../08-build.md:65 c33a3e173c8045a9ab9a0bfcf092dd2a
+msgid "Windows"
+msgstr "Windows"
+
+#: ../../08-build.md:71 177d80766023420e8ce837e876cec176
+msgid ""
+"Helper: `msbuild.cmd` (locates VS via `vswhere.exe`). Projects under `w32/`."
+" CI uploads `x64\\*.msi` on master / v1.10 / v1.11 (or PR titles containing "
+"`:upload-artifacts`)."
+msgstr ""
+"辅助脚本：`msbuild.cmd`（通过 `vswhere.exe` 定位 VS）。工程在 `w32/`。CI 在 master / v1.10 / "
+"v1.11 上上传 `x64\\*.msi`（或 PR 标题含 `:upload-artifacts`）。"
+
+#: ../../08-build.md:73 ac4f749fe9dd4bf8895fe74d2a374809
+msgid "Expected outputs (Unix prefix)"
+msgstr "预期产出（Unix 前缀）"
+
+#: ../../08-build.md 0e93afe6c5524cdfb3826d7b29286387
+msgid "Path"
+msgstr "路径"
+
+#: ../../08-build.md 8a0293f45ffd4b039055d110082dba83
+msgid "Content"
+msgstr "内容"
+
+#: ../../08-build.md 46e11288e8bb41cb895f86cf83152736
+msgid "`$prefix/bin/`"
+msgstr "`$prefix/bin/`"
+
+#: ../../08-build.md 8b54ce2c98c7475a872aa27b21b12931
+msgid ""
+"`freeswitch`, `fs_cli`, `fs_encode`, `fs_tts`, `fs_ivrd` (`bin_PROGRAMS` in "
+"`Makefile.am`)"
+msgstr ""
+"`freeswitch`、`fs_cli`、`fs_encode`、`fs_tts`、`fs_ivrd`（`Makefile.am` 中的 "
+"`bin_PROGRAMS`）"
+
+#: ../../08-build.md 267e5e50e99a4b16aeb2be89f20e7e49
+msgid "`$prefix/mod/`"
+msgstr "`$prefix/mod/`"
+
+#: ../../08-build.md f3d5256a84c644c4b412e2747a653feb
+msgid "Loadable `.so` / `.dylib` / `.dll`"
+msgstr "可加载的 `.so` / `.dylib` / `.dll`"
+
+#: ../../08-build.md d8c7146a0da24a7fbd3c15462637765f
+msgid "`$prefix/conf/`"
+msgstr "`$prefix/conf/`"
+
+#: ../../08-build.md 1634fc6ded3543f297695a09e27e3898
+msgid "Vanilla samples if the dir did not exist (`samples-conf`)"
+msgstr "若目录原先不存在则安装 vanilla 样例（`samples-conf`）"
+
+#: ../../08-build.md d26c6a15bec34cd2960a1cbff4046620
+msgid "`$prefix/db/`, `log/`, `run/`, `scripts/`, `htdocs/`"
+msgstr "`$prefix/db/`, `log/`, `run/`, `scripts/`, `htdocs/`"
+
+#: ../../08-build.md 4dc02fc833ea4f74a687e3400a0c88c9
+msgid "Runtime dirs (`install-data-local`)"
+msgstr "运行时目录（`install-data-local`）"
+
+#: ../../08-build.md a30f0ff46cf946a8a6c6636cfb3b1337
+msgid "`src/include/switch_version.h`"
+msgstr "`src/include/switch_version.h`"
+
+#: ../../08-build.md 4da1fffc58404315bae0c7722a46135a
+msgid "Generated from `switch_version.h.template`"
+msgstr "由 `switch_version.h.template` 生成"
+
+#: ../../08-build.md:83 cac363b4db0349a7b96edb49470a797d
+msgid "CI/CD Pipelines"
+msgstr "CI/CD 流水线"
+
+#: ../../08-build.md:85 02531a1d32fc4915830dd3df95775129
+msgid ""
+"All under `.github/workflows/`. Linux jobs use `signalwire/freeswitch-"
+"public-ci-base:bookworm-amd64` unless noted."
+msgstr ""
+"全部在 `.github/workflows/` 下。除非另有说明，Linux 作业使用 `signalwire/freeswitch-public-"
+"ci-base:bookworm-amd64`。"
+
+#: ../../08-build.md e2f7c43a03d547fc956adae2bfa6e194
+msgid "Workflow"
+msgstr "工作流"
+
+#: ../../08-build.md dabaf2970a2f46b7880d0a9f055cfeb6
+msgid "Trigger"
+msgstr "触发条件"
+
+#: ../../08-build.md 3b23ab7a04f94e699e8d1eb180f89690
+msgid "Purpose"
+msgstr "用途"
+
+#: ../../08-build.md 73357b54c42c4581a02daa2c96ce32b6
+msgid "Key output"
+msgstr "关键产出"
+
+#: ../../08-build.md 6f9ac329218b4376a0ce3e2f62203140
+msgid "`ci.yml`"
+msgstr "`ci.yml`"
+
+#: ../../08-build.md a36f0f9c96ee4cc4a21e3577f77b7795
+msgid "push `master` / `v1.10` / `v1.11`; PR open/sync; `workflow_dispatch`"
+msgstr "推送 `master` / `v1.10` / `v1.11`；PR 打开/同步；`workflow_dispatch`"
+
+#: ../../08-build.md 1734bb721dab4b668b1d842b56abb842
+msgid ""
+"Unit tests in 2 groups (`unit-test.yml` via `ci.sh`); optional DinD (`unit-"
+"test-dind.yml`); clang `scan-build.yml`"
+msgstr ""
+"分 2 组单元测试（经 `ci.sh` 的 `unit-test.yml`）；可选 DinD（`unit-test-dind.yml`）；clang "
+"`scan-build.yml`"
+
+#: ../../08-build.md 9a4acfb94c2b4b7c895f95597ff77f02
+msgid "Pass/fail; scan-build reports"
+msgstr "通过/失败；scan-build 报告"
+
+#: ../../08-build.md 6a8e5024ba5c45f9ae526a89d5393c17
+msgid "`build.yml` (“Build and Distribute”)"
+msgstr "`build.yml`（「Build and Distribute」）"
+
+#: ../../08-build.md 86e7bb5e0ed4444dbe4db79cc8d1b378
+msgid "PR; push `master` / `v1.10` / `v1.11`; `workflow_dispatch`"
+msgstr "PR；推送 `master` / `v1.10` / `v1.11`；`workflow_dispatch`"
+
+#: ../../08-build.md 08fd83c3d6284b79b92701dc266dd0e1
+msgid ""
+"Debian **bookworm** + **trixie** × amd64 / arm32v7 / arm64v8. PR excludes "
+"some ARM combos. Branch `v1.10`/`v1.11` → `release`; `master` → `unstable`"
+msgstr ""
+"Debian **bookworm** + **trixie** × amd64 / arm32v7 / arm64v8。PR 排除部分 ARM "
+"组合。分支 `v1.10`/`v1.11` → `release`；`master` → `unstable`"
+
+#: ../../08-build.md 7219c68242664855a8d8097f70bc8970
+msgid ""
+"`.deb` / `.dsc` / `.changes` / tarballs; upload when push is on "
+"`signalwire/freeswitch`"
+msgstr ""
+"`.deb` / `.dsc` / `.changes` / tarball；当推送到 `signalwire/freeswitch` 时上传"
+
+#: ../../08-build.md a0ea45be94574e8abe73f5ad30a0ddd6
+msgid "`macos.yml`"
+msgstr "`macos.yml`"
+
+#: ../../08-build.md 905cd2cd92e0427f9d98f679c6f030fd
+msgid "push/PR those branches; `workflow_dispatch`"
+msgstr "推送/PR 这些分支；`workflow_dispatch`"
+
+#: ../../08-build.md 36f2c5ce3fb34e7ea0e3b909466bc15e
+msgid ""
+"Homebrew deps + `./bootstrap.sh -j` + `./configure --prefix=OUT` + `make "
+"install`"
+msgstr ""
+"Homebrew 依赖 + `./bootstrap.sh -j` + `./configure --prefix=OUT` + `make "
+"install`"
+
+#: ../../08-build.md 360c2e7bd10644e0aaf51bed71405bab
+msgid "Artifact `freeswitch-macos-build`"
+msgstr "产物 `freeswitch-macos-build`"
+
+#: ../../08-build.md 811bf2cd621a45ab8899a672776159a8
+msgid "`windows.yml`"
+msgstr "`windows.yml`"
+
+#: ../../08-build.md db4042521b6a4919b46f387f8f5367af
+msgid "PR; push `master` / `release`"
+msgstr "PR；推送 `master` / `release`"
+
+#: ../../08-build.md 74ad59bbca1942fca7e0b19c12577818
+msgid "MSBuild x64 Release"
+msgstr "MSBuild x64 Release"
+
+#: ../../08-build.md 48364c594f774997a9ccb4696b4be966
+msgid "MSI artifact"
+msgstr "MSI 产物"
+
+#: ../../08-build.md 20790dc6c1364163b21edf1bffef6afc
+msgid "`tarball.yml`"
+msgstr "`tarball.yml`"
+
+#: ../../08-build.md 17bafad2fdae4af69b16fa81b3ddbfcc
+msgid "push `v1.10` / `v1.11`; `workflow_dispatch`"
+msgstr "推送 `v1.10` / `v1.11`；`workflow_dispatch`"
+
+#: ../../08-build.md 2629d1e8794c4756a73d50bcc3628633
+msgid "`scripts/ci/src_tarball.sh`"
+msgstr "`scripts/ci/src_tarball.sh`"
+
+#: ../../08-build.md 7dd9575ad23e47be8863648e81944c6d
+msgid ""
+"`.tar.gz` / `.bz2` / `.xz` / `.zip` + checksums under `src_dist/`; Teleport "
+"upload on branch push"
+msgstr ""
+"`.tar.gz` / `.bz2` / `.xz` / `.zip` 及校验和，位于 `src_dist/`；分支推送时 Teleport 上传"
+
+#: ../../08-build.md 9a458a0249da481b9214e03dedef40f8
+msgid "`unit-test.yml`"
+msgstr "`unit-test.yml`"
+
+#: ../../08-build.md 481635df65dc40669f68a1a3f943db21
+msgid "`workflow_call` from `ci.yml`"
+msgstr "来自 `ci.yml` 的 `workflow_call`"
+
+#: ../../08-build.md 1a82a5940e5a4525a697b84fdd83d17c
+msgid ""
+"Configure/build/install Sofia-SIP + FreeSWITCH; `tests/unit/run-tests.sh`; "
+"`libs/esl` `make check` on group 1"
+msgstr ""
+"配置/构建/安装 Sofia-SIP + FreeSWITCH；`tests/unit/run-tests.sh`；第 1 组对 `libs/esl` "
+"执行 `make check`"
+
+#: ../../08-build.md 83545449302b422e831cf219a8609c4b
+msgid "Logs on failure"
+msgstr "失败时的日志"
+
+#: ../../08-build.md:96 0393285fc4eb48d5b9ffc3bfb32f3c80
+msgid ""
+"`build.yml` issues a temporary repo token (`repo-auth-client`) before the "
+"public Debian Docker matrix "
+"(`.github/docker/debian/<codename>/<arch>/public.<release>.Dockerfile`)."
+msgstr ""
+"`build.yml` 在公共 Debian Docker "
+"矩阵（`.github/docker/debian/<codename>/<arch>/public.<release>.Dockerfile`）之前签发临时仓库"
+" token（`repo-auth-client`）。"
+
+#: ../../08-build.md:98 55a3e555fcb247e1ba4e5fb1ddc157c0
+msgid "Release Process"
+msgstr "发布流程"
+
+#: ../../08-build.md:100 581527ddb6d24b19ae87fd7bc0c94c07
+msgid "Version fields that **must stay together** (`configure.ac` comment):"
+msgstr "必须**一起保持**的版本字段（`configure.ac` 注释）："
+
+#: ../../08-build.md:102 41b51ba0476845e69cbf63fc42a7818f
+msgid "`AC_INIT([freeswitch], [1.11.3-dev], …)`"
+msgstr "`AC_INIT([freeswitch], [1.11.3-dev], …)`"
+
+#: ../../08-build.md:103 fb763c0b0d4d4664b7a8bfc30fbe7040
+msgid ""
+"`SWITCH_VERSION_MAJOR` / `MINOR` / `MICRO` (and optional `REVISION` / "
+"`REVISION_HUMAN` for a tagged release)"
+msgstr ""
+"`SWITCH_VERSION_MAJOR` / `MINOR` / `MICRO`（打标签发布时还可选 `REVISION` / "
+"`REVISION_HUMAN`）"
+
+#: ../../08-build.md:104 02cf8cc7ebd8495c8926685e416b78b4
+msgid ""
+"`build/next-release.txt` (currently `1.11.3-dev`) — `src_tarball.sh` reads "
+"this and writes `.version`"
+msgstr ""
+"`build/next-release.txt`（当前为 `1.11.3-dev`）——`src_tarball.sh` 读取它并写入 "
+"`.version`"
+
+#: ../../08-build.md:106 6101596f96264dd28dd8ac37d736921f
+msgid "Then:"
+msgstr "然后："
+
+#: ../../08-build.md:108 cb22d2f727414f338b6cee095c657120
+msgid ""
+"Land changes via GitHub PR (`docs/SubmittingPatches`, `README.md`). Topic "
+"branches; `./scripts/setup-git.sh` for author identity."
+msgstr ""
+"通过 GitHub PR 合入改动（`docs/SubmittingPatches`、`README.md`）。使用主题分支；用 "
+"`./scripts/setup-git.sh` 设置作者身份。"
+
+#: ../../08-build.md:109 cee20d3a9a764b0bad308f6a83456ecf
+msgid "CI green on `ci.yml` + platform builds you care about."
+msgstr "`ci.yml` 以及你关心的平台构建保持 CI 绿灯。"
+
+#: ../../08-build.md:110 1effb79b3fa746638fb5ad1ecf600ca4
+msgid ""
+"For a packaged line: merge/tag on `v1.10` or `v1.11` so `build.yml` treats "
+"`release=release`. `master` publishes **unstable**."
+msgstr ""
+"面向打包产品线：在 `v1.10` 或 `v1.11` 上合并/打标签，使 `build.yml` 把 "
+"`release=release`。`master` 发布的是 **unstable**。"
+
+#: ../../08-build.md:111 e95b9818f4ad485a8b459c8c1600d1af
+msgid ""
+"Source archives: `tarball.yml` or `./scripts/ci/src_tarball.sh` (needs a "
+"**git** tree; FSDEB same constraint — `scripts/packaging/build/README.md`)."
+msgstr ""
+"源码归档：`tarball.yml` 或 `./scripts/ci/src_tarball.sh`（需要 **git** 树；FSDEB "
+"同样限制——`scripts/packaging/build/README.md`）。"
+
+#: ../../08-build.md:112 1cc51b209318474b8527a000f05f10c2
+msgid ""
+"Debian packages from git: FSDEB   `curl -sSL https://freeswitch.org/fsdeb | "
+"bash -s -- -b BUILD_NUMBER -o OUT_DIR -w /path/to/freeswitch`"
+msgstr ""
+"从 git 构建 Debian 包：FSDEB   `curl -sSL https://freeswitch.org/fsdeb | bash -s "
+"-- -b BUILD_NUMBER -o OUT_DIR -w /path/to/freeswitch`"
+
+#: ../../08-build.md:114 9b4ba92b2ebf4b728f9677345e068b23
+msgid ""
+"Operator install from SignalWire repo: FSGET (`scripts/packaging/README.md`)"
+" — requires a PAT."
+msgstr "从 SignalWire 仓库做运维安装：FSGET（`scripts/packaging/README.md`）——需要 PAT。"
+
+#: ../../08-build.md:115 39bd512e86e24125ad6178cd1ed108f3
+msgid ""
+"Verify: `freeswitch -version` / `fs_cli -x version`; package lists under "
+"`freeswitch.signalwire.com` (workflow `REPO_DOMAIN`)."
+msgstr ""
+"验证：`freeswitch -version` / `fs_cli -x version`；软件包列表在 "
+"`freeswitch.signalwire.com`（工作流 `REPO_DOMAIN`）。"
+
+#: ../../08-build.md:117 f634c9d8358b45ac89a3007e34da5c5f
+msgid ""
+"Human product release notes: [Confluence Release "
+"Notes](https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes). "
+"Mechanical git draft: `cd man && make changelog-draft` (writes "
+"`_generated/`; slow on this history)."
+msgstr ""
+"面向人的产品发行说明：[Confluence Release "
+"Notes](https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes)。机械"
+" git 草稿：`cd man && make changelog-draft`（写入 `_generated/`；在本仓库历史上会很慢）。"
+
+#: ../../08-build.md:119 0c973eac0eb24d2c82bcb78c9ebcf338
+msgid "Documentation Build and Publish"
+msgstr "文档构建与发布"
+
+#: ../../08-build.md:121 50b6082525ad4196b01bc07c44d6940b
+msgid "PKB lives in `man/` (not `docs/man` Unix pages)."
+msgstr "PKB 在 `man/`（不是 `docs/man` Unix 手册页）。"
+
+#: ../../08-build.md:134 cdf7021da8154f918ef3e3252f2e2e06
+msgid ""
+"AgentBox (optional): `make publish` runs `agentbox-init` → `html-all` → "
+"`strip-confidential` (default strip `L3+`) → `gen_agentbox_files.py` → `abx "
+"func deploy freeswitch-doc`. Function slug is `freeswitch-doc` "
+"(`agentbox.yaml`)."
+msgstr ""
+"AgentBox（可选）：`make publish` 依次运行 `agentbox-init` → `html-all` → `strip-"
+"confidential`（默认剥离 `L3+`）→ `gen_agentbox_files.py` → `abx func deploy "
+"freeswitch-doc`。函数 slug 是 `freeswitch-doc`（`agentbox.yaml`）。"
+
+#: ../../08-build.md:136 8821be45f59f4aa9b8e001a4e0a188b0
+msgid "Common Failures"
+msgstr "常见失败"
+
+#: ../../08-build.md 39d4d6d5d18e4c1daa172fdf5a6a5a30
+msgid "Symptom"
+msgstr "现象"
+
+#: ../../08-build.md ade588393fb94fea974e0b77d429e13f
+msgid "Likely cause"
+msgstr "可能原因"
+
+#: ../../08-build.md 36949f4df03b4c10b1dac778564051c6
+msgid "Fix"
+msgstr "处理"
+
+#: ../../08-build.md 829a93058b1d4693b6268bb5b16385aa
+msgid "`bootstrap.sh` dies on autoconf/libtool"
+msgstr "`bootstrap.sh` 在 autoconf/libtool 上失败"
+
+#: ../../08-build.md a8eddc825ceb446e9e858e208bef4d65
+msgid "Tool older than `scripts/ci/build-requirements.sh`"
+msgstr "工具版本低于 `scripts/ci/build-requirements.sh`"
+
+#: ../../08-build.md e475fccb7e9847e088461cebb70b3b6a
+msgid "Install GNU autotools; macOS Homebrew `autoconf automake libtool`"
+msgstr "安装 GNU autotools；macOS Homebrew `autoconf automake libtool`"
+
+#: ../../08-build.md 3652a6e6df8e4b2880b00c633371f6fe
+msgid "Link/configure missing Sofia, KS, SpanDSP, signalwire"
+msgstr "链接/configure 缺少 Sofia、KS、SpanDSP、signalwire"
+
+#: ../../08-build.md 3094887e5f4c4959a00a806539f1865e
+msgid "Out-of-tree deps"
+msgstr "树外依赖"
+
+#: ../../08-build.md af333037d4ed46039eab5aaba4ce961e
+msgid "Follow `docker/examples/Debian11/Dockerfile` or `ci.sh -c sofia-sip`"
+msgstr "按 `docker/examples/Debian11/Dockerfile` 或 `ci.sh -c sofia-sip`"
+
+#: ../../08-build.md 1043728473a542418ed7c0bd3d27d548
+msgid "Module not in `mod/` after install"
+msgstr "安装后模块不在 `mod/` 中"
+
+#: ../../08-build.md a3b5706e0c0846c5865e4b338479196a
+msgid "Commented in `modules.conf` **or** not in runtime `modules.conf.xml`"
+msgstr "在 `modules.conf` 中被注释掉，**或者**不在运行时 `modules.conf.xml` 中"
+
+#: ../../08-build.md abb1a73881f44811b9cc2c7bcd85fb7f
+msgid "Uncomment, `make mod_*`, and load XML"
+msgstr "取消注释，`make mod_*`，并加载 XML"
+
+#: ../../08-build.md 508417b9eebf4d56aab3eee8cd887e8c
+msgid "`make dist` / FSDEB from a tarball"
+msgstr "从 tarball 做 `make dist` / FSDEB"
+
+#: ../../08-build.md c10e1f74ffe7496a92fc905d507111de
+msgid "Scripts require git"
+msgstr "脚本需要 git"
+
+#: ../../08-build.md a28402d16e4a4d30a8c2de760f10e74d
+msgid "Clone the repo (`scripts/packaging/build/README.md`)"
+msgstr "克隆仓库（`scripts/packaging/build/README.md`）"
+
+#: ../../08-build.md 3b1b94dd51c247adb0061fc1ca3bd1cf
+msgid "FSGET / `docker/master` apt 401"
+msgstr "FSGET / `docker/master` apt 401"
+
+#: ../../08-build.md b7030c1e6c744068a5109d94136b4228
+msgid "No SignalWire PAT"
+msgstr "没有 SignalWire PAT"
+
+#: ../../08-build.md 8a7f5318338b452eb5e0accc3ab88b72
+msgid "PAT or source build"
+msgstr "使用 PAT 或改为源码构建"
+
+#: ../../08-build.md 320e0dc3369945e09ba6c82960e4ea66
+msgid "Debian ffmpeg headers differ"
+msgstr "Debian ffmpeg 头文件不一致"
+
+#: ../../08-build.md 090168a08cdd410e85971599b4f40c71
+msgid "Bookworm vs Trixie package names"
+msgstr "Bookworm 与 Trixie 的包名不同"
+
+#: ../../08-build.md 76810df545094c399010195e03b76e9e
+msgid ""
+"`debian/control-modules` `Build-Depends-Bookworm` / `Build-Depends-Trixie`"
+msgstr ""
+"`debian/control-modules` `Build-Depends-Bookworm` / `Build-Depends-Trixie`"
+
+#: ../../08-build.md c309ed6b68d948909853fa10bf275486
+msgid "Windows MSI missing in CI"
+msgstr "CI 中缺少 Windows MSI"
+
+#: ../../08-build.md 54257d59360f4bf6bfc6218726ade66e
+msgid "Not master/v1.10/v1.11 and PR title lacks `:upload-artifacts`"
+msgstr "不是 master/v1.10/v1.11，且 PR 标题没有 `:upload-artifacts`"
+
+#: ../../08-build.md 4bbb2ff0f24149888fa7b25a42c85dd4
+msgid "See `windows.yml` `if:`"
+msgstr "见 `windows.yml` 的 `if:`"
+
+#: ../../08-build.md efad4ede8b124117a3eab48a78dc3470
+msgid "`scan-build-14` not found"
+msgstr "找不到 `scan-build-14`"
+
+#: ../../08-build.md 97372bb8d9a84291b899bb3072c0d503
+msgid "Local machine lacks clang-14 analyzer"
+msgstr "本机没有 clang-14 analyzer"
+
+#: ../../08-build.md 1c49d40d4c5c44449867704cb1c87fb3
+msgid "Use CI image or install clang tools (`ci.sh` scan-build path)"
+msgstr "使用 CI 镜像或安装 clang 工具（`ci.sh` 的 scan-build 路径）"
+
+#: ../../08-build.md ef2664aba70e43adb2d810a052a76799
+msgid "PKB `make html` fails"
+msgstr "PKB `make html` 失败"
+
+#: ../../08-build.md 3dd841d384e842f5a7e0f6de45241848
+msgid "Poetry env not installed; missing `linkify-it-py`"
+msgstr "未安装 Poetry 环境；缺少 `linkify-it-py`"
+
+#: ../../08-build.md 2075564e6b9b463fa0ba6d9c1ff161c0
+msgid "`cd man && poetry install`"
+msgstr "`cd man && poetry install`"
+
+#: ../../08-build.md 38bf4ab008e046489dd1ea1e35264d58
+msgid "Changelog draft hangs"
+msgstr "changelog 草稿卡住"
+
+#: ../../08-build.md 684c850dffd342649922c86996a6eb1e
+msgid "`gen_changelog.sh` walks a large git log"
+msgstr "`gen_changelog.sh` 会遍历很大的 git log"
+
+#: ../../08-build.md ac525ada252f42feb82a71960568a1f1
+msgid "Run with `--range` (e.g. `HEAD~20..HEAD`)"
+msgstr "用 `--range` 运行（例如 `HEAD~20..HEAD`）"
+
+#: ../../08-build.md 426a662dbf764a878cb9363b965cec70
+msgid "Clicking 中文 404s `http://127.0.0.1:8000/zh/`"
+msgstr "点击「中文」后 `http://127.0.0.1:8000/zh/` 返回 404"
+
+#: ../../08-build.md 77004e97a1444b75a00f302929e2e960
+#, python-brace-format
+msgid ""
+"`make serve-watch` (old `make serve`) serves English `_build/html`; the "
+"switcher expects `_build/site/{en,zh}`"
+msgstr ""
+"`make serve-watch`（以前的 `make serve`）只提供英文 `_build/html`；语言切换需要 "
+"`_build/site/{en,zh}`"
+
+#: ../../08-build.md 85ce505b31b44a01a1f676a436d0422e
+msgid "Stop that process; `make serve` or `make serve-all`"
+msgstr "先停掉该进程，再运行 `make serve` 或 `make serve-all`"
+
+#: ../../08-build.md:152 a2a9e5cbcf9d49fc823f4911f0754750
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../08-build.md:154 82c76954c96444d19fabd7e547acd123
+msgid "[Quick Start](01-quick-start.md)"
+msgstr "[快速开始](01-quick-start.md)"
+
+#: ../../08-build.md:155 4d8e8b1999f44e14842fed3890a36abe
+msgid "[Tech Stack](03-tech-stack.md)"
+msgstr "[技术栈](03-tech-stack.md)"
+
+#: ../../08-build.md:156 0db548ce59d343c3a418bc7f48a5a9ef
+msgid "[Testing](09-testing.md)"
+msgstr "[测试](09-testing.md)"
+
+#: ../../08-build.md:157 52dabc060c4a4f73ab04e27640f22149
+msgid "[Runbook](10-runbook.md)"
+msgstr "[运维手册](10-runbook.md)"
+
+#: ../../08-build.md:158 8a1b72ca50cb4f319c90eed09831003f
+msgid "[Documentation Process](12-document.md)"
+msgstr "[文档流程](12-document.md)"

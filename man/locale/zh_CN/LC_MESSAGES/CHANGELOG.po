@@ -1,0 +1,205 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../CHANGELOG.md:1 e9ebc0b849e24b74aa37d628a5234a07
+msgid "Appendix-04: Documentation Changelog"
+msgstr "附录-04: 文档变更记录"
+
+#: ../../CHANGELOG.md:5 15b4312c52124d5aa9065830d570934d
+msgid ""
+"Tracks Project Knowledge Base changes (page additions, translations, "
+"tooling). Code and feature changes belong in the repository `docs/ChangeLog`"
+" and upstream release notes, not here."
+msgstr ""
+"记录项目知识库（PKB）变更（页面新增、翻译、工具链）。代码和功能变更应写入仓库的 `docs/ChangeLog` 和上游发行说明，而不是这里。"
+
+#: ../../CHANGELOG.md:7 c81647651015443fbd236b7e190fe6dd
+msgid "2026-08-17"
+msgstr "2026-08-17"
+
+#: ../../CHANGELOG.md:9 5ef3c8f3e14e46da9c8863f07033ddff
+msgid "Changed"
+msgstr "变更"
+
+#: ../../CHANGELOG.md:11 dd44b7831f5444378e0c287d86659cd8
+msgid ""
+"Aligned PKB with the [FreeSWITCH Users "
+"Manual](https://developer.signalwire.com/freeswitch/) as the operator "
+"configuration source of truth (Explained/Confluence remain historical)"
+msgstr ""
+"将 PKB 与 [FreeSWITCH 用户手册](https://developer.signalwire.com/freeswitch/) "
+"对齐，作为运维配置的权威来源（Explained/Confluence 仅作历史资料）"
+
+#: ../../CHANGELOG.md:12 94ad469d610b411fa826981448636bee
+msgid ""
+"Added PKB ↔ Users Manual page map on `index.md`; three configuration domains"
+" (directory / dialplan / configuration) on overview and architecture"
+msgstr ""
+"在 `index.md` 增加 PKB ↔ 用户手册页面对照；在概述与架构中补充三大配置域（directory / dialplan / "
+"configuration）"
+
+#: ../../CHANGELOG.md:13 d074861d7fe64346b085bc6247b11394
+msgid ""
+"Extended Quick Start with configuration-root table, vanilla first-call "
+"numbers (`9196` echo, `1000`–`1019`), and `default_password=1234` (verified "
+"in `vars.xml`)"
+msgstr ""
+"在快速开始中补充配置根目录表、vanilla 首呼号码（`9196` 回声、`1000`–`1019`），以及已在 `vars.xml` 核实的 "
+"`default_password=1234`"
+
+#: ../../CHANGELOG.md:14 09dc8328b7844e6d9dfafa096c7ac3cd
+#, python-brace-format
+msgid ""
+"Documented `$${var}` vs `${var}`, `user_context` vs SIP profile `context`, "
+"`pre_load_modules.conf.xml`, compiled XML in `log_dir`, and media late-"
+"negotiation / bypass / proxy flags"
+msgstr ""
+"记录 `$${var}` 与 `${var}`、`user_context` 与 SIP profile "
+"`context`、`pre_load_modules.conf.xml`、编译后 XML 位于 `log_dir`，以及媒体 late-"
+"negotiation / bypass / proxy 标志"
+
+#: ../../CHANGELOG.md:15 134bdaad6243465db4927a99caa1b6a5
+msgid ""
+"Glossary, FAQ, runbook, AI guide, and documentation-process pages now point "
+"at Users Manual chapters instead of treating Explained as primary"
+msgstr "术语表、FAQ、运维手册、AI 指南与文档流程页改为指向用户手册章节，不再把 Explained 当作主文档"
+
+#: ../../CHANGELOG.md:17 62321a861aff4b3a9d70b00b4e071f7d
+msgid "Added"
+msgstr "新增"
+
+#: ../../CHANGELOG.md:19 31dccc82da094d9f9ef9be4cc7becd01
+msgid ""
+"Added zh_CN gettext catalogs under `locale/zh_CN/LC_MESSAGES/` (all numbered"
+" pages, appendices, ADR/change templates)"
+msgstr "在 `locale/zh_CN/LC_MESSAGES/` 增加 zh_CN gettext 目录（全部编号页、附录、ADR/变更模板）"
+
+#: ../../CHANGELOG.md:20 5e74fb958c2541e6868ee2170100f92d
+msgid ""
+"Filled `appendix-01-faq.md` and `appendix-02-glossary.md` (install, two "
+"`modules.conf`, ESL bind vs `fs_cli`, 25 terms)"
+msgstr ""
+"填写 `appendix-01-faq.md` 和 `appendix-02-glossary.md`（安装、两份 `modules.conf`、ESL"
+" 绑定 vs `fs_cli`、25 个术语）"
+
+#: ../../CHANGELOG.md:21 d41729e4953e4faf948172d5cc5ad58a
+msgid ""
+"Filled `12-document.md` (PKB `man/` source of truth, Level 1–3, zh_CN "
+"catalogs)"
+msgstr "填写 `12-document.md`（PKB 以 `man/` 为源、Level 1–3、zh_CN 目录）"
+
+#: ../../CHANGELOG.md:22 eebd0e82dcc94ed0992fb7b10c34e34a
+msgid ""
+"Filled `07-conventions.md` (`.clang-format`, SubmittingPatches, two "
+"`modules.conf`, secrets)"
+msgstr ""
+"填写 `07-conventions.md`（`.clang-format`、SubmittingPatches、两份 "
+"`modules.conf`、密钥）"
+
+#: ../../CHANGELOG.md:23 e054b9ad42804bf1ac23bd4697cb9fbc
+msgid ""
+"Filled `11-observability.md` (`switch_log` levels, `freeswitch.log`, "
+"HEARTBEAT/`status`; no Prometheus)"
+msgstr ""
+"填写 `11-observability.md`（`switch_log` "
+"级别、`freeswitch.log`、HEARTBEAT/`status`；无 Prometheus）"
+
+#: ../../CHANGELOG.md:24 2306526236664f2cb74448345de7199d
+msgid ""
+"Filled `06-workflows.md` (inbound SIP, REGISTER, ESL originate, `reloadxml`)"
+msgstr "填写 `06-workflows.md`（入局 SIP、REGISTER、ESL originate、`reloadxml`）"
+
+#: ../../CHANGELOG.md:25 dbdf90a2c40e4b2099005813f49fec0b
+msgid ""
+"Filled `10-runbook.md` (start/stop/`fs_cli`, inspect `$PREFIX`, 12 common "
+"issues)"
+msgstr "填写 `10-runbook.md`（启动/停止/`fs_cli`、检查 `$PREFIX`、12 个常见问题）"
+
+#: ../../CHANGELOG.md:26 37935686dcde4cbaad81dffe01f96d47
+msgid ""
+"Filled `09-testing.md` (`tests/unit/run-tests.sh`, `ci.sh`, ESL `make "
+"check`, PKB `make html-en`)"
+msgstr ""
+"填写 `09-testing.md`（`tests/unit/run-tests.sh`、`ci.sh`、ESL `make check`、PKB "
+"`make html-en`）"
+
+#: ../../CHANGELOG.md:27 104fb80ee62e4daaac5ebae6de427143
+msgid ""
+"Filled `08-build.md` (Autotools, GHA matrix, FSDEB/tarball, PKB Sphinx "
+"publish)"
+msgstr "填写 `08-build.md`（Autotools、GHA 矩阵、FSDEB/tarball、PKB Sphinx 发布）"
+
+#: ../../CHANGELOG.md:28 b5961edfaa4a471d827c47aca0c248f9
+msgid ""
+"Filled `05-data-and-api.md` (XML/SQL model, ESL, Verto JSON-RPC, core "
+"events; extractor found no REST)"
+msgstr ""
+"填写 `05-data-and-api.md`（XML/SQL 模型、ESL、Verto JSON-RPC、核心事件；提取器未发现 REST）"
+
+#: ../../CHANGELOG.md:29 d90cdb697d3b4077b6c822d0c5f1cb88
+msgid ""
+"Filled `03-tech-stack.md` from `configure.ac` floors plus bundled lib "
+"versions (`gen_tech_stack.py` only saw PKB Sphinx)"
+msgstr ""
+"根据 `configure.ac` 最低版本及捆绑库版本填写 `03-tech-stack.md`（`gen_tech_stack.py` 只看到 "
+"PKB Sphinx）"
+
+#: ../../CHANGELOG.md:30 a60c85bad5314c37a7a1ec6fc0f2ec3f
+msgid ""
+"Filled `02-architecture.md` (C4 Context→Code, SIP session flow, module vs "
+"autoload)"
+msgstr "填写 `02-architecture.md`（C4 Context→Code、SIP 会话流程、模块 vs 自动加载）"
+
+#: ../../CHANGELOG.md:31 36e63474fac842a9bcdf889180d5644b
+msgid "Filled `01-quick-start.md` from bootstrap/CI/Docker/packaging commands"
+msgstr "根据 bootstrap/CI/Docker/打包命令填写 `01-quick-start.md`"
+
+#: ../../CHANGELOG.md:32 dd4dd25f66bb4a85a4fdcadb98c5eb03
+msgid ""
+"Filled `04-repo-map.md` from `gen_repo_map.sh` plus verified `src/mod/` "
+"category map"
+msgstr "根据 `gen_repo_map.sh` 及已核实的 `src/mod/` 分类图填写 `04-repo-map.md`"
+
+#: ../../CHANGELOG.md:33 d08873ae380347e984eea01da50c176e
+msgid ""
+"Filled `00-overview.md` from repo facts (purpose, users, C4 context, scope)"
+msgstr "根据仓库事实填写 `00-overview.md`（目的、用户、C4 上下文、范围）"
+
+#: ../../CHANGELOG.md:34 54e992729e614f35bf6ec0d58e61871f
+msgid ""
+"Initial bilingual Sphinx PKB skeleton under `man/` (`/PKB-init --sphinx "
+"--bilingual=zh_CN`)"
+msgstr "在 `man/` 下初始化双语 Sphinx PKB 骨架（`/PKB-init --sphinx --bilingual=zh_CN`）"
+
+#: ../../CHANGELOG.md:35 af2db71bf9b44b5da21c25004fc5812d
+msgid ""
+"Standard numbered pages `00`–`12`, appendices, ADR/change templates, and "
+"helper scripts"
+msgstr "标准编号页面 `00`–`12`、附录、ADR/变更模板以及辅助脚本"
+
+#: ../../CHANGELOG.md:36 7eb8384b38e94d3bb36341a323593e72
+msgid "Language switcher scaffold for English and `zh_CN`"
+msgstr "英文与 `zh_CN` 的语言切换脚手架"
+
+msgid ""
+"Refreshed `locale/zh_CN/LC_MESSAGES/` for the Users Manual alignment (new "
+"strings + unfuzzy of updated paragraphs)"
+msgstr "按用户手册对齐刷新了 `locale/zh_CN/LC_MESSAGES/`（新字符串 + 更新段落去 fuzzy）"

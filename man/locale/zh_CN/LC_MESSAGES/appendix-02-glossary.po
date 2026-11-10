@@ -1,0 +1,611 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../appendix-02-glossary.md:1 62dadda99a33461ba28bf31877d2d765
+msgid "Appendix-02: Glossary"
+msgstr "附录-02: 术语表"
+
+#: ../../appendix-02-glossary.md:5 28a26cec6489472fa2c4cdb93e2c5eb3
+msgid ""
+"Terms humans and AI commonly mix up in this tree. Prefer the **Notes** path "
+"over guessing."
+msgstr "人和 AI 在本树里常混用的术语。宁可跟着 **说明** 列的路径走，也不要猜。"
+
+#: ../../appendix-02-glossary.md:7 58ad2990ae5f45cd997c6ca8492d5cc0
+msgid "Terms"
+msgstr "术语"
+
+#: ../../appendix-02-glossary.md 289a6f927e404c738aedff3eded6907f
+msgid "Term"
+msgstr "术语"
+
+#: ../../appendix-02-glossary.md b2f5674a71e24642bbe5966a8b0af71a
+msgid "Meaning"
+msgstr "含义"
+
+#: ../../appendix-02-glossary.md 4f8592ffe095427bbc30024068b0ee1a
+msgid "Notes"
+msgstr "说明"
+
+#: ../../appendix-02-glossary.md 6d1d1b9d53644c7fba9291a4e8e3d411
+msgid "`-nonat`"
+msgstr "`-nonat`"
+
+#: ../../appendix-02-glossary.md 4ee068316810469582d94eb76424c47d
+msgid "Start flag: skip UPnP / NAT-PMP pinholes"
+msgstr "启动标志：跳过 UPnP / NAT-PMP 打洞"
+
+#: ../../appendix-02-glossary.md f22c84c1f9b8439794bd6e80aa0900bd
+msgid ""
+"Required unless you *want* auto-NAT. Vanilla warning: "
+"`conf/vanilla/README_IMPORTANT.txt`. Debian unit: `debian/freeswitch-"
+"systemd.freeswitch.service`."
+msgstr ""
+"除非你 *想要* 自动 NAT，否则必须加。vanilla 警告：`conf/vanilla/README_IMPORTANT.txt`。Debian "
+"unit：`debian/freeswitch-systemd.freeswitch.service`。"
+
+#: ../../appendix-02-glossary.md e15f718327aa424980dc01fa0ea67cf3
+#, python-brace-format
+msgid "`$${name}`"
+msgstr "`$${name}`"
+
+#: ../../appendix-02-glossary.md 4134f04c921b44468c3ad911a7897a5c
+msgid "Preprocessor variable, expanded while assembling XML"
+msgstr "预处理器变量，在组装 XML 时展开"
+
+#: ../../appendix-02-glossary.md 54d02ee92ea34cc1877c90f4ee0a1017
+#, python-brace-format
+msgid ""
+"Defined with `#set` / `X-PRE-PROCESS cmd=\"set\"` in `vars.xml`. Distinct "
+"from `${name}` (channel, call time). [Users Manual Ch "
+"3](https://developer.signalwire.com/freeswitch/configuration/xml)."
+msgstr ""
+"在 `vars.xml` 中用 `#set` / `X-PRE-PROCESS cmd=\"set\"` 定义。不同于 "
+"`${name}`（通道变量，呼叫时展开）。[用户手册第 3 "
+"章](https://developer.signalwire.com/freeswitch/configuration/xml)。"
+
+#: ../../appendix-02-glossary.md 3b79ef96a92d4f40974d61811d5bed36
+#, python-brace-format
+msgid "`${name}`"
+msgstr "`${name}`"
+
+#: ../../appendix-02-glossary.md f9869f8c488e4863ad541cf65754d388
+msgid "Channel variable, expanded at call time"
+msgstr "通道变量，在呼叫时展开"
+
+#: ../../appendix-02-glossary.md b2ee2dc120c44c95acfd85177f73f278
+msgid "Set by directory, dialplan, and apps. Catalog is Users Manual Ch 32."
+msgstr "由号码簿、拨号计划和应用设置。完整目录见用户手册第 32 章。"
+
+#: ../../appendix-02-glossary.md f7d353b999f9458ea50a011817d15ff0
+msgid "`CS_*`"
+msgstr "`CS_*`"
+
+#: ../../appendix-02-glossary.md e9cf4057c0844004bdcebc6302045c67
+msgid "`switch_channel_state_t` values on a channel"
+msgstr "信道上的 `switch_channel_state_t` 取值"
+
+#: ../../appendix-02-glossary.md ef76bb19db1a43ed9cab6a3da63e8ffe
+msgid ""
+"Default inbound: `CS_NEW` → `CS_INIT` → `CS_ROUTING` → `CS_EXECUTE` → "
+"`CS_EXCHANGE_MEDIA` or hangup `CS_HANGUP` → `CS_REPORTING` → `CS_DESTROY`. "
+"Enum: `src/include/switch_types.h`. Not the same as callstate `CCS_*`."
+msgstr ""
+"默认入站：`CS_NEW` → `CS_INIT` → `CS_ROUTING` → `CS_EXECUTE` → "
+"`CS_EXCHANGE_MEDIA`，或挂断 `CS_HANGUP` → `CS_REPORTING` → "
+"`CS_DESTROY`。枚举：`src/include/switch_types.h`。与呼叫状态 `CCS_*` 不是一回事。"
+
+#: ../../appendix-02-glossary.md 0bfeb26fd8bc446ab56f87c70b25eb81
+msgid "ClueCon"
+msgstr "ClueCon"
+
+#: ../../appendix-02-glossary.md eb2c43a040dc4f6fba1cd41c210d084f
+msgid "Default ESL password"
+msgstr "默认 ESL 密码"
+
+#: ../../appendix-02-glossary.md 6a976e8b19b44bc7a4d4f6f0547b05ef
+msgid ""
+"Demo value — change before public bind. Vanilla listen is `::`:8021; "
+"`fs_cli` client default is `127.0.0.1:8021`. "
+"`conf/vanilla/autoload_configs/event_socket.conf.xml`, "
+"`libs/esl/fs_cli.conf`."
+msgstr ""
+"演示值 — 公网绑定前先改。vanilla 监听 `::`:8021；`fs_cli` 客户端默认是 "
+"`127.0.0.1:8021`。`conf/vanilla/autoload_configs/event_socket.conf.xml`、`libs/esl/fs_cli.conf`。"
+
+#: ../../appendix-02-glossary.md e0b525cb04c54d929216bf246b991f67
+msgid "bridge"
+msgstr "bridge"
+
+#: ../../appendix-02-glossary.md c35e96c8fc094098a2e93d88a97b7046
+msgid "Association that joins two channels so media flows between them"
+msgstr "把两条 channel 连在一起、使媒体在其间流动的关联"
+
+#: ../../appendix-02-glossary.md af2d0c36c3b241c2bdec0641ab63e4df
+msgid ""
+"Dialplan app `bridge`; core `switch_ivr_bridge`. Users Manual Ch 1 term."
+msgstr "拨号计划应用 `bridge`；核心 `switch_ivr_bridge`。用户手册第 1 章术语。"
+
+#: ../../appendix-02-glossary.md 555b0b1e15a9404baafff56f2f760870
+msgid "call"
+msgstr "呼叫"
+
+#: ../../appendix-02-glossary.md 16b264e4886e40508c8fb5affc7bc9fa
+msgid "Pair of legs in core SQL"
+msgstr "核心 SQL 里的一对腿"
+
+#: ../../appendix-02-glossary.md 0c1797074c3444baaee28b7dda8f9589
+msgid ""
+"Table `calls`: `call_uuid`, `caller_uuid`, `callee_uuid` "
+"(`src/switch_core_sqldb.c`). Not one session. Users Manual: one or more "
+"associated channels."
+msgstr ""
+"表 "
+"`calls`：`call_uuid`、`caller_uuid`、`callee_uuid`（`src/switch_core_sqldb.c`）。不是一个"
+" session。用户手册：一条或多条关联的 channel。"
+
+#: ../../appendix-02-glossary.md b504034e565d4e56abe9ed4c3e9610d6
+msgid "channel"
+msgstr "信道"
+
+#: ../../appendix-02-glossary.md 63cc343433554fd5abbbe2d3905aad11
+msgid "One call leg’s state, variables, hangup cause"
+msgstr "一条呼叫腿的状态、变量、挂断原因"
+
+#: ../../appendix-02-glossary.md 6ff892af03c441a9870aef273eb23f7f
+msgid ""
+"`switch_channel_t` inside a session. Dialplan/apps key off channel state. "
+"`src/switch_channel.c`. Users Manual: one leg between FreeSWITCH and a "
+"single endpoint."
+msgstr ""
+"session 里的 "
+"`switch_channel_t`。拨号计划/应用按信道状态驱动。`src/switch_channel.c`。用户手册：FreeSWITCH 与单个"
+" endpoint 之间的一条腿。"
+
+#: ../../appendix-02-glossary.md 2d9c90779b7f497a928233ff16462739
+msgid "configuration root"
+msgstr "配置根目录"
+
+#: ../../appendix-02-glossary.md f7b25507e34146c3b2d2b7e3861ba3fa
+msgid "Directory that contains `freeswitch.xml`"
+msgstr "包含 `freeswitch.xml` 的目录"
+
+#: ../../appendix-02-glossary.md a8e3c038146c428a9d012c64675d5e3b
+msgid ""
+"Source default: `/usr/local/freeswitch/conf`. Debian: `/etc/freeswitch`. "
+"Users Manual paths are relative to this root."
+msgstr ""
+"源码默认：`/usr/local/freeswitch/conf`。Debian：`/etc/freeswitch`。用户手册路径相对此根。"
+
+#: ../../appendix-02-glossary.md b173f79eca694abab610870f201029d6
+msgid "dialplan"
+msgstr "拨号计划"
+
+#: ../../appendix-02-glossary.md bf82a548d43d45b586184dcda8e35479
+msgid "XML (or other) routing: match extension, run apps"
+msgstr "XML（或其他）路由：匹配分机，跑应用"
+
+#: ../../appendix-02-glossary.md 129b8a4026e8474a83c47d75be6d8452
+msgid ""
+"Vanilla section in `conf/vanilla/freeswitch.xml`; default context "
+"`conf/vanilla/dialplan/default.xml`. Hunt in `CS_ROUTING` via "
+"`mod_dialplan_xml`. [Ch "
+"12](https://developer.signalwire.com/freeswitch/dialplan/xml)."
+msgstr ""
+"vanilla 段在 `conf/vanilla/freeswitch.xml`；默认上下文 "
+"`conf/vanilla/dialplan/default.xml`。在 `CS_ROUTING` 中由 `mod_dialplan_xml` "
+"猎取。[第 12 章](https://developer.signalwire.com/freeswitch/dialplan/xml)。"
+
+#: ../../appendix-02-glossary.md 51d174df1f474b55bbc7a4a0949cc53e
+msgid "directory"
+msgstr "用户目录"
+
+#: ../../appendix-02-glossary.md bced200c8cec4d90b2da4209246077eb
+msgid "XML users / domains (SIP digest, VM, channel vars)"
+msgstr "XML 用户 / 域（SIP digest、语音信箱、信道变量）"
+
+#: ../../appendix-02-glossary.md e1e925cff87b4c9a8628b81d2cc5a1ab
+msgid ""
+"Vanilla `conf/vanilla/directory/` (`1000.xml` …). Directory users are "
+"**not** OS users. [Ch 6](https://developer.signalwire.com/freeswitch/users-"
+"and-endpoints/user-directory)."
+msgstr ""
+"vanilla 的 `conf/vanilla/directory/`（`1000.xml` …）。目录用户 **不是** 操作系统用户。[第 6 "
+"章](https://developer.signalwire.com/freeswitch/users-and-endpoints/user-"
+"directory)。"
+
+#: ../../appendix-02-glossary.md 99048b97b5394b34b7bffa3d5e8d1328
+msgid "endpoint"
+msgstr "endpoint"
+
+#: ../../appendix-02-glossary.md 118f23778cbc4ed0ab14110bd70c0765
+msgid "Protocol interface that originates or receives calls"
+msgstr "发起或接收呼叫的协议接口"
+
+#: ../../appendix-02-glossary.md 249cca4b4c674ff99aa301adc7e5eaf1
+msgid ""
+"A module: Sofia (`mod_sofia`) for SIP, Verto (`mod_verto`) for WebRTC. Users"
+" Manual Ch 1."
+msgstr "一个模块：Sofia（`mod_sofia`）用于 SIP，Verto（`mod_verto`）用于 WebRTC。用户手册第 1 章。"
+
+#: ../../appendix-02-glossary.md 286106df3e34442fb7072769da243aa1
+msgid "ESL / Event Socket"
+msgstr "ESL / Event Socket"
+
+#: ../../appendix-02-glossary.md 4960dbf01e2a470e9db3319fd83562a5
+msgid "Out-of-process TCP control + event subscribe"
+msgstr "进程外 TCP 控制 + 事件订阅"
+
+#: ../../appendix-02-glossary.md 359a171044bd410eb3e85130f903f0c4
+msgid ""
+"`mod_event_socket` listens; clients `auth` then `api` / `bgapi` / `event` / "
+"`sendmsg`. Vanilla listen `::`:8021; `fs_cli` connects to `127.0.0.1:8021`. "
+"Distinct from the in-process event bus (`src/switch_event.c`). [Ch "
+"46](https://developer.signalwire.com/freeswitch/programming/esl-inbound)."
+msgstr ""
+"`mod_event_socket` 监听；客户端先 `auth`，再 `api` / `bgapi` / `event` / "
+"`sendmsg`。vanilla 监听 `::`:8021；`fs_cli` 连到 "
+"`127.0.0.1:8021`。不同于进程内事件总线（`src/switch_event.c`）。[第 46 "
+"章](https://developer.signalwire.com/freeswitch/programming/esl-inbound)。"
+
+#: ../../appendix-02-glossary.md ded2d2f7ad66453984ab3a5b073fa1df
+msgid "FreeSWITCH"
+msgstr "FreeSWITCH"
+
+#: ../../appendix-02-glossary.md 775272e518e4459db86a9b3647f7c316
+msgid "Modular C softswitch: sessions, media, dialplan, loadable DSOs"
+msgstr "模块化 C 软交换：会话、媒体、拨号计划、可加载 DSO"
+
+#: ../../appendix-02-glossary.md 217abf0fc1054f748139a3cde56dbdf0
+msgid ""
+"This repo’s product. Version **1.11.3-dev** (`configure.ac`). Sponsor "
+"SignalWire; hosted cloud is a *separate* product. Operator manual: [Users "
+"Manual](https://developer.signalwire.com/freeswitch/)."
+msgstr ""
+"本仓库的产品。版本 **1.11.3-dev**（`configure.ac`）。赞助方 SignalWire；托管云是 *另一个* "
+"产品。运维手册：[用户手册](https://developer.signalwire.com/freeswitch/)。"
+
+#: ../../appendix-02-glossary.md 70e5d42364794060b68520a39d4f5c1f
+msgid "FSDEB"
+msgstr "FSDEB"
+
+#: ../../appendix-02-glossary.md de2f92a565f746db92ffb156d2c2971e
+msgid "Build Debian packages from a **git** tree"
+msgstr "从 **git** 树构建 Debian 包"
+
+#: ../../appendix-02-glossary.md a471e72b7737432cb596f8cd79e796d6
+msgid ""
+"`curl …/fsdeb | bash -s -- -b BUILD_NUMBER -o OUT_DIR -w "
+"/path/to/freeswitch`. Tarball checkouts are not supported. "
+"`scripts/packaging/build/README.md`."
+msgstr ""
+"`curl …/fsdeb | bash -s -- -b BUILD_NUMBER -o OUT_DIR -w "
+"/path/to/freeswitch`。不支持 tarball 检出。`scripts/packaging/build/README.md`。"
+
+#: ../../appendix-02-glossary.md 1bf407caa9ca419392f31d8b21f8fdf1
+msgid "FSGET"
+msgstr "FSGET"
+
+#: ../../appendix-02-glossary.md 08685555644848168e74aebaf13345c0
+msgid "Install packaged FreeSWITCH from SignalWire apt"
+msgstr "从 SignalWire apt 安装已打包的 FreeSWITCH"
+
+#: ../../appendix-02-glossary.md fdfdc2a795354658b52d2ac7bda754af
+msgid ""
+"`curl -sSL https://freeswitch.org/fsget | bash -s <PAT> [release|prerelease]"
+" [install]`. Needs a PAT. `scripts/packaging/README.md`, `README.md`."
+msgstr ""
+"`curl -sSL https://freeswitch.org/fsget | bash -s <PAT> [release|prerelease]"
+" [install]`。需要 PAT。`scripts/packaging/README.md`、`README.md`。"
+
+#: ../../appendix-02-glossary.md 03a92f2fab644e64b55c491363a58fba
+msgid "`fs_cli`"
+msgstr "`fs_cli`"
+
+#: ../../appendix-02-glossary.md 0ed9e245ee1f473385216198e9401812
+msgid "ESL client shipped with the tree"
+msgstr "随本树附带的 ESL 客户端"
+
+#: ../../appendix-02-glossary.md 0ec6892a49544f6da40c97768cb19d93
+msgid ""
+"Built from `libs/esl/fs_cli.c`. Health: `fs_cli -x status` must match `^UP`."
+msgstr "由 `libs/esl/fs_cli.c` 构建。健康检查：`fs_cli -x status` 必须匹配 `^UP`。"
+
+#: ../../appendix-02-glossary.md 501febc7e4714f56b06ba562c2ddd3a6
+msgid "libks"
+msgstr "libks"
+
+#: ../../appendix-02-glossary.md d446492564874da491526130b3c79aa4
+msgid "KS runtime (libks / libks2), **not** in this git tree"
+msgstr "KS 运行时（libks / libks2），**不在** 本 git 树里"
+
+#: ../../appendix-02-glossary.md c869124e63674ebf8de5b11f0ae4bad1
+msgid ""
+"Required if `mod_verto` or `mod_signalwire` is enabled (`configure.ac`). "
+"Often confused with bundled `libs/`."
+msgstr ""
+"启用 `mod_verto` 或 `mod_signalwire` 时需要（`configure.ac`）。常与捆绑的 `libs/` 搞混。"
+
+#: ../../appendix-02-glossary.md 118e4f5f6ad8434dbdda408a2ab8f548
+msgid "`mod_sofia`"
+msgstr "`mod_sofia`"
+
+#: ../../appendix-02-glossary.md 99048b97b5394b34b7bffa3d5e8d1328
+msgid "SIP endpoint module"
+msgstr "SIP 终端模块"
+
+#: ../../appendix-02-glossary.md 7668480311c2454ca856e46117202566
+msgid ""
+"Profiles in `conf/vanilla/sip_profiles/` (internal auth vs external `auth-"
+"calls=false`). Uses out-of-tree Sofia-SIP. `src/mod/endpoints/mod_sofia/`. "
+"[Ch 7](https://developer.signalwire.com/freeswitch/users-and-endpoints/sip-"
+"profiles)."
+msgstr ""
+"profile 在 `conf/vanilla/sip_profiles/`（内部鉴权 vs 外部 `auth-calls=false`）。使用树外 "
+"Sofia-SIP。`src/mod/endpoints/mod_sofia/`。[第 7 "
+"章](https://developer.signalwire.com/freeswitch/users-and-endpoints/sip-"
+"profiles)。"
+
+#: ../../appendix-02-glossary.md e8b031e1b2bd48eab1a609505efc7820
+msgid "`modules.conf`"
+msgstr "`modules.conf`"
+
+#: ../../appendix-02-glossary.md 650d2a4acb374a7882e7e4d98a587ab6
+msgid "**Build-time** list of `src/mod/...` trees to compile"
+msgstr "**构建时** 要编译的 `src/mod/...` 树列表"
+
+#: ../../appendix-02-glossary.md 95cdd8d63f1a46cc90878be1b3171546
+msgid ""
+"Copied from `build/modules.conf.in` by `bootstrap.sh`. Commented lines are "
+"not built."
+msgstr "由 `bootstrap.sh` 从 `build/modules.conf.in` 复制。被注释的行不会构建。"
+
+#: ../../appendix-02-glossary.md e5e238fc6f1042a2945ceb9a56ec665d
+msgid "`modules.conf.xml`"
+msgstr "`modules.conf.xml`"
+
+#: ../../appendix-02-glossary.md 8bf5b1e2e5f84c97b62f83881644e26e
+msgid "**Runtime** autoload list of compiled modules"
+msgstr "**运行时** 已编译模块的自动加载列表"
+
+#: ../../appendix-02-glossary.md ef591eaf49b749fab4ce6be572f7578f
+msgid ""
+"`conf/vanilla/autoload_configs/modules.conf.xml`. Loader: "
+"`src/switch_loadable_module.c`. Companions: `pre_load_modules.conf.xml`, "
+"`post_load_modules.conf.xml`. [Ch "
+"5](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)."
+msgstr ""
+"`conf/vanilla/autoload_configs/modules.conf.xml`。加载器：`src/switch_loadable_module.c`。配套文件：`pre_load_modules.conf.xml`、`post_load_modules.conf.xml`。[第"
+" 5 章](https://developer.signalwire.com/freeswitch/configuration/module-"
+"loading/)。"
+
+#: ../../appendix-02-glossary.md 05a5084c6f5e4196bd1e966798d537b5
+msgid "PKB"
+msgstr "PKB"
+
+#: ../../appendix-02-glossary.md 00f9adf3a2444b1fb008382d6bcc279b
+msgid "Project Knowledge Base (this Sphinx/MyST doc set)"
+msgstr "项目知识库（本套 Sphinx/MyST 文档）"
+
+#: ../../appendix-02-glossary.md 4ad8d1f51bd9424b943a54eb4fa3e68f
+msgid ""
+"Lives in **`man/`**, not `docs/man/`. Tooling: `man/pyproject.toml`. Not "
+"linked into the `freeswitch` binary. Does not replace the Users Manual."
+msgstr ""
+"位于 **`man/`**，不是 `docs/man/`。工具链：`man/pyproject.toml`。不会链进 `freeswitch` "
+"二进制。不替代用户手册。"
+
+#: ../../appendix-02-glossary.md d9301dbe6a22450e8d793a48101c8cc5
+msgid "prefix"
+msgstr "安装前缀"
+
+#: ../../appendix-02-glossary.md 72297f3398b64266aae1a99db43f7f7d
+msgid "Autotools install root"
+msgstr "Autotools 安装根"
+
+#: ../../appendix-02-glossary.md e26850857d074383bf4b4870907abffc
+msgid ""
+"Default `/usr/local/freeswitch` (`AC_PREFIX_DEFAULT` in `configure.ac`). "
+"Layout: `bin/`, `mod/`, `conf/`, `log/`, `db/`, `scripts/`, `htdocs/`, "
+"`sounds/`."
+msgstr ""
+"默认 `/usr/local/freeswitch`（`configure.ac` 里的 "
+"`AC_PREFIX_DEFAULT`）。布局：`bin/`、`mod/`、`conf/`、`log/`、`db/`、`scripts/`、`htdocs/`、`sounds/`。"
+
+#: ../../appendix-02-glossary.md fa5f0264272843cea4ff1f7ffe611761
+msgid "RTP"
+msgstr "RTP"
+
+#: ../../appendix-02-glossary.md 91a13836ce7040cd8832b99a27e30e21
+msgid "Real-time media path (audio/video over UDP)"
+msgstr "实时媒体路径（UDP 上的音视频）"
+
+#: ../../appendix-02-glossary.md d3b465699cca4a50a9bc955d079bacbc
+msgid ""
+"Core: `src/switch_rtp.c`, `src/switch_core_media.c`. Docker needs host "
+"networking for the UDP ranges. Media modes: [Ch "
+"17](https://developer.signalwire.com/freeswitch/media-and-codecs/handling)."
+msgstr ""
+"核心：`src/switch_rtp.c`、`src/switch_core_media.c`。Docker 需要 host 网络才能覆盖这些 UDP "
+"范围。媒体模式：[第 17 章](https://developer.signalwire.com/freeswitch/media-and-"
+"codecs/handling)。"
+
+#: ../../appendix-02-glossary.md b9d2c326b8904518a0ef5bb7f0427b05
+msgid "session"
+msgstr "会话"
+
+#: ../../appendix-02-glossary.md d59efc8443ca456e9d30c75c350fcff0
+msgid "One call leg’s thread, codecs, queues, UUID"
+msgstr "一条呼叫腿的线程、编解码、队列、UUID"
+
+#: ../../appendix-02-glossary.md 2e59aa0cff034c64b6e442fbba08ede3
+msgid ""
+"`switch_core_session_t` wraps a channel. One session thread owns the state "
+"machine. `src/switch_core_session.c`. Users Manual: runtime container for a "
+"channel and its application state."
+msgstr ""
+"`switch_core_session_t` 包裹一个信道。一条 session "
+"线程拥有状态机。`src/switch_core_session.c`。用户手册：channel 及其应用状态的运行时容器。"
+
+#: ../../appendix-02-glossary.md 2cea229fb796493c916d78e3564297ef
+msgid "Sofia-SIP"
+msgstr "Sofia-SIP"
+
+#: ../../appendix-02-glossary.md 99b41a66b1584ec2b3a3b5d160ff371e
+msgid "External SIP stack (`sofia-sip-ua >= 1.13.18`)"
+msgstr "外部 SIP 栈（`sofia-sip-ua >= 1.13.18`）"
+
+#: ../../appendix-02-glossary.md d38b137dfccb46ceaa6c348bdf66986f
+msgid ""
+"**Not** vendored under `libs/`. CI clones `freeswitch/sofia-sip`. Used by "
+"`mod_sofia`."
+msgstr "**没有** 放进 `libs/`。CI 克隆 `freeswitch/sofia-sip`。供 `mod_sofia` 使用。"
+
+#: ../../appendix-02-glossary.md 1cfd474c4f794ef3b7f0d3662c9220f8
+msgid "SpanDSP"
+msgstr "SpanDSP"
+
+#: ../../appendix-02-glossary.md cd7b5e57ed66456282cafd9d45917aab
+msgid "External DSP / fax / codec library (`>= 3.1.1`)"
+msgstr "外部 DSP / 传真 / 编解码库（`>= 3.1.1`）"
+
+#: ../../appendix-02-glossary.md 29a3df4cbf3c4857823f6018c5df514f
+msgid ""
+"**Not** in this git tree. Hard configure error if missing. `mod_spandsp`."
+msgstr "**不在** 本 git 树。缺失时 configure 硬失败。`mod_spandsp`。"
+
+#: ../../appendix-02-glossary.md 0a0da02a964840fe9fa57b3060526537
+msgid "`switch_status_t`"
+msgstr "`switch_status_t`"
+
+#: ../../appendix-02-glossary.md 2d7ae6efa723479e9747c7e1aedaf4fd
+msgid "Core C return enum (`SWITCH_STATUS_SUCCESS`, `SWITCH_STATUS_FALSE`, …)"
+msgstr "核心 C 返回枚举（`SWITCH_STATUS_SUCCESS`、`SWITCH_STATUS_FALSE`、…）"
+
+#: ../../appendix-02-glossary.md 121520254c9a4f8cbd1b93c506fd98b6
+msgid ""
+"`src/include/switch_types.h`. Endpoints may return `SWITCH_STATUS_FALSE` "
+"from a state handler to skip the core’s standard handler. Hangup *cause* is "
+"`switch_call_cause_t`, not this type."
+msgstr ""
+"`src/include/switch_types.h`。终端可从状态处理函数返回 "
+"`SWITCH_STATUS_FALSE`，以跳过核心的标准处理。挂断 *原因* 是 `switch_call_cause_t`，不是这个类型。"
+
+#: ../../appendix-02-glossary.md e5e238fc6f1042a2945ceb9a56ec665d
+msgid "`user_context`"
+msgstr "`user_context`"
+
+#: ../../appendix-02-glossary.md 20c3d9187b254d61a9c79faf5ef3f0ad
+msgid "Directory variable that selects the dialplan context after auth"
+msgstr "认证后选择拨号计划上下文的号码簿变量"
+
+#: ../../appendix-02-glossary.md be5946426bde431dbeda742f255ce02c
+msgid ""
+"Vanilla users 1000–1019: `default`. Overrides the SIP profile’s `context` "
+"(`public` on internal)."
+msgstr ""
+"Vanilla 用户 1000–1019：`default`。覆盖 SIP profile 的 `context`（internal 上为 "
+"`public`）。"
+
+#: ../../appendix-02-glossary.md ba8e9535a7bc4ff3b42d507c4250fc4d
+msgid "Users Manual"
+msgstr "用户手册"
+
+#: ../../appendix-02-glossary.md bf8b53b17d424ccc87020eec5032b5cc
+msgid "Operator configuration reference from SignalWire"
+msgstr "SignalWire 提供的运维配置参考"
+
+#: ../../appendix-02-glossary.md 52542a6e569e4ef99acbb384ee414264
+msgid ""
+"[developer.signalwire.com/freeswitch](https://developer.signalwire.com/freeswitch/)."
+" Parts 1–8 configuration; 9 modules; 10 recipes; 11 troubleshooting; 12 "
+"ESL/scripting. Distinct from this PKB and from Explained/Confluence."
+msgstr ""
+"[developer.signalwire.com/freeswitch](https://developer.signalwire.com/freeswitch/)。第"
+" 1–8 部分配置；9 模块；10 配方；11 排障；12 ESL/脚本。与本 PKB 以及 Explained/Confluence 不同。"
+
+#: ../../appendix-02-glossary.md 0efb3453821c474b9edcf460bf63ce6f
+msgid "vanilla"
+msgstr "vanilla"
+
+#: ../../appendix-02-glossary.md 6e0cbedfc39c49c6a58be57481613c98
+msgid "Default sample XML profile (`conf/vanilla`)"
+msgstr "默认示例 XML 配置（`conf/vanilla`）"
+
+#: ../../appendix-02-glossary.md bd4e9a643b154a59829572feb26f4da1
+msgid ""
+"Demo PBX, not a production security baseline. Other profiles: `conf/sbc`, "
+"`conf/minimal`, `conf/curl`. Installed when `$(confdir)` does not exist "
+"(`Makefile.am` `samples-conf`)."
+msgstr ""
+"演示 PBX，不是生产安全基线。其他配置：`conf/sbc`、`conf/minimal`、`conf/curl`。当 `$(confdir)` "
+"不存在时安装（`Makefile.am` 的 `samples-conf`）。"
+
+#: ../../appendix-02-glossary.md 21773beba4ae4ad187fa173219fc5ae8
+msgid "Verto"
+msgstr "Verto"
+
+#: ../../appendix-02-glossary.md b5615c78d20145578c476b644b44afb1
+msgid "HTML5 / WebRTC endpoint (`mod_verto`, name `verto.rtc`)"
+msgstr "HTML5 / WebRTC 终端（`mod_verto`，名称 `verto.rtc`）"
+
+#: ../../appendix-02-glossary.md 307c68ea6eb14ef8839b1175c3428cc9
+msgid ""
+"JSON-RPC 2.0 over WS/WSS. Methods in "
+"`src/mod/endpoints/mod_verto/mod_verto.c`. Needs libks."
+msgstr ""
+"WS/WSS 上的 JSON-RPC 2.0。方法在 `src/mod/endpoints/mod_verto/mod_verto.c`。需要 "
+"libks。"
+
+#: ../../appendix-02-glossary.md:44 d5ccffe2ecaa4477811a27e2e1be5e46
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../appendix-02-glossary.md:46 4d5bb2a6c14d46f4a03ff796b60d5e9f
+msgid "[Project Overview](00-overview.md)"
+msgstr "[项目概述](00-overview.md)"
+
+#: ../../appendix-02-glossary.md:47 7e8fe7c84b964816ab916b9802eff363
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../appendix-02-glossary.md:48 2526ac26e02c4d4faafff2cb26395611
+msgid "[Tech Stack](03-tech-stack.md)"
+msgstr "[技术栈](03-tech-stack.md)"
+
+#: ../../appendix-02-glossary.md:49 cd4207d2e8bb44f788331f5c7d922b21
+msgid "[Data and API](05-data-and-api.md)"
+msgstr "[数据与 API](05-data-and-api.md)"
+
+#: ../../appendix-02-glossary.md:50 10df4327df984729af639fbbd92fc1d9
+msgid "[FAQ](appendix-01-faq.md)"
+msgstr "[常见问题](appendix-01-faq.md)"
+
+#: ../../appendix-02-glossary.md:51 e1ef78395bb64126a5222a9d7cf71aa2
+msgid "[Users Manual](https://developer.signalwire.com/freeswitch/)"
+msgstr "[用户手册](https://developer.signalwire.com/freeswitch/)"
+
+#~ msgid ""
+#~ "`conf/vanilla/autoload_configs/modules.conf.xml`. Loader: "
+#~ "`src/switch_loadable_module.c`."
+#~ msgstr ""
+#~ "`conf/vanilla/autoload_configs/modules.conf.xml`。加载器：`src/switch_loadable_module.c`。"

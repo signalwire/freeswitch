@@ -1,0 +1,891 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../01-quick-start.md:1 2552d0e09afa4926bf7552732c5ea666
+msgid "01. Quick Start"
+msgstr "01. 快速入门"
+
+#: ../../01-quick-start.md:5 e1e2b6ac8b934013bfb72e7f74b6bf0e
+msgid ""
+"Goal: get a `freeswitch` process running from **this clone** and prove it "
+"with `fs_cli -x status`. Vanilla XML is a demo PBX, not a production "
+"baseline (`conf/vanilla/README_IMPORTANT.txt`). Operator-facing first-call "
+"steps (register 1000/1001, dial `9196`) match [Users Manual Chapter "
+"2](https://developer.signalwire.com/freeswitch/foundations/getting-started)."
+msgstr ""
+"目标：从 **本克隆** 跑起 `freeswitch` 进程，并用 `fs_cli -x status` 验证。Vanilla XML 是演示 "
+"PBX，不是生产基线（`conf/vanilla/README_IMPORTANT.txt`）。面向运维的首呼步骤（注册 1000/1001、拨 "
+"`9196`）与 [用户手册第 2 "
+"章](https://developer.signalwire.com/freeswitch/foundations/getting-started) "
+"一致。"
+
+#: ../../01-quick-start.md:7 59bbc993784e446390f609477503dcb0
+msgid ""
+"If you only need a packaged daemon on Debian and have a SignalWire token, "
+"skip to [Install from packages](#install-from-packages-debian). That is what"
+" `README.md` recommends for operators."
+msgstr ""
+"如果只需要在 Debian 上安装打包好的守护进程且已有 SignalWire token，可跳到 [从软件包安装](#install-from-"
+"packages-debian)。这是 `README.md` 向运维人员推荐的路径。"
+
+#: ../../01-quick-start.md:9 9dd1d3874b004069bb42b3bd8194d940
+msgid "Prerequisites"
+msgstr "前置条件"
+
+#: ../../01-quick-start.md 120e85ac32f5496c8d27f70093b38f9c
+msgid "Tool"
+msgstr "工具"
+
+#: ../../01-quick-start.md f639322054514e5eb27739189b030d31
+msgid "Minimum version"
+msgstr "最低版本"
+
+#: ../../01-quick-start.md 14c221aec9764aceadf726276e3a0e77
+msgid "Check command"
+msgstr "检查命令"
+
+#: ../../01-quick-start.md 8fe6e9c2b4f9483183c9071be5e1fd8e
+msgid "Install notes"
+msgstr "安装说明"
+
+#: ../../01-quick-start.md 74a8444720154c2fb78abef34bbccc7b
+msgid "Git"
+msgstr "Git"
+
+#: ../../01-quick-start.md fed3cfe121fc4e379caa36d978a661f5
+msgid "any recent"
+msgstr "任意较新版本"
+
+#: ../../01-quick-start.md 9246b267dddc4e5cb80b2d7ee55b9928
+msgid "`git --version`"
+msgstr "`git --version`"
+
+#: ../../01-quick-start.md 880aa0c502ac4137be76606247939a48
+msgid "Clone this tree"
+msgstr "克隆本仓库"
+
+#: ../../01-quick-start.md 48de4e3b3d744b4d8ab7307ad9029c78
+msgid "autoconf"
+msgstr "autoconf"
+
+#: ../../01-quick-start.md 15a9a7e86f014f18bfafa63edbbcb5f8
+msgid "2.59+"
+msgstr "2.59+"
+
+#: ../../01-quick-start.md 8b906e8200b04065b4aa86cef8c886cf
+msgid "`autoconf --version`"
+msgstr "`autoconf --version`"
+
+#: ../../01-quick-start.md 975e970ad8504f8a804c14c891eef439
+msgid "Enforced by `scripts/ci/build-requirements.sh` via `bootstrap.sh`"
+msgstr "由 `scripts/ci/build-requirements.sh` 经 `bootstrap.sh` 强制检查"
+
+#: ../../01-quick-start.md 46ce58fcdb82453793c06f3156f76258
+msgid "automake / aclocal"
+msgstr "automake / aclocal"
+
+#: ../../01-quick-start.md 2fb8da50f3a34d148ee23aedc942f30e
+msgid "1.7+"
+msgstr "1.7+"
+
+#: ../../01-quick-start.md 0cff4756896247e097d20c029e1de8f1
+msgid "`automake --version`"
+msgstr "`automake --version`"
+
+#: ../../01-quick-start.md 3fccb8238a3c44a192dc402568c12926
+msgid "Same checker"
+msgstr "同一检查脚本"
+
+#: ../../01-quick-start.md bee0c60217ee4663942c4af5b9393dcf
+msgid "libtool / libtoolize"
+msgstr "libtool / libtoolize"
+
+#: ../../01-quick-start.md aebbd371256a47e5baf9882b79039e97
+msgid "1.5.14+ (2.x is fine)"
+msgstr "1.5.14+（2.x 亦可）"
+
+#: ../../01-quick-start.md 6fc2f169fcda4bb7a2c84a77fe9017ec
+msgid "`libtool --version`"
+msgstr "`libtool --version`"
+
+#: ../../01-quick-start.md 2bd10b51167d44efaf039150c6174fac
+msgid "macOS: Homebrew `libtool` (`glibtool`)"
+msgstr "macOS：Homebrew `libtool`（`glibtool`）"
+
+#: ../../01-quick-start.md 5b634be844e844de8a789ca1807c40e1
+msgid "C/C++ toolchain"
+msgstr "C/C++ 工具链"
+
+#: ../../01-quick-start.md 6ed69b0a0d3c4de8a09900caf3cca56f
+msgid "GCC or Clang"
+msgstr "GCC or Clang"
+
+#: ../../01-quick-start.md 1a0cc30e3d6b449ababecd922df6e209
+msgid "`cc --version`"
+msgstr "`cc --version`"
+
+#: ../../01-quick-start.md 9ea9cac955834f62b19029cfd88ed9ea
+msgid "`build-essential` on Debian; Xcode CLT on macOS"
+msgstr "Debian 上用 `build-essential`；macOS 上用 Xcode CLT"
+
+#: ../../01-quick-start.md 5418f4bb19df4583957db1ff29505a15
+msgid "pkg-config"
+msgstr "pkg-config"
+
+#: ../../01-quick-start.md de1ed92d9a644a0abdc1fbb306745b0b
+msgid "any"
+msgstr "任意"
+
+#: ../../01-quick-start.md a644add369f84b1bbb41f8f39c7f898e
+msgid "`pkg-config --version`"
+msgstr "`pkg-config --version`"
+
+#: ../../01-quick-start.md b30265f447844887a90679e8e49c6844
+msgid "Needed by `configure`"
+msgstr "`configure` 需要"
+
+#: ../../01-quick-start.md a61a259f4ea443b18235ecc4655e9007
+msgid "Sofia-SIP, libks, SpanDSP, signalwire-c"
+msgstr "Sofia-SIP, libks, SpanDSP, signalwire-c"
+
+#: ../../01-quick-start.md a451fa3165834ec4839a2e9f31cfbc43
+msgid "matching current FreeSWITCH"
+msgstr "与当前 FreeSWITCH 匹配"
+
+#: ../../01-quick-start.md d6c62e1968a34bb09a1fa0653f88244a
+msgid "`pkg-config --exists sofia-sip-ua`"
+msgstr "`pkg-config --exists sofia-sip-ua`"
+
+#: ../../01-quick-start.md 52f55b7b138142f49711e36d69e3ce25
+msgid ""
+"**Not fully in this repo.** CI clones [sofia-"
+"sip](https://github.com/freeswitch/sofia-sip); the Debian 11 source "
+"Dockerfile also builds libks, spandsp, and signalwire-c "
+"(`docker/examples/Debian11/Dockerfile`)."
+msgstr ""
+"**并不完全在本仓库内。** CI 会克隆 [sofia-sip](https://github.com/freeswitch/sofia-"
+"sip)；Debian 11 源码 Dockerfile 还会构建 libks、spandsp 和 "
+"signalwire-c（`docker/examples/Debian11/Dockerfile`）。"
+
+#: ../../01-quick-start.md:21 b521387a5a7a46a680b5569be10c82e6
+msgid ""
+"Debian/Ubuntu source-build packages used in "
+"`docker/examples/Debian11/Dockerfile` include `build-essential`, `cmake`, "
+"`automake`, `autoconf`, `libtool-bin`, `pkg-config`, `libssl-dev`, "
+"`zlib1g-dev`, `libpcre2-dev`, `libedit-dev`, `libsqlite3-dev`, "
+"`libcurl4-openssl-dev`, `libspeexdsp-dev`, `libopus-dev`, `libsndfile1-dev`,"
+" `liblua5.2-dev`, `python3-dev`, `libpq-dev`, and related codec/AV headers."
+msgstr ""
+"`docker/examples/Debian11/Dockerfile` 中用于 Debian/Ubuntu 源码构建的软件包包括 `build-"
+"essential`、`cmake`、`automake`、`autoconf`、`libtool-bin`、`pkg-config`、`libssl-"
+"dev`、`zlib1g-dev`、`libpcre2-dev`、`libedit-"
+"dev`、`libsqlite3-dev`、`libcurl4-openssl-dev`、`libspeexdsp-dev`、`libopus-"
+"dev`、`libsndfile1-dev`、`liblua5.2-dev`、`python3-dev`、`libpq-dev` 以及相关编解码器/AV"
+" 头文件。"
+
+#: ../../01-quick-start.md:23 f43f4cc2528e486da9ebb81add2d5605
+#, python-brace-format
+msgid ""
+"macOS CI (`.github/workflows/macos.yml`) installs Homebrew formulas "
+"(`autoconf`, `automake`, `libtool`, `pcre2`, `sofia-sip`, `opus`, "
+"`speexdsp`, …) plus `signalwire/homebrew-"
+"signalwire/{libks2,signalwire-c2,spandsp}`."
+msgstr ""
+"macOS CI（`.github/workflows/macos.yml`）安装 Homebrew "
+"formula（`autoconf`、`automake`、`libtool`、`pcre2`、`sofia-"
+"sip`、`opus`、`speexdsp` 等）以及 `signalwire/homebrew-"
+"signalwire/{libks2,signalwire-c2,spandsp}`。"
+
+#: ../../01-quick-start.md:25 994476a51d40497ab59bf5b8bf6cd281
+msgid "Clone and Install"
+msgstr "克隆与安装"
+
+#: ../../01-quick-start.md:27 4136cd08af2546839b8bec979999655a
+msgid ""
+"You already have the tree if you are reading this PKB. From a fresh machine:"
+msgstr "如果你正在阅读本 PKB，说明已经有这份代码树。在全新机器上："
+
+#: ../../01-quick-start.md:34 7be408641ec54715925a16feb8685d1c
+msgid ""
+"This workspace is version **1.11.3-dev** (`configure.ac`). Upstream default "
+"remote is `https://github.com/signalwire/freeswitch`."
+msgstr ""
+"本工作区版本为 **1.11.3-dev**（`configure.ac`）。上游默认 remote 为 "
+"`https://github.com/signalwire/freeswitch`。"
+
+#: ../../01-quick-start.md:36 aca42479ea0c451fbddd5c3c2557d508
+msgid "Source build (developer path)"
+msgstr "源码构建（开发者路径）"
+
+#: ../../01-quick-start.md:38 b71b04401c1144b499c988ae38c74ec5
+msgid ""
+"Install Sofia-SIP (and libks / SpanDSP / signalwire-c) first, the same way "
+"CI and `docker/examples/Debian11/Dockerfile` do. Then, from the repo root:"
+msgstr ""
+"先按 CI 和 `docker/examples/Debian11/Dockerfile` 的方式安装 Sofia-SIP（以及 libks / "
+"SpanDSP / signalwire-c）。然后在仓库根目录执行："
+
+#: ../../01-quick-start.md:47 383f4bbe0424494099b0da7862c04b3b
+msgid ""
+"`bootstrap.sh` copies `build/modules.conf.in` → `modules.conf` if missing, "
+"then runs Autotools. `-j` parallelizes library bootstraps."
+msgstr ""
+"若缺少 `modules.conf`，`bootstrap.sh` 会把 `build/modules.conf.in` 复制为 "
+"`modules.conf`，然后运行 Autotools。`-j` 用于并行引导依赖库。"
+
+#: ../../01-quick-start.md:48 fdb08da9391749ddb4b0b6b1fc8df798
+msgid ""
+"Default prefix without `--prefix` is `/usr/local/freeswitch` "
+"(`configure.ac`). A home prefix avoids root and matches the macOS CI pattern"
+" (`--prefix=.../OUT`)."
+msgstr ""
+"未指定 `--prefix` 时默认前缀为 `/usr/local/freeswitch`（`configure.ac`）。使用 home "
+"下的前缀可避免 root，并与 macOS CI 模式一致（`--prefix=.../OUT`）。"
+
+#: ../../01-quick-start.md:49 57d2a3227605411d89cc2a4fd8945080
+msgid ""
+"`make install` also installs vanilla sample config when `$(confdir)` does "
+"not exist (`Makefile.am`: `test -d $(DESTDIR)$(confdir) || $(MAKE) samples-"
+"conf`)."
+msgstr ""
+"当 `$(confdir)` 不存在时，`make install` 还会安装 vanilla 示例配置（`Makefile.am`：`test -d "
+"$(DESTDIR)$(confdir) || $(MAKE) samples-conf`）。"
+
+#: ../../01-quick-start.md:50 5d978dc4bef3406ab74ceac1a2637f1f
+msgid ""
+"Prompts and music-on-hold are **not** in this git tree. After `make "
+"install`, [Chapter "
+"2](https://developer.signalwire.com/freeswitch/foundations/getting-started) "
+"also runs `make cd-sounds-install cd-moh-install` (Callie 8 kHz packages; "
+"`Makefile.am` `sounds-install`). Skip only if you do not need playback/echo "
+"tests."
+msgstr ""
+"提示音与保持音乐**不在**本 git 树中。`make install` 之后，[第 2 "
+"章](https://developer.signalwire.com/freeswitch/foundations/getting-started) "
+"还会跑 `make cd-sounds-install cd-moh-install`（Callie 8 kHz 包；`Makefile.am` 的 "
+"`sounds-install`）。只有不需要放音/回声测试时才可跳过。"
+
+#: ../../01-quick-start.md:51 243fa26da0d944ac9e4a636859a73e8f
+msgid ""
+"Debug symbols without changing configure flags: `./devel-bootstrap.sh` sets "
+"`CFLAGS`/`CXXFLAGS` to `-ggdb3 -O0` then bootstraps and configures."
+msgstr ""
+"无需改 configure 参数即可带调试符号：`./devel-bootstrap.sh` 将 `CFLAGS`/`CXXFLAGS` 设为 "
+"`-ggdb3 -O0`，然后执行 bootstrap 和 configure。"
+
+#: ../../01-quick-start.md:53 9c5c45f784ca44bb8fdd2f4a32885d16
+msgid ""
+"Enable extra modules by uncommenting lines in `modules.conf` **after** "
+"bootstrap and **before** `./configure` / `make`. CI’s unit-test configure "
+"(`ci.sh`) is an example of that edit pattern."
+msgstr ""
+"在 bootstrap **之后**、`./configure` / `make` **之前**，通过取消 `modules.conf` "
+"中对应行的注释来启用额外模块。CI 的单元测试 configure（`ci.sh`）就是这种修改方式的例子。"
+
+#: ../../01-quick-start.md:55 d698712d5b7b471ea03fdf262c788632
+msgid "Install from packages (Debian)"
+msgstr "从软件包安装（Debian）"
+
+#: ../../01-quick-start.md:57 6838d80d224146408b80d2d410f85df4
+msgid ""
+"Requires a SignalWire Personal Access Token. From "
+"`scripts/packaging/README.md`:"
+msgstr "需要 SignalWire Personal Access Token。摘自 `scripts/packaging/README.md`："
+
+#: ../../01-quick-start.md:65 017ad2b383764c399df58306f8a48638
+msgid ""
+"`release` tracks packaged releases; `prerelease` tracks what you see on "
+"`master`."
+msgstr "`release` 跟踪已打包发行版；`prerelease` 跟踪你在 `master` 上看到的内容。"
+
+#: ../../01-quick-start.md:67 596eba53ffa44b779172f7d3b005cda4
+msgid ""
+"Meta packages (Users Manual Ch 2): `freeswitch-meta-all` (every module), "
+"`freeswitch-meta-vanilla` (vanilla set + typically `freeswitch-sounds-en-us-"
+"callie` / `freeswitch-sounds-music`), `freeswitch-meta-default`, "
+"`freeswitch-meta-bare`. Packaged config root is `/etc/freeswitch`; systemd: "
+"`systemctl enable --now freeswitch`."
+msgstr ""
+"元软件包（用户手册第 2 章）：`freeswitch-meta-all`（全部模块）、`freeswitch-meta-"
+"vanilla`（vanilla 集合，通常还带 `freeswitch-sounds-en-us-callie` / `freeswitch-"
+"sounds-music`）、`freeswitch-meta-default`、`freeswitch-meta-bare`。打包安装的配置根是 "
+"`/etc/freeswitch`；systemd：`systemctl enable --now freeswitch`。"
+
+#: ../../01-quick-start.md:69 9abe527122f842c891305cb35db7defd
+msgid "Docker"
+msgstr "Docker"
+
+#: ../../01-quick-start.md:71 a5560cd1b44c4d6f8a300e5b4b094824
+msgid ""
+"Packaged image (`docker/master/Dockerfile`) also needs a SignalWire `TOKEN` "
+"build-arg. For a **source** image without that token, follow "
+"`docker/examples/Debian11/Dockerfile` (clone deps, `./bootstrap.sh -j`, "
+"`./configure`, `make && make install`)."
+msgstr ""
+"打包镜像（`docker/master/Dockerfile`）同样需要 SignalWire `TOKEN` build-arg。若要构建**无需该 "
+"token 的源码镜像**，请按 `docker/examples/Debian11/Dockerfile`（克隆依赖、`./bootstrap.sh "
+"-j`、`./configure`、`make && make install`）。"
+
+#: ../../01-quick-start.md:73 482cdcb86c5e4767b61687fd3862c1fc
+msgid ""
+"Runtime containers expect **host networking** (`docker/README.md`). Typical "
+"ports: SIP 5060/5080, TLS 5061/5081, WebSocket 5066/7443, ESL **8021**, RTP "
+"UDP ranges 16384–32768 and 64535–65535."
+msgstr ""
+"运行时容器需要 **host 网络**（`docker/README.md`）。常见端口：SIP 5060/5080、TLS "
+"5061/5081、WebSocket 5066/7443、ESL **8021**、RTP UDP 范围 16384–32768 和 "
+"64535–65535。"
+
+#: ../../01-quick-start.md:75 7bb8d1de8c3a4a038b9e6a5f2ca203e8
+msgid "Run Locally"
+msgstr "本地运行"
+
+#: ../../01-quick-start.md:77 9217658d92694c20912cfc35df1d3e9a
+msgid "After a prefix install:"
+msgstr "完成 prefix 安装后："
+
+#: ../../01-quick-start.md:84 6fcf2571dbac450c9da9e9041a498e04
+msgid ""
+"`-ncwait`: background, no console, wait until the core is ready "
+"(`src/switch.c`)."
+msgstr "`-ncwait`：后台运行、无控制台，等到核心就绪（`src/switch.c`）。"
+
+#: ../../01-quick-start.md:85 5b85cf704e114a3cb405fc09e1fab49f
+msgid ""
+"`-nonat`: skip UPnP/NAT-PMP pinholes — required unless you *want* auto-NAT "
+"(`conf/vanilla/README_IMPORTANT.txt`)."
+msgstr ""
+"`-nonat`：跳过 UPnP/NAT-PMP 打洞——除非你*确实需要*自动 "
+"NAT，否则都应加上（`conf/vanilla/README_IMPORTANT.txt`）。"
+
+#: ../../01-quick-start.md:86 ee7c7a6847914aa887c3cb9c4a0db135
+msgid "Foreground console instead: `freeswitch -c -nonat`."
+msgstr "若要前台控制台：`freeswitch -c -nonat`。"
+
+#: ../../01-quick-start.md:87 ad5ba172b532428c8322ceda3b028d41
+msgid "Stop: `freeswitch -stop` (same prefix `bin/`)."
+msgstr "停止：`freeswitch -stop`（同一 prefix 的 `bin/`）。"
+
+#: ../../01-quick-start.md:89 b1a9615f7a094894b5816f17ae9e171e
+msgid ""
+"Default Event Socket is `127.0.0.1:8021` with password `ClueCon` "
+"(`src/mod/event_handlers/mod_event_socket/conf/autoload_configs/event_socket.conf.xml`,"
+" `libs/esl/fs_cli.conf`). `fs_cli` uses that by default."
+msgstr ""
+"默认 Event Socket 为 `127.0.0.1:8021`，密码 "
+"`ClueCon`（`src/mod/event_handlers/mod_event_socket/conf/autoload_configs/event_socket.conf.xml`、`libs/esl/fs_cli.conf`）。`fs_cli`"
+" 默认使用该配置。"
+
+#: ../../01-quick-start.md:91 5a76c9d384304b3db9c9987d426c2f72
+msgid ""
+"The **configuration root** is the directory that contains `freeswitch.xml` "
+"([Chapter "
+"2](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)):"
+msgstr ""
+"**配置根目录**是包含 `freeswitch.xml` 的目录（[第 2 "
+"章](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)）："
+
+#: ../../01-quick-start.md fbd1035e08644eb3b0639bf16d5b4a20
+msgid "Install type"
+msgstr "安装类型"
+
+#: ../../01-quick-start.md f158114567ab4e8ab9fd4fe9c09810f4
+msgid "Typical configuration root"
+msgstr "典型配置根"
+
+#: ../../01-quick-start.md f185cd388d104540a568090ddfa118f6
+msgid "Source build (this PKB, `--prefix=\"$HOME/fs\"`)"
+msgstr "源码构建（本 PKB，`--prefix=\"$HOME/fs\"`）"
+
+#: ../../01-quick-start.md 17b8ad37dc854407bb026579a62fabc1
+msgid "`$HOME/fs/conf`"
+msgstr "`$HOME/fs/conf`"
+
+#: ../../01-quick-start.md 4d72b6fc32b042d0ae60845d2a1e4bae
+msgid "Source build (Autotools default prefix)"
+msgstr "源码构建（Autotools 默认 prefix）"
+
+#: ../../01-quick-start.md 3115a92086764a6f9462f76c077ee0b4
+msgid "`/usr/local/freeswitch/conf`"
+msgstr "`/usr/local/freeswitch/conf`"
+
+#: ../../01-quick-start.md 6128d375c327412fb68702c10a87a0a6
+msgid "Debian package"
+msgstr "Debian 软件包"
+
+#: ../../01-quick-start.md 7928081937cd4f18954e79cd68d468e5
+msgid "`/etc/freeswitch`"
+msgstr "`/etc/freeswitch`"
+
+#: ../../01-quick-start.md:99 a79499474a1b425c9decd466a3dd35f5
+msgid "**Working looks like:**"
+msgstr "**正常运行时看起来像：**"
+
+#: ../../01-quick-start.md:101 c53a3fd3f92242e99e877136c1669c75
+msgid ""
+"`fs_cli -x status` prints a line starting with `UP` (same check as "
+"`docker/base_image/healthcheck.sh`)."
+msgstr ""
+"`fs_cli -x status` 会打印以 `UP` 开头的一行（与 `docker/base_image/healthcheck.sh` "
+"相同的检查）。"
+
+#: ../../01-quick-start.md:102 55a675b1cf0848fca1a686441ac63792
+msgid ""
+"`fs_cli -x sofia status` shows SIP profiles (vanilla internal/external)."
+msgstr "`fs_cli -x sofia status` 显示 SIP profile（vanilla 的 internal/external）。"
+
+#: ../../01-quick-start.md:103 65b20ef0b9e94c29afd24aa6c2d719af
+#, python-brace-format
+msgid ""
+"Directory users `1000`–`1019` exist in `conf/vanilla/directory/` with shared"
+" password `$${default_password}` = **`1234`** (`conf/vanilla/vars.xml`). Do "
+"not expose them on a public IP."
+msgstr ""
+"`conf/vanilla/directory/` 中存在分机用户 `1000`–`1019`，共享密码 `$${default_password}` "
+"= **`1234`**（`conf/vanilla/vars.xml`）。不要把它们暴露在公网 IP 上。"
+
+#: ../../01-quick-start.md:105 51d3dc5ff0b340baa5fcb49bcd5cdad7
+msgid "First call (vanilla PBX)"
+msgstr "首呼（vanilla PBX）"
+
+#: ../../01-quick-start.md:107 464d3d1fd2fc4ac186cc519bad1dfcd4
+msgid ""
+"Optional, after the process is `UP`. Matches Users Manual Chapter 2 against "
+"this tree’s `conf/vanilla/dialplan/default.xml`."
+msgstr "可选，进程已 `UP` 之后。对照用户手册第 2 章与本仓库 `conf/vanilla/dialplan/default.xml`。"
+
+#: ../../01-quick-start.md:109 5c0068836a9141588b92892136cea54a
+msgid ""
+"Register a SIP softphone as user `1000` (password `1234`, port **5060**, UDP"
+" or TCP) to the host’s SIP address. A second client as `1001` lets you call "
+"between extensions."
+msgstr ""
+"把 SIP 软电话注册为用户 `1000`（密码 `1234`，端口 **5060**，UDP 或 TCP）到主机 SIP 地址。第二部客户端注册为 "
+"`1001` 即可分机互拨。"
+
+#: ../../01-quick-start.md:110 54327214bca94c6782af00058f93d930
+msgid ""
+"Confirm bindings: `fs_cli -x \"show registrations\"` and `fs_cli -x \"sofia "
+"status profile internal reg\"`."
+msgstr ""
+"确认绑定：`fs_cli -x \"show registrations\"` 与 `fs_cli -x \"sofia status profile "
+"internal reg\"`。"
+
+#: ../../01-quick-start.md:111 5f139ca524ad4468a76a7cc60e1651bf
+msgid ""
+"From `1000`, dial **`1001`** (`Local_Extension` `^(10[01][0-9])$`) or dial "
+"**`9196`** for the echo test (no second device)."
+msgstr ""
+"从 `1000` 拨 **`1001`**（`Local_Extension` `^(10[01][0-9])$`），或拨 **`9196`** "
+"做回声测试（不需要第二部设备）。"
+
+#: ../../01-quick-start.md 4634be99f2a64962812f3d05a2497429
+msgid "Number"
+msgstr "号码"
+
+#: ../../01-quick-start.md 102821eb1c7747f5ae8f2c5eb9d5fc8f
+msgid "Destination in vanilla `default` context"
+msgstr "vanilla `default` 上下文中的目的"
+
+#: ../../01-quick-start.md cebd2ada9fc44191b006cad2e383e74a
+msgid "`1000`–`1019`"
+msgstr "`1000`–`1019`"
+
+#: ../../01-quick-start.md 57cbcd4b64ba43f39c1599f0235f2c57
+msgid "Registered test extensions"
+msgstr "已注册的测试分机"
+
+#: ../../01-quick-start.md 584002289d2841a699c9c8d408741ff9
+msgid "`9196`"
+msgstr "`9196`"
+
+#: ../../01-quick-start.md 2544d05bb30b46caa7f32c2d439a08d6
+msgid "Echo (`echo` app)"
+msgstr "回声（`echo` 应用）"
+
+#: ../../01-quick-start.md 5f7aed524e744420adbd45690267b508
+msgid "`9195`"
+msgstr "`9195`"
+
+#: ../../01-quick-start.md dfe994f6c5fd44a09e334c3ac4c7522a
+msgid "Delayed echo (`delay_echo` **5000** ms in this tree — not 250 ms)"
+msgstr "延迟回声（本仓库 `delay_echo` 为 **5000** ms，不是 250 ms）"
+
+#: ../../01-quick-start.md fb76f0b5d3ef4dd4b13b3291f36212b7
+msgid "`9197`"
+msgstr "`9197`"
+
+#: ../../01-quick-start.md b068bd3d01e24bdc93f83a29d4f4bdb3
+msgid "Milliwatt tone (1004 Hz)"
+msgstr "毫瓦音（1004 Hz）"
+
+#: ../../01-quick-start.md 05612179924540b4abcfe59dc01b5fbb
+msgid "`9198`"
+msgstr "`9198`"
+
+#: ../../01-quick-start.md 35b0460a226f45eaa69361d7db5503b8
+msgid "Tone stream demo"
+msgstr "音流演示"
+
+#: ../../01-quick-start.md 8d44486dbf694c2880fe3cf23e2b0f46
+msgid "`9664`"
+msgstr "`9664`"
+
+#: ../../01-quick-start.md 12dfe9a173854a438cfd1ca14df02529
+msgid "Music on hold"
+msgstr "保持音乐"
+
+#: ../../01-quick-start.md 03f8bed688b44779b54064fd239ebb55
+msgid "`5000`"
+msgstr "`5000`"
+
+#: ../../01-quick-start.md af8f69444d0447608859ccc5af78f658
+msgid "IVR demo"
+msgstr "IVR 演示"
+
+#: ../../01-quick-start.md c6970e885b8c4ce28799dc832ef39ab2
+msgid "`5001`"
+msgstr "`5001`"
+
+#: ../../01-quick-start.md 82100c81a0d14f0d8243953c0b602959
+msgid "Dynamic conference"
+msgstr "动态会议"
+
+#: ../../01-quick-start.md fc1ce7564fdd47a69c7138cf7edfa6e3
+msgid "`3000`–`3099`"
+msgstr "`3000`–`3099`"
+
+#: ../../01-quick-start.md 82db4423755a4c88b91af5b9ab6ebf10
+msgid "Named conferences (`30xx` narrowband)"
+msgstr "命名会议室（`30xx` 窄带）"
+
+#: ../../01-quick-start.md 80db6c0fc02e4a2d820302090b5965dc
+msgid "`4000` or `*98`"
+msgstr "`4000` 或 `*98`"
+
+#: ../../01-quick-start.md 7c87f394044d42ef927d884f95527d50
+msgid "Voicemail main (`vmain`)"
+msgstr "语音信箱主菜单（`vmain`）"
+
+#: ../../01-quick-start.md 647ec174f267448d92111003d8ac154c
+msgid "`0` or `operator`"
+msgstr "`0` 或 `operator`"
+
+#: ../../01-quick-start.md 42ca612112a94ebb84bea34d9e6017c2
+msgid "Operator (transfers to 1000 XML features)"
+msgstr "话务员（转到 1000 XML features）"
+
+#: ../../01-quick-start.md:127 497e083b092440efad6668ac37d5b5d1
+msgid ""
+"Change `default_password` in `vars.xml` before any untrusted network, then "
+"`reloadxml`. `fs_cli` number keys 1–12 map to "
+"help/status/sofia/reloadxml/siptrace "
+"(`conf/vanilla/autoload_configs/switch.conf.xml`)."
+msgstr ""
+"在任何不可信网络之前先改 `vars.xml` 中的 `default_password`，然后 `reloadxml`。`fs_cli` 数字键 "
+"1–12 映射到 "
+"help/status/sofia/reloadxml/siptrace（`conf/vanilla/autoload_configs/switch.conf.xml`）。"
+
+#: ../../01-quick-start.md:129 560b678c47f145cfa08e0e11c5f4de24
+msgid "Run Tests"
+msgstr "运行测试"
+
+#: ../../01-quick-start.md:131 24cedc00feef4b53b0f388537f9cde5e
+msgid ""
+"Unit tests are Autotools programs under `tests/unit/` linking "
+"`libfreeswitch`. CI installs first, then:"
+msgstr "单元测试是 `tests/unit/` 下链接 `libfreeswitch` 的 Autotools 程序。CI 会先安装，然后："
+
+#: ../../01-quick-start.md:141 a6febe034c104635b46dc874db2153b9
+msgid ""
+"`./run-tests.sh` calls `make -C ../.. print_tests`, then `make -f run-"
+"tests.mk`. New tests must use `src/include/test/switch_test.h` "
+"(`tests/unit/README`)."
+msgstr ""
+"`./run-tests.sh` 先调用 `make -C ../.. print_tests`，再执行 `make -f run-"
+"tests.mk`。新测试必须使用 `src/include/test/switch_test.h`（`tests/unit/README`）。"
+
+#: ../../01-quick-start.md:143 2ca96449c39942f0b42feead3cc38fb4
+msgid "ASAN unit-test configure (from `ci.sh -t unit-test`):"
+msgstr "ASAN 单元测试 configure（来自 `ci.sh -t unit-test`）："
+
+#: ../../01-quick-start.md:151 aec1baab628e4f15992666d6aaa2f173
+msgid ""
+"Sofia-SIP must already be built/installed for that flow (see "
+"`.github/workflows/unit-test.yml`)."
+msgstr "该流程要求 Sofia-SIP 已经构建/安装（见 `.github/workflows/unit-test.yml`）。"
+
+#: ../../01-quick-start.md:153 a11392a35e284d558640b63876d97846
+msgid "Build for Production"
+msgstr "生产构建"
+
+#: ../../01-quick-start.md 1f7fb13bb43741f2ad7911a626e7ed23
+msgid "Goal"
+msgstr "目标"
+
+#: ../../01-quick-start.md 7e3d669436f24af798c079aaa95c5e50
+msgid "Command / path"
+msgstr "命令 / 路径"
+
+#: ../../01-quick-start.md 7b6fbf7768904134a67b1ab2bc358f40
+msgid "Unix prefix install"
+msgstr "Unix prefix 安装"
+
+#: ../../01-quick-start.md ee0b3f85401b4cd8bfdaa24facd04b77
+msgid ""
+"`./bootstrap.sh -j && ./configure --prefix=... && make && make install`"
+msgstr ""
+"`./bootstrap.sh -j && ./configure --prefix=... && make && make install`"
+
+#: ../../01-quick-start.md 35845821220a48789847301d416bfb43
+msgid "Debian packages from a **git** tree"
+msgstr "从 **git** 树构建 Debian 包"
+
+#: ../../01-quick-start.md 336504ba94584568897f15680019ae9c
+msgid ""
+"`scripts/packaging/build/README.md` (`FSDEB`); tarball checkouts are not "
+"supported"
+msgstr "`scripts/packaging/build/README.md`（`FSDEB`）；不支持 tarball 检出"
+
+#: ../../01-quick-start.md 6128d375c327412fb68702c10a87a0a6
+msgid "Docker (packages)"
+msgstr "Docker（软件包）"
+
+#: ../../01-quick-start.md 868e62a2747c4771b1334010757d4c73
+msgid "`docker/master/Dockerfile` with `TOKEN`"
+msgstr "`docker/master/Dockerfile`，需 `TOKEN`"
+
+#: ../../01-quick-start.md d28bcbe8bc694fcab5427f00b2d75bd1
+msgid "Windows"
+msgstr "Windows"
+
+#: ../../01-quick-start.md 7108ea676ba9447898572aa1bcfaeb04
+msgid "`Freeswitch.2017.sln` / `w32/`"
+msgstr "`Freeswitch.2017.sln` / `w32/`"
+
+#: ../../01-quick-start.md:162 2c5a0e4c240d4d8dafdf43520bdf4619
+msgid ""
+"Install layout under `--prefix` (defaults in `configure.ac`): `bin/`, "
+"`mod/`, `conf/`, `log/`, `db/`, `scripts/`, `htdocs/`, `sounds/`."
+msgstr ""
+"`--prefix` 下的安装布局（默认值见 "
+"`configure.ac`）：`bin/`、`mod/`、`conf/`、`log/`、`db/`、`scripts/`、`htdocs/`、`sounds/`。"
+
+#: ../../01-quick-start.md:164 75737ad12c544c70832995f823ecbb1c
+msgid ""
+"Before any public deployment: change SIP and voicemail passwords (or run "
+"`scripts/perl/randomize-passwords.pl`), change the ESL password, and start "
+"with `-nonat` unless NAT helpers are intentional."
+msgstr ""
+"任何公开部署之前：修改 SIP 和语音信箱密码（或运行 `scripts/perl/randomize-passwords.pl`），修改 ESL "
+"密码，并加上 `-nonat` 启动，除非你有意使用 NAT 辅助。"
+
+#: ../../01-quick-start.md:166 76b84d2615094c7b9698117142991bd7
+msgid "Common Issues"
+msgstr "常见问题"
+
+#: ../../01-quick-start.md a2a7a771ccfa4af5b3ea9fdd1d7ffc8c
+msgid "Symptom"
+msgstr "现象"
+
+#: ../../01-quick-start.md d7035bddb43d49428e3e2639a4504727
+msgid "Likely cause"
+msgstr "可能原因"
+
+#: ../../01-quick-start.md 81bb69c16ee747be99e050d4174851fd
+msgid "Fix"
+msgstr "处理"
+
+#: ../../01-quick-start.md 75cad4ed40634d4f82705ae2be0b731b
+msgid "`bootstrap.sh` exits on autoconf/automake/libtool"
+msgstr "`bootstrap.sh` 在 autoconf/automake/libtool 上退出"
+
+#: ../../01-quick-start.md 5ae80e0b83cf4f77924d3f2be0e2088a
+msgid "Tool versions below `scripts/ci/build-requirements.sh`"
+msgstr "工具版本低于 `scripts/ci/build-requirements.sh` 的要求"
+
+#: ../../01-quick-start.md 38ffb86cbc564ad3a82098c858174797
+msgid ""
+"Install GNU autotools; on macOS use Homebrew `autoconf` `automake` `libtool`"
+msgstr "安装 GNU autotools；在 macOS 上使用 Homebrew `autoconf` `automake` `libtool`"
+
+#: ../../01-quick-start.md 4a99b7b559594063aaadf7b7884489b4
+msgid "`configure` / link fails on Sofia, KS, SpanDSP, or signalwire"
+msgstr "`configure` / 链接在 Sofia、KS、SpanDSP 或 signalwire 上失败"
+
+#: ../../01-quick-start.md d89f7322234e44e7ac0396050320e8e9
+msgid "Those libraries are out-of-tree"
+msgstr "这些库不在本仓库内"
+
+#: ../../01-quick-start.md 59b6600ede144e559a5866d17297e779
+msgid ""
+"Build them first as in `docker/examples/Debian11/Dockerfile` or "
+"`.github/workflows/unit-test.yml` / `macos.yml`"
+msgstr ""
+"先按 `docker/examples/Debian11/Dockerfile` 或 `.github/workflows/unit-test.yml`"
+" / `macos.yml` 构建它们"
+
+#: ../../01-quick-start.md 5c49843e08944e318433cf630b440f3d
+msgid "`modules.conf` missing modules you expected"
+msgstr "`modules.conf` 缺少你期望的模块"
+
+#: ../../01-quick-start.md b75387299c784634a0cbce1f9ffbd113
+msgid ""
+"File is a copy of `build/modules.conf.in`; commented lines are disabled"
+msgstr "该文件是 `build/modules.conf.in` 的副本；被注释的行表示未启用"
+
+#: ../../01-quick-start.md 2761b323d24048a1b2566141dbddbc35
+msgid ""
+"Uncomment the `src/mod/...` path, then rebuild that module (`make mod_lua` "
+"style targets in top-level `Makefile.am`)"
+msgstr ""
+"取消注释 `src/mod/...` 路径，然后重建该模块（顶级 `Makefile.am` 中类似 `make mod_lua` 的目标）"
+
+#: ../../01-quick-start.md d821e311364f47aa9d9dedfa864b08f6
+msgid "`fs_cli` cannot connect"
+msgstr "`fs_cli` 无法连接"
+
+#: ../../01-quick-start.md 1e58e9f353ee4623ad5463a0a0bd4877
+msgid "Switch not up, or ESL not on 8021"
+msgstr "交换机未起来，或 ESL 不在 8021"
+
+#: ../../01-quick-start.md eaa10e4d53f646c0936f61f4fc1ce944
+msgid ""
+"`freeswitch -ncwait`; confirm `mod_event_socket` loaded; default bind is "
+"loopback"
+msgstr "`freeswitch -ncwait`；确认 `mod_event_socket` 已加载；默认绑定在 loopback"
+
+#: ../../01-quick-start.md 106a376663e04ec484ffda76819b59ce
+msgid "Router “pinhole” / unexpected inbound SIP"
+msgstr "路由器“打洞” / 意外的入局 SIP"
+
+#: ../../01-quick-start.md 6b6a76cf74f34b18ae2ec401e415b173
+msgid "Auto NAT (UPnP/NATPMP)"
+msgstr "自动 NAT（UPnP/NATPMP）"
+
+#: ../../01-quick-start.md bcde3a0f49b647a3b44a101c440e3304
+msgid "Start with `-nonat`"
+msgstr "启动时加上 `-nonat`"
+
+#: ../../01-quick-start.md 57cbcd4b64ba43f39c1599f0235f2c57
+msgid "Compromised demo extensions"
+msgstr "演示分机被攻破"
+
+#: ../../01-quick-start.md 89ac4b56deec43fe871e6fe1aafa79e9
+msgid "Vanilla users 1000–1019 and ESL `ClueCon`"
+msgstr "Vanilla 用户 1000–1019 以及 ESL `ClueCon`"
+
+#: ../../01-quick-start.md 5834c957f1554285a5502ea003a48e14
+msgid "Randomize passwords; do not publish 5060/8021 without ACLs"
+msgstr "随机化密码；没有 ACL 就不要把 5060/8021 暴露出去"
+
+#: ../../01-quick-start.md bc81640bc99743e2a1961ff720a1710b
+msgid "`FSGET` / `docker/master` apt repo 401"
+msgstr "`FSGET` / `docker/master` apt 仓库返回 401"
+
+#: ../../01-quick-start.md 7fd677c5ed7e42d5b9fccb0bb60b15bd
+msgid "No SignalWire PAT"
+msgstr "没有 SignalWire PAT"
+
+#: ../../01-quick-start.md 255ad2d3502347fda765ba2800f05784
+msgid ""
+"Create a PAT as linked from `scripts/packaging/README.md`, or build from "
+"source"
+msgstr "按 `scripts/packaging/README.md` 中的链接创建 PAT，或改为从源码构建"
+
+#: ../../01-quick-start.md c379a012a208402cab3466063dde1fe2
+msgid "Docker RTP/SIP broken"
+msgstr "Docker 上 RTP/SIP 异常"
+
+#: ../../01-quick-start.md 57232971712b43929cc5ea82e4ebaf35
+msgid "Published port ranges vs host net"
+msgstr "发布的端口范围 vs host 网络"
+
+#: ../../01-quick-start.md f3362ccb40e24eaca39a87c96546333a
+msgid "Use `docker run --network host` (`docker/README.md`)"
+msgstr "使用 `docker run --network host`（`docker/README.md`）"
+
+#: ../../01-quick-start.md 3b25b0f62e194c05b079c24df53f376b
+msgid "`debian_min_build.sh` fails on modern Debian"
+msgstr "`debian_min_build.sh` 在较新的 Debian 上失败"
+
+#: ../../01-quick-start.md 7ec973a882b546a7b5d900d35b57f42c
+msgid "Script pins **Jessie / FreeSWITCH 1.6** repos"
+msgstr "脚本钉死了 **Jessie / FreeSWITCH 1.6** 仓库"
+
+#: ../../01-quick-start.md 9c89ff0a81e442838fe3dff02a1a22a2
+msgid "Use the Debian 11 Dockerfile or current FSGET docs, not that helper"
+msgstr "改用 Debian 11 Dockerfile 或当前 FSGET 文档，不要用那个辅助脚本"
+
+#: ../../01-quick-start.md:180 49b0d78b8ee54d6baa65fa07aa79f10b
+msgid "Next Steps"
+msgstr "后续步骤"
+
+#: ../../01-quick-start.md:182 4f65543f0381493cb6417aae41463d00
+msgid "[Overview](00-overview.md)"
+msgstr "[概述](00-overview.md)"
+
+#: ../../01-quick-start.md:183 943d57132de341498693a428f670e28d
+msgid "[Repository Map](04-repo-map.md)"
+msgstr "[仓库地图](04-repo-map.md)"
+
+#: ../../01-quick-start.md:184 2c0565e61d2d41e9b325fbc8ffda0fee
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../01-quick-start.md:185 86ddd99847e24aff9cd966141d230491
+msgid "[Tech Stack](03-tech-stack.md)"
+msgstr "[技术栈](03-tech-stack.md)"
+
+#: ../../01-quick-start.md:186 9bfed23c04724fd8abafb820c28adf64
+msgid "[Build](08-build.md)"
+msgstr "[构建](08-build.md)"
+
+#: ../../01-quick-start.md:187 a916781d6dfe4887bc0d19345f3e284b
+msgid "[Runbook](10-runbook.md)"
+msgstr "[运维手册](10-runbook.md)"
+
+#: ../../01-quick-start.md:189 d77f35806f244b0280ab91d45a1eafff
+msgid ""
+"Operator configuration: [FreeSWITCH Users "
+"Manual](https://developer.signalwire.com/freeswitch/) — especially [Chapter "
+"2 Getting "
+"Started](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started). Historical wiki: [FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)."
+msgstr ""
+"运维配置：[FreeSWITCH 用户手册](https://developer.signalwire.com/freeswitch/) — 尤其是 "
+"[第 2 章入门](https://developer.signalwire.com/freeswitch/foundations/getting-"
+"started)。历史 wiki：[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)。"
+
+#~ msgid ""
+#~ "Operator tutorials: [FreeSWITCH "
+#~ "Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+#~ "Explained/)."
+#~ msgstr ""
+#~ "运维教程：[FreeSWITCH "
+#~ "Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+#~ "Explained/)。"

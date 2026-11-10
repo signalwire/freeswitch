@@ -1,0 +1,388 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../adr/template.md:1 fa1d5b46c0b84316a952122f53bbfac1
+msgid "ADR-XXXX: [Title]"
+msgstr "ADR-XXXX: [Title]"
+
+#: ../../adr/template.md:7 86e00e3586254beb899bfcf847c53340
+msgid "Status"
+msgstr "状态"
+
+#: ../../adr/template.md:9 18ab655648624ef083009748ecd10367
+msgid "[Proposed | Accepted | Deprecated | Superseded]"
+msgstr "[已提议 | 已接受 | 已废弃 | 已被取代]"
+
+#: ../../adr/template.md:11 b50593960984422a8e95c6e21f79c0ca
+msgid "Proposed: [Date]"
+msgstr "已提议：[Date]"
+
+#: ../../adr/template.md:12 34ec80045fe1460ab9958354c951806a
+msgid "Accepted: [Date]"
+msgstr "已接受：[Date]"
+
+#: ../../adr/template.md:13 22682436243b497a87b3b9b2bbcba0e0
+msgid "Deprecated: [Date]"
+msgstr "已废弃：[Date]"
+
+#: ../../adr/template.md:14 ../../adr/template.md:162
+#: 5da1b9091e2b45c2b8a2fd8c9e269e14 ebee8c43a2fc417a97c4e2f1d312bf84
+msgid "Superseded by: ADR-XXXX"
+msgstr "被取代于：ADR-XXXX"
+
+#: ../../adr/template.md:16 542c5f65c83b41f1a5773211d177857f
+msgid "Context — Why This Decision Matters"
+msgstr "背景 — 为什么这项决策重要"
+
+#: ../../adr/template.md:18 a235b635315b445ca5127a864421e9a5
+msgid ""
+"[Describe the context and problem statement. Focus on **why** this decision "
+"is needed now — what changed, what pressure exists, what happens if we do "
+"nothing. The \"what\" is in the Decision section; this section is about the "
+"forces driving the choice.]"
+msgstr ""
+"[描述背景与问题陈述。重点说明**为什么**现在需要做这个决策——发生了什么变化、存在什么压力、如果什么都不做会怎样。「决策」一节写“做什么”；本节写驱动选择的力量。]"
+
+#: ../../adr/template.md:20 7b5895929e8741a39fc0df77cbc81e92
+msgid "Problem"
+msgstr "问题"
+
+#: ../../adr/template.md:22 68f74cafaf8548d79056b0a190146238
+msgid ""
+"[Clear statement of the problem being addressed. Explain why it is a problem"
+" — not just what is broken, but what impact it has on users, team velocity, "
+"reliability, or cost.]"
+msgstr "[清晰陈述要解决的问题。说明为什么这是一个问题——不仅写哪里坏了，还要写对用户、团队效率、可靠性或成本的影响。]"
+
+#: ../../adr/template.md:24 95d9cafc1954434098d40284f057b8a4
+msgid "Constraints"
+msgstr "约束"
+
+#: ../../adr/template.md:26 c614ef41eb4447eb954197a1cb2cb29a
+msgid "Constraint 1: [e.g., Must work with existing infrastructure]"
+msgstr "约束 1：[例如：必须与现有基础设施协同工作]"
+
+#: ../../adr/template.md:27 20bef596154a4df386c10c8d4a92e3b4
+msgid "Constraint 2: [e.g., Budget limit of $X]"
+msgstr "约束 2：[例如：预算上限为 $X]"
+
+#: ../../adr/template.md:28 afc869a8dda041d3883ad13922e30c98
+msgid "Constraint 3: [e.g., Timeline of Y weeks]"
+msgstr "约束 3：[例如：时间线为 Y 周]"
+
+#: ../../adr/template.md:30 d1a6a9aaf026477985fe7d416c9e1689
+msgid "Goals"
+msgstr "目标"
+
+#: ../../adr/template.md:32 338c011838af4ac5804de6d42d2dd4cd
+msgid "Goal 1: [What we want to achieve]"
+msgstr "目标 1：[我们想达成什么]"
+
+#: ../../adr/template.md:33 30f22dc8be73435abcbdc13944e83f36
+msgid "Goal 2: [What we want to achieve]"
+msgstr "目标 2：[我们想达成什么]"
+
+#: ../../adr/template.md:35 eea202c5c8bd4e5782a08219ada35c21
+msgid "Non-Goals"
+msgstr "非目标"
+
+#: ../../adr/template.md:37 b5f1293f9a42474ca5af335bcaa30f83
+msgid "Non-goal 1: [What we explicitly do NOT want to address]"
+msgstr "非目标 1：[我们明确不打算解决什么]"
+
+#: ../../adr/template.md:38 bacb5338b12744e18f9e1020949328d7
+msgid "Non-goal 2: [What we explicitly do NOT want to address]"
+msgstr "非目标 2：[我们明确不打算解决什么]"
+
+#: ../../adr/template.md:40 93605c409b8046b8a8257234f4b8b9e1
+msgid "Decision"
+msgstr "决策"
+
+#: ../../adr/template.md:42 a3e6fae5a8b94b50a641f83dca8d0cba
+msgid ""
+"[Describe the decision that was made. Be specific and clear. Then explain "
+"**why this option was chosen over the alternatives** — this is the most "
+"valuable sentence in the entire ADR.]"
+msgstr "[描述做出的决策。要具体、清楚。然后说明**为什么选择该方案而不是其他备选**——这是整份 ADR 中最有价值的一句。]"
+
+#: ../../adr/template.md:44 839629641ed34c6cabfe4f7517f53bd0
+msgid "Summary"
+msgstr "摘要"
+
+#: ../../adr/template.md:46 762311663b764f5faf2b4513739c5dc7
+msgid "[One-paragraph summary of the decision]"
+msgstr "[用一段话概括该决策]"
+
+#: ../../adr/template.md:48 36312dbe9c5d4edcad718cc6bbaba0dc
+msgid "Details"
+msgstr "细节"
+
+#: ../../adr/template.md:50 c478a5c188d0414abb7365b87aa115e4
+msgid ""
+"[More detailed explanation if needed. Include diagrams, code examples, etc.]"
+msgstr "[如有需要，给出更详细的说明。可包含图表、代码示例等。]"
+
+#: ../../adr/template.md:52 2a98c6ea0adc40e1ab16aec3ba7daab1
+msgid "Alternatives Considered"
+msgstr "考虑过的备选方案"
+
+#: ../../adr/template.md:54 63c02d4166704044ab8c4f6f66f3093d
+msgid "Option 1: [Name]"
+msgstr "方案 1：[Name]"
+
+#: ../../adr/template.md:56 ../../adr/template.md:72 ../../adr/template.md:88
+#: 3844a52265af4232a515e8f19936bbe3 7879cf3b795742888f1a39c077566404
+#: 9580c17a870741e9b604192c146a362e
+msgid "**Description**: [Brief description]"
+msgstr "**描述**：[简要说明]"
+
+#: ../../adr/template.md:58 ../../adr/template.md:74 ../../adr/template.md:90
+#: 1bd9100722924752a3c958a6a61102ff 2ad4e772365e452d8d64b2818cacc454
+#: 3c7f060753d44207a933a75d5dfbdefe
+msgid "**Pros**:"
+msgstr "**优点**："
+
+#: ../../adr/template.md:59 ../../adr/template.md:75 ../../adr/template.md:91
+#: 031074a7b7d147a4881593dfd693f8ca 23ab5731eca3463fbf2fb9db4d4145ab
+#: 750b606e5d0845e7a59d82d458c822db
+msgid "Pro 1"
+msgstr "优点 1"
+
+#: ../../adr/template.md:60 ../../adr/template.md:76 ../../adr/template.md:92
+#: b33c2e986b2d490c9e494885f059beda b4821ad432a74adc9657909ab4a617cc
+#: bceedcb8e37f4cf8b897151d1aec10f2
+msgid "Pro 2"
+msgstr "优点 2"
+
+#: ../../adr/template.md:61 ../../adr/template.md:77 ../../adr/template.md:93
+#: 3c6a59a75a4e4a60b7ada32fc77cc914 734d4ce9ad0440a6b12519436cfb80f7
+#: 982ec533c235469e91b619c7e994f44a
+msgid "Pro 3"
+msgstr "优点 3"
+
+#: ../../adr/template.md:63 ../../adr/template.md:79 ../../adr/template.md:95
+#: 15e5b9e1d91f4a58b915d5c28dfae732 d85763c9acf044cb988d8040b9fab719
+#: d92421a4c1ac485d85bcb9a1a01d5bf5
+msgid "**Cons**:"
+msgstr "**缺点**："
+
+#: ../../adr/template.md:64 ../../adr/template.md:80 ../../adr/template.md:96
+#: 207e6f60ed2f49c38c26e1a7187f5e1a c4013845173d497e8f378b2c6521a227
+#: e073b5ab214e43168ceeb180378179bf
+msgid "Con 1"
+msgstr "缺点 1"
+
+#: ../../adr/template.md:65 ../../adr/template.md:81 ../../adr/template.md:97
+#: 0ca8459e60d647f389204bb49771ca1c 62d4e886d0a04f05aafd7c6c16375149
+#: 6e2516e350354cbb872d3ab02d7ba69e
+msgid "Con 2"
+msgstr "缺点 2"
+
+#: ../../adr/template.md:66 ../../adr/template.md:82 ../../adr/template.md:98
+#: 22fa91be50be46b6bcca7a812437c300 43d84f25c91c43fbabc4d46665bbf524
+#: b43094cde6c4402b8bebab9826606fda
+msgid "Con 3"
+msgstr "缺点 3"
+
+#: ../../adr/template.md:68 ../../adr/template.md:84
+#: 446a09b97a9446cabb02d78d03794303 ff95e96802d143748f6baa8981d62d5e
+msgid "**Why rejected**: [Explain why this option was not chosen]"
+msgstr "**未选原因**：[说明为什么没有选择该方案]"
+
+#: ../../adr/template.md:70 169d5236096247cea81e21484d1855c5
+msgid "Option 2: [Name]"
+msgstr "方案 2：[Name]"
+
+#: ../../adr/template.md:86 78970c10a49943f6a74bb69788df3e4e
+msgid "Option 3: [Name] (Chosen)"
+msgstr "方案 3：[Name]（已选）"
+
+#: ../../adr/template.md:100 913eb69e09e84d0e8521b999ceda1937
+msgid "**Why chosen**: [Explain why this option was selected]"
+msgstr "**入选原因**：[说明为什么选择该方案]"
+
+#: ../../adr/template.md:102 201fb1a77c324a36af2aeeca435bb17d
+msgid "Consequences"
+msgstr "后果"
+
+#: ../../adr/template.md:104 43bbf97d8cc74a0c9762b93cfbae905a
+msgid "Positive"
+msgstr "正面"
+
+#: ../../adr/template.md:106 16c3cd7bf06d47b98efd89460fa0d2c5
+msgid "Positive consequence 1"
+msgstr "正面后果 1"
+
+#: ../../adr/template.md:107 6f1b5a80633e4bf7bcf0c20365f358cf
+msgid "Positive consequence 2"
+msgstr "正面后果 2"
+
+#: ../../adr/template.md:108 8a5d51b7d6c347469532b9de363946f3
+msgid "Positive consequence 3"
+msgstr "正面后果 3"
+
+#: ../../adr/template.md:110 207bbb1c8f504b7788d33d0b5816fe8f
+msgid "Negative"
+msgstr "负面"
+
+#: ../../adr/template.md:112 acc68cacaf4a4f30804984afbfcbcd19
+msgid "Negative consequence 1: [And mitigation strategy]"
+msgstr "负面后果 1：[以及缓解策略]"
+
+#: ../../adr/template.md:113 19f40d7c9ab343b8a447a8fd6d0e8884
+msgid "Negative consequence 2: [And mitigation strategy]"
+msgstr "负面后果 2：[以及缓解策略]"
+
+#: ../../adr/template.md:115 32e2493f72d94327ad9520ee751dd1d1
+msgid "Neutral"
+msgstr "中性"
+
+#: ../../adr/template.md:117 f7fc1845cfab4f85a84f1cd3fd6f6ebe
+msgid "Neutral consequence 1"
+msgstr "中性后果 1"
+
+#: ../../adr/template.md:118 d59d40df312942bf923b0f214a878bae
+msgid "Neutral consequence 2"
+msgstr "中性后果 2"
+
+#: ../../adr/template.md:120 633f12991c764e3eb57f87a726382713
+msgid "Implementation"
+msgstr "实施"
+
+#: ../../adr/template.md:122 aaea4a9985d9481a937877512a72f4ed
+msgid "Changes Required"
+msgstr "所需变更"
+
+#: ../../adr/template.md:124 c97fc9380b6f49d1b1c022616c1271fb
+msgid "Change 1: [What needs to be modified]"
+msgstr "变更 1：[需要修改什么]"
+
+#: ../../adr/template.md:125 5962df3c0e364002946c582ae11167d3
+msgid "Change 2: [What needs to be modified]"
+msgstr "变更 2：[需要修改什么]"
+
+#: ../../adr/template.md:127 b06af62c3f51419f98824473c32cd9c0
+msgid "Migration Path"
+msgstr "迁移路径"
+
+#: ../../adr/template.md:129 40246be5ee8248559dcc092530682391
+msgid ""
+"[If applicable, describe how to migrate from the old approach to the new "
+"one]"
+msgstr "[如适用，说明如何从旧方案迁移到新方案]"
+
+#: ../../adr/template.md:131 ../../adr/template.md:139
+#: 10cd39da74164335818a8dcba909c3d5 7a61e6d85fcb4f319946751ba20e01df
+msgid "Step 1"
+msgstr "步骤 1"
+
+#: ../../adr/template.md:132 ../../adr/template.md:140
+#: 74d396dd6db5477da4986ecd04e376e8 d599d0d8f7b347a494d20f67b9282678
+msgid "Step 2"
+msgstr "步骤 2"
+
+#: ../../adr/template.md:133 fd9c94b488c544978e3e53259577f881
+msgid "Step 3"
+msgstr "步骤 3"
+
+#: ../../adr/template.md:135 634eaa37d50f4046975c73257f914d8d
+msgid "Rollback Plan"
+msgstr "回滚计划"
+
+#: ../../adr/template.md:137 648b047649ab443fbe905475b8cab76d
+msgid "[How to rollback if this decision proves to be wrong]"
+msgstr "[如果该决策被证明是错误的，如何回滚]"
+
+#: ../../adr/template.md:142 bf54613abb184151b2a84f9a02bddd5f
+msgid "Validation"
+msgstr "验证"
+
+#: ../../adr/template.md:144 09b1e9af4195475f9ab4a5de75a4a040
+msgid "Success Criteria"
+msgstr "成功标准"
+
+#: ../../adr/template.md:146 9331aebc5d9b4fbbbfb1127e05dc1b62
+msgid "Criterion 1: [How we'll know this decision was successful]"
+msgstr "标准 1：[如何判断该决策是成功的]"
+
+#: ../../adr/template.md:147 d83086a98b6c470cba21902c610b74bf
+msgid "Criterion 2: [How we'll know this decision was successful]"
+msgstr "标准 2：[如何判断该决策是成功的]"
+
+#: ../../adr/template.md:149 58f01c84539e44a1be7b29fa228b2534
+msgid "Metrics"
+msgstr "指标"
+
+#: ../../adr/template.md:151 911f78a78f4b41e782ea6c44603eae45
+msgid "Metric 1: [What we'll measure]"
+msgstr "指标 1：[我们要度量什么]"
+
+#: ../../adr/template.md:152 dc509fa0cd0247f8a88ce9adb20fdc84
+msgid "Metric 2: [What we'll measure]"
+msgstr "指标 2：[我们要度量什么]"
+
+#: ../../adr/template.md:154 ef5f9c7f52f24702bb4f64ebaf67e977
+msgid "Review Date"
+msgstr "复审日期"
+
+#: ../../adr/template.md:156 692f82d020134830855ed40a7324cb71
+msgid "[Date when this decision should be reviewed]"
+msgstr "[应复审该决策的日期]"
+
+#: ../../adr/template.md:158 93b726e0818a475aaed341addd14ab8f
+msgid "Related"
+msgstr "相关"
+
+#: ../../adr/template.md:160 f811a5ffcffc44769b2f32f72dd55f88
+msgid "Related to: ADR-XXXX"
+msgstr "相关于：ADR-XXXX"
+
+#: ../../adr/template.md:161 5360b27fab57484aaa373b21f8c889dd
+msgid "Supersedes: ADR-XXXX"
+msgstr "取代：ADR-XXXX"
+
+#: ../../adr/template.md:163 9d0f9a6463ad4a18bfaff5af69a9a507
+msgid "Depends on: ADR-XXXX"
+msgstr "依赖于：ADR-XXXX"
+
+#: ../../adr/template.md:164 9e0271c1be214ef4a76b68af4fc7e578
+msgid "Depended on by: ADR-XXXX"
+msgstr "被依赖于：ADR-XXXX"
+
+#: ../../adr/template.md:166 c30bd3c52e664e9ba1b58080788bd474
+msgid "References"
+msgstr "参考资料"
+
+#: ../../adr/template.md:168 777c9c37b76b4a288d3ac17fe9b58fdc
+msgid "[Link to related discussion]"
+msgstr "[相关讨论链接]"
+
+#: ../../adr/template.md:169 b03987e070024240b7154099b3bd54c1
+msgid "[Link to research]"
+msgstr "[研究资料链接]"
+
+#: ../../adr/template.md:170 3b63e434c9d841b18ee5ff5c5f41c4cc
+msgid "[Link to documentation]"
+msgstr "[文档链接]"
+
+#: ../../adr/template.md:174 efd1f5114e3d4c529dc5e8abf045228e
+msgid "**Author**: [Name] **Date**: [Date] **Reviewers**: [Names]"
+msgstr "**作者**：[Name] **日期**：[Date] **评审人**：[Names]"
