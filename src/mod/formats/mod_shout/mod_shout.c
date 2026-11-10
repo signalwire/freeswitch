@@ -1024,6 +1024,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 		*len = bytes / sizeof(int16_t) / handle->real_channels;
 	}
 
+	handle->pos += *len;
 	handle->sample_count += *len;
 
 	return SWITCH_STATUS_SUCCESS;
