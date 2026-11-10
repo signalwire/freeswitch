@@ -12814,13 +12814,20 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_receive_message(switch_core_se
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING,
 								  "%s has a media bug, hard mute not allowed.\n", switch_channel_get_name(session->channel));
 			} else {
+				int was_muted = !!switch_rtp_test_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
+				
 				if (msg->numeric_arg) {
 					switch_rtp_set_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
 				} else {
 					switch_rtp_clear_flag(a_engine->rtp_session, SWITCH_RTP_FLAG_MUTE);
 				}
 
-				rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);
+				/* Flush only on an actual mute state change. switch_core_media_bug_add()
+				 * unmutes unconditionally; flushing there discarded the frame in hand
+				 * and every queued one each time a media bug attached to a live leg. */
+				if (was_muted != !!msg->numeric_arg) {
+					rtp_flush_read_buffer(a_engine->rtp_session, SWITCH_RTP_FLUSH_ONCE);
+				}
 			}
 		}
 
