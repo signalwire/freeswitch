@@ -47,6 +47,7 @@ static struct {
 	int url_count;
 	int url_index;
 	switch_thread_rwlock_t *log_path_lock;
+	switch_thread_rwlock_t *reporting_lock;
 	char *base_log_dir;
 	char *base_err_log_dir[MAX_ERR_DIRS];
 	char *log_dir;
@@ -265,10 +266,6 @@ static void process_cdr(cdr_data_t *data)
 
 	switch_assert(data != NULL);
 
-	if (globals.shutdown) {
-		goto end;
-	}
-
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_INFO, "Process [%s]\n", data->filename);
 
 	if (!zstr(data->logdir) && (globals.log_http_and_disk || !globals.url_count)) {
@@ -370,8 +367,14 @@ static void process_cdr(cdr_data_t *data)
 		 */
 
 		for (cur_try = 0; cur_try < globals.retries; cur_try++) {
-			if (cur_try > 0) {
+			if (cur_try > 0 && !globals.shutdown) {
 				switch_yield(globals.delay * 1000000);
+			}
+
+			if (globals.shutdown) {
+				/* Don't hold up the shutdown with HTTP retries, the CDR is backed up below */
+				switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_WARNING, "Shutting down, not posting [%s]\n", data->filename);
+				break;
 			}
 
 			destUrl = switch_mprintf("%s?uuid=%s", globals.urls[globals.url_index], data->uuid);
@@ -436,7 +439,7 @@ static void process_cdr(cdr_data_t *data)
 	destroy_cdr_data(data);
 }
 
-static switch_status_t my_on_reporting(switch_core_session_t *session)
+static switch_status_t generate_cdr(switch_core_session_t *session)
 {
 	cJSON *json_cdr = NULL;
 	char *json_text = NULL;
@@ -446,10 +449,6 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	const char *a_prefix = "";
 	cdr_data_t *cdr_data = NULL;
 	const char *logdir = NULL;
-
-	if (globals.shutdown) {
-		return SWITCH_STATUS_SUCCESS;
-	}
 
 	is_b = channel && switch_channel_get_originator_caller_profile(channel);
 	if (!globals.log_b && is_b) {
@@ -516,12 +515,33 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t my_on_reporting(switch_core_session_t *session)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (globals.shutdown) {
+		return status;
+	}
+
+	/* Held while the CDR is generated and queued, the module shutdown takes the write lock to wait for us */
+	switch_thread_rwlock_rdlock(globals.reporting_lock);
+
+	if (!globals.shutdown) {
+		status = generate_cdr(session);
+	}
+
+	switch_thread_rwlock_unlock(globals.reporting_lock);
+
+	return status;
+}
+
 static void *SWITCH_THREAD_FUNC cdr_thread(switch_thread_t *t, void *obj)
 {
 	void *pop = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Cdr thread started.\n");
 
-	while (!globals.shutdown) {
+	/* Run until the NULL pushed by the shutdown, it comes after every CDR queued before it */
+	for (;;) {
 		cdr_data_t *data = NULL;
 
 		if (switch_queue_pop(globals.queue, &pop) != SWITCH_STATUS_SUCCESS) {
@@ -536,8 +556,11 @@ static void *SWITCH_THREAD_FUNC cdr_thread(switch_thread_t *t, void *obj)
 		process_cdr(data);
 	}
 
+	/* Only reached with CDRs left over if a pop failed */
 	while (switch_queue_trypop(globals.queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		destroy_cdr_data((cdr_data_t *) pop);
+		if (pop) {
+			process_cdr((cdr_data_t *) pop);
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Cdr thread ended.\n");
@@ -588,6 +611,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	globals.encode_values = ENCODING_DEFAULT;
 
 	switch_thread_rwlock_create(&globals.log_path_lock, pool);
+	switch_thread_rwlock_create(&globals.reporting_lock, pool);
 
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -755,12 +779,19 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 	int err_dir_index = 0;
 	switch_status_t status;
 
+	/* Stop new reporting callbacks and wait for the running ones,
+	 * so nothing is queued after the NULL that stops the CDR thread */
+	switch_core_remove_state_handler(&state_handlers);
 	globals.shutdown = 1;
+	switch_thread_rwlock_wrlock(globals.reporting_lock);
+	switch_thread_rwlock_unlock(globals.reporting_lock);
 
 	if (globals.queue) {
 		switch_queue_push(globals.queue, NULL);
 		switch_thread_join(&status, globals.thread);
 	}
+
+	switch_event_unbind(&globals.node);
 
 	switch_safe_free(globals.log_dir);
 
@@ -768,10 +799,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_json_cdr_shutdown)
 		switch_safe_free(globals.err_log_dir[err_dir_index]);
 	}
 
-	switch_event_unbind(&globals.node);
-	switch_core_remove_state_handler(&state_handlers);
-
 	switch_thread_rwlock_destroy(globals.log_path_lock);
+	switch_thread_rwlock_destroy(globals.reporting_lock);
 
 	return SWITCH_STATUS_SUCCESS;
 }
