@@ -1177,6 +1177,7 @@ static switch_status_t fsv_file_write(switch_file_handle_t *handle, void *data, 
 		int i;
 		uint32_t j;
 		int32_t mixed = 0;
+		// SIMD
 		for (i = 0; (size_t)i < *len; i++) {
 			for (j = 0; j < handle->channels; j++) {
 				mixed += xdata[i * handle->channels + j];

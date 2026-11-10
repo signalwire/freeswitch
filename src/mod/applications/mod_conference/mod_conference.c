@@ -35,11 +35,13 @@
  * Seven Du <dujinfang@gmail.com>
  * Emmanuel Schmidbauer <e.schmidbauer@gmail.com>
  * William King <william.king@quentustech.com>
+ * Stephane Alnet <stephane@shimaore.net>
  *
  * mod_conference.c -- Software Conference Bridge
  *
  */
 #include <mod_conference.h>
+#include <switch_simd.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
@@ -218,7 +220,11 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 	uint8_t *async_file_frame;
 	int16_t *bptr;
 	uint32_t x = 0;
+#ifndef SIMD
 	int32_t z = 0;
+#else
+	simde__m256i z;
+#endif
 	conference_cdr_node_t *np;
 	switch_time_t last_heartbeat_time = switch_epoch_time_now(NULL);
 
@@ -552,6 +558,20 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 				} else {
 					if (has_file_data) {
+#ifdef SIMD
+						int16_t *muxed;
+						muxed = (int16_t *) file_frame;
+						bptr = (int16_t *) async_file_frame;
+						/* Note: we use the fact that the buffers (file_frame & async_file_frame) are allocated
+						 * full-size at SWITCH_RECOMMENDED_BUFFER_SIZE to assert that we do not go over the end
+						 * of the buffer. (We know this because 8192 (SWITCH_RECOMMENDED_BUFFER_SIZE) is a
+						 * multiple of 32 (sizeof(simde__mm256i), so even in the worst case we will end up with an
+						 * integer number of loops.)
+						 * Note: apparently APR doesn't support aligned_alloc / memalign, too bad.
+						 * At least on libc we should be getting 8-bytes aligned malloc(), if this is what APR uses.
+						 */
+						SIMD_mux_sln_int16_int16_unbound(muxed,bptr,file_sample_len * conference->channels);
+#else
 						switch_size_t x;
 						for (x = 0; x < file_sample_len * conference->channels; x++) {
 							int32_t z;
@@ -563,6 +583,7 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 							switch_normalize_to_16bit(z);
 							muxed[x] = (int16_t) z;
 						}
+#endif
 					} else {
 						memcpy(file_frame, async_file_frame, file_sample_len * 2 * conference->channels);
 						has_file_data = 1;
@@ -574,21 +595,33 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 		if (ready || has_file_data) {
 			/* Use more bits in the main_frame to preserve the exact sum of the audio samples. */
-			int main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
-			int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			SWITCH_ALIGN int32_t main_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
+			SWITCH_ALIGN int16_t write_frame[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 
 			/* Init the main frame with file data if there is any. */
 			bptr = (int16_t *) file_frame;
 			if (has_file_data && file_sample_len) {
-
+#ifdef SIMD
+				/* Both `file_frame` and `main_frame` have lengths multiple of 8 bytes, so
+				 * we should be safe loading and storing beyond `len`.
+				 */
+				size_t samples = MIN(bytes / 2, file_sample_len * conference->channels);
+				size_t index = file_sample_len * conference->channels * sizeof(main_frame[0]);
+				SIMD_convert32_int16_unbound(main_frame, bptr, samples);
+				memset(main_frame+index, 255, sizeof(main_frame)-index);
+#else
 				for (x = 0; x < bytes / 2; x++) {
+					/* It's unclear here why we say `<=` rather than `<`, looks like an offset-by-one error.
+					 * For now the SIMD code assumes that `<` was meant here.
+					 */
 					if (x <= file_sample_len * conference->channels) {
 						main_frame[x] = (int32_t) bptr[x];
 					} else {
 						memset(&main_frame[x], 255, sizeof(main_frame[x]));
 					}
 				}
+#endif
 			}
 
 			conference->mux_loop_count = 0;
@@ -604,9 +637,13 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 				}
 
 				bptr = (int16_t *) omember->frame;
+#ifdef SIMD
+				SIMD_mux32_sln((simde__m256i *)main_frame, bptr, omember->read / 2);
+#else /* SIMD */
 				for (x = 0; x < omember->read / 2; x++) {
 					main_frame[x] += (int32_t) bptr[x];
 				}
+#endif /* SIMD */
 			}
 
 			/* Create write frame once per member who is not deaf for each sample in the main frame
@@ -636,12 +673,24 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 
 				bptr = (int16_t *) omember->frame;
 
+#ifndef SIMD
 				for (x = 0; x < bytes / 2 ; x++) {
 					z = main_frame[x];
+#else
+				for (x = 0; x < bytes / 2 ; x += int32_per_m256i) {
+					z = simde_mm256_loadu_epi32((simde__m256i *)(main_frame+x));
+#endif
 
 					/* bptr[x] represents my own contribution to this audio sample */
-					if (conference_utils_member_test_flag(omember, MFLAG_HAS_AUDIO) && x <= omember->read / 2) {
+					/* It's unclear here why we say `<=` rather than `<`, looks like an offset-by-one error.
+					 * For now the SIMD code assumes that `<` was meant here.
+					 */
+					if (conference_utils_member_test_flag(omember, MFLAG_HAS_AUDIO) && x < omember->read / 2) {
+#ifndef SIMD
 						z -= (int32_t) bptr[x];
+#else
+						z = simde_mm256_sub_epi32(z, simde_mm256_cvtepi16_epi32(simde_mm_loadu_epi16(bptr+x)));
+#endif
 					}
 
 					/* when there are relationships, we have to do more work by scouring all the members to see if there are any
@@ -655,7 +704,11 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 								int16_t *rptr = (int16_t *) imember->frame;
 								for (rel = imember->relationships; rel; rel = rel->next) {
 									if ((rel->id == omember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_SPEAK)) {
+#ifndef SIMD
 										z -= (int32_t) rptr[x];
+#else
+										z = simde_mm256_sub_epi32(z, simde_mm256_cvtepi16_epi32(simde_mm_loadu_epi16(rptr+x)));
+#endif
 										found = 1;
 										break;
 									}
@@ -663,7 +716,11 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 								if (!found) {
 									for (rel = omember->relationships; rel; rel = rel->next) {
 										if ((rel->id == imember->id || rel->id == 0) && !switch_test_flag(rel, RFLAG_CAN_HEAR)) {
+#ifndef SIMD
 											z -= (int32_t) rptr[x];
+#else
+											z = simde_mm256_sub_epi32(z, simde_mm256_cvtepi16_epi32(simde_mm_loadu_epi16(rptr+x)));
+#endif
 											break;
 										}
 									}
@@ -674,8 +731,12 @@ void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, void *ob
 					}
 
 					/* Now we can convert to 16 bit. */
+#ifndef SIMD
 					switch_normalize_to_16bit(z);
 					write_frame[x] = (int16_t) z;
+#else
+					simde_mm_store_si128((simde__m128i *)(write_frame+x), simde_mm256_cvtsepi32_epi16(z));
+#endif
 				}
 
 				if (!omember->channel || switch_channel_test_flag(omember->channel, CF_AUDIO)) {
