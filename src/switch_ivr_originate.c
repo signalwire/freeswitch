@@ -3368,7 +3368,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					goto notready;
 				}
 
-				if ((to = (uint8_t) (elapsed >= (time_t) timelimit_sec)) || (fail_on_single_reject && oglobals.hups)) {
+				if ((to = (uint8_t) ((switch_micro_time_now() - last_retry_start) / 1000000 >= (time_t) timelimit_sec)) || (fail_on_single_reject && oglobals.hups)) {
 					int ok = 0;
 
 					if (fail_on_single_reject_var) {
