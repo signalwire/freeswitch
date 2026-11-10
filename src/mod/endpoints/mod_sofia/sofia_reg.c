@@ -369,7 +369,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->expires_str = "0";
 		}
 
-		if (gateway_ptr->ping && !gateway_ptr->pinging && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED)) &&
+		if (gateway_ptr->ping && (now >= gateway_ptr->ping && (ostate == REG_STATE_NOREG || ostate == REG_STATE_REGED)) &&
 			!gateway_ptr->deleted) {
 			nua_handle_t *nh = nua_handle(profile->nua, NULL, NUTAG_URL(gateway_ptr->register_url), TAG_END());
 			sofia_private_t *pvt;
@@ -408,7 +408,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		switch (ostate) {
 		case REG_STATE_DOWN:
 		case REG_STATE_NOREG:
-			if (!gateway_ptr->ping && !gateway_ptr->pinging && gateway_ptr->status != SOFIA_GATEWAY_UP) {
+			if (!gateway_ptr->ping && gateway_ptr->status != SOFIA_GATEWAY_UP) {
 				gateway_ptr->status = SOFIA_GATEWAY_UP;
 				gateway_ptr->uptime = switch_time_now();
 			}
