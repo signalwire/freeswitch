@@ -81,6 +81,10 @@
 #define SCORE_IIR_SPEAKING_MAX 300
 /* the threshold below which you cede the floor to someone loud (see above value). */
 #define SCORE_IIR_SPEAKING_MIN 100
+/* Give an active input thread a short chance to deliver a real frame before the mixer emits silence. */
+#define CONF_AUDIO_INPUT_RETRY_USEC 2000
+/* Treat very recent input as an active source even if the talk flag is between gate updates. */
+#define CONF_AUDIO_INPUT_RECENT_MULTIPLIER 3
 /* the FPS of the conference canvas */
 #define FPS 30
 /* max supported layers in one mcu */
@@ -792,6 +796,7 @@ struct conference_member {
 	switch_mutex_t *audio_in_mutex;
 	switch_mutex_t *audio_out_mutex;
 	switch_mutex_t *read_mutex;
+	switch_thread_cond_t *audio_in_cond;
 	switch_mutex_t *fnode_mutex;
 	switch_thread_rwlock_t *rwlock;
 	switch_codec_implementation_t read_impl;
@@ -825,6 +830,7 @@ struct conference_member {
 	int32_t volume_out_level;
 	switch_time_t join_time;
 	time_t last_talking;
+	switch_time_t last_audio_in;
 	switch_time_t first_talk_detect;
 	uint32_t talk_detects;
 	uint32_t auto_energy_track;
