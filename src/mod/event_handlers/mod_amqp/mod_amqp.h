@@ -65,6 +65,8 @@
 #define MAX_ROUTING_KEY_FORMAT_FALLBACK_FIELDS 5
 #define MAX_AMQP_ROUTING_KEY_LENGTH 255
 
+#define MAX_TEMP_CONNECTIONS 30
+
 #define TIME_STATS_TO_AGGREGATE 1024
 #define MOD_AMQP_DEBUG_TIMING 0
 #define MOD_AMQP_DEFAULT_CONTENT_TYPE "text/json"
@@ -72,6 +74,7 @@
 
 typedef struct {
     char routing_key[MAX_AMQP_ROUTING_KEY_LENGTH];
+    char correlation_id[SWITCH_UUID_FORMATTED_LENGTH + 1];
     char *pjson;
 } mod_amqp_message_t;
 
@@ -198,12 +201,55 @@ typedef struct {
   switch_memory_pool_t *pool;
 } mod_amqp_logging_profile_t;
 
+typedef struct {
+  char *name;
+
+  char *exchange;
+  char *exchange_type;
+  char *bindings;
+  int exchange_durable;
+  int exchange_auto_delete;
+  mod_amqp_keypart_t format_fields[MAX_ROUTING_KEY_FORMAT_FIELDS+1];
+  switch_bool_t enable_fallback_format_fields;
+
+  /* Send connection — owned by xml_handler_thread */
+  mod_amqp_connection_t *conn_root;
+  mod_amqp_connection_t *conn_active;
+
+  /* Recv connection — owned by reader_thread */
+  mod_amqp_connection_t *recv_conn;
+  char recv_queue_name[256];   /* broker-assigned queue name, written by reader, read by sender */
+  switch_bool_t recv_ready;    /* atomic flag: 1 = recv_queue_name is valid */
+
+  /* Pending response dispatch: correlation_id -> switch_queue_t* */
+  switch_hash_t  *response_hash;
+  switch_mutex_t *response_hash_mutex;
+
+  int reconnect_interval_ms;
+  int fetch_timeout_ms;
+  int circuit_breaker_ms;
+  switch_time_t circuit_breaker_reset_time;
+
+  /* Sender thread */
+  switch_thread_t *xml_handler_thread;
+  switch_queue_t  *send_queue;
+  unsigned int     send_queue_size;
+
+  /* Reader thread */
+  switch_thread_t *reader_thread;
+
+  switch_bool_t running;
+  char *custom_attr;
+  switch_memory_pool_t *pool;
+} mod_amqp_xml_handler_profile_t;
+
 typedef struct mod_amqp_globals_s {
   switch_memory_pool_t *pool;
 
   switch_hash_t *producer_hash;
   switch_hash_t *command_hash;
   switch_hash_t *logging_hash;
+  switch_hash_t *xml_handler_hash;
 } mod_amqp_globals_t;
 
 extern mod_amqp_globals_t mod_amqp_globals;
@@ -241,5 +287,12 @@ switch_status_t mod_amqp_logging_create(char *name, switch_xml_t cfg);
 switch_status_t mod_amqp_logging_destroy(mod_amqp_logging_profile_t **prof);
 void * SWITCH_THREAD_FUNC mod_amqp_logging_thread(switch_thread_t *thread, void *data);
 
+/* xml_handler */
+switch_status_t mod_amqp_xml_handler_create(char *name, switch_xml_t cfg);
+switch_status_t mod_amqp_xml_handler_destroy(mod_amqp_xml_handler_profile_t **prof);
+void * SWITCH_THREAD_FUNC mod_amqp_xml_handler_thread(switch_thread_t *thread, void *data);
+void * SWITCH_THREAD_FUNC mod_amqp_xml_handler_reader_thread(switch_thread_t *thread, void *data);
+switch_status_t mod_amqp_xml_handler_routing_key(mod_amqp_xml_handler_profile_t *profile, char routingKey[MAX_AMQP_ROUTING_KEY_LENGTH],
+					      switch_event_t* evt, mod_amqp_keypart_t routingKeyEventHeaderNames[]);
 #endif /* MOD_AMQP_H */
 
