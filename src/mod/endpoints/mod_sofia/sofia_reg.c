@@ -139,6 +139,21 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 
 	if (gateway_ptr->state == REG_STATE_REGED || gateway_ptr->state == REG_STATE_UNREGISTER) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
+
+		if (gateway_ptr->state == REG_STATE_UNREGISTER && !gateway_ptr->deleted && gateway_ptr->sofia_private) {
+			nua_handle_t *nh = gateway_ptr->nh;
+			sofia_private_t *pvt = gateway_ptr->sofia_private;
+
+			gateway_ptr->nh = NULL;
+			gateway_ptr->sofia_private = NULL;
+			pvt->is_unregister = 1;
+			pvt->unregister_next = gateway_ptr->profile->unregistering;
+			gateway_ptr->profile->unregistering = pvt;
+			nua_handle_bind(nh, pvt);
+			nua_unregister(nh, NUTAG_URL(gateway_ptr->register_url), NUTAG_REGISTRAR(gateway_ptr->register_proxy), TAG_END());
+			return;
+		}
+
 		nua_unregister(gateway_ptr->nh, NUTAG_URL(gateway_ptr->register_url), NUTAG_REGISTRAR(gateway_ptr->register_proxy), TAG_END());
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Destroying registration handle for %s\n", gateway_ptr->name);
@@ -2675,12 +2690,83 @@ void sofia_reg_handle_sip_r_register(int status,
 
 }
 
-void sofia_reg_handle_sip_r_challenge(int status,
+void sofia_reg_handle_gateway_unregister(nua_event_t event,
+										 int status,
+										 char const *phrase,
+										 nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private,
+										 sofia_gateway_t *gateway, sip_t const *sip,
+										 sofia_dispatch_event_t *de, tagi_t tags[])
+{
+	sofia_private_t **entry;
+
+	if (status < 200) {
+		return;
+	}
+
+	switch (event) {
+	case nua_r_register:
+	case nua_r_unregister:
+		if (sip && (status == 401 || status == 407)) {
+			if (gateway && sofia_reg_handle_sip_r_challenge(status, phrase, nua, profile, nh, sofia_private, NULL, gateway, sip, de, tags)) {
+				return;
+			}
+			break;
+		}
+
+		if (event == nua_r_register) {
+			return;
+		}
+
+		if (status < 300) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registered %s\n", sofia_private->gateway_name);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed UN-Registration with status %s [%d]\n",
+							  sofia_private->gateway_name, switch_str_nil(phrase), status);
+		}
+
+		if (gateway && gateway->state == REG_STATE_DOWN) {
+			sofia_reg_fire_custom_gateway_state_event(gateway, status, phrase);
+		}
+		break;
+	case nua_r_authenticate:
+	case nua_r_cancel:
+		break;
+	default:
+		return;
+	}
+
+	switch_mutex_lock(profile->gw_mutex);
+	for (entry = &profile->unregistering; *entry; entry = &(*entry)->unregister_next) {
+		if (*entry == sofia_private) {
+			*entry = sofia_private->unregister_next;
+			break;
+		}
+	}
+	switch_mutex_unlock(profile->gw_mutex);
+
+	sofia_private->destroy_nh = 1;
+	sofia_private->destroy_me = 1;
+}
+
+void sofia_reg_release_unregisters(sofia_profile_t *profile)
+{
+	sofia_private_t *pvt;
+
+	switch_mutex_lock(profile->gw_mutex);
+	while ((pvt = profile->unregistering)) {
+		profile->unregistering = pvt->unregister_next;
+		sofia_private_free(pvt);
+	}
+	switch_mutex_unlock(profile->gw_mutex);
+}
+
+switch_bool_t sofia_reg_handle_sip_r_challenge(int status,
 									  char const *phrase,
 									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private,
 									  switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip,
 								sofia_dispatch_event_t *de, tagi_t tags[])
 {
+	switch_bool_t authenticated = SWITCH_FALSE;
 	sip_www_authenticate_t const *authenticate = NULL;
 	char const *realm = NULL;
 	char const *scheme = NULL;
@@ -2856,8 +2942,10 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
 	nua_authenticate(nh,
-					 TAG_IF(sofia_private && !zstr(sofia_private->gateway_name), SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600")),
+					 TAG_IF(sofia_private && !zstr(sofia_private->gateway_name) && !sofia_private->is_unregister,
+							SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600")),
 					 NUTAG_AUTH(authentication), TAG_END());
+	authenticated = SWITCH_TRUE;
 
 	goto end;
 
@@ -2879,7 +2967,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		sofia_reg_release_gateway(var_gateway);
 	}
 
-	return;
+	return authenticated;
 
 
 

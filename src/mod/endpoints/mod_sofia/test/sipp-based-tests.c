@@ -126,6 +126,25 @@ static void unregister_gw(void)
 	switch_safe_free(stream.data);
 }
 
+static void sofia_api(const char *cmd)
+{
+	switch_stream_handle_t stream = { 0 };
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute("sofia", cmd, NULL, &stream);
+	switch_safe_free(stream.data);
+}
+
+static int wait_for_flag(int *flag, int seconds)
+{
+	int loops = seconds * 10;
+
+	while (!*flag && loops--) {
+		switch_sleep(100 * 1000);
+	}
+
+	return *flag;
+}
+
 static int start_sipp_uac(const char *ip, int remote_port, const char *dialed_number, const char *scenario_uac, const char *extra)
 {
 	char *cmd = switch_mprintf("sipp %s:%d -nr -p 5062 -m 1 -s %s -recv_timeout 10000 -timeout 10s -sf %s -bg %s", ip, remote_port, dialed_number, scenario_uac, extra);
@@ -214,6 +233,57 @@ static void event_handler_reg_fail(switch_event_t *event)
 	}
 
 	show_event(event);
+}
+
+static int test_unreg_gw_reged = 0;
+
+static void event_handler_unreg_ok(switch_event_t *event)
+{
+	const char *new_ev = switch_event_get_header(event, "Event-Subclass");
+
+	if (new_ev && !strcmp(new_ev, "sofia::gateway_state")) {
+		const char *gateway = switch_event_get_header(event, "Gateway");
+		const char *state = switch_event_get_header(event, "State");
+		const char *status = switch_event_get_header(event, "Status");
+
+		if (gateway && !strcmp(gateway, "testgw-unreg") && state) {
+			if (!strcmp(state, "REGED")) {
+				test_unreg_gw_reged = 1;
+			} else if (!strcmp(state, "DOWN") && status && !strcmp(status, "200")) {
+				test_success++;
+			}
+		}
+	}
+
+	show_event(event);
+}
+
+static int run_unregister_challenge(const char *scenario_uas, int *registered, int *unregistered)
+{
+	const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+	int sipp_ret;
+
+	test_success = 0;
+	test_unreg_gw_reged = 0;
+
+	switch_event_bind("sofia", SWITCH_EVENT_CUSTOM, NULL, event_handler_unreg_ok, NULL);
+
+	sipp_ret = start_sipp_uas(local_ip_v4, 6083, scenario_uas, "");
+	if (sipp_ret >= 0 && sipp_ret != 127) {
+		sofia_api("profile external register testgw-unreg");
+		*registered = wait_for_flag(&test_unreg_gw_reged, 5);
+
+		sofia_api("profile external unregister testgw-unreg");
+		*unregistered = wait_for_flag(&test_success, 5);
+
+		/* sipp should timeout, attempt kill, just in case.*/
+		kill_sipp();
+	}
+
+	switch_event_unbind_callback(event_handler_unreg_ok);
+	test_success = 0;
+
+	return sipp_ret;
 }
 
 FST_CORE_EX_BEGIN("./conf-sipp", SCF_VG | SCF_USE_SQL)
@@ -695,6 +765,36 @@ skiptest:
 				switch_safe_free(to);
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(unregister_407_fresh_nonce)
+		{
+			int registered = 0, unregistered = 0;
+			int sipp_ret;
+
+			sipp_ret = run_unregister_challenge("sipp-scenarios/uas_unregister_407.xml", &registered, &unregistered);
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_check(!"sipp not found");
+			} else {
+				fst_check(registered);
+				fst_check(unregistered);
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(unregister_401_no_cached_credentials)
+		{
+			int registered = 0, unregistered = 0;
+			int sipp_ret;
+
+			sipp_ret = run_unregister_challenge("sipp-scenarios/uas_unregister_401.xml", &registered, &unregistered);
+			if (sipp_ret < 0 || sipp_ret == 127) {
+				fst_check(!"sipp not found");
+			} else {
+				fst_check(registered);
+				fst_check(unregistered);
 			}
 		}
 		FST_TEST_END()

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+
+<scenario name="UAS Registrar challenging un-REGISTER">
+
+  <recv request="REGISTER" />
+  <send>
+    <![CDATA[
+
+      SIP/2.0 407 Proxy Authentication Required
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Proxy-Authenticate: Digest realm="freeswitch.org", nonce="2d4e8b0c13f94a5e9c6b7a8d1e0f3c25", algorithm=MD5
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <recv request="REGISTER" />
+  <send>
+    <![CDATA[
+
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      [last_Contact:];expires=60
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <recv request="REGISTER">
+    <action>
+      <ereg regexp="^ *0 *$" search_in="hdr" header="Expires:" check_it="true" assign_to="unreg_expires"/>
+    </action>
+  </recv>
+  <send>
+    <![CDATA[
+
+      SIP/2.0 407 Proxy Authentication Required
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Proxy-Authenticate: Digest realm="freeswitch.org", nonce="7f1c9a4b2e6d48c0b3a5e9d2c4f6a8b1", algorithm=MD5
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <recv request="REGISTER">
+    <action>
+      <ereg regexp="^ *0 *$" search_in="hdr" header="Expires:" check_it="true" assign_to="auth_expires"/>
+      <ereg regexp="7f1c9a4b2e6d48c0b3a5e9d2c4f6a8b1" search_in="hdr" header="Proxy-Authorization:" check_it="true" assign_to="auth_nonce"/>
+    </action>
+  </recv>
+  <send>
+    <![CDATA[
+
+      SIP/2.0 200 OK
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <Reference variables="unreg_expires,auth_expires,auth_nonce"/>
+
+  <!-- definition of the response time repartition table (unit is ms)   -->
+  <ResponseTimeRepartition value="10, 20, 30, 40, 50, 100, 150, 200"/>
+  <!-- definition of the call length repartition table (unit is ms)     -->
+  <CallLengthRepartition value="10, 50, 100, 500, 1000, 5000, 10000"/>
+</scenario>
