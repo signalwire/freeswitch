@@ -670,6 +670,7 @@ static void phase_e_handler(void *user_data, int result)
 	/* switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING); */
 
 	pvt->done = 1;
+	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 
 	/* Fire event */
 
@@ -1486,6 +1487,7 @@ void mod_spandsp_fax_stop_fax(switch_core_session_t *session)
 	pvt_t *pvt = switch_channel_get_private(switch_core_session_get_channel(session), "_fax_pvt");
 	if (pvt) {
 		pvt->done = 1;
+		switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 	}
 }
 
