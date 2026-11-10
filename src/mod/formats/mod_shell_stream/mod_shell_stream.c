@@ -142,6 +142,16 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 			goto end;
 		} else {				/*  child */
 			close(context->fds[0]);
+
+			/* Flush the stdout/stderr buffers inherited from the parent BEFORE
+			 * dup2'ing them to the pipe. Otherwise the grandchild spawned by
+			 * switch_system()/system() flushes the inherited buffered console
+			 * log text into the audio pipe at exit, and the playback pump
+			 * plays those log bytes as audio, producing a pop/clip noise at
+			 * the end of the stream. */
+			fflush(stdout);
+			fflush(stderr);
+
 			dup2(context->fds[1], STDOUT_FILENO);
 			switch_system(context->command, SWITCH_TRUE);
 			printf("EOF");
