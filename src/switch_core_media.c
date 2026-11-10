@@ -16003,6 +16003,19 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			resample++;
 			write_frame = &session->raw_write_frame;
 			write_frame->rate = frame->codec->implementation->actual_samples_per_second;
+
+			/* An existing write resampler may have been created for a different source or
+			 * destination rate (e.g. before a mid-call codec change); reusing it produces
+			 * short frames, so discard it and let a correctly configured one be created. */
+			if (session->write_resampler &&
+				((uint32_t) session->write_resampler->from_rate != frame->codec->implementation->actual_samples_per_second ||
+				 (uint32_t) session->write_resampler->to_rate != session->write_impl.actual_samples_per_second)) {
+				switch_mutex_lock(session->resample_mutex);
+				switch_resample_destroy(&session->write_resampler);
+				switch_mutex_unlock(session->resample_mutex);
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Write resampler rates changed, recreating\n");
+			}
+
 			if (!session->write_resampler) {
 				switch_mutex_lock(session->resample_mutex);
 				status = switch_resample_create(&session->write_resampler,
