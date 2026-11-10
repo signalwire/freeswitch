@@ -2422,7 +2422,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 		sps = --runtime.sps;
 		switch_mutex_unlock(runtime.throttle_mutex);
 
-		if (sps <= 0) {
+		if (sps < 0) {
 			switch_mutex_unlock(runtime.session_hash_mutex);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Throttle Error! %d\n", session_manager.session_count);
 			UNPROTECT_INTERFACE(endpoint_interface);
