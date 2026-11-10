@@ -184,6 +184,7 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 	tech_pvt->mparams.cng_pt = tech_pvt->cng_pt;
 	tech_pvt->mparams.rtp_timeout_sec = profile->rtp_timeout_sec;
 	tech_pvt->mparams.rtp_hold_timeout_sec = profile->rtp_hold_timeout_sec;
+	tech_pvt->mparams.max_codec_check_frames = profile->max_codec_check_frames;
 
 	if (profile->rtp_digit_delay) {
 		tech_pvt->mparams.dtmf_delay = profile->rtp_digit_delay;

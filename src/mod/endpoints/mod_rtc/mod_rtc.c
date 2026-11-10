@@ -331,6 +331,7 @@ void rtc_attach_private(switch_core_session_t *session, private_object_t *tech_p
 	switch_channel_set_cap(tech_pvt->channel, CC_JITTERBUFFER);
 	switch_channel_set_cap(tech_pvt->channel, CC_FS_RTP);
 	switch_channel_set_cap(tech_pvt->channel, CC_IO_OVERRIDE);
+	tech_pvt->mparams.max_codec_check_frames = SWITCH_MAX_CODEC_CHECK_FRAMES;
 	switch_media_handle_create(&tech_pvt->media_handle, session, &tech_pvt->mparams);
 	switch_core_session_set_private(session, tech_pvt);
 
