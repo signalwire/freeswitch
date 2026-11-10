@@ -1877,7 +1877,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 	switch_time_t now;
 	uint32_t sec, ntp_sec, ntp_usec;
 	switch_time_exp_t now_hr;
-	now = switch_micro_time_now();
+	now = switch_time_now(); /* not the cached timer tick, peers use this timestamp to compute RTT */
 	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
 	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
 	sr->ntp_msw = htonl(ntp_sec);   /* store result in "most significant word" */
@@ -1900,7 +1900,7 @@ static inline uint32_t calc_local_lsr_now(void)
 {
 	switch_time_t now;
 	uint32_t ntp_sec, ntp_usec, lsr_now, sec;
-	now = switch_micro_time_now();
+	now = switch_time_now(); /* not the cached timer tick, it would skew DLSR by up to one tick */
 	sec = (uint32_t)(now/1000000);        /* convert to seconds     */
 	ntp_sec = sec+NTP_TIME_OFFSET;  /* convert to NTP seconds */
 	ntp_usec = (uint32_t)(now - ((switch_time_t) sec*1000000)); /* remove seconds to keep only the microseconds */
