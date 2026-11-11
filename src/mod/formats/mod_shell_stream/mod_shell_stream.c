@@ -30,6 +30,7 @@
  */
 #include <switch.h>
 #include <sys/wait.h>
+#include <signal.h>
 
 #define MY_BUF_LEN 1024 * 32
 #define MY_BLOCK_SIZE MY_BUF_LEN
@@ -137,7 +138,13 @@ static switch_status_t shell_stream_file_open(switch_file_handle_t *handle, cons
 				switch_cond_next();
 			}
 
-			wait(&(context->pid));
+			/* NOTE: we intentionally do NOT wait() for the child here.
+			   Doing so blocks file_open() until the child process fully
+			   exits, which means FreeSWITCH can't start calling
+			   file_read() (i.e. can't start playing anything) until the
+			   ENTIRE external command has finished running - defeating
+			   the purpose of the background buffering thread above.
+			   The child is instead reaped in shell_stream_file_close(). */
 
 			goto end;
 		} else {				/*  child */
@@ -183,6 +190,31 @@ static switch_status_t shell_stream_file_close(switch_file_handle_t *handle)
 
 	switch_thread_rwlock_wrlock(context->rwlock);
 	switch_thread_rwlock_unlock(context->rwlock);
+
+	/* Reap the child process here instead of in file_open(). Closing
+	   fds[0] above closes the read end of the pipe, so if the child is
+	   still writing (e.g. playback was stopped mid-stream), its next
+	   write will fail (EPIPE/SIGPIPE) and it should exit on its own
+	   shortly. Give it a brief grace period, then force-kill as a
+	   safety net so we never block indefinitely or leak a process. */
+	if (context->pid > 0) {
+		int status = 0;
+		pid_t wp;
+		int tries = 0;
+
+		while ((wp = waitpid(context->pid, &status, WNOHANG)) == 0 && tries < 100) {
+			switch_yield(10000); /* 10ms; ~1s total grace period */
+			tries++;
+		}
+
+		if (wp == 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							   "shell_stream child pid %d did not exit after stream close, killing it\n",
+							   (int) context->pid);
+			kill(context->pid, SIGKILL);
+			waitpid(context->pid, &status, 0);
+		}
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
