@@ -3986,6 +3986,20 @@ static switch_bool_t verto__info_func(const char *method, cJSON *params, jsock_t
 			}
 		}
 
+		if (!strcasecmp(proto, "api") && !jsock->profile->enable_chat_api_proto) {
+			/* Truncate: the rest of "to" comes straight from the client JSON and has no length bound. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+							  "Profile [%s] rejected a message from %s (%s) addressed to the 'api' chat proto [%.256s]. "
+							  "Set enable-chat-api-proto=true on the profile to permit it.\n",
+							  jsock->profile->name, switch_str_nil(jsock->uid), switch_str_nil(jsock->name), switch_str_nil(to));
+
+			cJSON_AddItemToObject(*response, "message", cJSON_CreateString("The api chat proto is not permitted on this profile"));
+			switch_safe_free(pproto);
+			r = SWITCH_FALSE;
+
+			goto cleanup;
+		}
+
 		if (!zstr(to) && !zstr(body) && switch_event_create(&event, SWITCH_EVENT_MESSAGE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", VERTO_CHAT_PROTO);
 
@@ -5343,6 +5357,8 @@ static switch_status_t parse_config(const char *cf)
 					profile->jb_msec = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "blind-reg") && !zstr(val)) {
 					profile->blind_reg = switch_true(val);
+				} else if (!strcasecmp(var, "enable-chat-api-proto") && !zstr(val)) {
+					profile->enable_chat_api_proto = switch_true(val);
 				} else if (!strcasecmp(var, "userauth") && !zstr(val)) {
 					profile->userauth = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "chop-domain") && !zstr(val)) {

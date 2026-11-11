@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
-    <pcreLibDir>$(BaseDir)libs\pcre-$(pcreVersion)</pcreLibDir>
+    <pcreLibDir>$(BaseDir)libs\pcre-$(pcreVersion)_$(pcreBuildNumber)</pcreLibDir>
   </PropertyGroup>
 
   <!--
@@ -42,7 +42,7 @@
 
   <Target Name="pcreBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/windows/packages/pcre/$(pcreVersion)/pcre-$(pcreVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/pcre-v$(pcreVersion)_$(pcreBuildNumber)/pcre-$(pcreVersion)_$(pcreBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
            expectfileordirectory="$(pcreLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\$(PCRELibraryFileName).lib"
            outputfolder=""
            outputfilename=""
@@ -51,7 +51,7 @@
   </Target>
   <Target Name="pcreHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/windows/packages/pcre/$(pcreVersion)/pcre-$(pcreVersion)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/pcre-v$(pcreVersion)_$(pcreBuildNumber)/pcre-$(pcreVersion)_$(pcreBuildNumber)-headers.zip"
            expectfileordirectory="$(pcreLibDir)\include\pcre2.h"
            outputfolder=""
            outputfilename=""
@@ -71,11 +71,11 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(BaseDir)libs\pcre-$(pcreVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(BaseDir)libs\pcre-$(pcreVersion)_$(pcreBuildNumber)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)libs\pcre-$(pcreVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\pcre-$(pcreVersion)_$(pcreBuildNumber)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(PCRELibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

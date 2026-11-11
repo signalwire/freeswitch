@@ -426,6 +426,20 @@
   <X-PRE-PROCESS cmd="set" data="rtp_liberal_dtmf=true"/>
   <!-- Helps with WebRTC Audio -->
 
+  <!-- Require valid MESSAGE-INTEGRITY on inbound ICE (STUN) connectivity checks; unverified checks are
+       dropped. Default off. Uncomment and change Z- prefix to X- to enable. -->
+  <!--<Z-PRE-PROCESS cmd="set" data="ice_verify_message_integrity=true"/>-->
+
+  <!-- DTLS-SRTP client certificate verification, server role only.
+       How FreeSWITCH, when it is the DTLS server (the peer is the DTLS client, i.e. a=setup:active),
+       verifies the client's certificate. No effect when FreeSWITCH is the DTLS client.
+         none        - default; the client certificate is not requested or checked
+         fingerprint - request the client cert and require it to match the SDP a=fingerprint
+         full        - also enforce the certificate's CA chain (needs a CA bundle; self-signed
+                       WebRTC certificates will not pass)
+       Uncomment the line below and change Z- prefix to X- to enable. -->
+  <!--<Z-PRE-PROCESS cmd="set" data="rtp_dtls_client_cert_verify_mode=fingerprint"/>-->
+
   <!-- Stock Video Avatars -->
   <X-PRE-PROCESS cmd="set" data="video_mute_png=$${images_dir}/default-mute.png"/>
   <X-PRE-PROCESS cmd="set" data="video_no_avatar_png=$${images_dir}/default-avatar.png"/>

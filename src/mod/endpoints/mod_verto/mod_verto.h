@@ -247,6 +247,7 @@ struct verto_profile_s {
 	
 	int in_thread;
 	int blind_reg;
+	int enable_chat_api_proto;
 
 	char *userauth;
 	char *root_passwd;

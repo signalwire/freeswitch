@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
-    <mariadb-connector-clibDir>$(BaseDir)libs\mariadb-connector-c-$(mariadb-connector-cVersion)</mariadb-connector-clibDir>
+    <mariadb-connector-clibDir>$(BaseDir)libs\mariadb-connector-c-$(mariadb-connector-cVersion)_$(mariadb-connector-cBuildNumber)</mariadb-connector-clibDir>
   </PropertyGroup>
 
   <!-- 
@@ -35,7 +35,7 @@
 
   <Target Name="mariadb-connector-cBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/mariadb-connector-c/$(mariadb-connector-cVersion)/mariadb-connector-c-$(mariadb-connector-cVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/mariadb-connector-c-v$(mariadb-connector-cVersion)_$(mariadb-connector-cBuildNumber)/mariadb-connector-c-$(mariadb-connector-cVersion)_$(mariadb-connector-cBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(mariadb-connector-clibDir)\binaries\$(Platform)\$(Configuration)\libmariadb.dll" 
            outputfolder=""
            outputfilename="" 
@@ -44,7 +44,7 @@
   </Target> 
   <Target Name="mariadb-connector-cHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/mariadb-connector-c/$(mariadb-connector-cVersion)/mariadb-connector-c-$(mariadb-connector-cVersion)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/mariadb-connector-c-v$(mariadb-connector-cVersion)_$(mariadb-connector-cBuildNumber)/mariadb-connector-c-$(mariadb-connector-cVersion)_$(mariadb-connector-cBuildNumber)-headers.zip"
            expectfileordirectory="$(mariadb-connector-clibDir)\include\mysql.h" 
            outputfolder=""
            outputfilename="" 

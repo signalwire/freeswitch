@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
-    <curlLibDir>$(SolutionDir)libs\curl-$(curlVersion)</curlLibDir>
+    <curlLibDir>$(SolutionDir)libs\curl-$(curlVersion)_$(curlBuildNumber)</curlLibDir>
   </PropertyGroup>
 
   <!--
@@ -41,7 +41,7 @@
 
   <Target Name="curlBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="https://files.freeswitch.org/windows/packages/curl/$(curlVersion)_$(curlBuildNumber)/curl-$(curlVersion)_$(curlBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/curl-v$(curlVersion)_$(curlBuildNumber)/curl-$(curlVersion)_$(curlBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
            expectfileordirectory="$(curlLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\curl.lib"
            outputfolder=""
            outputfilename=""
@@ -50,7 +50,7 @@
   </Target>
   <Target Name="curlHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="https://files.freeswitch.org/windows/packages/curl/$(curlVersion)_$(curlBuildNumber)/curl-$(curlVersion)_$(curlBuildNumber)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/curl-v$(curlVersion)_$(curlBuildNumber)/curl-$(curlVersion)_$(curlBuildNumber)-headers.zip"
            expectfileordirectory="$(curlLibDir)\include\curl\curl.h"
            outputfolder=""
            outputfilename=""

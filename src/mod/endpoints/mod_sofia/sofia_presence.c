@@ -1896,7 +1896,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 	return 0;
 }
 
-char *get_display_name_from_contact(const char *in, char* dst)
+char *get_display_name_from_contact(const char *in, char* dst, size_t dst_size)
 {
 	// name-addr      =  [ display-name ] LAQUOT addr-spec RAQUOT
 	// display-name   =  *(token LWS)/ quoted-string
@@ -1904,8 +1904,13 @@ char *get_display_name_from_contact(const char *in, char* dst)
 	char *p;
 	char *buf;
 
-	strcpy(dst, "");
-	if (strchr(in, '<') && strchr(in, '>')) {
+	if (!dst || !dst_size) {
+		return dst;
+	}
+
+	*dst = '\0';
+
+	if (!zstr(in) && strchr(in, '<') && strchr(in, '>')) {
 		buf = strdup(in);
 		switch_assert(buf);
 		p = strchr(buf, '<');
@@ -1918,11 +1923,11 @@ char *get_display_name_from_contact(const char *in, char* dst)
 						char *q = strdup(p + 1);
 						switch_assert(q);
 						end_of(q) = '\0';
-						strcpy(dst, q);
+						switch_copy_string(dst, q, dst_size);
 						switch_safe_free(q);
 					}
 				} else {
-					strcpy(dst, p);
+					switch_copy_string(dst, p, dst_size);
 				}
 				switch_safe_free(p);
 			}
@@ -2012,7 +2017,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:queue+%s", to_user);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "queue");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "queue");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2026,7 +2031,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:park+%s", to_user);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "park");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "park");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2040,7 +2045,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:pickup+%s", to_user);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "pickup");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "pickup");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -2053,13 +2058,13 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 			buf_to_free = switch_mprintf("sip:conf+%s@%s", to_user, host);
 		}
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, "conference");
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", "conference");
 		remote_user = to_user;
 		remote_host = local_host;
 	}
 	else if (bInternal) {
 		local_user = to_user;
-		get_display_name_from_contact(contact, remote_display_buf);
+		get_display_name_from_contact(contact, remote_display_buf, sizeof(remote_display_buf));
 		buf_to_free = sofia_glue_strip_uri(contact);
 		remote_uri = buf_to_free;
 		remote_user = contact_user;
@@ -2068,7 +2073,7 @@ static int sofia_dialog_probe_callback(void *pArg, int argc, char **argv, char *
 		local_user = from_user;
 		buf_to_free = switch_mprintf("**%s@%s", from_user, local_host);
 		remote_uri = buf_to_free;
-		strcpy(remote_display_buf, to_user);
+		snprintf(remote_display_buf, sizeof(remote_display_buf), "%s", to_user);
 		remote_user = to_user;
 		remote_host = local_host;
 	}
@@ -4866,10 +4871,31 @@ void sofia_presence_handle_sip_i_message(int status,
 
 			full_from = sip_header_as_string(nua_handle_get_home(nh), (void *) sip->sip_from);
 
-			if ((p = strchr(to_user, '+')) && p != to_user) {
+			/* Only split a user that fits in proto: the copy below truncates, so a '+' past the
+			   buffer would leave nothing to split on, and a selector or address cut in half must
+			   not be parsed either. An over-long user is treated as a plain address. */
+			if ((p = strchr(to_user, '+')) && p != to_user && strlen(to_user) < sizeof(proto)) {
 				switch_copy_string(proto, to_user, sizeof(proto));
 				p = strchr(proto, '+');
 				*p++ = '\0';
+
+				if (!strcasecmp(proto, "api") && !sofia_test_pflag(profile, PFLAG_ENABLE_CHAT_API_PROTO)) {
+					/* p is the rest of the To user, still percent-encoded and bounded by the proto buffer. */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+									  "Profile [%s] rejected a MESSAGE from %s@%s (%s:%d) addressed to the 'api' chat proto [%s]. "
+									  "Set enable-chat-api-proto=true on the profile to permit it.\n",
+									  profile->name, switch_str_nil(from_user), switch_str_nil(from_host), network_ip, network_port, p);
+
+					nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+
+					if (full_from) {
+						su_free(nua_handle_get_home(nh), full_from);
+					}
+
+					/* Return rather than goto end: the end label answers 200/202, which would be a
+					   second response on this transaction. */
+					return;
+				}
 
 				if ((to_addr = strdup(p))) {
 					if ((p = strchr(to_addr, '+'))) {

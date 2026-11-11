@@ -193,9 +193,13 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 switch_event_node_t *enodes[SWITCH_EVENT_ALL + 1];
 		 uint32_t node_index;
 
-		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name = NULL, const char *subclass_name = "", int len = 5000);
+		 SWITCH_DECLARE_CONSTRUCTOR EventConsumer(const char *event_name, const char *subclass_name, int len);
+		 inline EventConsumer(const char *event_name, const char *subclass_name) : EventConsumer(event_name, subclass_name, 5000) {}
+		 inline EventConsumer(const char *event_name) : EventConsumer(event_name, "", 5000) {}
+		 inline EventConsumer() : EventConsumer(NULL, "", 5000) {}
 		 SWITCH_DECLARE_CONSTRUCTOR ~ EventConsumer();
-		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name = "");
+		 SWITCH_DECLARE(int) bind(const char *event_name, const char *subclass_name);
+		 inline int bind(const char *event_name) { return bind(event_name, ""); }
 		 SWITCH_DECLARE(Event *) pop(int block = 0, int timeout = 0);
 		 SWITCH_DECLARE(void) cleanup();
 	 };
@@ -238,7 +242,8 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(int) answer();
 		 SWITCH_DECLARE(int) print(char *txt);
 		 SWITCH_DECLARE(int) preAnswer();
-		 SWITCH_DECLARE(void) hangup(const char *cause = "normal_clearing");
+		 SWITCH_DECLARE(void) hangup(const char *cause);
+		 inline void hangup() { hangup("normal_clearing"); }
 		 SWITCH_DECLARE(void) hangupState(void);
 		 SWITCH_DECLARE(void) setVariable(char *var, char *val);
 		 SWITCH_DECLARE(void) setPrivate(char *var, void *val);
@@ -247,7 +252,9 @@ SWITCH_DECLARE(bool) email(char *to, char *from, char *headers = NULL, char *bod
 		 SWITCH_DECLARE(switch_status_t) process_callback_result(char *result);
 		 SWITCH_DECLARE(void) say(const char *tosay, const char *module_name, const char *say_type, const char *say_method,
 								  const char *say_gender = NULL);
-		 SWITCH_DECLARE(void) sayPhrase(const char *phrase_name, const char *phrase_data = "", const char *phrase_lang = NULL);
+		 SWITCH_DECLARE(void) sayPhrase(const char *phrase_name, const char *phrase_data, const char *phrase_lang);
+		 inline void sayPhrase(const char *phrase_name, const char *phrase_data) { sayPhrase(phrase_name, phrase_data, NULL); }
+		 inline void sayPhrase(const char *phrase_name) { sayPhrase(phrase_name, "", NULL); }
 		 SWITCH_DECLARE(const char *) hangupCause();
 		 SWITCH_DECLARE(const char *) getState();
 

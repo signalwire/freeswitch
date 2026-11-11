@@ -93,6 +93,8 @@
     <!-- add a ;received="<ip>:<port>" to the contact when replying to register for nat handling -->
     <!--<param name="NDLB-received-in-nat-reg-contact" value="true"/>-->
     <param name="auth-calls" value="$${internal_auth_calls}"/>
+    <!-- lets an inbound MESSAGE to api+<command> run FreeSWITCH API commands, so enable only for trusted peers -->
+    <!-- <param name="enable-chat-api-proto" value="true"/> -->
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
     <!-- Shouldn't set these on IPv6 -->

@@ -5,7 +5,7 @@
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <LuaLibDir>$(SolutionDir)libs\lua-$(LuaVersion)</LuaLibDir>
+    <LuaLibDir>$(SolutionDir)libs\lua-$(LuaVersion)_$(LuaBuildNumber)</LuaLibDir>
   </PropertyGroup>
 
   <!-- 
@@ -30,7 +30,7 @@
 
   <Target Name="luaBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/lua/$(luaVersion)/lua-$(luaVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/lua-v$(LuaVersion)_$(LuaBuildNumber)/lua-$(LuaVersion)_$(LuaBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
            expectfileordirectory="$(LuaLibDir)\binaries\$(Platform)\$(Configuration)\lua53.dll" 
            outputfolder=""
            outputfilename="" 
@@ -39,7 +39,7 @@
   </Target> 
   <Target Name="luaHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/lua/$(luaVersion)/lua-$(luaVersion)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/lua-v$(LuaVersion)_$(LuaBuildNumber)/lua-$(LuaVersion)_$(LuaBuildNumber)-headers.zip"
            expectfileordirectory="$(LuaLibDir)\include\lua.h" 
            outputfolder=""
            outputfilename="" 

@@ -5,7 +5,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
     <pocketsphinxMajorVersion>0</pocketsphinxMajorVersion>
-    <pocketsphinxVersion>0.7</pocketsphinxVersion>
+    <pocketsphinxVersion>0.8</pocketsphinxVersion>
   </PropertyGroup>
   <PropertyGroup>
     <pocketsphinxVersionImported>true</pocketsphinxVersionImported>

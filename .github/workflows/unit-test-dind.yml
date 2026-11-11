@@ -23,7 +23,7 @@ jobs:
   unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: signalwire/freeswitch-public-ci-base:bookworm-amd64
+      image: signalwire/freeswitch-public-ci-base:trixie-amd64
       options: --privileged
     env:
       DEBIAN_FRONTEND: noninteractive
@@ -65,7 +65,7 @@ jobs:
           echo "logs_path=${GITHUB_WORKSPACE}/freeswitch/tests/unit/logs" >> $GITHUB_OUTPUT
 
           "${GITHUB_WORKSPACE}/freeswitch/tests/unit/run-tests-docker.sh" \
-            --base-image signalwire/freeswitch-public-ci-base:bookworm-amd64 \
+            --base-image signalwire/freeswitch-public-ci-base:trixie-amd64 \
             --cpus ${{ env.NUM_CPU_PER_CONTAINER }} \
             --image-tag ci.local \
             --max-containers ${{ env.MAX_CONTAINERS }} \

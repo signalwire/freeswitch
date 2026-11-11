@@ -55,7 +55,7 @@ jobs:
                 }
               },
               {
-                "version": "bullseye",
+                "version": "trixie",
                 "platform": {
                   "name": "arm32v7"
                 }
@@ -132,7 +132,6 @@ jobs:
         version:
           - trixie
           - bookworm
-          - bullseye
         platform:
           - name: amd64
             runner: ubuntu-latest

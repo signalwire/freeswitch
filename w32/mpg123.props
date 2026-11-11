@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="mpg123-version.props" Condition=" '$(mpg123VersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <mpg123LibDir>$(BaseDir)libs\mpg123-$(mpg123Version)_$(mpg123BuildNumber)</mpg123LibDir>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="mpg123BinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/mpg123-v$(mpg123Version)_$(mpg123BuildNumber)/mpg123-$(mpg123Version)_$(mpg123BuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(mpg123LibDir)\binaries\$(Platform)\$(Configuration)\mpg123.dll"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="mpg123HeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/mpg123-v$(mpg123Version)_$(mpg123BuildNumber)/mpg123-$(mpg123Version)_$(mpg123BuildNumber)-headers.zip"
+           expectfileordirectory="$(mpg123LibDir)\include\mpg123.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="mpg123copyTarget" BeforeTargets="CustomBuild" DependsOnTargets="mpg123BinariesDownloadTarget">
+      <ItemGroup>
+          <mpg123Files Include="$(mpg123LibDir)\binaries\$(Platform)\$(Configuration)\*.dll" />
+      </ItemGroup>
+      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(Configuration)\mpg123.dll')"
+          SourceFiles="@(mpg123Files)"
+          DestinationFiles="@(mpg123Files-&gt;'$(BaseDir)$(Platform)\$(Configuration)\%(Filename)%(Extension)')"
+      />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(mpg123LibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(mpg123LibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>mpg123.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

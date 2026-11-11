@@ -17,15 +17,16 @@
     <ffmpegConfigName>$([System.Text.RegularExpressions.Regex]::Replace('$(Configuration)', '-.*$', ''))</ffmpegConfigName>
     <ffmpegVariant>$([System.Text.RegularExpressions.Regex]::Replace('$(Configuration)', '^.*-', ''))</ffmpegVariant>
 
-    <ffmpegDir>$(BaseDir)libs\ffmpeg-$(ffmpegVersion)</ffmpegDir>
+    <ffmpegPkg>ffmpeg-$(ffmpegVersion)_$(ffmpegBuildNumber)</ffmpegPkg>
+    <ffmpegDir>$(BaseDir)libs\$(ffmpegPkg)</ffmpegDir>
     <ffmpegBinDir>$(ffmpegDir)\binaries\$(ffmpegVariant)\$(Platform)\$(ffmpegConfigName)</ffmpegBinDir>
-    <ffmpegPkgBase>https://github.com/freeswitch/ffmpeg-packaging/releases/download/ffmpeg-v$(ffmpegVersion)</ffmpegPkgBase>
+    <ffmpegPkgBase>https://github.com/freeswitch/windows-deps/releases/download/ffmpeg-v$(ffmpegVersion)_$(ffmpegBuildNumber)</ffmpegPkgBase>
   </PropertyGroup>
 
   <!-- Download + extract the headers (config-independent). -->
   <Target Name="ffmpegHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
     <DownloadPackageTask
-        package="$(ffmpegPkgBase)/ffmpeg-$(ffmpegVersion)-headers.zip"
+        package="$(ffmpegPkgBase)/$(ffmpegPkg)-headers.zip"
         expectfileordirectory="$(ffmpegDir)\include\libavcodec\avcodec.h"
         outputfolder=""
         outputfilename=""
@@ -36,7 +37,7 @@
   <!-- Download + extract the per-variant, per-config binaries (DLLs + import libs). -->
   <Target Name="ffmpegBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
     <DownloadPackageTask
-        package="$(ffmpegPkgBase)/ffmpeg-$(ffmpegVersion)-$(ffmpegVariant)-binaries-$(Platform.ToLower())-$(ffmpegConfigName.ToLower()).zip"
+        package="$(ffmpegPkgBase)/$(ffmpegPkg)-$(ffmpegVariant)-binaries-$(Platform.ToLower())-$(ffmpegConfigName.ToLower()).zip"
         expectfileordirectory="$(ffmpegBinDir)\avcodec.lib"
         outputfolder=""
         outputfilename=""

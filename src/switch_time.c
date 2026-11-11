@@ -38,6 +38,7 @@
 
 #ifdef HAVE_TIMERFD_CREATE
 #include <sys/timerfd.h>
+#include <poll.h>
 #endif
 
 //#if defined(DARWIN)
@@ -497,27 +498,27 @@ static switch_status_t _timerfd_next(switch_timer_t *timer)
 static switch_status_t _timerfd_check(switch_timer_t *timer, switch_bool_t step)
 {
 	interval_timer_t *it = timer->private_info;
-	struct itimerspec val;
-	int diff;
+	struct pollfd pfd = { .events = POLLIN };
 
 	if (!it) {
 		return SWITCH_STATUS_GENERR;
 	}
 
-	timerfd_gettime(it->fd, &val);
-	diff = val.it_value.tv_nsec / 1000;
+	pfd.fd = it->fd;
 
-	if (diff > 0) {
-		/* still pending */
-		timer->diff = diff;
-		return SWITCH_STATUS_FALSE;
-	} else {
-		/* timer pending */
+	if (poll(&pfd, 1, 0) > 0) {
+		/* timer has fired */
 		timer->diff = 0;
 		if (step) {
 			_timerfd_step(timer);
 		}
+
 		return SWITCH_STATUS_SUCCESS;
+	} else {
+		/* still pending */
+		timer->diff = 1;
+
+		return SWITCH_STATUS_FALSE;
 	}
 }
 

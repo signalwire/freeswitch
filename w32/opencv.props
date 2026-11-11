@@ -11,12 +11,12 @@
   <PropertyGroup>
     <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
     <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
-    <OpenCVLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">opencv_world341d</OpenCVLibraryFileName> 
-    <OpenCVLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">opencv_world341</OpenCVLibraryFileName> 
+    <OpenCVLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">opencv_world4100d</OpenCVLibraryFileName> 
+    <OpenCVLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">opencv_world4100</OpenCVLibraryFileName> 
   </PropertyGroup>
 
   <PropertyGroup Label="UserMacros">
-    <opencvLibDir>$(BaseDir)libs\opencv-$(opencvVersion)</opencvLibDir>
+    <opencvLibDir>$(BaseDir)libs\opencv-$(opencvVersion)_$(opencvBuildNumber)</opencvLibDir>
   </PropertyGroup>
 
   <!-- 
@@ -41,7 +41,7 @@
 
   <Target Name="opencvBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/opencv/$(opencvVersion)/opencv-$(opencvVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/opencv-v$(opencvVersion)_$(opencvBuildNumber)/opencv-$(opencvVersion)_$(opencvBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
            expectfileordirectory="$(opencvLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\$(OpenCVLibraryFileName).lib"
            outputfolder=""
            outputfilename="" 
@@ -50,8 +50,8 @@
   </Target> 
   <Target Name="opencvHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/opencv/$(opencvVersion)/opencv-$(opencvVersion)-headers.zip"
-           expectfileordirectory="$(opencvLibDir)\include\opencv\cv.h" 
+           package="https://github.com/freeswitch/windows-deps/releases/download/opencv-v$(opencvVersion)_$(opencvBuildNumber)/opencv-$(opencvVersion)_$(opencvBuildNumber)-headers.zip"
+           expectfileordirectory="$(opencvLibDir)\include\opencv2\opencv.hpp" 
            outputfolder=""
            outputfilename="" 
            extractto="$(BaseDir)libs\"
@@ -70,10 +70,10 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(opencvLibDir)\include\;$(opencvLibDir)\include\opencv\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(opencvLibDir)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)libs\opencv-$(opencvVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)libs\opencv-$(opencvVersion)_$(opencvBuildNumber)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(OpenCVLibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

@@ -246,7 +246,12 @@ static switch_status_t rtp_test_end_call(switch_core_session_t **psession)
 	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 	switch_media_handle_destroy(session);
 	switch_core_session_rwunlock(session);
-	
+
+	/* switch_media_handle_destroy() already destroyed the session's RTP session; clear both
+	   pointers so callers and later tests never act on the freed objects. */
+	*psession = NULL;
+	rtp_session = NULL;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -449,6 +454,96 @@ FST_TEARDOWN_END()
 	}
 	FST_TEST_END()
 #endif
+
+	FST_TEST_BEGIN(test_rtcp_nack_oversized_length)
+	{
+		switch_core_session_t *session = NULL;
+		switch_status_t status;
+		switch_socket_t *sock_rtp = NULL;
+		switch_sockaddr_t *sock_addr = NULL;
+		const char *str_err = NULL;
+		char rpacket[SWITCH_RECOMMENDED_BUFFER_SIZE];
+		switch_payload_t pt = { 0 };
+		switch_frame_flag_t frameflags = { 0 };
+		uint32_t rcvd_datalen;
+		switch_size_t send_len;
+		int i;
+		/* RTPFB NACK feedback: V=2/P=0/FMT=1, PT=205 (byte 0xCD -> header.pt 77), header.length
+		   claims 0xFFFF words but only two FCI words are present. The reader must process two
+		   entries (clamped to the datagram), not the 0xFFFF - 2 implied by the length field. */
+		unsigned char nack[20] = {
+			0x81, 0xcd, 0xff, 0xff,             /* V/P/FMT=1, PT=205, length=0xFFFF */
+			0xde, 0xad, 0xbe, 0xef,             /* sender SSRC */
+			0xca, 0xfe, 0xba, 0xbe,             /* media SSRC */
+			0x00, 0x01, 0x00, 0x00,             /* FCI word 0: PID=1, BLP=0 */
+			0x00, 0x02, 0x00, 0x00              /* FCI word 1: PID=2, BLP=0 */
+		};
+
+		status = rtp_test_start_call(&session);
+		if (status != SWITCH_STATUS_SUCCESS || !session) {
+			fst_fail("failed to start PCMU test call");
+			goto nack_oob_cleanup;
+		}
+
+		switch_core_media_set_rtp_flag(session, SWITCH_MEDIA_TYPE_AUDIO, SWITCH_RTP_FLAG_ENABLE_RTCP);
+
+		rtp_session = switch_core_media_get_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO);
+		if (!rtp_session) {
+			fst_fail("no RTP session");
+			goto nack_oob_cleanup;
+		}
+
+		switch_rtp_clear_flag(rtp_session, SWITCH_RTP_FLAG_PAUSE);
+		/* This test feeds only RTCP; drop the media timeout so the no-RTP reads don't return a
+		   media-timeout error that the post-condition below would misread as a reader failure. */
+		switch_rtp_set_media_timeout(rtp_session, 0);
+		/* Accept the feedback packet from the test socket and route it through the video
+		   NACK branch of the RTCP reader. */
+		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ);
+		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_VIDEO);
+		switch_rtp_set_flag(rtp_session, SWITCH_RTP_FLAG_NACK);
+
+		if (switch_socket_create(&sock_rtp, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+			fst_fail("failed to create test socket");
+			goto nack_oob_cleanup;
+		}
+
+		switch_sockaddr_new(&sock_addr, rx_host, audio_rx_port, switch_core_session_get_pool(session));
+		if (!sock_addr) {
+			fst_fail("failed to create sockaddr");
+			goto nack_oob_cleanup;
+		}
+
+		switch_rtp_set_remote_address(rtp_session, tx_host, switch_sockaddr_get_port(sock_addr), 0, SWITCH_FALSE, &str_err);
+		switch_rtp_reset(rtp_session);
+
+		/* rtcp-mux: the feedback arrives on the RTP socket. Send and read a few rounds so the
+		   source address is adopted and the packet reaches the RTCP NACK parser. With the FCI
+		   count clamped the parser stays in bounds; without it the read trips an out-of-bounds
+		   access (ASan/Valgrind abort, or heap corruption). */
+		for (i = 0; i < 4; i++) {
+			send_len = sizeof(nack);
+			if (switch_socket_sendto(sock_rtp, sock_addr, MSG_CONFIRM, (const char *)nack, &send_len) != SWITCH_STATUS_SUCCESS) {
+				fst_fail("failed to send NACK packet");
+				goto nack_oob_cleanup;
+			}
+
+			rcvd_datalen = sizeof(rpacket);
+			status = switch_rtp_read(rtp_session, (void *)rpacket, &rcvd_datalen, &pt, &frameflags, io_flags);
+		}
+
+		/* In-band, synchronous post-condition: the read we just issued on this thread returned a
+		   non-error status, i.e. the reader tolerated the malformed feedback rather than breaking.
+		   The out-of-bounds access itself is caught by ASan/Valgrind on the read above. */
+		fst_xcheck(status != SWITCH_STATUS_GENERR && status != SWITCH_STATUS_FALSE,
+				   "RTP reader tolerates an oversized RTCP NACK and keeps reading");
+
+nack_oob_cleanup:
+		if (sock_rtp) switch_socket_close(sock_rtp);
+		/* rtp_test_end_call() -> switch_media_handle_destroy() destroys the RTP session. */
+		if (session) rtp_test_end_call(&session);
+	}
+	FST_TEST_END()
 
 	FST_TEST_BEGIN(test_rtp_media_timeout)
 	{

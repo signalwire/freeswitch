@@ -86,9 +86,13 @@ public class freeswitchJNI {
   public final static native long EventConsumer_enodes_get(long jarg1, EventConsumer jarg1_);
   public final static native void EventConsumer_node_index_set(long jarg1, EventConsumer jarg1_, long jarg2);
   public final static native long EventConsumer_node_index_get(long jarg1, EventConsumer jarg1_);
-  public final static native long new_EventConsumer(String jarg1, String jarg2, int jarg3);
+  public final static native long new_EventConsumer__SWIG_0(String jarg1, String jarg2, int jarg3);
+  public final static native long new_EventConsumer__SWIG_1(String jarg1, String jarg2);
+  public final static native long new_EventConsumer__SWIG_2(String jarg1);
+  public final static native long new_EventConsumer__SWIG_3();
   public final static native void delete_EventConsumer(long jarg1);
-  public final static native int EventConsumer_bind(long jarg1, EventConsumer jarg1_, String jarg2, String jarg3);
+  public final static native int EventConsumer_bind__SWIG_0(long jarg1, EventConsumer jarg1_, String jarg2, String jarg3);
+  public final static native int EventConsumer_bind__SWIG_1(long jarg1, EventConsumer jarg1_, String jarg2);
   public final static native long EventConsumer_pop(long jarg1, EventConsumer jarg1_, int jarg2, int jarg3);
   public final static native void EventConsumer_cleanup(long jarg1, EventConsumer jarg1_);
   public final static native void delete_CoreSession(long jarg1);
@@ -116,7 +120,8 @@ public class freeswitchJNI {
   public final static native int CoreSession_answer(long jarg1, CoreSession jarg1_);
   public final static native int CoreSession_print(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native int CoreSession_preAnswer(long jarg1, CoreSession jarg1_);
-  public final static native void CoreSession_hangup(long jarg1, CoreSession jarg1_, String jarg2);
+  public final static native void CoreSession_hangup__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2);
+  public final static native void CoreSession_hangup__SWIG_1(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_hangupState(long jarg1, CoreSession jarg1_);
   public final static native void CoreSession_setVariable(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native void CoreSession_setPrivate(long jarg1, CoreSession jarg1_, String jarg2, long jarg3);
@@ -124,7 +129,9 @@ public class freeswitchJNI {
   public final static native String CoreSession_getVariable(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native long CoreSession_process_callback_result(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native void CoreSession_say(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4, String jarg5, String jarg6);
-  public final static native void CoreSession_sayPhrase(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4);
+  public final static native void CoreSession_sayPhrase__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, String jarg3, String jarg4);
+  public final static native void CoreSession_sayPhrase__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
+  public final static native void CoreSession_sayPhrase__SWIG_2(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native String CoreSession_hangupCause(long jarg1, CoreSession jarg1_);
   public final static native String CoreSession_getState(long jarg1, CoreSession jarg1_);
   public final static native int CoreSession_recordFile(long jarg1, CoreSession jarg1_, String jarg2, int jarg3, int jarg4, int jarg5);

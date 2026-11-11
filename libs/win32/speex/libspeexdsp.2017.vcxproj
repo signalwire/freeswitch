@@ -41,7 +41,8 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <Import Project="$(SolutionDir)\w32\download_speex.props" Condition=" '$(downloadspeexPropsImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\download_speexdsp.props" Condition=" '$(downloadspeexdspPropsImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\speexdsp.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Static_SSE|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
@@ -154,7 +155,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -171,7 +172,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -188,7 +189,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -209,7 +210,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -227,7 +228,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USE_SSE;WIN32;NDEBUG;_WINDOWS;_USRDLL;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
@@ -265,7 +266,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USE_SSE;WIN32;NDEBUG;_WINDOWS;_USRDLL;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
@@ -300,7 +301,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USE_SSE;WIN32;NDEBUG;_WINDOWS;_USRDLL;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
@@ -329,7 +330,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>$(ProjectDir);..\..\speex-1.2rc1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(speexdsp_libDir)\win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_USE_SSE;WIN32;NDEBUG;_WINDOWS;_USRDLL;HAVE_CONFIG_H;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
@@ -350,30 +351,39 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\buffer.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\fftwrap.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\filterbank.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\jitter.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\kiss_fft.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\kiss_fftr.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\mdf.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\preprocess.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\resample.c" />
-    <ClCompile Include="..\..\speex-1.2rc1\libspeex\smallft.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\buffer.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\fftwrap.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\filterbank.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\jitter.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\kiss_fft.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\kiss_fftr.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\mdf.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\preprocess.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\resample.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\scal.c" />
+    <ClCompile Include="$(speexdsp_libDir)\libspeexdsp\smallft.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\_kiss_fft_guts.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\arch.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\fftwrap.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\filterbank.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\fixed_debug.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\fixed_generic.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\kiss_fft.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\kiss_fftr.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\math_approx.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\os_support.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\pseudofloat.h" />
-    <ClInclude Include="..\..\speex-1.2rc1\libspeex\smallft.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\_kiss_fft_guts.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\arch.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\fftwrap.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\filterbank.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\fixed_debug.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\fixed_generic.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\kiss_fft.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\kiss_fftr.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\math_approx.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\os_support.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\pseudofloat.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\resample_sse.h" />
+    <ClInclude Include="$(speexdsp_libDir)\libspeexdsp\smallft.h" />
+    <ClInclude Include="$(speexdsp_libDir)\include\speex\speex_buffer.h" />
+    <ClInclude Include="$(speexdsp_libDir)\include\speex\speex_echo.h" />
+    <ClInclude Include="$(speexdsp_libDir)\include\speex\speex_jitter.h" />
+    <ClInclude Include="$(speexdsp_libDir)\include\speex\speex_preprocess.h" />
+    <ClInclude Include="$(speexdsp_libDir)\include\speex\speex_resampler.h" />
+    <ClInclude Include="$(speexdsp_libDir)\include\speex\speexdsp_types.h" />
+    <ClInclude Include="$(speexdsp_libDir)\win32\config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -164,6 +164,19 @@ typedef enum {
 } dtls_type_t;
 
 typedef enum {
+	/* FreeSWITCH as DTLS server does not request the client certificate; its fingerprint is not checked. */
+	DTLS_CLIENT_CERT_VERIFY_NONE,
+	/* FreeSWITCH as DTLS server requests the client certificate and binds it to the SDP a=fingerprint; the PKI chain is not enforced. */
+	DTLS_CLIENT_CERT_VERIFY_FINGERPRINT,
+	/* Like DTLS_CLIENT_CERT_VERIFY_FINGERPRINT, and additionally OpenSSL enforces the PKI chain verdict. */
+	DTLS_CLIENT_CERT_VERIFY_FULL
+} dtls_client_cert_verify_t;
+
+/* Default policy for verifying the client certificate when FreeSWITCH is the DTLS server,
+ * applied when rtp_dtls_client_cert_verify_mode is unset. */
+#define DTLS_CLIENT_CERT_VERIFY_DEFAULT DTLS_CLIENT_CERT_VERIFY_NONE
+
+typedef enum {
 	DS_OFF,
 	DS_HANDSHAKE,
 	DS_SETUP,
@@ -2612,27 +2625,16 @@ typedef struct switch_cache_db_handle switch_cache_db_handle_t;
 
 static inline const char *switch_cache_db_type_name(switch_cache_db_handle_type_t type)
 {
-	const char *type_str = "INVALID";
-
 	switch (type) {
 	case SCDB_TYPE_DATABASE_INTERFACE:
-		{
-			type_str = "DATABASE_INTERFACE";
-		}
-		break;
+		return "DATABASE_INTERFACE";
 	case SCDB_TYPE_ODBC:
-		{
-			type_str = "ODBC";
-		}
-		break;
+		return "ODBC";
 	case SCDB_TYPE_CORE_DB:
-		{
-			type_str = "CORE_DB";
-		}
-		break;
+		return "CORE_DB";
+	default:
+		return "INVALID";
 	}
-
-	return type_str;
 }
 
 SWITCH_DECLARE(switch_cache_db_handle_type_t) switch_cache_db_get_type(switch_cache_db_handle_t *dbh);

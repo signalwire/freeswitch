@@ -148,6 +148,10 @@
         <!-- extended info parsing -->
         <!-- <param name="extended-info-parsing" value="true"/> -->
 
+        <!-- lets an inbound MESSAGE to api+<command> run FreeSWITCH API commands,
+             so enable only for trusted peers -->
+        <!-- <param name="enable-chat-api-proto" value="true"/> -->
+
         <!-- <param name="aggressive-nat-detection" value="true"/> -->
         <!-- There are known issues (asserts and segfaults) when 100rel is
              enabled.  It is not recommended to enable 100rel at this time. -->

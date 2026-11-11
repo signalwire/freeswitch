@@ -263,10 +263,6 @@ Description: mod_codec2
  Adds mod_codec2.
 Build-Depends: libcodec2-dev
 
-Module: codecs/mod_com_g729
-Description: mod_com_g729
- Adds mod_com_g729.
-
 Module: codecs/mod_g723_1
 Description: mod_g723_1
  Adds mod_g723_1.

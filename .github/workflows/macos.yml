@@ -16,11 +16,11 @@ on:
 jobs:
   build:
     name: Build MacOS
-    runs-on: macos-latest
+    runs-on: xcode-27
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -30,7 +30,6 @@ jobs:
           brew upgrade --formula || true
           # Remove pinned cmake version (https://github.com/actions/runner-images/blob/macos-15-arm64/20250825.2246/images/macos/scripts/build/install-common-utils.sh#L19)
           brew uninstall --ignore-dependencies cmake || true
-          # brew install libtiff openssl@3
           brew install \
             autoconf \
             automake \
@@ -39,6 +38,7 @@ jobs:
             gnu-sed \
             jpeg \
             ldns \
+            libks \
             libpq@18 \
             libsndfile \
             libtool \
@@ -47,21 +47,20 @@ jobs:
             ossp-uuid \
             pcre2 \
             pkgconf \
+            signalwire-client-c \
             sofia-sip \
             speex \
             speexdsp \
             sqlite \
-            yasm \
           && \
           brew list --pinned | awk '{system("brew unpin " $1)}' && \
           brew install --adopt \
-            signalwire/homebrew-signalwire/libks2 \
-            signalwire/homebrew-signalwire/signalwire-c2 \
             signalwire/homebrew-signalwire/spandsp \
           && \
           brew link --force --overwrite \
             ffmpeg@7 \
-            libpq@18
+            libpq@18 \
+            ruby@3.4
 
       - name: Bootstrap FreeSWITCH
         run: ./bootstrap.sh -j
@@ -94,7 +93,7 @@ jobs:
       #     find . -type f | sort
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: freeswitch-macos-build

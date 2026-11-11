@@ -81,11 +81,18 @@ void rtmp_handle_control(rtmp_session_t *rsession, int amfnumber)
 	rtmp_state_t *state = &rsession->amfstate[amfnumber];
 	char buf[200] = { 0 };
 	char *p = buf;
+	char *end = buf + sizeof(buf);
 	int type = state->buf[0] << 8 | state->buf[1];
 	int i;
 
-	for (i = 2; i < state->origlen; i++) {
-		p += sprintf(p, "%02x ", state->buf[i] & 0xFF);
+	for (i = 2; i < state->origlen && p < end; i++) {
+		int n = snprintf(p, end - p, "%02x ", state->buf[i] & 0xFF);
+
+		if (n <= 0 || n >= end - p) {
+			break;
+		}
+
+		p += n;
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_UUID_LOG(rsession->uuid), SWITCH_LOG_DEBUG, "Control (%d): %s\n", type, buf);
