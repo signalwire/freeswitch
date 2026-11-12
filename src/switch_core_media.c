@@ -1010,6 +1010,14 @@ SWITCH_DECLARE(void) switch_core_media_parse_rtp_bugs(switch_rtp_bug_flag_t *fla
 		*flag_pole &= ~RTP_BUG_CHANGE_SSRC_ON_MARKER;
 	}
 
+	if (switch_stristr("CHANGE_SSRC_ON_MARKER_ALSO_WHEN_SECURE", str)) {
+		*flag_pole |= RTP_BUG_CHANGE_SSRC_ON_MARKER_ALSO_WHEN_SECURE;
+	}
+
+	if (switch_stristr("~CHANGE_SSRC_ON_MARKER_ALSO_WHEN_SECURE", str)) {
+		*flag_pole &= ~RTP_BUG_CHANGE_SSRC_ON_MARKER_ALSO_WHEN_SECURE;
+	}
+
 	if (switch_stristr("FLUSH_JB_ON_DTMF", str)) {
 		*flag_pole |= RTP_BUG_FLUSH_JB_ON_DTMF;
 	}
