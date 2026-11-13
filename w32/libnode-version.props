@@ -4,7 +4,7 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <LibNodeVersion>24.22.1</LibNodeVersion>
+    <LibNodeVersion>24.22.3</LibNodeVersion>
     <LibNodeBuildNumber>1</LibNodeBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
