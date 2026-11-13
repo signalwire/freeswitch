@@ -1267,11 +1267,15 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg * msg, 
 
 
 /* fake enough of the net_kernel module to be able to respond to net_adm:ping */
-/* {'$gen_call', {<cpx@freecpx.128.0>, #Ref<254770.4.0>}, {is_auth, cpx@freecpx} */
+/* {'$gen_call', {<cpx@freecpx.128.0>, #Ref<254770.4.0>}, {is_auth, cpx@freecpx}}
+ * OTP 24+ sends the tag as an improper list instead of a plain reference:
+ * {'$gen_call', {<cpx@freecpx.128.0>, [alias | #Ref<254770.4.0>]}, {is_auth, cpx@freecpx}}
+ * The reply must echo the tag unchanged, as {[alias | Ref], yes}. */
 static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg * msg, ei_x_buff * buf, ei_x_buff * rbuf)
 {
-	int version, size, type, arity;
+	int version, size, type, arity, list_arity;
 	char atom[MAXATOMLEN];
+	char tag_atom[MAXATOMLEN] = "";
 	erlang_ref ref;
 	erlang_pid pid;
 
@@ -1310,8 +1314,22 @@ static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg * 
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (ei_decode_pid(buf->buff, &buf->index, &pid) || ei_decode_ref(buf->buff, &buf->index, &ref)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decoding pid and ref error\n");
+	if (ei_decode_pid(buf->buff, &buf->index, &pid)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decoding pid error\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	ei_get_type(buf->buff, &buf->index, &type, &size);
+
+	if (type == ERL_LIST_EXT) {
+		/* OTP 24+ tag: [alias | Ref] (one element, improper tail) */
+		if (ei_decode_list_header(buf->buff, &buf->index, &list_arity) || list_arity != 1 ||
+			ei_decode_atom(buf->buff, &buf->index, tag_atom) || ei_decode_ref(buf->buff, &buf->index, &ref)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decoding alias tag error\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	} else if (ei_decode_ref(buf->buff, &buf->index, &ref)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decoding ref error\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1336,6 +1354,10 @@ static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg * 
 
 	/* To ! {Tag, Reply} */
 	ei_x_encode_tuple_header(rbuf, 2);
+	if (*tag_atom) {
+		ei_x_encode_list_header(rbuf, 1);
+		ei_x_encode_atom(rbuf, tag_atom);
+	}
 	ei_x_encode_ref(rbuf, &ref);
 	ei_x_encode_atom(rbuf, "yes");
 
