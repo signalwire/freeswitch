@@ -3,7 +3,7 @@ MODNAME=mod_amr
 
 mod_LTLIBRARIES = mod_amr.la
 if HAVE_AMR
-mod_amr_la_SOURCES  = mod_amr.c bitshift.c amr_be.c
+mod_amr_la_SOURCES  = mod_amr.c amr_payload.c
 else
 mod_amr_la_SOURCES  = mod_amr.c 
 endif
