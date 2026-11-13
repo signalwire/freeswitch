@@ -3725,11 +3725,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_set_codec(switch_core_session_
 	switch_core_session_set_write_impl(session, a_engine->write_codec.implementation);
 
 	if (switch_rtp_ready(a_engine->rtp_session)) {
+		uint32_t samples_per_interval = a_engine->read_impl.samples_per_packet;
+
 		switch_assert(a_engine->read_codec.implementation);
+
+		/* RFC 7587: Opus advances its RTP timestamp at a fixed 48 kHz clock regardless of the
+		   negotiated payload rate, so the interval must come from samples_per_second, not
+		   samples_per_packet. switch_rtp_new() applies this at init; mirror it here so the
+		   post-negotiation change does not reset the Opus clock to the payload rate. */
+		if (!strcasecmp("opus", a_engine->read_impl.iananame)) {
+			samples_per_interval = a_engine->read_impl.samples_per_second *
+				(a_engine->read_impl.microseconds_per_packet / 1000) / 1000;
+		}
 
 		if (switch_rtp_change_interval(a_engine->rtp_session,
 									   a_engine->read_impl.microseconds_per_packet,
-									   a_engine->read_impl.samples_per_packet) != SWITCH_STATUS_SUCCESS) {
+									   samples_per_interval) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			switch_goto_status(SWITCH_STATUS_FALSE, end);
 		}
@@ -4541,6 +4552,21 @@ static void greedy_sort(switch_media_handle_t *smh, struct matches *matches, int
 	}
 }
 
+/* Find the loaded implementation of imp's codec at rate, with imp's ptime and channel count. */
+static const switch_codec_implementation_t *find_codec_at_rate(const switch_codec_implementation_t *imp, uint32_t rate)
+{
+	const switch_codec_implementation_t *search[1];
+	char fmtp[SWITCH_MAX_CODECS][MAX_FMTP_LEN];
+	char tmp[80];
+	char *prefs[1];
+
+	switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui%dc", imp->iananame, rate, imp->microseconds_per_packet / 1000,
+					imp->number_of_channels);
+	prefs[0] = tmp;
+
+	return switch_loadable_module_get_codecs_sorted(search, fmtp, 1, prefs, 1) ? search[0] : NULL;
+}
+
 static void clear_pmaps(switch_rtp_engine_t *engine)
 {
 	payload_map_t *pmap;
@@ -4812,7 +4838,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	struct matches matches[MAX_MATCHES] = { { 0 } };
 	struct matches near_matches[MAX_MATCHES] = { { 0 } };
 	int codec_ms = 0;
-	uint32_t remote_codec_rate = 0, fmtp_remote_codec_rate = 0;
+	uint32_t remote_codec_rate = 0, fmtp_remote_codec_rate = 0, opus_rate = 0;
 	const char *tmp;
 	int m_idx = 0, skip_rtcp = 0, skip_video_rtcp = 0, got_rtcp_mux = 0, got_video_rtcp_mux = 0;
 	int nm_idx = 0;
@@ -5536,10 +5562,42 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					}
 				}
 
+				if (fmtp_remote_codec_rate) {
+					remote_codec_rate = fmtp_remote_codec_rate;
+				}
+
+				opus_rate = 0;
+
+				if (!strcasecmp(rm_encoding, "opus")) {
+					/* RFC 7587 fixes the Opus rtpmap at 48000/2 and any Opus decoder plays any rate, so match
+					   exactly one configured Opus rate: the offered one if it is configured, otherwise the
+					   first one configured. Opus implementations share one payload map per payload type, so
+					   matching several would leave the last one's rate on it. */
+					for (i = 0; i < smh->mparams->num_codecs && i < total_codecs; i++) {
+						const switch_codec_implementation_t *imp = codec_array[i];
+
+						if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO || strcasecmp(imp->iananame, "opus")) {
+							continue;
+						}
+
+						if (!opus_rate || imp->actual_samples_per_second == remote_codec_rate) {
+							opus_rate = imp->actual_samples_per_second;
+						}
+
+						if (opus_rate == remote_codec_rate) {
+							break;
+						}
+					}
+				}
+
 				for (i = 0; i < smh->mparams->num_codecs && i < total_codecs; i++) {
 					const switch_codec_implementation_t *imp = codec_array[i];
 					uint32_t bit_rate = imp->bits_per_second;
 					uint32_t codec_rate = imp->samples_per_second;
+
+					if (!strcasecmp(map->rm_encoding, "opus")) {
+						codec_rate = imp->actual_samples_per_second;
+					}
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO) {
 						continue;
@@ -5550,13 +5608,14 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000, bit_rate, imp->number_of_channels);
 					if ((zstr(map->rm_encoding) || (smh->mparams->ndlb & SM_NDLB_ALLOW_BAD_IANANAME)) && map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
+					} else if (opus_rate) {
+						match = (!strcasecmp(rm_encoding, imp->iananame) &&
+								 ((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 95 && imp->ianacode > 95)) &&
+								 codec_rate == opus_rate) ? 1 : 0;
 					} else {
 						match = (!strcasecmp(rm_encoding, imp->iananame) &&
 								 ((map->rm_pt < 96 && imp->ianacode < 96) || (map->rm_pt > 95 && imp->ianacode > 95)) &&
-								 (remote_codec_rate == codec_rate || fmtp_remote_codec_rate == imp->actual_samples_per_second)) ? 1 : 0;
-						if (fmtp_remote_codec_rate) {
-							remote_codec_rate = fmtp_remote_codec_rate;
-						}
+								 (remote_codec_rate == codec_rate || remote_codec_rate == imp->actual_samples_per_second)) ? 1 : 0;
 					}
 
 					if (match && bit_rate && map_bit_rate && map_bit_rate != bit_rate && strcasecmp(map->rm_encoding, "ilbc") &&
@@ -5577,7 +5636,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
 											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n",
 											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
-						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) || remote_codec_rate != codec_rate) {
+						} else if ((ptime && codec_ms && codec_ms * 1000 != imp->microseconds_per_packet) ||
+								   (!opus_rate && remote_codec_rate != codec_rate)) {
 							/* ptime does not match */
 							match = 0;
 
@@ -5602,7 +5662,8 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 						}
 
 						matches[m_idx].codec_idx = i;
-						matches[m_idx].rate = codec_rate;
+						/* for Opus keep the offered rate; the matched rate may be higher (see below) */
+						matches[m_idx].rate = opus_rate ? remote_codec_rate : codec_rate;
 						matches[m_idx].imp = imp;
 						matches[m_idx].map = map;
 						m_idx++;
@@ -5679,6 +5740,25 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 
 				if (greedy) { /* sort in favor of mine */
 					greedy_sort(smh, matches, m_idx, codec_array, total_codecs);
+				}
+
+				if (!scrooge) {
+					/* An Opus offer capped below the matched rate (maxplaybackrate/sprop-maxcapturerate) uses
+					   the loaded implementation at the offered rate when there is one. Done after sorting,
+					   because greedy_sort only keeps implementations that are in codec_array. */
+					for (j = 0; j < m_idx; j++) {
+						const switch_codec_implementation_t *timp;
+
+						if (!strcasecmp(matches[j].imp->iananame, "opus") && matches[j].rate > 0 &&
+							(uint32_t) matches[j].rate < matches[j].imp->actual_samples_per_second &&
+							(timp = find_codec_at_rate(matches[j].imp, matches[j].rate))) {
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG,
+											  "Substituting codec %s@%ui@%uh@%dc\n", timp->iananame,
+											  timp->microseconds_per_packet / 1000, timp->actual_samples_per_second,
+											  timp->number_of_channels);
+							matches[j].imp = timp;
+						}
+					}
 				}
 
 				match = 1;
@@ -16223,7 +16303,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				session->enc_write_frame.codec = session->write_codec;
 				session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t) / session->write_impl.number_of_channels;
 				session->enc_write_frame.channels = session->write_impl.number_of_channels;
-				if (frame->codec->implementation->samples_per_packet != session->write_impl.samples_per_packet) {
+				if (frame->codec->implementation->samples_per_packet != session->write_impl.samples_per_packet ||
+					frame->codec->implementation->samples_per_second != session->write_impl.samples_per_second) {
+					/* RFC 7587: a clock-rate change (e.g. AMR-WB/16000 -> Opus, whose RTP clock is
+					   48 kHz) must regenerate the RTP timestamp at the write codec's clock instead of
+					   passing the source timestamp through. samples_per_packet alone misses this for
+					   a same-rate transcode (AMR-WB 16k and Opus 16k both pack 320 samples/20ms), so
+					   the Opus timestamp would advance at 16 kHz. samples_per_interval carries the
+					   correct 48 kHz Opus clock (see switch_core_media_set_codec). */
 					session->enc_write_frame.timestamp = 0;
 				} else {
 					session->enc_write_frame.timestamp = frame->timestamp;
