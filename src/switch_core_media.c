@@ -7114,8 +7114,13 @@ static switch_status_t perform_write(switch_core_session_t *session, switch_fram
 
 		if (a_engine && a_engine->write_fb && !(flags & SWITCH_IO_FLAG_QUEUED)) {
 			switch_frame_t *dupframe = NULL;
+			int up;
 
-			if (switch_frame_buffer_dup(a_engine->write_fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
+			switch_mutex_lock(smh->control_mutex);
+			up = a_engine->mh.up;
+			switch_mutex_unlock(smh->control_mutex);
+
+			if (up && switch_frame_buffer_dup(a_engine->write_fb, frame, &dupframe) == SWITCH_STATUS_SUCCESS) {
 				switch_frame_buffer_push(a_engine->write_fb, dupframe);
 				dupframe = NULL;
 				return SWITCH_STATUS_SUCCESS;
@@ -7190,6 +7195,7 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 	switch_rtp_engine_t *a_engine = NULL;
 	switch_codec_implementation_t write_impl;
 	switch_timer_t timer = {0};
+	void *pop;
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;
@@ -7214,8 +7220,6 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 	switch_frame_buffer_create(&a_engine->write_fb, 500);
 
 	while(switch_channel_up_nosig(session->channel) && mh->up == 1) {
-		void *pop;
-
 		if (session->write_impl.microseconds_per_packet != write_impl.microseconds_per_packet ||
 			session->write_impl.samples_per_packet != write_impl.samples_per_packet) {
 
@@ -7244,6 +7248,14 @@ static void *SWITCH_THREAD_FUNC audio_write_thread(switch_thread_t *thread, void
 	switch_mutex_lock(smh->control_mutex);
 	mh->up = 0;
 	switch_mutex_unlock(smh->control_mutex);
+
+	while (switch_frame_buffer_trypop(a_engine->write_fb, &pop) == SWITCH_STATUS_SUCCESS) {
+		if (pop && (switch_size_t)pop != 1) {
+			switch_frame_t *frame = (switch_frame_t *)pop;
+
+			switch_frame_buffer_free(a_engine->write_fb, &frame);
+		}
+	}
 
 	switch_core_timer_destroy(&timer);
 
