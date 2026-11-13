@@ -11,6 +11,9 @@ noinst_PROGRAMS += test_mod_verto
 noinst_PROGRAMS += test_mod_event_socket
 noinst_PROGRAMS += switch_timer
 
+# test_srtp_rekey_after_rollover drives a libsrtp sender, so it needs the bundled libsrtp header.
+switch_rtp_CPPFLAGS = $(AM_CPPFLAGS) -I$(switch_srcdir)/libs/srtp/include
+
 if HAVE_PCAP
 noinst_PROGRAMS += switch_rtp_pcap
 AM_LDFLAGS += $(PCAP_LIBS)

@@ -7,6 +7,8 @@
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
+#include <srtp.h>
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -294,6 +296,356 @@ static dtls_state_t run_client_cert_verify_case(const char *verify_mode, int pre
 	return state;
 }
 
+/*
+ * SRTP re-key after a sequence number wrap. The peer is a libsrtp sender, so the test chooses the
+ * rollover counter (ROC) its packets carry after a re-key: srtp_set_stream_roc() on the new sender
+ * context continues the old counter (RFC 3711 3.3.1), leaving it unset restarts at 0 (RFC 4568 7.1.4).
+ * libsrtp's AEAD protect path ignores srtp_set_stream_roc(), so the GCM sender can only restart.
+ */
+#define SRTP_TEST_PAYLOAD_LEN 160
+#define SRTP_TEST_PACKETS 100
+#define SRTP_TEST_WARMUP 60
+#define SRTP_TEST_KEYSALT_LEN 30
+
+typedef enum {
+	SRTP_TEST_AES_CM_128_HMAC_SHA1_80,
+	SRTP_TEST_AES_CM_128_HMAC_SHA1_80_MKI,
+	SRTP_TEST_AEAD_AES_128_GCM
+} srtp_test_suite_t;
+
+typedef enum {
+	SRTP_REKEY_PEER_KEEPS_ROC,        /* the peer keeps its ROC */
+	SRTP_REKEY_PEER_RESETS_ROC,       /* the peer restarts at ROC 0 */
+	SRTP_REKEY_OTHER_SSRC_FIRST,      /* a second SSRC sends first after the re-key, then the peer keeps */
+	SRTP_REKEY_OTHER_SSRC_THEN_RESET, /* a late old-key packet and a second SSRC, then the peer resets */
+	SRTP_REKEY_TWICE,                 /* a second re-key before the first is decided, then the peer keeps */
+	SRTP_REKEY_WRAP_IN_GAP            /* the peer wraps while its packets are lost around the re-key, and keeps */
+} srtp_rekey_case_t;
+
+typedef struct {
+	int fd;
+	struct sockaddr_in fs_addr;
+	srtp_test_suite_t suite;
+	srtp_t ctx;
+	uint32_t ssrc;
+	uint16_t seq;
+	uint32_t roc; /* ROC of the next packet, as the peer counts it */
+	uint32_t ts;
+} srtp_test_peer_t;
+
+typedef struct {
+	int before; /* decrypted before the re-key, of SRTP_TEST_PACKETS */
+	int other;  /* decrypted from the second SSRC, of SRTP_TEST_PACKETS */
+	int after;  /* decrypted from the peer after the re-key, of SRTP_TEST_PACKETS; -1 if the harness failed */
+} srtp_rekey_result_t;
+
+/* MKI shared by FreeSWITCH's key material and the sender, in the byte order FreeSWITCH copies it in. */
+static const unsigned int srtp_test_mki_id = 1;
+
+static void srtp_test_keysalt(unsigned char *keysalt, unsigned char fill)
+{
+	int i;
+
+	for (i = 0; i < SRTP_TEST_KEYSALT_LEN; i++) {
+		keysalt[i] = (unsigned char) (fill + i);
+	}
+}
+
+/* Give FreeSWITCH's receive side a key, the way an SDES offer or answer does. */
+static switch_status_t srtp_test_fs_key(switch_rtp_t *rtp, srtp_test_suite_t suite, const unsigned char *keysalt)
+{
+	switch_secure_settings_t ssec = { 0 };
+	switch_crypto_key_material_t key_material = { 0 };
+
+	ssec.crypto_type = suite == SRTP_TEST_AEAD_AES_128_GCM ? AEAD_AES_128_GCM : AES_CM_128_HMAC_SHA1_80;
+	memcpy(ssec.remote_raw_key, keysalt, SRTP_TEST_KEYSALT_LEN);
+
+	if (suite == SRTP_TEST_AES_CM_128_HMAC_SHA1_80_MKI) {
+		memcpy(key_material.raw_key, keysalt, SRTP_TEST_KEYSALT_LEN);
+		key_material.mki_id = srtp_test_mki_id;
+		key_material.mki_size = sizeof(srtp_test_mki_id);
+		ssec.remote_key_material_next = &key_material;
+		ssec.remote_key_material_n = 1;
+	}
+
+	return switch_rtp_add_crypto_key(rtp, SWITCH_RTP_CRYPTO_RECV, 1, &ssec);
+}
+
+/* (Re)key the sender with a new libsrtp context, continuing its ROC when keep_roc is set. */
+static int srtp_test_peer_key(srtp_test_peer_t *peer, const unsigned char *keysalt, int keep_roc)
+{
+	srtp_policy_t policy;
+	srtp_master_key_t mki, *mkis[1];
+	unsigned char mki_id[sizeof(srtp_test_mki_id)];
+
+	if (peer->ctx) {
+		srtp_dealloc(peer->ctx);
+		peer->ctx = NULL;
+	}
+
+	memset(&policy, 0, sizeof(policy));
+	if (peer->suite == SRTP_TEST_AEAD_AES_128_GCM) {
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtp);
+		srtp_crypto_policy_set_aes_gcm_128_16_auth(&policy.rtcp);
+	} else {
+		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtp);
+		srtp_crypto_policy_set_aes_cm_128_hmac_sha1_80(&policy.rtcp);
+	}
+	policy.ssrc.type = ssrc_specific;
+	policy.ssrc.value = peer->ssrc;
+	policy.window_size = 1024;
+
+	if (peer->suite == SRTP_TEST_AES_CM_128_HMAC_SHA1_80_MKI) {
+		memcpy(mki_id, &srtp_test_mki_id, sizeof(mki_id));
+		mki.key = (unsigned char *) keysalt;
+		mki.mki_id = mki_id;
+		mki.mki_size = sizeof(mki_id);
+		mkis[0] = &mki;
+		policy.keys = mkis;
+		policy.num_master_keys = 1;
+	} else {
+		policy.key = (unsigned char *) keysalt;
+	}
+
+	if (srtp_create(&peer->ctx, &policy) != srtp_err_status_ok) {
+		peer->ctx = NULL;
+		return 0;
+	}
+
+	if (!keep_roc) {
+		peer->roc = 0;
+		return 1;
+	}
+
+	return srtp_set_stream_roc(peer->ctx, peer->ssrc, peer->roc) == srtp_err_status_ok;
+}
+
+static void srtp_test_payload(uint16_t seq, unsigned char *payload)
+{
+	int i;
+
+	for (i = 0; i < SRTP_TEST_PAYLOAD_LEN; i++) {
+		payload[i] = (unsigned char) (seq * 7 + i);
+	}
+}
+
+/* Advance the peer's sequence number without sending, as if the packet were lost. */
+static void srtp_test_peer_skip(srtp_test_peer_t *peer)
+{
+	if (++peer->seq == 0) {
+		peer->roc++;
+	}
+	peer->ts += SRTP_TEST_PAYLOAD_LEN;
+}
+
+/* Protect and send the peer's next packet. */
+static int srtp_test_peer_send(srtp_test_peer_t *peer)
+{
+	uint32_t buf[(12 + SRTP_TEST_PAYLOAD_LEN + SRTP_MAX_TRAILER_LEN) / 4 + 1];
+	unsigned char *pkt = (unsigned char *) buf;
+	int len = 12 + SRTP_TEST_PAYLOAD_LEN, i;
+	srtp_err_status_t stat;
+
+	pkt[0] = 0x80;
+	pkt[1] = TEST_PT;
+	pkt[2] = peer->seq >> 8;
+	pkt[3] = peer->seq & 0xff;
+	for (i = 0; i < 4; i++) {
+		pkt[4 + i] = (peer->ts >> (24 - 8 * i)) & 0xff;
+		pkt[8 + i] = (peer->ssrc >> (24 - 8 * i)) & 0xff;
+	}
+	srtp_test_payload(peer->seq, pkt + 12);
+
+	if (peer->suite == SRTP_TEST_AES_CM_128_HMAC_SHA1_80_MKI) {
+		stat = srtp_protect_mki(peer->ctx, pkt, &len, 1, 0);
+	} else {
+		stat = srtp_protect(peer->ctx, pkt, &len);
+	}
+
+	srtp_test_peer_skip(peer);
+
+	return stat == srtp_err_status_ok &&
+		sendto(peer->fd, pkt, len, 0, (struct sockaddr *) &peer->fs_addr, sizeof(peer->fs_addr)) == len;
+}
+
+/* Send the peer's next packet and read without blocking; returns 1 if FreeSWITCH delivered its plaintext. */
+static int srtp_test_send_and_read(switch_rtp_t *rtp, srtp_test_peer_t *peer)
+{
+	char buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	unsigned char expect[SRTP_TEST_PAYLOAD_LEN];
+	int tries;
+
+	srtp_test_payload(peer->seq, expect);
+
+	if (!srtp_test_peer_send(peer)) {
+		return 0;
+	}
+
+	for (tries = 0; tries < 3; tries++) {
+		uint32_t len = sizeof(buf);
+		switch_payload_t pt = 0;
+		switch_frame_flag_t frame_flags = 0;
+
+		switch_rtp_read(rtp, (void *) buf, &len, &pt, &frame_flags, SWITCH_IO_FLAG_NOBLOCK);
+
+		if (pt == TEST_PT && len == SRTP_TEST_PAYLOAD_LEN && !memcmp(buf, expect, len)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * Feed FreeSWITCH SRTP from one SSRC across a sequence number wrap, re-key its receive side the way an
+ * SDES re-INVITE does (same SSRC, sequence carries on), then have the peer carry on under the new key.
+ */
+static srtp_rekey_result_t run_srtp_rekey_case(srtp_test_suite_t suite, srtp_rekey_case_t rekey_case)
+{
+	srtp_rekey_result_t result = { 0, 0, -1 };
+	unsigned char key_a[SRTP_TEST_KEYSALT_LEN], key_b[SRTP_TEST_KEYSALT_LEN], key_c[SRTP_TEST_KEYSALT_LEN];
+	switch_core_session_t *session = NULL;
+	switch_rtp_t *srtp_rtp = NULL;
+	switch_rtp_flag_t srtp_flags[SWITCH_RTP_FLAG_INVALID] = { 0 };
+	switch_call_cause_t cause;
+	srtp_test_peer_t peer = { 0 }, other = { 0 };
+	struct sockaddr_in local = { 0 };
+	socklen_t local_len = sizeof(local);
+	switch_port_t fs_port;
+	const char *srtp_err = NULL;
+	int i;
+
+	peer.fd = -1;
+	peer.suite = other.suite = suite;
+	srtp_test_keysalt(key_a, 0x11);
+	srtp_test_keysalt(key_b, 0xa0);
+	srtp_test_keysalt(key_c, 0x51);
+
+	/* As in run_client_cert_verify_case(): FreeSWITCH binds the configured RTP port. */
+	fs_port = switch_rtp_set_start_port(0);
+
+	if ((peer.fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		goto done;
+	}
+	local.sin_family = AF_INET;
+	local.sin_addr.s_addr = inet_addr(rx_host);
+	if (bind(peer.fd, (struct sockaddr *) &local, sizeof(local)) < 0 ||
+		getsockname(peer.fd, (struct sockaddr *) &local, &local_len) < 0) {
+		goto done;
+	}
+	peer.fs_addr = local;
+	peer.fs_addr.sin_port = htons(fs_port);
+
+	if (switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL) != SWITCH_STATUS_SUCCESS || !session) {
+		goto done;
+	}
+
+	srtp_rtp = switch_rtp_new(rx_host, fs_port, rx_host, ntohs(local.sin_port), TEST_PT, 8000, 20 * 1000, srtp_flags, NULL, &srtp_err,
+							  switch_core_session_get_pool(session), 0, 0);
+	if (!srtp_rtp || !switch_rtp_ready(srtp_rtp)) {
+		goto done;
+	}
+
+	switch_core_media_set_rtp_session(session, SWITCH_MEDIA_TYPE_AUDIO, srtp_rtp);
+
+	peer.ssrc = 0x5c704c80;
+	peer.ts = 0x10000000;
+	/* wrap halfway through the counted packets, so the ROC is 1 at the re-key; or stop short of the wrap
+	 * and wrap in the gap */
+	peer.seq = (uint16_t) (rekey_case == SRTP_REKEY_WRAP_IN_GAP ? 65536 - SRTP_TEST_WARMUP - SRTP_TEST_PACKETS - 50 :
+						   65536 - SRTP_TEST_WARMUP - SRTP_TEST_PACKETS / 2);
+	if (srtp_test_fs_key(srtp_rtp, suite, key_a) != SWITCH_STATUS_SUCCESS || !srtp_test_peer_key(&peer, key_a, 0)) {
+		goto done;
+	}
+
+	/* Not counted: FreeSWITCH answers the first packet of the stream with a CNG frame, and later drops the
+	 * packet that carries the timestamp it gave that frame ("we already sent this frame" in
+	 * read_rtp_packet()), the 51st here. Neither involves SRTP. */
+	for (i = 0; i < SRTP_TEST_WARMUP; i++) {
+		srtp_test_send_and_read(srtp_rtp, &peer);
+	}
+
+	for (i = 0; i < SRTP_TEST_PACKETS; i++) {
+		result.before += srtp_test_send_and_read(srtp_rtp, &peer);
+	}
+
+	if (srtp_test_fs_key(srtp_rtp, suite, key_b) != SWITCH_STATUS_SUCCESS) {
+		goto done;
+	}
+
+	switch (rekey_case) {
+	case SRTP_REKEY_OTHER_SSRC_THEN_RESET:
+		/* a late packet under the old key is the first one after the re-key */
+		srtp_test_send_and_read(srtp_rtp, &peer);
+		/* fall through */
+	case SRTP_REKEY_OTHER_SSRC_FIRST:
+		other.fd = peer.fd;
+		other.fs_addr = peer.fs_addr;
+		other.ssrc = peer.ssrc + 1;
+		other.seq = 1000;
+		other.ts = 0x20000000;
+		if (!srtp_test_peer_key(&other, key_b, 0)) {
+			goto done;
+		}
+		for (i = 0; i < SRTP_TEST_PACKETS; i++) {
+			result.other += srtp_test_send_and_read(srtp_rtp, &other);
+		}
+		break;
+	case SRTP_REKEY_TWICE:
+		/* a late packet under the old key starts the first re-key; the second comes before any new-key packet */
+		srtp_test_send_and_read(srtp_rtp, &peer);
+		memcpy(key_b, key_c, sizeof(key_b));
+		if (srtp_test_fs_key(srtp_rtp, suite, key_b) != SWITCH_STATUS_SUCCESS) {
+			goto done;
+		}
+		break;
+	case SRTP_REKEY_WRAP_IN_GAP:
+		for (i = 0; i < 150; i++) {
+			srtp_test_peer_skip(&peer);
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (!srtp_test_peer_key(&peer, key_b, rekey_case != SRTP_REKEY_PEER_RESETS_ROC && rekey_case != SRTP_REKEY_OTHER_SSRC_THEN_RESET)) {
+		goto done;
+	}
+
+	result.after = 0;
+	for (i = 0; i < SRTP_TEST_PACKETS; i++) {
+		result.after += srtp_test_send_and_read(srtp_rtp, &peer);
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "SRTP re-key suite %d case %d: decrypted %d before, %d other SSRC, %d after\n",
+					  suite, rekey_case, result.before, result.other, result.after);
+
+ done:
+
+	if (peer.ctx) {
+		srtp_dealloc(peer.ctx);
+	}
+
+	if (other.ctx) {
+		srtp_dealloc(other.ctx);
+	}
+
+	if (peer.fd >= 0) {
+		close(peer.fd);
+	}
+
+	if (srtp_rtp) {
+		switch_rtp_destroy(&srtp_rtp);
+	}
+
+	if (session) {
+		switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+		switch_core_session_rwunlock(session);
+	}
+
+	return result;
+}
+
 FST_CORE_BEGIN("./conf")
 {
 FST_SUITE_BEGIN(switch_rtp)
@@ -558,6 +910,40 @@ FST_TEARDOWN_END()
 		 * rather than silently accepted the way none would. */
 		state = run_client_cert_verify_case("bogus", 1, REMOTE_FP_DIFFERENT);
 		fst_xcheck(state == DS_FAIL, "unrecognized mode falls back to fingerprint and rejects a mismatch");
+	}
+	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_srtp_rekey_after_rollover)
+	{
+		static const struct {
+			srtp_test_suite_t suite;
+			srtp_rekey_case_t rekey_case;
+			const char *name;
+		} cases[] = {
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80, SRTP_REKEY_PEER_KEEPS_ROC, "AES-CM: peer keeps its ROC" },
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80, SRTP_REKEY_PEER_RESETS_ROC, "AES-CM: peer resets its ROC" },
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80, SRTP_REKEY_OTHER_SSRC_FIRST, "AES-CM: another SSRC first, peer keeps" },
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80, SRTP_REKEY_OTHER_SSRC_THEN_RESET, "AES-CM: late packet and another SSRC, peer resets" },
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80, SRTP_REKEY_TWICE, "AES-CM: second re-key before a decision, peer keeps" },
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80, SRTP_REKEY_WRAP_IN_GAP, "AES-CM: wrap while packets are lost, peer keeps" },
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80_MKI, SRTP_REKEY_PEER_KEEPS_ROC, "AES-CM with MKI: peer keeps its ROC" },
+			{ SRTP_TEST_AES_CM_128_HMAC_SHA1_80_MKI, SRTP_REKEY_PEER_RESETS_ROC, "AES-CM with MKI: peer resets its ROC" },
+			{ SRTP_TEST_AEAD_AES_128_GCM, SRTP_REKEY_PEER_RESETS_ROC, "AES-GCM: peer resets its ROC" },
+			{ SRTP_TEST_AEAD_AES_128_GCM, SRTP_REKEY_OTHER_SSRC_THEN_RESET, "AES-GCM: late packet and another SSRC, peer resets" }
+		};
+		srtp_rekey_result_t result;
+		size_t i;
+
+		for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+			int has_other = cases[i].rekey_case == SRTP_REKEY_OTHER_SSRC_FIRST || cases[i].rekey_case == SRTP_REKEY_OTHER_SSRC_THEN_RESET;
+
+			result = run_srtp_rekey_case(cases[i].suite, cases[i].rekey_case);
+			fst_xcheck(result.before == SRTP_TEST_PACKETS, switch_core_sprintf(fst_pool, "%s: every packet before the re-key decrypts", cases[i].name));
+			if (has_other) {
+				fst_xcheck(result.other == SRTP_TEST_PACKETS, switch_core_sprintf(fst_pool, "%s: every packet from the other SSRC decrypts", cases[i].name));
+			}
+			fst_xcheck(result.after == SRTP_TEST_PACKETS, switch_core_sprintf(fst_pool, "%s: every packet after the re-key decrypts", cases[i].name));
+		}
 	}
 	FST_TEST_END()
 
