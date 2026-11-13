@@ -1352,6 +1352,53 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 	return SWITCH_STATUS_SUCCESS;
 }
 
+/* True when the deflect target already carries a URI scheme or is a name-addr */
+static switch_bool_t sofia_deflect_target_is_uri(const char *target)
+{
+	const char *p = target;
+
+	if (strchr(target, '<')) {
+		return SWITCH_TRUE;
+	}
+
+	/* A scheme is a letter followed by letters, digits, '+', '-' or '.', terminated by ':' */
+	if (!isalpha((unsigned char)*p)) {
+		return SWITCH_FALSE;
+	}
+
+	for (p++; *p; p++) {
+		if (*p == ':') {
+			return SWITCH_TRUE;
+		}
+
+		if (!isalnum((unsigned char)*p) && *p != '+' && *p != '-' && *p != '.') {
+			break;
+		}
+	}
+
+	return SWITCH_FALSE;
+}
+
+/* Builds the Refer-To for a deflect target; fails for an empty target */
+switch_status_t sofia_deflect_build_refer_to(const char *target, const char *sipip, char *buf, switch_size_t buflen)
+{
+	if (zstr(target)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (sofia_deflect_target_is_uri(target)) {
+		switch_copy_string(buf, target, buflen);
+	} else if (strchr(target, '@')) {
+		switch_snprintf(buf, buflen, "sip:%s", target);
+	} else {
+		const char *format = strchr(sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
+
+		switch_snprintf(buf, buflen, format, target, sipip);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t sofia_receive_message(switch_core_session_t *session, switch_core_session_message_t *msg)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1563,18 +1610,19 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_DEFLECT: {
 
-		char *extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+		char *extra_headers;
 		char ref_to[1024] = "";
 		const char *var;
-		const char *session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
+		const char *session_id_header;
 
-		if (strncasecmp(msg->string_arg, "sip:", 4)) {
-			const char *format = strchr(tech_pvt->profile->sipip, ':') ? "sip:%s@[%s]" : "sip:%s@%s";
-
-			switch_snprintf(ref_to, sizeof(ref_to), format, msg->string_arg, tech_pvt->profile->sipip);
-		} else {
-			switch_set_string(ref_to, msg->string_arg);
+		if (sofia_deflect_build_refer_to(msg->string_arg, tech_pvt->profile->sipip, ref_to, sizeof(ref_to)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Deflect requires a target\n");
+			msg->string_reply = "no target";
+			break;
 		}
+
+		extra_headers = sofia_glue_get_extra_headers(channel, SOFIA_SIP_HEADER_PREFIX);
+		session_id_header = sofia_glue_session_id_header(session, tech_pvt->profile);
 
 		nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url),
 				  TAG_IF(!zstr(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
