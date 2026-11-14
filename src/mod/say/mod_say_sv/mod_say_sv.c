@@ -104,51 +104,35 @@ static switch_status_t play_group(switch_say_method_t method, switch_say_gender_
 			} else {	/* [2-9]xx */
 				switch_say_file(sh, "digits/%d", a);
 			}
-			switch_say_file(sh, "digits/hundra");
+			switch_say_file(sh, "digits/100");
 		}
 	}
 
-        if (b) {
-                if (b > 1) {	/* 20 < 99 */
-                        if (c == 0) {
-				if (method == SSM_COUNTED) {
-					switch_say_file(sh, "digits/r-%d0", b);
-                        	} else {
-					switch_say_file(sh, "digits/%d0", b);
-				}
+	if (b) {
+		if (b > 1) {
+			if (method == SSM_COUNTED && c == 0) {
+				switch_say_file(sh, "digits/r-%d0", b);
 			} else {
-                                if (c == 1) {
-					if (method == SSM_COUNTED) {
-						switch_say_file(sh, "digits/r-1", b);
-                	        	} else {
-						if (gender == SSG_UTRUM) {
-        	        	        		switch_say_file(sh, "digits/u-1");
-						} else {
-							switch_say_file(sh, "digits/n-1");
-						}
-					}
-                                } else {
-					if (method == SSM_COUNTED) {
-						switch_say_file(sh, "digits/r-%d0", b);
-                	        	} else {
-						switch_say_file(sh, "digits/%d0", b);
-					}
-				}
-                        }
-                } else {	/* 10 < 20 */
-                        if (method == SSM_COUNTED) {
-                                switch_say_file(sh, "digits/r-%d%d", b, c);
-                        } else {
-                                switch_say_file(sh, "digits/%d%d", b, c);
-                        }
-                }
-                c = 0;
-        }
+				switch_say_file(sh, "digits/%d0", b);
+			}
+		} else {
+			if (method == SSM_COUNTED) {
+				switch_say_file(sh, "digits/r-%d%d", b, c);
+			} else {
+				switch_say_file(sh, "digits/%d%d", b, c);
+			}
+			c = 0;
+		}
+	}
 
         if (c) {	/* 0 < 9 */
 		if (c == 1) {
 			if (what) {
-	 			switch_say_file(sh, "digits/n-1");
+				if (!strcmp(what, "digits/miljon") || !strcmp(what, "digits/miljoner")) {
+					switch_say_file(sh, "digits/u-1");
+				} else {
+					switch_say_file(sh, "digits/n-1");
+				}
 			} else {
 				if (method == SSM_COUNTED) {
 					switch_say_file(sh, "digits/r-1");
@@ -236,7 +220,7 @@ static switch_status_t sv_say_general_count(switch_say_file_handle_t *sh, char *
                         break;
 		case SSM_COUNTED:
 		case SSM_PRONOUNCED:
-			if (places[6] == 1 && ( !places[8] || !places[7])) {
+			if (places[6] == 1 && !places[8] && !places[7]) {
 				if ((status = play_group(SSM_PRONOUNCED, say_args->gender, places[8], places[7], places[6], "digits/miljon", sh)) != SWITCH_STATUS_SUCCESS) {
 					return status;
 				}
