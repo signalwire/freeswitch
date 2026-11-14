@@ -64,6 +64,73 @@ static char *fst_getenv_default(const char *env, char *default_value, switch_boo
 	char *env = fst_getenv_default(#env, NULL, SWITCH_TRUE);
 
 /**
+ * Poll `cond` every 10 ms until it is true or `timeout_ms` passes, then continue.
+ * Use it instead of a fixed switch_sleep() when waiting for something asynchronous
+ * (an event, a state change) and check the condition afterwards as usual.
+ */
+#define fst_wait_until(cond, timeout_ms) \
+	do { \
+		switch_time_t fst_wait_deadline_ = switch_micro_time_now() + (switch_time_t)(timeout_ms) * 1000; \
+		while (!(cond) && switch_micro_time_now() < fst_wait_deadline_) { \
+			switch_sleep(10000); \
+		} \
+	} while (0)
+
+/**
+ * True once no session with this uuid exists any more.
+ */
+static inline switch_bool_t fst_session_gone(const char *uuid)
+{
+	switch_core_session_t *session = switch_core_session_locate(uuid);
+
+	if (session) {
+		switch_core_session_rwunlock(session);
+		return SWITCH_FALSE;
+	}
+	return SWITCH_TRUE;
+}
+
+/**
+ * True once mod_sofia reports the named profile as RUNNING (its line in "sofia status").
+ * Wait for it with fst_wait_until() instead of sleeping a fixed time after startup.
+ */
+static inline switch_bool_t fst_sofia_profile_running(const char *name)
+{
+	switch_stream_handle_t stream = { 0 };
+	switch_bool_t running = SWITCH_FALSE;
+	char *line, *next;
+
+	SWITCH_STANDARD_STREAM(stream);
+	if (switch_api_execute("sofia", "status", NULL, &stream) == SWITCH_STATUS_SUCCESS && stream.data) {
+		for (line = (char *)stream.data; line && *line; line = next) {
+			if ((next = strchr(line, '\n'))) {
+				*next++ = '\0';
+			}
+			if (strstr(line, "\tprofile\t") && strstr(line, "RUNNING")) {
+				char *p = line;
+				while (*p == ' ') p++;
+				if (!strncmp(p, name, strlen(name)) && (p[strlen(name)] == '\t' || p[strlen(name)] == ' ')) {
+					running = SWITCH_TRUE;
+					break;
+				}
+			}
+		}
+	}
+	switch_safe_free(stream.data);
+	return running;
+}
+
+/**
+ * Shorten the grace period switch_core_destroy() gives module threads (1 s twice by default).
+ * Override with FST_MODULE_SHUTDOWN_GRACE_MS.
+ */
+static inline void fst_set_module_shutdown_grace(void)
+{
+	const char *grace = getenv("FST_MODULE_SHUTDOWN_GRACE_MS");
+	switch_core_set_variable("module_shutdown_grace_ms", grace ? grace : "100");
+}
+
+/**
  * initialize FS core from optional configuration dir
  */
 static switch_status_t fst_init_core_and_modload(const char *confdir, const char *basedir, int minimal, switch_core_flag_t flags)
@@ -121,7 +188,14 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 
 	if (!minimal) {
 		status = switch_core_init_and_modload(flags, SWITCH_TRUE, &err);
-		switch_sleep(1 * 1000000);
+		/* modules are loaded synchronously; tests that need an asynchronous listener
+		   (a SIP profile, a socket) wait for it themselves. FST_CORE_SETTLE_MS restores a fixed pause. */
+		{
+			const char *settle = getenv("FST_CORE_SETTLE_MS");
+			if (settle && atoi(settle) > 0) {
+				switch_sleep((switch_interval_time_t)atoi(settle) * 1000);
+			}
+		}
 		switch_core_set_variable("sound_prefix", "." SWITCH_PATH_SEPARATOR);
 		if (status != SWITCH_STATUS_SUCCESS && err) {
 			fprintf(stderr, "%s", err);
@@ -303,6 +377,7 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
  * Define the end of a freeswitch core test driver.
  */
 #define FST_CORE_END() \
+		fst_set_module_shutdown_grace(); \
 		switch_core_destroy(); \
 		} \
 		if (fst_time_start) { \
@@ -551,12 +626,17 @@ static switch_status_t fst_init_core_and_modload(const char *confdir, const char
 			if (fst_session_pool) { \
 				fst_session_pool = NULL; \
 			} \
-			switch_core_session_rwunlock(fst_session); \
-			if (fst_core) { \
-				switch_log_level_t level = SWITCH_LOG_DISABLE; \
-				switch_core_session_ctl(SCSC_LOGLEVEL, &level); \
+			{ \
+				char fst_session_uuid[SWITCH_UUID_FORMATTED_LENGTH + 1]; \
+				switch_copy_string(fst_session_uuid, switch_core_session_get_uuid(fst_session), sizeof(fst_session_uuid)); \
+				switch_core_session_rwunlock(fst_session); \
+				if (fst_core) { \
+					switch_log_level_t level = SWITCH_LOG_DISABLE; \
+					switch_core_session_ctl(SCSC_LOGLEVEL, &level); \
+				} \
+				/* wait until the session is really destroyed (its recording closed) instead of a fixed second */ \
+				fst_wait_until(fst_session_gone(fst_session_uuid), 5000); \
 			} \
-			switch_sleep(1000000); \
 		} \
 	} \
 	FCT_TEST_END()

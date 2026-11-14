@@ -2,7 +2,7 @@
 <document type="freeswitch/xml">
   <X-PRE-PROCESS cmd="exec-set" data="test=echo 1234"/>
   <X-PRE-PROCESS cmd="set" data="spawn_instead_of_system=true"/>
-  <X-PRE-PROCESS cmd="exec-set" data="shell_exec_set_test=ls / | grep usr"/>
+  <X-PRE-PROCESS cmd="exec-set" data="shell_exec_set_test=echo usr | grep usr"/>
   <X-PRE-PROCESS cmd="set" data="spawn_instead_of_system=false"/>
   <X-PRE-PROCESS cmd="set" data="default_password=$${test}"/>
   <X-PRE-PROCESS cmd="set" data="rtp_timer_name=soft" />

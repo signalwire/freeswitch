@@ -103,6 +103,8 @@ static switch_memory_pool_t *module_pool = NULL;
 static struct {
 	int32_t RUNNING;
 	int32_t STARTED;
+	/* set by softtimer_shutdown(); the runtime thread must not (re)enter RUNNING == 1 afterwards */
+	int32_t STOP_REQUESTED;
 	int32_t use_cond_yield;
 	switch_mutex_t *mutex;
 	uint32_t timer_count;
@@ -1082,7 +1084,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 
 	switch_time_sync();
 
-	globals.STARTED = globals.RUNNING = 1;
+	switch_mutex_lock(globals.mutex);
+	globals.STARTED = 1;
+	if (!globals.STOP_REQUESTED) {
+		globals.RUNNING = 1;
+	}
+	switch_mutex_unlock(globals.mutex);
 	switch_mutex_lock(runtime.throttle_mutex);
 	runtime.sps = runtime.sps_total;
 	switch_mutex_unlock(runtime.throttle_mutex);
@@ -1120,7 +1127,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	time_sync = runtime.time_sync;
 
 	globals.use_cond_yield = COND;
-	globals.RUNNING = 1;
+	/* a shutdown may already have been requested while we were starting up: then don't loop at all */
+	switch_mutex_lock(globals.mutex);
+	if (!globals.STOP_REQUESTED) {
+		globals.RUNNING = 1;
+	}
+	switch_mutex_unlock(globals.mutex);
 
 	while (globals.RUNNING == 1) {
 
@@ -1586,13 +1598,21 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 {
+	int wait_for_runtime = 0;
+
 	globals.use_cond_yield = 0;
 
+	/* Record the stop under the mutex even if the runtime thread has not reached its loop yet;
+	   otherwise it sets RUNNING = 1 afterwards and never exits (unload then hangs joining it). */
+	switch_mutex_lock(globals.mutex);
+	globals.STOP_REQUESTED = 1;
 	if (globals.RUNNING == 1) {
-		switch_mutex_lock(globals.mutex);
 		globals.RUNNING = -1;
-		switch_mutex_unlock(globals.mutex);
+		wait_for_runtime = 1;
+	}
+	switch_mutex_unlock(globals.mutex);
 
+	if (wait_for_runtime) {
 		while (globals.RUNNING == -1) {
 			do_sleep(10000);
 		}

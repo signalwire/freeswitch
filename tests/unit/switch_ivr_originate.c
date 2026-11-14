@@ -138,7 +138,7 @@ FST_CORE_BEGIN("./conf")
 			switch_event_bind("originate_test_external_id", SWITCH_EVENT_CHANNEL_HANGUP, SWITCH_EVENT_SUBCLASS_ANY, on_hangup_event, NULL);
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_core_session_rwunlock(session);
-			switch_yield(1000 * 1000);
+			fst_wait_until(got_external_id_in_event == 1, 2000);
 			fst_check(got_external_id_in_event == 1);
 			switch_event_unbind_callback(on_hangup_event);
 		}
@@ -164,7 +164,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_core_session_rwunlock(session);
 
-			switch_sleep(1000000);
+			fst_wait_until(reporting == 1 && destroy == 1, 2000);
 			fst_check(reporting == 1);
 			fst_check(destroy == 1);
 		}
@@ -190,7 +190,7 @@ FST_CORE_BEGIN("./conf")
 
 			switch_core_session_rwunlock(session);
 
-			switch_sleep(1000000);
+			fst_wait_until(reporting == 1 && destroy == 2, 2000);
 			fst_check(reporting == 1);
 			fst_check(destroy == 2);
 		}
@@ -598,7 +598,8 @@ FST_CORE_BEGIN("./conf")
 			status = switch_ivr_originate(NULL, &session, &cause, dialstring, 0, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 			fst_requires(status == SWITCH_STATUS_SUCCESS);
 			fst_requires(session);
-			switch_yield(2000000);
+			fst_wait_until(application_hit >= 1, 2000);
+			switch_yield(300000); /* a second (wrong) execution would show up right after the first */
 			switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
 			switch_core_session_rwunlock(session);
 			switch_event_unbind_callback(loopback_group_confirm_event_handler);
@@ -613,7 +614,8 @@ FST_CORE_BEGIN("./conf")
 			switch_event_bind("test", SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, loopback_group_confirm_event_handler, NULL);
 
 			switch_core_session_execute_application(fst_session, "bridge", dialstring);
-			switch_yield(2000000);
+			fst_wait_until(application_hit >= 1, 2000);
+			switch_yield(300000); /* a second (wrong) execution would show up right after the first */
 			switch_channel_hangup(fst_channel, SWITCH_CAUSE_NORMAL_CLEARING);
 			fst_check(application_hit == 1);
 		}
@@ -781,7 +783,7 @@ FST_CORE_BEGIN("./conf")
 			fst_check(!switch_channel_ready(channel));
 
 			switch_core_session_rwunlock(session);
-			switch_sleep(1000000);
+			fst_wait_until(switch_core_session_count() == 0, 2000);
 		}
 		FST_TEST_END()
 
