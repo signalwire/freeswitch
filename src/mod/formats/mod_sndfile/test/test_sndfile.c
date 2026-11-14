@@ -107,7 +107,10 @@ typedef struct  {
 	switch_status_t jstatus;
 } test_params_t;
 
-#define thread_bail_out(x, msg) if (!(x)) {params->status = SWITCH_STATUS_FALSE; params->err_detail = strdup(msg); return NULL;}
+/* On failure, record the reason and jump to the per-thread "done" label so the session lock,
+   file handle and heap buffers are always released -- returning straight out of the thread (as
+   this used to) leaked the held session read-lock and blocked the session from being destroyed. */
+#define thread_bail_out(x, msg) if (!(x)) {params->status = SWITCH_STATUS_FALSE; params->err_detail = strdup(msg); goto done;}
 
 /* Where to write the recording this test makes and reads back. */
 static char *test_recording_path(switch_core_session_t *session, const char *ext)
@@ -138,18 +141,18 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_mono_thread_run(switch_thread
 	static char play_filename[] = "../sounds/hi.wav";
 	char path[4096];
 	switch_file_handle_t fh = { 0 };
-	int16_t *audiobuf;
+	int16_t *audiobuf = NULL;
 	switch_size_t len;
 	switch_size_t rd;
-	char *recording;
+	char *recording = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
-	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
+	switch_snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
 	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
 	thread_bail_out(session, "no session");
-	
+
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_originate() status != SWITCH_STATUS_SUCCESS");
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Testing media file extension: [%s]\n", params->ext);
@@ -177,26 +180,35 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_mono_thread_run(switch_thread
 
 	thread_bail_out((rd == 320), " rd != 320 "); // check that we read the wanted number of samples
 
-	status = switch_core_file_close(&fh);
-	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
+
+done:
+	/* Single cleanup path, reached on success and on every failure, so nothing is leaked. */
+	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
+		if (switch_core_file_close(&fh) != SWITCH_STATUS_SUCCESS && params->status == SWITCH_STATUS_SUCCESS) {
+			params->status = SWITCH_STATUS_FALSE;
+			params->err_detail = strdup("switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+		}
+	}
 
 	switch_safe_free(audiobuf);
 
-	unlink(recording);
+	if (recording) {
+		unlink(recording);
+		switch_safe_free(recording);
+	}
 
-	switch_safe_free(recording);
-
-	switch_sleep(1000000);
-
-	channel = switch_core_session_get_channel(session);
-	thread_bail_out(channel, "switch_core_session_get_channel() channel should not be NULL");
-
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-	thread_bail_out(!switch_channel_ready(channel), "switch_channel_ready(channel) should not return TRUE")
-
-	switch_core_session_rwunlock(session);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		if (channel) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (switch_channel_ready(channel) && params->status == SWITCH_STATUS_SUCCESS) {
+				params->status = SWITCH_STATUS_FALSE;
+				params->err_detail = strdup("switch_channel_ready(channel) should not return TRUE");
+			}
+		}
+		switch_core_session_rwunlock(session);
+	}
 
 	return NULL;
 }
@@ -213,16 +225,17 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_m2s_thread_run(switch_thread_
 	static char play_filename[] = "../sounds/hi.wav";
 	char path[4096];
 	switch_file_handle_t fh = { 0 };
-	int16_t *audiobuf;
+	int16_t *audiobuf = NULL;
 	switch_size_t len, rd;
-	char *recording;
+	char *recording = NULL;
 	int channels = 2;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
-	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
+	switch_snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
 	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	thread_bail_out(session, "no session");
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_originate() status != SWITCH_STATUS_SUCCESS");
 
 	recording = test_recording_path(session, params->ext);
@@ -237,14 +250,6 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_m2s_thread_run(switch_thread_
 
 	switch_ivr_stop_record_session(session, "all");
 
-	channel = switch_core_session_get_channel(session);
-	thread_bail_out(channel, "switch_core_session_get_channel() channel should not be NULL");
-
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-	thread_bail_out(!switch_channel_ready(channel), "switch_channel_ready(channel) should not return TRUE")
-
-	switch_core_session_rwunlock(session);
-
 	status = switch_core_file_open(&fh, recording, channels, 8000, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_core_file_open() status != SWITCH_STATUS_SUCCESS");
 
@@ -257,18 +262,34 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_m2s_thread_run(switch_thread_
 
 	thread_bail_out((rd == 320), " rd != 320 "); // check that we read the wanted number of samples
 
-	status = switch_core_file_close(&fh);
-	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
+
+done:
+	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
+		if (switch_core_file_close(&fh) != SWITCH_STATUS_SUCCESS && params->status == SWITCH_STATUS_SUCCESS) {
+			params->status = SWITCH_STATUS_FALSE;
+			params->err_detail = strdup("switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+		}
+	}
 
 	switch_safe_free(audiobuf);
 
-	unlink(recording);
+	if (recording) {
+		unlink(recording);
+		switch_safe_free(recording);
+	}
 
-	switch_safe_free(recording);
-
-	switch_sleep(1000000);
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		if (channel) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (switch_channel_ready(channel) && params->status == SWITCH_STATUS_SUCCESS) {
+				params->status = SWITCH_STATUS_FALSE;
+				params->err_detail = strdup("switch_channel_ready(channel) should not return TRUE");
+			}
+		}
+		switch_core_session_rwunlock(session);
+	}
 
 	return NULL;
 }
@@ -284,16 +305,17 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_s2m_thread_run(switch_thread_
 	static char play_filename[] = "../sounds/hello_stereo.wav";
 	char path[4096];
 	switch_file_handle_t fh = { 0 };
-	int16_t *audiobuf;
+	int16_t *audiobuf = NULL;
 	switch_size_t len, rd;
-	char *recording, *rec_path;
-	int channels = 2; 
+	char *recording = NULL, *rec_path = NULL;
+	int channels = 2;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
-	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
+	switch_snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
 	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+	thread_bail_out(session, "no session");
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_originate() status != SWITCH_STATUS_SUCCESS");
 
 	rec_path = test_recording_path(session, params->ext);
@@ -314,11 +336,6 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_s2m_thread_run(switch_thread_
 
 	switch_ivr_stop_record_session(session, "all");
 
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-	thread_bail_out(!switch_channel_ready(channel), "switch_channel_ready(channel) should not return TRUE")
-
-	switch_core_session_rwunlock(session);
-
 	status = switch_core_file_open(&fh, recording, channels, 8000, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_core_file_open() status != SWITCH_STATUS_SUCCESS");
 
@@ -331,17 +348,35 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_s2m_thread_run(switch_thread_
 
 	thread_bail_out((rd == 320), " rd != 320 "); // check that we read the wanted number of samples
 
-	status = switch_core_file_close(&fh);
-	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
+
+done:
+	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
+		if (switch_core_file_close(&fh) != SWITCH_STATUS_SUCCESS && params->status == SWITCH_STATUS_SUCCESS) {
+			params->status = SWITCH_STATUS_FALSE;
+			params->err_detail = strdup("switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+		}
+	}
 
 	switch_safe_free(audiobuf);
 
-	unlink(rec_path);
-
-	switch_safe_free(rec_path);
+	if (rec_path) {
+		unlink(rec_path);
+		switch_safe_free(rec_path);
+	}
 	switch_safe_free(recording);
 
-	switch_sleep(1000000);
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		if (channel) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (switch_channel_ready(channel) && params->status == SWITCH_STATUS_SUCCESS) {
+				params->status = SWITCH_STATUS_FALSE;
+				params->err_detail = strdup("switch_channel_ready(channel) should not return TRUE");
+			}
+		}
+		switch_core_session_rwunlock(session);
+	}
 
 	return NULL;
 }
@@ -357,17 +392,18 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_stereo_thread_run(switch_thre
 	static char play_filename[] = "../sounds/hello_stereo.wav";
 	char path[4096];
 	switch_file_handle_t fh = { 0 };
-	int16_t *audiobuf;
+	int16_t *audiobuf = NULL;
 	switch_size_t len, rd;
-	char *recording, *rec_path;
-	int channels = 2; 
-	
+	char *recording = NULL, *rec_path = NULL;
+	int channels = 2;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started thread [0x%lx] Testing media file extension: [%s]\n", (unsigned long)(intptr_t)switch_thread_self(), params->ext);
 
-	sprintf(path, "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
+	switch_snprintf(path, sizeof(path), "%s%s%s", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR, play_filename);
 
 	status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", timeout_sec, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
-	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_play_file() status != SWITCH_STATUS_SUCCESS");
+	thread_bail_out(session, "no session");
+	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_ivr_originate() status != SWITCH_STATUS_SUCCESS");
 
 	rec_path = test_recording_path(session, params->ext);
 	recording = switch_mprintf("{force_channels=2}%s", rec_path);
@@ -388,11 +424,6 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_stereo_thread_run(switch_thre
 
 	switch_ivr_stop_record_session(session, "all");
 
-	switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-	thread_bail_out(!switch_channel_ready(channel), "switch_channel_ready(channel) should not return TRUE")
-
-	switch_core_session_rwunlock(session);
-
 	status = switch_core_file_open(&fh, recording, channels, 8000, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL);
 	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_core_file_open() status != SWITCH_STATUS_SUCCESS");
 
@@ -405,17 +436,35 @@ static void *SWITCH_THREAD_FUNC sndfile_write_read_stereo_thread_run(switch_thre
 
 	thread_bail_out((rd == 320), " rd != 320 "); // check that we read the wanted number of samples
 
-	status = switch_core_file_close(&fh);
-	thread_bail_out(status == SWITCH_STATUS_SUCCESS, "switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Finished thread [0x%lx]\n", (unsigned long)(intptr_t)switch_thread_self());
+
+done:
+	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
+		if (switch_core_file_close(&fh) != SWITCH_STATUS_SUCCESS && params->status == SWITCH_STATUS_SUCCESS) {
+			params->status = SWITCH_STATUS_FALSE;
+			params->err_detail = strdup("switch_core_file_close() status != SWITCH_STATUS_SUCCESS");
+		}
+	}
 
 	switch_safe_free(audiobuf);
 
-	unlink(rec_path);
-
-	switch_safe_free(rec_path);
+	if (rec_path) {
+		unlink(rec_path);
+		switch_safe_free(rec_path);
+	}
 	switch_safe_free(recording);
 
-	switch_sleep(1000000);
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		if (channel) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+			if (switch_channel_ready(channel) && params->status == SWITCH_STATUS_SUCCESS) {
+				params->status = SWITCH_STATUS_FALSE;
+				params->err_detail = strdup("switch_channel_ready(channel) should not return TRUE");
+			}
+		}
+		switch_core_session_rwunlock(session);
+	}
 
 	return NULL;
 }
