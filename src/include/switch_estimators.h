@@ -74,6 +74,8 @@ struct cusum_kalman_detector_s {
 	float last_average;
 	float last_q;
 	float N; /*how many samples we have so far (eg: how many RTCP we received, granted that we can calculate RTT for each one of them)*/
+	/* downward CUSUM statistic, used to re-baseline after the level drops */
+	float g_down_last;
 };
 
 typedef struct kalman_estimator_s kalman_estimator_t;
@@ -82,7 +84,7 @@ typedef struct cusum_kalman_detector_s cusum_kalman_detector_t;
 SWITCH_DECLARE(void) switch_kalman_init(kalman_estimator_t *est, float Q, float R);
 SWITCH_DECLARE(switch_bool_t) switch_kalman_cusum_init(cusum_kalman_detector_t *detect_change, float epsilon,float h);
 SWITCH_DECLARE(switch_bool_t) switch_kalman_estimate(kalman_estimator_t * est, float measurement, int system_model);
-SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float rtt_avg);
+SWITCH_DECLARE (switch_bool_t) switch_kalman_cusum_detect_change(cusum_kalman_detector_t * detector, float measurement, float avg);
 SWITCH_DECLARE(switch_bool_t) switch_kalman_is_slow_link(kalman_estimator_t * est_loss, kalman_estimator_t * est_rtt);
 
 SWITCH_END_EXTERN_C
