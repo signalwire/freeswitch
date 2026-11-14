@@ -277,12 +277,17 @@ static void event_handler(switch_event_t *event)
 	listener_t *l, *lp, *last = NULL;
 	time_t now = switch_epoch_time_now(NULL);
 	switch_status_t qstatus;
+	const char *uuid;
+	const char *job_owner_uuid;
 
 	switch_assert(event != NULL);
 
 	if (!listen_list.ready) {
 		return;
 	}
+
+	uuid = switch_event_get_header(event, "unique-id");
+	job_owner_uuid = switch_event_get_header_nil(event, "Job-Owner-UUID");
 
 	switch_mutex_lock(globals.listener_mutex);
 
@@ -373,11 +378,10 @@ static void event_handler(switch_event_t *event)
 		}
 
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {
-			char *uuid = switch_event_get_header(event, "unique-id");
 			if (!uuid || (l->session && strcmp(uuid, switch_core_session_get_uuid(l->session)))) {
 				send = 0;
 			}
-			if (l->session && !strcmp(switch_core_session_get_uuid(l->session), switch_event_get_header_nil(event, "Job-Owner-UUID"))) {
+			if (l->session && !strcmp(switch_core_session_get_uuid(l->session), job_owner_uuid)) {
 			    send = 1;
 			}
 		}
