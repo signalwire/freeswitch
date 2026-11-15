@@ -3469,7 +3469,25 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_yield(1000000);
 
 
-	while (mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING) && sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
+	while (mod_sofia_globals.running == 1) {
+		int profile_running, worker_running;
+
+		/* The worker thread clears PFLAG_WORKER_RUNNING under flag_mutex as it leaves
+		   (sofia_profile_worker_thread_run), and a stop or restart command clears
+		   PFLAG_RUNNING under it from another thread, while this thread loops here.
+		   Read both under the same lock so the threads are ordered; take flag_mutex
+		   only to copy the two bytes and release it before su_root_step(). This
+		   thread already takes it in the same state just below, to clear
+		   PFLAG_RUNNING, so this adds no lock-order edge. */
+		switch_mutex_lock(profile->flag_mutex);
+		profile_running = sofia_test_pflag(profile, PFLAG_RUNNING);
+		worker_running = sofia_test_pflag(profile, PFLAG_WORKER_RUNNING);
+		switch_mutex_unlock(profile->flag_mutex);
+
+		if (!profile_running || !worker_running) {
+			break;
+		}
+
 		su_root_step(profile->s_root, 1000);
 		profile->last_root_step = switch_time_now();
 	}
