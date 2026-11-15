@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<!DOCTYPE scenario SYSTEM "sipp.dtd">
+
+<scenario name="UAS checks that an INVITE without body sent without the SOA engine has no Content-Type">
+  <recv request="INVITE" crlf="true">
+    <action>
+      <ereg regexp="Content-Length: *0[^0-9]" search_in="msg" check_it="true" assign_to="nobody"/>
+      <ereg regexp="Content-Type:" search_in="msg" check_it_inverse="true" assign_to="noctype"/>
+    </action>
+  </recv>
+
+  <send>
+    <![CDATA[
+
+      SIP/2.0 486 Busy Here
+      [last_Via:]
+      [last_From:]
+      [last_To:];tag=[pid]SIPpTag01[call_number]
+      [last_Call-ID:]
+      [last_CSeq:]
+      Content-Length: 0
+
+    ]]>
+  </send>
+
+  <recv request="ACK" crlf="true">
+  </recv>
+
+  <Reference variables="nobody,noctype"/>
+</scenario>
