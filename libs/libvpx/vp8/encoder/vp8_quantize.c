@@ -9,6 +9,9 @@
  */
 
 #include <math.h>
+
+#include "./vpx_config.h"
+#include "vpx_ports/bitops.h"
 #include "vpx_mem/vpx_mem.h"
 
 #include "onyx_int.h"
@@ -162,10 +165,10 @@ static const int qzbin_factors_y2[129] = {
 static void invert_quant(int improved_quant, short *quant, short *shift,
                          short d) {
   if (improved_quant) {
-    unsigned t;
+    unsigned int t;
     int l, m;
-    t = d;
-    for (l = 0; t > 1; ++l) t >>= 1;
+    t = (unsigned int)d;
+    l = get_msb(t);
     m = 1 + (1 << (16 + l)) / d;
     *quant = (short)(m - (1 << 16));
     *shift = l;
@@ -294,7 +297,7 @@ void vp8cx_mb_init_quantizer(VP8_COMP *cpi, MACROBLOCK *x, int ok_to_skip) {
   /* Select the baseline MB Q index. */
   if (xd->segmentation_enabled) {
     /* Abs Value */
-    if (xd->mb_segement_abs_delta == SEGMENT_ABSDATA) {
+    if (xd->mb_segment_abs_delta == SEGMENT_ABSDATA) {
       QIndex = xd->segment_feature_data[MB_LVL_ALT_Q]
                                        [xd->mode_info_context->mbmi.segment_id];
       /* Delta Value */

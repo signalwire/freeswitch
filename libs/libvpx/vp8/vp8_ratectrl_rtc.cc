@@ -8,9 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
-#include <new>
 #include "vp8/vp8_ratectrl_rtc.h"
+
+#include <math.h>
+
+#include <new>
+
+#include "vp8/common/common.h"
+#include "vp8/encoder/onyx_int.h"
 #include "vp8/encoder/ratectrl.h"
 #include "vpx_ports/system_state.h"
 
@@ -60,12 +65,19 @@ std::unique_ptr<VP8RateControlRTC> VP8RateControlRTC::Create(
   if (!rc_api->cpi_) return nullptr;
   vp8_zero(*rc_api->cpi_);
 
-  rc_api->InitRateControl(cfg);
+  if (!rc_api->InitRateControl(cfg)) return nullptr;
 
   return rc_api;
 }
 
-void VP8RateControlRTC::InitRateControl(const VP8RateControlRtcConfig &rc_cfg) {
+VP8RateControlRTC::~VP8RateControlRTC() {
+  if (cpi_) {
+    vpx_free(cpi_->gf_active_flags);
+    vpx_free(cpi_);
+  }
+}
+
+bool VP8RateControlRTC::InitRateControl(const VP8RateControlRtcConfig &rc_cfg) {
   VP8_COMMON *cm = &cpi_->common;
   VP8_CONFIG *oxcf = &cpi_->oxcf;
   oxcf->end_usage = USAGE_STREAM_FROM_SERVER;
@@ -83,15 +95,22 @@ void VP8RateControlRTC::InitRateControl(const VP8RateControlRtcConfig &rc_cfg) {
   cpi_->kf_bitrate_adjustment = 0;
   cpi_->gf_overspend_bits = 0;
   cpi_->non_gf_bitrate_adjustment = 0;
-  UpdateRateControl(rc_cfg);
+  if (!UpdateRateControl(rc_cfg)) return false;
   cpi_->buffer_level = oxcf->starting_buffer_level;
   cpi_->bits_off_target = oxcf->starting_buffer_level;
+  return true;
 }
 
-void VP8RateControlRTC::UpdateRateControl(
+bool VP8RateControlRTC::UpdateRateControl(
     const VP8RateControlRtcConfig &rc_cfg) {
+  if (rc_cfg.ts_number_layers < 1 ||
+      rc_cfg.ts_number_layers > VPX_TS_MAX_LAYERS) {
+    return false;
+  }
+
   VP8_COMMON *cm = &cpi_->common;
   VP8_CONFIG *oxcf = &cpi_->oxcf;
+  const unsigned int prev_number_of_layers = oxcf->number_of_layers;
   vpx_clear_system_state();
   cm->Width = rc_cfg.width;
   cm->Height = rc_cfg.height;
@@ -117,24 +136,42 @@ void VP8RateControlRTC::UpdateRateControl(
   cpi_->buffered_mode = oxcf->optimal_buffer_level > 0;
   oxcf->under_shoot_pct = rc_cfg.undershoot_pct;
   oxcf->over_shoot_pct = rc_cfg.overshoot_pct;
+  oxcf->drop_frames_water_mark = rc_cfg.frame_drop_thresh;
+  if (oxcf->drop_frames_water_mark > 0) cpi_->drop_frames_allowed = 1;
   cpi_->oxcf.rc_max_intra_bitrate_pct = rc_cfg.max_intra_bitrate_pct;
   cpi_->framerate = rc_cfg.framerate;
   for (int i = 0; i < KEY_FRAME_CONTEXT; ++i) {
     cpi_->prior_key_frame_distance[i] =
         static_cast<int>(cpi_->output_framerate);
   }
-
-  if (oxcf->number_of_layers > 1) {
+  oxcf->screen_content_mode = rc_cfg.is_screen;
+  if (oxcf->number_of_layers > 1 || prev_number_of_layers > 1) {
     memcpy(oxcf->target_bitrate, rc_cfg.layer_target_bitrate,
            sizeof(rc_cfg.layer_target_bitrate));
     memcpy(oxcf->rate_decimator, rc_cfg.ts_rate_decimator,
            sizeof(rc_cfg.ts_rate_decimator));
-    oxcf->periodicity = 2;
+    if (cm->current_video_frame == 0) {
+      double prev_layer_framerate = 0;
+      for (unsigned int i = 0; i < oxcf->number_of_layers; ++i) {
+        vp8_init_temporal_layer_context(cpi_, oxcf, i, prev_layer_framerate);
+        prev_layer_framerate = cpi_->output_framerate / oxcf->rate_decimator[i];
+      }
+    } else if (oxcf->number_of_layers != prev_number_of_layers) {
+      // The number of temporal layers has changed, so reset/initialize the
+      // temporal layer context for the new layer configuration: this means
+      // calling vp8_reset_temporal_layer_change() below.
 
-    double prev_layer_framerate = 0;
-    for (unsigned int i = 0; i < oxcf->number_of_layers; ++i) {
-      vp8_init_temporal_layer_context(cpi_, oxcf, i, prev_layer_framerate);
-      prev_layer_framerate = cpi_->output_framerate / oxcf->rate_decimator[i];
+      // Start at the base of the pattern cycle, so set the layer id to 0 and
+      // reset the temporal pattern counter.
+      // TODO(marpan/jianj): don't think lines 148-151 are needed (user controls
+      // the layer_id) so remove.
+      if (cpi_->temporal_layer_id > 0) {
+        cpi_->temporal_layer_id = 0;
+      }
+      cpi_->temporal_pattern_counter = 0;
+
+      vp8_reset_temporal_layer_change(cpi_, oxcf,
+                                      static_cast<int>(prev_number_of_layers));
     }
   }
 
@@ -146,20 +183,24 @@ void VP8RateControlRTC::UpdateRateControl(
   cm->MBs = cm->mb_rows * cm->mb_cols;
   cm->mode_info_stride = cm->mb_cols + 1;
 
-  oxcf->starting_buffer_level =
-      rescale((int)oxcf->starting_buffer_level, oxcf->target_bandwidth, 1000);
-  /* Set or reset optimal and maximum buffer levels. */
-  if (oxcf->optimal_buffer_level == 0) {
-    oxcf->optimal_buffer_level = oxcf->target_bandwidth / 8;
-  } else {
-    oxcf->optimal_buffer_level =
-        rescale((int)oxcf->optimal_buffer_level, oxcf->target_bandwidth, 1000);
-  }
-  if (oxcf->maximum_buffer_size == 0) {
-    oxcf->maximum_buffer_size = oxcf->target_bandwidth / 8;
-  } else {
-    oxcf->maximum_buffer_size =
-        rescale((int)oxcf->maximum_buffer_size, oxcf->target_bandwidth, 1000);
+  // For temporal layers: starting/maximum/optimal_buffer_level is already set
+  // via vp8_init_temporal_layer_context() or vp8_reset_temporal_layer_change().
+  if (oxcf->number_of_layers <= 1 && prev_number_of_layers <= 1) {
+    oxcf->starting_buffer_level =
+        rescale((int)oxcf->starting_buffer_level, oxcf->target_bandwidth, 1000);
+    /* Set or reset optimal and maximum buffer levels. */
+    if (oxcf->optimal_buffer_level == 0) {
+      oxcf->optimal_buffer_level = oxcf->target_bandwidth / 8;
+    } else {
+      oxcf->optimal_buffer_level = rescale((int)oxcf->optimal_buffer_level,
+                                           oxcf->target_bandwidth, 1000);
+    }
+    if (oxcf->maximum_buffer_size == 0) {
+      oxcf->maximum_buffer_size = oxcf->target_bandwidth / 8;
+    } else {
+      oxcf->maximum_buffer_size =
+          rescale((int)oxcf->maximum_buffer_size, oxcf->target_bandwidth, 1000);
+    }
   }
 
   if (cpi_->bits_off_target > oxcf->maximum_buffer_size) {
@@ -169,9 +210,11 @@ void VP8RateControlRTC::UpdateRateControl(
 
   vp8_new_framerate(cpi_, cpi_->framerate);
   vpx_clear_system_state();
+  return true;
 }
 
-void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
+FrameDropDecision VP8RateControlRTC::ComputeQP(
+    const VP8FrameParamsQpRTC &frame_params) {
   VP8_COMMON *const cm = &cpi_->common;
   vpx_clear_system_state();
   if (cpi_->oxcf.number_of_layers > 1) {
@@ -182,14 +225,27 @@ void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
     vp8_restore_layer_context(cpi_, layer);
     vp8_new_framerate(cpi_, cpi_->layer_context[layer].framerate);
   }
-  cm->frame_type = frame_params.frame_type;
+  cm->frame_type = static_cast<FRAME_TYPE>(frame_params.frame_type);
   cm->refresh_golden_frame = (cm->frame_type == KEY_FRAME) ? 1 : 0;
   cm->refresh_alt_ref_frame = (cm->frame_type == KEY_FRAME) ? 1 : 0;
   if (cm->frame_type == KEY_FRAME && cpi_->common.current_video_frame > 0) {
     cpi_->common.frame_flags |= FRAMEFLAGS_KEY;
   }
 
-  vp8_pick_frame_size(cpi_);
+  cpi_->per_frame_bandwidth = static_cast<int>(
+      round(cpi_->oxcf.target_bandwidth / cpi_->output_framerate));
+  if (vp8_check_drop_buffer(cpi_)) {
+    if (cpi_->oxcf.number_of_layers > 1) vp8_save_layer_context(cpi_);
+    return FrameDropDecision::kDrop;
+  }
+
+  if (!vp8_pick_frame_size(cpi_)) {
+    cm->current_video_frame++;
+    cpi_->frames_since_key++;
+    cpi_->ext_refresh_frame_flags_pending = 0;
+    if (cpi_->oxcf.number_of_layers > 1) vp8_save_layer_context(cpi_);
+    return FrameDropDecision::kDrop;
+  }
 
   if (cpi_->buffer_level >= cpi_->oxcf.optimal_buffer_level &&
       cpi_->buffered_mode) {
@@ -253,9 +309,46 @@ void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
   q_ = vp8_regulate_q(cpi_, cpi_->this_frame_target);
   vp8_set_quantizer(cpi_, q_);
   vpx_clear_system_state();
+  return FrameDropDecision::kOk;
 }
 
 int VP8RateControlRTC::GetQP() const { return q_; }
+
+UVDeltaQP VP8RateControlRTC::GetUVDeltaQP() const {
+  VP8_COMMON *cm = &cpi_->common;
+  UVDeltaQP uv_delta_q;
+  uv_delta_q.uvdc_delta_q = cm->uvdc_delta_q;
+  uv_delta_q.uvac_delta_q = cm->uvac_delta_q;
+  return uv_delta_q;
+}
+
+int VP8RateControlRTC::GetLoopfilterLevel() const {
+  VP8_COMMON *cm = &cpi_->common;
+  const double qp = q_;
+
+  // This model is from linear regression
+  if (cm->Width * cm->Height <= 320 * 240) {
+    cm->filter_level = static_cast<int>(0.352685 * qp + 2.957774);
+  } else if (cm->Width * cm->Height <= 640 * 480) {
+    cm->filter_level = static_cast<int>(0.485069 * qp - 0.534462);
+  } else {
+    cm->filter_level = static_cast<int>(0.314875 * qp + 7.959003);
+  }
+
+  int min_filter_level = 0;
+  // This logic is from get_min_filter_level() in picklpf.c
+  if (q_ > 6 && q_ <= 16) {
+    min_filter_level = 1;
+  } else {
+    min_filter_level = (q_ / 8);
+  }
+
+  const int max_filter_level = 63;
+  if (cm->filter_level < min_filter_level) cm->filter_level = min_filter_level;
+  if (cm->filter_level > max_filter_level) cm->filter_level = max_filter_level;
+
+  return cm->filter_level;
+}
 
 void VP8RateControlRTC::PostEncodeUpdate(uint64_t encoded_frame_size) {
   VP8_COMMON *const cm = &cpi_->common;

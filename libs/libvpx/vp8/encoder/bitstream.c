@@ -19,6 +19,7 @@
 #include <limits.h>
 #include "vpx/vpx_encoder.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_ports/compiler_attributes.h"
 #include "vpx_ports/system_state.h"
 #include "bitstream.h"
 
@@ -117,7 +118,9 @@ static void write_split(vp8_writer *bc, int x) {
                   vp8_mbsplit_encodings + x);
 }
 
-void vp8_pack_tokens(vp8_writer *w, const TOKENEXTRA *p, int xcount) {
+void VPX_NO_UNSIGNED_SHIFT_CHECK vp8_pack_tokens(vp8_writer *w,
+                                                 const TOKENEXTRA *p,
+                                                 int xcount) {
   const TOKENEXTRA *stop = p + xcount;
   unsigned int split;
   int shift;
@@ -498,7 +501,7 @@ static void pack_inter_mode_mvs(VP8_COMP *const cpi) {
           int ct[4];
 
           vp8_find_near_mvs(xd, m, &n1, &n2, &best_mv, ct, rf,
-                            cpi->common.ref_frame_sign_bias);
+                            pc->ref_frame_sign_bias);
           vp8_clamp_mv2(&best_mv, xd);
 
           vp8_mv_ref_probs(mv_ref_p, ct);
@@ -682,12 +685,12 @@ static int independent_coef_context_savings(VP8_COMP *cpi) {
       int k = 0;
       unsigned int prev_coef_count_sum[MAX_ENTROPY_TOKENS] = { 0 };
       int prev_coef_savings[MAX_ENTROPY_TOKENS] = { 0 };
-      const unsigned int(*probs)[MAX_ENTROPY_TOKENS];
+      const unsigned int (*probs)[MAX_ENTROPY_TOKENS];
       /* Calculate new probabilities given the constraint that
        * they must be equal over the prev coef contexts
        */
 
-      probs = (const unsigned int(*)[MAX_ENTROPY_TOKENS])x->coef_counts[i][j];
+      probs = (const unsigned int (*)[MAX_ENTROPY_TOKENS])x->coef_counts[i][j];
 
       /* Reset to default probabilities at key frames */
       if (cpi->common.frame_type == KEY_FRAME) {
@@ -1018,7 +1021,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
 
   bc[0].error = &pc->error;
 
-  validate_buffer(cx_data, 3, cx_data_end, &cpi->common.error);
+  validate_buffer(cx_data, 3, cx_data_end, &pc->error);
   cx_data += 3;
 
 #if defined(SECTIONBITS_OUTPUT)
@@ -1031,7 +1034,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
   if (oh.type == KEY_FRAME) {
     int v;
 
-    validate_buffer(cx_data, 7, cx_data_end, &cpi->common.error);
+    validate_buffer(cx_data, 7, cx_data_end, &pc->error);
 
     /* Start / synch code */
     cx_data[0] = 0x9D;
@@ -1077,7 +1080,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
     if (xd->update_mb_segmentation_data) {
       signed char Data;
 
-      vp8_write_bit(bc, xd->mb_segement_abs_delta);
+      vp8_write_bit(bc, xd->mb_segment_abs_delta);
 
       /* For each segmentation feature (Quant and loop filter level) */
       for (i = 0; i < MB_LVL_MAX; ++i) {
@@ -1240,7 +1243,7 @@ void vp8_pack_bitstream(VP8_COMP *cpi, unsigned char *dest,
 #else
   if (pc->refresh_entropy_probs == 0) {
     /* save a copy for later refresh */
-    memcpy(&cpi->common.lfc, &cpi->common.fc, sizeof(cpi->common.fc));
+    pc->lfc = pc->fc;
   }
 
   vp8_update_coef_probs(cpi);

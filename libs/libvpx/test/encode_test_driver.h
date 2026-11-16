@@ -13,13 +13,13 @@
 #include <string>
 #include <vector>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #if CONFIG_VP8_ENCODER || CONFIG_VP9_ENCODER
 #include "vpx/vp8cx.h"
 #endif
-#include "vpx/vpx_encoder.h"
+#include "vpx/vpx_tpl.h"
 
 namespace libvpx_test {
 
@@ -33,14 +33,23 @@ enum TestMode {
   kTwoPassGood,
   kTwoPassBest
 };
+
+#if CONFIG_REALTIME_ONLY
+#define ALL_TEST_MODES ::testing::Values(::libvpx_test::kRealTime)
+#define ONE_PASS_TEST_MODES ::testing::Values(::libvpx_test::kRealTime)
+#define ONE_OR_TWO_PASS_TEST_MODES ::testing::Values(::libvpx_test::kRealTime)
+#else
 #define ALL_TEST_MODES                                                        \
   ::testing::Values(::libvpx_test::kRealTime, ::libvpx_test::kOnePassGood,    \
                     ::libvpx_test::kOnePassBest, ::libvpx_test::kTwoPassGood, \
                     ::libvpx_test::kTwoPassBest)
-
 #define ONE_PASS_TEST_MODES                                                \
   ::testing::Values(::libvpx_test::kRealTime, ::libvpx_test::kOnePassGood, \
                     ::libvpx_test::kOnePassBest)
+
+#define ONE_OR_TWO_PASS_TEST_MODES \
+  ::testing::Values(::libvpx_test::kOnePassGood, ::libvpx_test::kTwoPassGood)
+#endif
 
 #define TWO_PASS_TEST_MODES \
   ::testing::Values(::libvpx_test::kTwoPassGood, ::libvpx_test::kTwoPassBest)
@@ -86,7 +95,7 @@ class TwopassStatsStore {
 // level of abstraction will be fleshed out as more tests are written.
 class Encoder {
  public:
-  Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
+  Encoder(vpx_codec_enc_cfg_t cfg, vpx_enc_deadline_t deadline,
           const unsigned long init_flags, TwopassStatsStore *stats)
       : cfg_(cfg), deadline_(deadline), init_flags_(init_flags), stats_(stats) {
     memset(&encoder_, 0, sizeof(encoder_));
@@ -103,7 +112,7 @@ class Encoder {
   }
   // This is a thin wrapper around vpx_codec_encode(), so refer to
   // vpx_encoder.h for its semantics.
-  void EncodeFrame(VideoSource *video, const unsigned long frame_flags);
+  void EncodeFrame(VideoSource *video, vpx_enc_frame_flags_t frame_flags);
 
   // Convenience wrapper for EncodeFrame()
   void EncodeFrame(VideoSource *video) { EncodeFrame(video, 0); }
@@ -153,6 +162,11 @@ class Encoder {
     const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
+
+  void Control(int ctrl_id, VpxTplGopStats *arg) {
+    const vpx_codec_err_t res = vpx_codec_control_(&encoder_, ctrl_id, arg);
+    ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+  }
 #endif  // CONFIG_VP9_ENCODER
 
 #if CONFIG_VP8_ENCODER || CONFIG_VP9_ENCODER
@@ -172,7 +186,7 @@ class Encoder {
     cfg_ = *cfg;
   }
 
-  void set_deadline(unsigned long deadline) { deadline_ = deadline; }
+  void set_deadline(vpx_enc_deadline_t deadline) { deadline_ = deadline; }
 
  protected:
   virtual vpx_codec_iface_t *CodecInterface() const = 0;
@@ -184,14 +198,14 @@ class Encoder {
 
   // Encode an image
   void EncodeFrameInternal(const VideoSource &video,
-                           const unsigned long frame_flags);
+                           vpx_enc_frame_flags_t frame_flags);
 
   // Flush the encoder on EOS
   void Flush();
 
   vpx_codec_ctx_t encoder_;
   vpx_codec_enc_cfg_t cfg_;
-  unsigned long deadline_;
+  vpx_enc_deadline_t deadline_;
   unsigned long init_flags_;
   TwopassStatsStore *stats_;
 };
@@ -206,8 +220,7 @@ class Encoder {
 class EncoderTest {
  protected:
   explicit EncoderTest(const CodecFactory *codec)
-      : codec_(codec), abort_(false), init_flags_(0), frame_flags_(0),
-        last_pts_(0) {
+      : codec_(codec), abort_(false), init_flags_(0), frame_flags_(0) {
     // Default to 1 thread.
     cfg_.g_threads = 1;
   }
@@ -260,7 +273,7 @@ class EncoderTest {
 
   const CodecFactory *codec_;
   // Hook to determine whether to decode frame after encoding
-  virtual bool DoDecode() const { return 1; }
+  virtual bool DoDecode() const { return true; }
 
   // Hook to handle encode/decode mismatch
   virtual void MismatchHook(const vpx_image_t *img1, const vpx_image_t *img2);
@@ -287,11 +300,10 @@ class EncoderTest {
   vpx_codec_enc_cfg_t cfg_;
   vpx_codec_dec_cfg_t dec_cfg_;
   unsigned int passes_;
-  unsigned long deadline_;
+  vpx_enc_deadline_t deadline_;
   TwopassStatsStore stats_;
   unsigned long init_flags_;
-  unsigned long frame_flags_;
-  vpx_codec_pts_t last_pts_;
+  vpx_enc_frame_flags_t frame_flags_;
 };
 
 }  // namespace libvpx_test

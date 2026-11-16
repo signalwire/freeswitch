@@ -13,7 +13,7 @@
 #include <string.h>
 #include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vp9_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
@@ -23,6 +23,7 @@
 #include "test/register_state_check.h"
 #include "test/util.h"
 #include "vp9/common/vp9_entropy.h"
+#include "vpx_config.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
@@ -33,16 +34,16 @@ using std::make_tuple;
 using std::tuple;
 
 namespace {
-typedef void (*FdctFunc)(const int16_t *in, tran_low_t *out, int stride);
-typedef void (*IdctFunc)(const tran_low_t *in, uint8_t *out, int stride);
-typedef void (*FhtFunc)(const int16_t *in, tran_low_t *out, int stride,
-                        int tx_type);
-typedef void (*FhtFuncRef)(const Buffer<int16_t> &in, Buffer<tran_low_t> *out,
-                           int size, int tx_type);
-typedef void (*IhtFunc)(const tran_low_t *in, uint8_t *out, int stride,
-                        int tx_type);
-typedef void (*IhtWithBdFunc)(const tran_low_t *in, uint8_t *out, int stride,
-                              int tx_type, int bd);
+using FdctFunc = void (*)(const int16_t *in, tran_low_t *out, int stride);
+using IdctFunc = void (*)(const tran_low_t *in, uint8_t *out, int stride);
+using FhtFunc = void (*)(const int16_t *in, tran_low_t *out, int stride,
+                         int tx_type);
+using FhtFuncRef = void (*)(const Buffer<int16_t> &in, Buffer<tran_low_t> *out,
+                            int size, int tx_type);
+using IhtFunc = void (*)(const tran_low_t *in, uint8_t *out, int stride,
+                         int tx_type);
+using IhtWithBdFunc = void (*)(const tran_low_t *in, uint8_t *out, int stride,
+                               int tx_type, int bd);
 
 template <FdctFunc fn>
 void fdct_wrapper(const int16_t *in, tran_low_t *out, int stride, int tx_type) {
@@ -66,11 +67,11 @@ void iht_wrapper(const tran_low_t *in, uint8_t *out, int stride, int tx_type,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-typedef void (*HighbdIdctFunc)(const tran_low_t *in, uint16_t *out, int stride,
-                               int bd);
+using HighbdIdctFunc = void (*)(const tran_low_t *in, uint16_t *out, int stride,
+                                int bd);
 
-typedef void (*HighbdIhtFunc)(const tran_low_t *in, uint16_t *out, int stride,
-                              int tx_type, int bd);
+using HighbdIhtFunc = void (*)(const tran_low_t *in, uint16_t *out, int stride,
+                               int tx_type, int bd);
 
 template <HighbdIdctFunc fn>
 void highbd_idct_wrapper(const tran_low_t *in, uint8_t *out, int stride,
@@ -94,7 +95,7 @@ struct FuncInfo {
 };
 
 /* forward transform, inverse transform, size, transform type, bit depth */
-typedef tuple<int, const FuncInfo *, int, vpx_bit_depth_t> DctParam;
+using DctParam = tuple<int, const FuncInfo *, int, vpx_bit_depth_t>;
 
 void fdct_ref(const Buffer<int16_t> &in, Buffer<tran_low_t> *out, int size,
               int /*tx_type*/) {
@@ -134,7 +135,7 @@ void fwht_ref(const Buffer<int16_t> &in, Buffer<tran_low_t> *out, int size,
 
 class TransTestBase : public ::testing::TestWithParam<DctParam> {
  public:
-  virtual void SetUp() {
+  void SetUp() override {
     rnd_.Reset(ACMRandom::DeterministicSeed());
     const int idx = GET_PARAM(0);
     const FuncInfo *func_info = &(GET_PARAM(1)[idx]);
@@ -166,7 +167,7 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
     ASSERT_NE(dst_, nullptr);
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     vpx_free(src_);
     src_ = nullptr;
     vpx_free(dst_);
@@ -358,14 +359,6 @@ class TransTestBase : public ::testing::TestWithParam<DctParam> {
     ASSERT_TRUE(in.Init());
     Buffer<tran_low_t> coeff = Buffer<tran_low_t>(size_, size_, 0, 16);
     ASSERT_TRUE(coeff.Init());
-    Buffer<uint8_t> dst = Buffer<uint8_t>(size_, size_, 0, 16);
-    ASSERT_TRUE(dst.Init());
-    Buffer<uint8_t> src = Buffer<uint8_t>(size_, size_, 0);
-    ASSERT_TRUE(src.Init());
-    Buffer<uint16_t> dst16 = Buffer<uint16_t>(size_, size_, 0, 16);
-    ASSERT_TRUE(dst16.Init());
-    Buffer<uint16_t> src16 = Buffer<uint16_t>(size_, size_, 0);
-    ASSERT_TRUE(src16.Init());
 
     for (int i = 0; i < count_test_block; ++i) {
       InitMem();
@@ -539,6 +532,18 @@ INSTANTIATE_TEST_SUITE_P(AVX2, TransDCT,
 #endif  // HAVE_AVX2 && !CONFIG_VP9_HIGHBITDEPTH
 
 #if HAVE_NEON
+#if CONFIG_VP9_HIGHBITDEPTH
+static const FuncInfo dct_neon_func_info[] = {
+  { &fdct_wrapper<vpx_highbd_fdct4x4_neon>,
+    &highbd_idct_wrapper<vpx_highbd_idct4x4_16_add_neon>, 4, 2 },
+  { &fdct_wrapper<vpx_highbd_fdct8x8_neon>,
+    &highbd_idct_wrapper<vpx_highbd_idct8x8_64_add_neon>, 8, 2 },
+  { &fdct_wrapper<vpx_highbd_fdct16x16_neon>,
+    &highbd_idct_wrapper<vpx_highbd_idct16x16_256_add_neon>, 16, 2 },
+  /* { &fdct_wrapper<vpx_highbd_fdct32x32_neon>,
+       &highbd_idct_wrapper<vpx_highbd_idct32x32_1024_add_neon>, 32, 2 },*/
+};
+#else
 static const FuncInfo dct_neon_func_info[4] = {
   { &fdct_wrapper<vpx_fdct4x4_neon>, &idct_wrapper<vpx_idct4x4_16_add_neon>, 4,
     1 },
@@ -549,12 +554,15 @@ static const FuncInfo dct_neon_func_info[4] = {
   { &fdct_wrapper<vpx_fdct32x32_neon>,
     &idct_wrapper<vpx_idct32x32_1024_add_neon>, 32, 1 }
 };
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 
 INSTANTIATE_TEST_SUITE_P(
     NEON, TransDCT,
-    ::testing::Combine(::testing::Range(0, 4),
-                       ::testing::Values(dct_neon_func_info),
-                       ::testing::Values(0), ::testing::Values(VPX_BITS_8)));
+    ::testing::Combine(
+        ::testing::Range(0, static_cast<int>(sizeof(dct_neon_func_info) /
+                                             sizeof(dct_neon_func_info[0]))),
+        ::testing::Values(dct_neon_func_info), ::testing::Values(0),
+        ::testing::Values(VPX_BITS_8, VPX_BITS_10, VPX_BITS_12)));
 #endif  // HAVE_NEON
 
 #if HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH
@@ -652,9 +660,15 @@ static const FuncInfo ht_neon_func_info[] = {
 #if CONFIG_VP9_HIGHBITDEPTH
   { &vp9_highbd_fht4x4_c, &highbd_iht_wrapper<vp9_highbd_iht4x4_16_add_neon>, 4,
     2 },
+  { &vp9_highbd_fht4x4_neon, &highbd_iht_wrapper<vp9_highbd_iht4x4_16_add_neon>,
+    4, 2 },
   { &vp9_highbd_fht8x8_c, &highbd_iht_wrapper<vp9_highbd_iht8x8_64_add_neon>, 8,
     2 },
+  { &vp9_highbd_fht8x8_neon, &highbd_iht_wrapper<vp9_highbd_iht8x8_64_add_neon>,
+    8, 2 },
   { &vp9_highbd_fht16x16_c,
+    &highbd_iht_wrapper<vp9_highbd_iht16x16_256_add_neon>, 16, 2 },
+  { &vp9_highbd_fht16x16_neon,
     &highbd_iht_wrapper<vp9_highbd_iht16x16_256_add_neon>, 16, 2 },
 #endif
   { &vp9_fht4x4_c, &iht_wrapper<vp9_iht4x4_16_add_neon>, 4, 1 },
@@ -754,7 +768,7 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Values(wht_c_func_info), ::testing::Values(0),
         ::testing::Values(VPX_BITS_8, VPX_BITS_10, VPX_BITS_12)));
 
-#if HAVE_SSE2 && !CONFIG_EMULATE_HARDWARE
+#if HAVE_SSE2 && HAVE_X86_ASM && !CONFIG_EMULATE_HARDWARE
 static const FuncInfo wht_sse2_func_info = {
   &fdct_wrapper<vp9_fwht4x4_sse2>, &idct_wrapper<vpx_iwht4x4_16_add_sse2>, 4, 1
 };
@@ -762,7 +776,7 @@ static const FuncInfo wht_sse2_func_info = {
 INSTANTIATE_TEST_SUITE_P(SSE2, TransWHT,
                          ::testing::Values(make_tuple(0, &wht_sse2_func_info, 0,
                                                       VPX_BITS_8)));
-#endif  // HAVE_SSE2 && !CONFIG_EMULATE_HARDWARE
+#endif  // HAVE_SSE2 && HAVE_X86_ASM && !CONFIG_EMULATE_HARDWARE
 
 #if HAVE_VSX && !CONFIG_EMULATE_HARDWARE && !CONFIG_VP9_HIGHBITDEPTH
 static const FuncInfo wht_vsx_func_info = {

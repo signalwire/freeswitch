@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
@@ -111,7 +111,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
 }
 
 void DecoderTest::set_cfg(const vpx_codec_dec_cfg_t &dec_cfg) {
-  memcpy(&cfg_, &dec_cfg, sizeof(cfg_));
+  cfg_ = dec_cfg;
 }
 
 void DecoderTest::set_flags(const vpx_codec_flags_t flags) { flags_ = flags; }

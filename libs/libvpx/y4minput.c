@@ -12,6 +12,8 @@
  */
 #include <assert.h>
 #include <errno.h>
+#include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,12 +23,13 @@
 // Reads 'size' bytes from 'file' into 'buf' with some fault tolerance.
 // Returns true on success.
 static int file_read(void *buf, size_t size, FILE *file) {
-  const int kMaxRetries = 5;
-  int retry_count = 0;
-  int file_error;
+  const int kMaxTries = 5;
+  int try_count = 0;
+  int file_error = 0;
   size_t len = 0;
-  do {
+  while (!feof(file) && len < size && try_count < kMaxTries) {
     const size_t n = fread((uint8_t *)buf + len, 1, size - len, file);
+    ++try_count;
     len += n;
     file_error = ferror(file);
     if (file_error) {
@@ -39,13 +42,13 @@ static int file_read(void *buf, size_t size, FILE *file) {
         return 0;
       }
     }
-  } while (!feof(file) && len < size && ++retry_count < kMaxRetries);
+  }
 
   if (!feof(file) && len != size) {
     fprintf(stderr,
             "Error reading file: %u of %u bytes read,"
-            " error: %d, retries: %d, %d: %s\n",
-            (uint32_t)len, (uint32_t)size, file_error, retry_count, errno,
+            " error: %d, tries: %d, %d: %s\n",
+            (uint32_t)len, (uint32_t)size, file_error, try_count, errno,
             strerror(errno));
   }
   return len == size;
@@ -66,10 +69,12 @@ static int y4m_parse_tags(y4m_input *_y4m, char *_tags) {
     switch (p[0]) {
       case 'W': {
         if (sscanf(p + 1, "%d", &_y4m->pic_w) != 1) return -1;
+        if (_y4m->pic_w <= 0) return -1;
         break;
       }
       case 'H': {
         if (sscanf(p + 1, "%d", &_y4m->pic_h) != 1) return -1;
+        if (_y4m->pic_h <= 0) return -1;
         break;
       }
       case 'F': {
@@ -174,6 +179,14 @@ static int parse_tags(y4m_input *y4m_ctx, FILE *file) {
   }
   if (y4m_ctx->fps_n == -1) {
     fprintf(stderr, "FPS field missing\n");
+    return 0;
+  }
+  /* Validate dimensions to prevent integer overflow in buffer size
+     calculations. The factor of 6 accounts for the most demanding buffer
+     formula: 2 * 3 * pic_w * pic_h (444 format at high bit-depth). */
+  if ((int64_t)y4m_ctx->pic_w * y4m_ctx->pic_h > INT_MAX / 6) {
+    fprintf(stderr, "Y4M dimensions %dx%d are too large.\n", y4m_ctx->pic_w,
+            y4m_ctx->pic_h);
     return 0;
   }
   return 1;
@@ -1147,6 +1160,7 @@ int y4m_input_fetch_frame(y4m_input *_y4m, FILE *_fin, vpx_image_t *_img) {
   _img->fmt = _y4m->vpx_fmt;
   _img->w = _img->d_w = _y4m->pic_w;
   _img->h = _img->d_h = _y4m->pic_h;
+  _img->bit_depth = _y4m->bit_depth;
   _img->x_chroma_shift = _y4m->dst_c_dec_h >> 1;
   _img->y_chroma_shift = _y4m->dst_c_dec_v >> 1;
   _img->bps = _y4m->bps;
@@ -1157,12 +1171,12 @@ int y4m_input_fetch_frame(y4m_input *_y4m, FILE *_fin, vpx_image_t *_img) {
   c_w *= bytes_per_sample;
   c_h = (_y4m->pic_h + _y4m->dst_c_dec_v - 1) / _y4m->dst_c_dec_v;
   c_sz = c_w * c_h;
-  _img->stride[VPX_PLANE_Y] = _img->stride[VPX_PLANE_ALPHA] =
-      _y4m->pic_w * bytes_per_sample;
+  _img->stride[VPX_PLANE_Y] = _y4m->pic_w * bytes_per_sample;
   _img->stride[VPX_PLANE_U] = _img->stride[VPX_PLANE_V] = c_w;
+  _img->stride[VPX_PLANE_ALPHA] = 0;
   _img->planes[VPX_PLANE_Y] = _y4m->dst_buf;
   _img->planes[VPX_PLANE_U] = _y4m->dst_buf + pic_sz;
   _img->planes[VPX_PLANE_V] = _y4m->dst_buf + pic_sz + c_sz;
-  _img->planes[VPX_PLANE_ALPHA] = _y4m->dst_buf + pic_sz + 2 * c_sz;
+  _img->planes[VPX_PLANE_ALPHA] = NULL;
   return 1;
 }
