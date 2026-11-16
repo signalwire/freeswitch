@@ -43,6 +43,7 @@ jobs:
             libsndfile \
             libtool \
             lua \
+            miniupnpc \
             opus \
             ossp-uuid \
             pcre2 \

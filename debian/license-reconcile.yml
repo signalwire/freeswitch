@@ -1,14 +1,6 @@
 Rules:
  rules:
   -
-   Glob: libs/miniupnpc/*
-   Matches: Thomas\sBERNARD
-   Copyright: Thomas Bernard
-  -
-   Glob: libs/miniupnpc/bsdqueue.h
-   Matches: The\sRegents\sof\sthe\sUniversity\sof\sCalifornia.\s+All\srights\sreserved.
-   Copyright: The Regents of the University of California.
-  -
    Glob: libs/sofia-sip/libsofia-sip-ua/su/poll.c
    Matches: Free\sSoftware\sFoundation,\sInc.
    Copyright: Free Software Foundation, Inc.
