@@ -304,6 +304,7 @@ Build-Depends:
  libsqlite3-dev,
  libtiff5-dev,
  libminiupnpc-dev (>= 2.1),
+ libnatpmp-dev,
  wget, pkg-config,
  yasm,
 # core codecs

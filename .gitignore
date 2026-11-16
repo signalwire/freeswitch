@@ -297,6 +297,8 @@ libs/freetype-*/
 libs/freetype-*.zip
 libs/miniupnpc-*/
 libs/miniupnpc-*.zip
+libs/libnatpmp-*/
+libs/libnatpmp-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/

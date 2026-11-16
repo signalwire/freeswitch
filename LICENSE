@@ -1554,10 +1554,6 @@ Files: libs/libtpl-1.5/src/tpl.[ch]
 Copyright: 2005-2010, Troy D. Hanson
 License: BSD-2-clause
 
-Files: libs/libnatpmp/*
-Copyright: 2007-2008, Thomas BERNARD <miniupnp@free.fr>
-License: ISC
-
 Files: libs/libwebsockets/*
 Copyright: 2010-2011 Andy Green <andy@warmcat.com>
 License: LGPL
