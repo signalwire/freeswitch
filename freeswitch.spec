@@ -135,6 +135,7 @@ BuildRequires: sofia-sip-devel >= 1.13.19
 BuildRequires: spandsp4-devel >= 3.1.1
 BuildRequires: pcre2-devel 
 BuildRequires: speex-devel 
+BuildRequires: miniupnpc-devel >= 2.1
 BuildRequires: sqlite-devel >= 3.6.20
 BuildRequires: libtiff-devel
 BuildRequires: libedit-devel
@@ -149,6 +150,7 @@ BuildRequires: libsndfile-devel
 Requires: curl >= 7.19
 Requires: pcre2
 Requires: speex
+Requires: miniupnpc >= 2.1
 Requires: sqlite >= 3.6.20
 Requires: libtiff
 Requires: libedit

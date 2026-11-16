@@ -303,6 +303,7 @@ Build-Depends:
  libedit-dev (>= 2.11),
  libsqlite3-dev,
  libtiff5-dev,
+ libminiupnpc-dev (>= 2.1),
  wget, pkg-config,
  yasm,
 # core codecs
