@@ -36,7 +36,7 @@
 #include <miniupnpc/miniwget.h>
 #include <miniupnpc/miniupnpc.h>
 #include <miniupnpc/upnpcommands.h>
-#include "../libs/libnatpmp/natpmp.h"
+#include <natpmp.h>
 
 #define MULTICAST_BUFFSIZE 65536
 #define IP_LEN 16
@@ -170,7 +170,7 @@ static int get_pmp_pubaddr(char *pub_addr)
 	const char *err = NULL;
 	int pflags;
 
-	if ((r = initnatpmp(&natpmp)) < 0) {
+	if ((r = initnatpmp(&natpmp, 0, 0)) < 0) {
 		err = "init failed";
 		goto end;
 	}
@@ -465,7 +465,7 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 	int r;
 	natpmp_t natpmp;
 
-	initnatpmp(&natpmp);
+	initnatpmp(&natpmp, 0, 0);
 
 	if (proto == SWITCH_NAT_TCP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 31104000);
@@ -537,7 +537,7 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 	int r;
 	natpmp_t natpmp;
 
-	initnatpmp(&natpmp);
+	initnatpmp(&natpmp, 0, 0);
 
 	if (proto == SWITCH_NAT_TCP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 0);

@@ -1347,6 +1347,11 @@ PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE2], [libpcre2-8 >=  10.00])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([MINIUPNPC], [miniupnpc >= 2.1])
+
+AC_CHECK_HEADER([natpmp.h], [], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
+AC_CHECK_LIB([natpmp], [initnatpmp], [NATPMP_LIBS=-lnatpmp], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
+AC_SUBST([NATPMP_LIBS])
+
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[

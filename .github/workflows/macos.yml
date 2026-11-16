@@ -39,6 +39,7 @@ jobs:
             jpeg \
             ldns \
             libks \
+            libnatpmp \
             libpq@18 \
             libsndfile \
             libtool \
