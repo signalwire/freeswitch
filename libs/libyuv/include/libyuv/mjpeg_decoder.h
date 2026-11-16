@@ -11,6 +11,9 @@
 #ifndef INCLUDE_LIBYUV_MJPEG_DECODER_H_
 #define INCLUDE_LIBYUV_MJPEG_DECODER_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
@@ -26,7 +29,7 @@ namespace libyuv {
 extern "C" {
 #endif
 
-LIBYUV_BOOL ValidateJpeg(const uint8_t* sample, size_t sample_size);
+int ValidateJpeg(const uint8_t* sample, size_t sample_size);
 
 #ifdef __cplusplus
 }  // extern "C"
@@ -81,11 +84,11 @@ class LIBYUV_API MJpegDecoder {
 
   // Loads a new frame, reads its headers, and determines the uncompressed
   // image format.
-  // Returns LIBYUV_TRUE if image looks valid and format is supported.
-  // If return value is LIBYUV_TRUE, then the values for all the following
+  // Returns true if image looks valid and format is supported.
+  // If return value is true, then the values for all the following
   // getters are populated.
   // src_len is the size of the compressed mjpeg frame in bytes.
-  LIBYUV_BOOL LoadFrame(const uint8_t* src, size_t src_len);
+  bool LoadFrame(const uint8_t* src, size_t src_len);
 
   // Returns width of the last loaded frame in pixels.
   int GetWidth();
@@ -129,7 +132,7 @@ class LIBYUV_API MJpegDecoder {
 
   // Call this after LoadFrame() if you decide you don't want to decode it
   // after all.
-  LIBYUV_BOOL UnloadFrame();
+  bool UnloadFrame();
 
   // Decodes the entire image into a one-buffer-per-color-component format.
   // dst_width must match exactly. dst_height must be <= to image height; if
@@ -138,16 +141,16 @@ class LIBYUV_API MJpegDecoder {
   // at least GetComponentSize(i). The pointers in planes are incremented
   // to point to after the end of the written data.
   // TODO(fbarchard): Add dst_x, dst_y to allow specific rect to be decoded.
-  LIBYUV_BOOL DecodeToBuffers(uint8_t** planes, int dst_width, int dst_height);
+  bool DecodeToBuffers(uint8_t** planes, int dst_width, int dst_height);
 
   // Decodes the entire image and passes the data via repeated calls to a
   // callback function. Each call will get the data for a whole number of
   // image scanlines.
   // TODO(fbarchard): Add dst_x, dst_y to allow specific rect to be decoded.
-  LIBYUV_BOOL DecodeToCallback(CallbackFunction fn,
-                               void* opaque,
-                               int dst_width,
-                               int dst_height);
+  bool DecodeToCallback(CallbackFunction fn,
+                        void* opaque,
+                        int dst_width,
+                        int dst_height);
 
   // The helper function which recognizes the jpeg sub-sampling type.
   static JpegSubsamplingType JpegSubsamplingTypeHelper(
@@ -159,13 +162,11 @@ class LIBYUV_API MJpegDecoder {
   void AllocOutputBuffers(int num_outbufs);
   void DestroyOutputBuffers();
 
-  LIBYUV_BOOL StartDecode();
-  LIBYUV_BOOL FinishDecode();
+  bool StartDecode();
+  bool FinishDecode();
 
   void SetScanlinePointers(uint8_t** data);
-  LIBYUV_BOOL DecodeImcuRow();
-
-  int GetComponentScanlinePadding(int component);
+  bool DecodeImcuRow();
 
   // A buffer holding the input data for a frame.
   Buffer buf_;
@@ -175,9 +176,9 @@ class LIBYUV_API MJpegDecoder {
   jpeg_source_mgr* source_mgr_;
   SetJmpErrorMgr* error_mgr_;
 
-  // LIBYUV_TRUE iff at least one component has scanline padding. (i.e.,
+  // true iff at least one component has scanline padding. (i.e.,
   // GetComponentScanlinePadding() != 0.)
-  LIBYUV_BOOL has_scanline_padding_;
+  bool has_scanline_padding_;
 
   // Temporaries used to point to scanline outputs.
   int num_outbufs_;  // Outermost size of all arrays below.
