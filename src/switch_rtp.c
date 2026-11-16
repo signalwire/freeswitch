@@ -46,7 +46,6 @@
 #undef PACKAGE
 #undef inline
 #include <srtp.h>
-#include <srtp_priv.h>
 #include <switch_ssl.h>
 #include <switch_jitterbuffer.h>
 
@@ -94,7 +93,7 @@ static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
 static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in);
 
-typedef srtp_hdr_t rtp_hdr_t;
+typedef char switch_rtp_hdr_size_check_t[sizeof(switch_rtp_hdr_t) == 12 ? 1 : -1];
 
 
 #ifdef _MSC_VER
@@ -109,7 +108,7 @@ typedef srtp_hdr_t rtp_hdr_t;
 static switch_hash_t *alloc_hash = NULL;
 
 typedef struct {
-	srtp_hdr_t header;
+	switch_rtp_hdr_t header;
 	char body[SWITCH_RTP_MAX_BUF_LEN+4+sizeof(char *)];
 	switch_rtp_hdr_ext_t *ext;
 	char *ebody;
@@ -419,7 +418,7 @@ struct switch_rtp {
 	switch_dtls_t *dtls;
 	switch_dtls_t *rtcp_dtls;
 
-	rtp_hdr_t last_rtp_hdr;
+	switch_rtp_hdr_t last_rtp_hdr;
 
 	uint16_t seq;
 	uint32_t ssrc;
@@ -1886,7 +1885,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 
 	sr->ts = htonl(rtp_session->last_write_ts);
 	sr->pc = htonl(rtp_session->stats.outbound.packet_count);
-	sr->oc = htonl(rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t));
+	sr->oc = htonl(rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(switch_rtp_hdr_t));
 
 	switch_time_exp_gmt(&now_hr,now);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u] packet_count[%u] OC[%u]\n",
@@ -1981,7 +1980,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 static void rtcp_stats_init(switch_rtp_t *rtp_session)
 {
 	switch_rtcp_numbers_t * stats = &rtp_session->stats.rtcp;
-	srtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
+	switch_rtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 	stats->ssrc = ntohl(hdr->ssrc);
 	stats->last_rpt_ts = rtp_session->write_timer.samplecount;
@@ -2032,7 +2031,7 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 static int rtcp_stats(switch_rtp_t *rtp_session)
 {
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
-	srtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
+	switch_rtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
 	switch_rtcp_numbers_t * stats = &rtp_session->stats.rtcp;
 	uint32_t packet_spacing_diff = 0, pkt_tsdiff, pkt_extended_seq;
 	uint16_t pkt_seq, seq_diff, max_seq;
@@ -2653,7 +2652,7 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	switch_mutex_unlock(port_lock);
 
 #ifdef ENABLE_SRTP
-	srtp_crypto_kernel_shutdown();
+	srtp_shutdown();
 #endif
 	switch_rtp_dtls_destroy();
 }
@@ -9345,7 +9344,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint32_t len, ts = 0;
 	switch_payload_t payload = 0;
 	rtp_msg_t *send_msg = NULL;
-	srtp_hdr_t local_header;
+	switch_rtp_hdr_t local_header;
 	int r = 0;
 	switch_status_t status;
 
