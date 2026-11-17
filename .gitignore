@@ -338,3 +338,6 @@ src/mod/endpoints/mod_sofia/test/sipp-based-tests
 src/mod/applications/mod_commands/test/test_interface_allowlist
 
 .DS_Store
+
+
+.idea/

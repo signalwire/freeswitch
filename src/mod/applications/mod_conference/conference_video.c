@@ -2035,7 +2035,7 @@ video_layout_t *conference_video_get_layout(conference_obj_t *conference, const 
 	layout_group_t *lg = NULL;
 	video_layout_t *vlayout = NULL;
 
-	if (!video_layout_name) return NULL;
+	if (!video_layout_name && !video_layout_group) return NULL;
 
 	if (video_layout_group) {
 		lg = switch_core_hash_find(conference->layout_group_hash, video_layout_group);
