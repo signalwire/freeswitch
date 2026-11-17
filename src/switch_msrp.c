@@ -1130,7 +1130,11 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		msrp_session = helper->msrp_session;
 		msrp_session->running = 1;
 
-		switch_assert(msrp_session->remote_path);
+		if (zstr(msrp_session->remote_path)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP %s has no remote path to connect to\n", msrp_session->call_id);
+			goto end;
+		}
+
 		dup = switch_core_strdup(pool, msrp_session->remote_path);
 		switch_assert(dup);
 
@@ -1155,8 +1159,9 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			}
 		}
 
-		if (!remote_ip || remote_port <= 0) {
+		if (zstr(remote_ip) || remote_port <= 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error get remote MSRP ip:port from path: [%s]\n", msrp_session->remote_path);
+			goto end;
 		}
 
 		if (switch_sockaddr_info_get(&sa, remote_ip, SWITCH_UNSPEC, remote_port, 0, pool) != SWITCH_STATUS_SUCCESS) {
