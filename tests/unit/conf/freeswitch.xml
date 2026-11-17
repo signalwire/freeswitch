@@ -73,5 +73,64 @@
         </condition>
       </extension>
     </context>
+
+    <context name="regex_all_capture">
+      <extension name="regex_all_capture">
+        <condition regex="all">
+          <regex field="${regex_test_unset}" expression="^$"/>
+          <regex field="${regex_test_uri}" expression="^sip:1(\d+)@"/>
+          <action application="set" data="captured=$1"/>
+        </condition>
+      </extension>
+    </context>
+
+    <context name="regex_all_fail_after_capture">
+      <extension name="regex_all_fail_after_capture">
+        <condition regex="all">
+          <regex field="${regex_test_uri}" expression="^sip:1(\d+)@"/>
+          <regex field="${regex_test_uri}" expression="^tel:"/>
+          <action application="set" data="captured=$1"/>
+          <anti-action application="set" data="captured=none"/>
+        </condition>
+      </extension>
+    </context>
+
+    <context name="regex_any_capture">
+      <extension name="regex_any_capture">
+        <condition regex="any">
+          <regex field="${regex_test_uri}" expression="^sip:1(\d+)@"/>
+          <action application="set" data="captured=$1"/>
+        </condition>
+      </extension>
+    </context>
+
+    <context name="regex_xor_capture_then_fail">
+      <extension name="regex_xor_capture_then_fail">
+        <condition regex="xor">
+          <regex field="${regex_test_uri}" expression="^sip:1(\d+)@"/>
+          <regex field="${regex_test_uri}" expression="^tel:(\d+)"/>
+          <action application="set" data="captured=$1"/>
+        </condition>
+      </extension>
+    </context>
+
+    <context name="regex_xor_no_capture_then_fail">
+      <extension name="regex_xor_no_capture_then_fail">
+        <condition regex="xor">
+          <regex field="${regex_test_uri}" expression="^sip:"/>
+          <regex field="${regex_test_uri}" expression="^tel:(\d+)"/>
+          <action application="set" data="captured=$1"/>
+        </condition>
+      </extension>
+    </context>
+
+    <context name="regex_any_expanded_expression_capture">
+      <extension name="regex_any_expanded_expression_capture">
+        <condition regex="any">
+          <regex field="${regex_test_uri}" expression="^sip:${regex_test_prefix}(\d+)@"/>
+          <action application="set" data="captured=$1"/>
+        </condition>
+      </extension>
+    </context>
   </section>
 </document>
