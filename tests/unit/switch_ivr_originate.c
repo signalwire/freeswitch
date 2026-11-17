@@ -95,6 +95,25 @@ static void loopback_group_confirm_event_handler(switch_event_t *event) // gener
 	}
 }
 
+/* Runs the XML dialplan in the given context of tests/unit/conf/freeswitch.xml */
+static switch_caller_extension_t *dialplan_regex_hunt(switch_core_session_t *session, const char *context)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_caller_profile_t *caller_profile = switch_caller_profile_clone(session, switch_channel_get_caller_profile(channel));
+	switch_dialplan_interface_t *dialplan_interface = switch_loadable_module_get_dialplan_interface("XML");
+	switch_caller_extension_t *extension = NULL;
+
+	if (dialplan_interface) {
+		switch_channel_set_variable(channel, "regex_test_uri", "sip:15551234567@example.com");
+		switch_channel_set_variable(channel, "regex_test_prefix", "1");
+		caller_profile->context = switch_core_session_strdup(session, context);
+		extension = dialplan_interface->hunt_function(session, NULL, caller_profile);
+		UNPROTECT_INTERFACE(dialplan_interface);
+	}
+
+	return extension;
+}
+
 FST_CORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_ivr_originate)
@@ -112,6 +131,145 @@ FST_CORE_BEGIN("./conf")
 		{
 		}
 		FST_TEARDOWN_END()
+
+		/* regex="all" where the last regex has a ${var} field and a capture group: $1 is the captured digits */
+		FST_TEST_BEGIN(dialplan_regex_all_expanded_field_capture)
+		{
+			switch_core_session_t *session = NULL;
+			switch_caller_extension_t *extension = NULL;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_status_t status;
+			const char *expected[] = { "set", "captured=5551234567", NULL };
+
+			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_check(session != NULL);
+
+			if (session) {
+				extension = dialplan_regex_hunt(session, "regex_all_capture");
+				fst_check_extension_apps(expected, extension);
+
+				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
+
+		/* regex="all" where a ${var} field fails after a capture: the anti-action runs */
+		FST_TEST_BEGIN(dialplan_regex_all_expanded_field_fail_after_capture)
+		{
+			switch_core_session_t *session = NULL;
+			switch_caller_extension_t *extension = NULL;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_status_t status;
+			const char *expected[] = { "set", "captured=none", NULL };
+
+			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_check(session != NULL);
+
+			if (session) {
+				extension = dialplan_regex_hunt(session, "regex_all_fail_after_capture");
+				fst_check_extension_apps(expected, extension);
+
+				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
+
+		/* regex="any" where the first regex has a ${var} field and a capture group: $1 is the captured digits */
+		FST_TEST_BEGIN(dialplan_regex_any_expanded_field_capture)
+		{
+			switch_core_session_t *session = NULL;
+			switch_caller_extension_t *extension = NULL;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_status_t status;
+			const char *expected[] = { "set", "captured=5551234567", NULL };
+
+			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_check(session != NULL);
+
+			if (session) {
+				extension = dialplan_regex_hunt(session, "regex_any_capture");
+				fst_check_extension_apps(expected, extension);
+
+				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
+
+		/* regex="any" where the expression has a ${var} and a capture group: $1 is the captured digits */
+		FST_TEST_BEGIN(dialplan_regex_any_expanded_expression_capture)
+		{
+			switch_core_session_t *session = NULL;
+			switch_caller_extension_t *extension = NULL;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_status_t status;
+			const char *expected[] = { "set", "captured=5551234567", NULL };
+
+			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_check(session != NULL);
+
+			if (session) {
+				extension = dialplan_regex_hunt(session, "regex_any_expanded_expression_capture");
+				fst_check_extension_apps(expected, extension);
+
+				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
+
+		/* regex="xor" where the first regex captures and the second one, also with a group, fails: $1 is the captured digits */
+		FST_TEST_BEGIN(dialplan_regex_xor_capture_then_fail)
+		{
+			switch_core_session_t *session = NULL;
+			switch_caller_extension_t *extension = NULL;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_status_t status;
+			const char *expected[] = { "set", "captured=5551234567", NULL };
+
+			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_check(session != NULL);
+
+			if (session) {
+				extension = dialplan_regex_hunt(session, "regex_xor_capture_then_fail");
+				fst_check_extension_apps(expected, extension);
+
+				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
+
+		/* regex="xor" where the first regex has no group and matches, and the second one, with a group, fails:
+		 * the action data stays as written */
+		FST_TEST_BEGIN(dialplan_regex_xor_no_capture_then_fail)
+		{
+			switch_core_session_t *session = NULL;
+			switch_caller_extension_t *extension = NULL;
+			switch_call_cause_t cause = SWITCH_CAUSE_NONE;
+			switch_status_t status;
+			const char *expected[] = { "set", "captured=$1", NULL };
+
+			status = switch_ivr_originate(NULL, &session, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_check(session != NULL);
+
+			if (session) {
+				extension = dialplan_regex_hunt(session, "regex_xor_no_capture_then_fail");
+				fst_check_extension_apps(expected, extension);
+
+				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
+				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
 
 		FST_TEST_BEGIN(originate_test_external_id)
 		{
