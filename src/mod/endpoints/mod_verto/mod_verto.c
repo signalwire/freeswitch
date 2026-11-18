@@ -1077,11 +1077,16 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			cJSON * i;
 
 			for(i = json_ptr->child; i; i = i->next) {
+				/* Skip empty names, and the NULL ones cJSON gives array elements. */
+				if (zstr(i->string)) {
+					continue;
+				}
+
 				if (i->type == cJSON_True) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "true");
 				} else if (i->type == cJSON_False) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "false");
-				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+				} else if (!zstr(i->valuestring)) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
 				}
 			}
@@ -1153,13 +1158,30 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 				switch_mutex_lock(jsock->flag_mutex);
 				for (i = json_ptr->child; i; i = i->next) {
-					if (i->type == cJSON_True) {
-						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
-					} else if (i->type == cJSON_False) {
-						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "false");
-					} else if (!zstr(i->string) && !zstr(i->valuestring)) {
-						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
+					char *prefixed = NULL;
+					const char *name = i->string;
+
+					/* Skip empty names, and the NULL ones cJSON gives array elements. */
+					if (zstr(i->string)) {
+						continue;
 					}
+
+					if (jsock->profile->enable_uservars_namespace) {
+						if (!(prefixed = switch_mprintf("verto_uvar_%s", i->string))) {
+							continue;
+						}
+						name = prefixed;
+					}
+
+					if (i->type == cJSON_True) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, name, "true");
+					} else if (i->type == cJSON_False) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, name, "false");
+					} else if (!zstr(i->valuestring)) {
+						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, name, i->valuestring);
+					}
+
+					switch_safe_free(prefixed);
 				}
 				switch_mutex_unlock(jsock->flag_mutex);
 			}
@@ -1868,7 +1890,7 @@ new_req:
 		}
 
 		if (!(buffer = malloc(request->content_length + 1))) {
-			goto request_err;
+			goto err;
 		}
 
 		while(bytes < (switch_ssize_t)request->content_length) {
@@ -1878,6 +1900,8 @@ new_req:
 
 			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
+				free(buffer);
+				request->keepalive = 0;
 				goto done;
 			}
 
@@ -1945,7 +1969,7 @@ new_req:
 		}
 
 		if (!(params = cJSON_CreateObject())) {
-			goto request_err;
+			goto err;
 		}
 
 		cJSON_AddItemToObject(params, "login", cJSON_CreateString(auth_user));
@@ -2036,13 +2060,14 @@ done:
 
 	return;
 
-request_err:
-	kws_request_free(&request);
-
 err:
 	err = "HTTP/1.1 500 Internal Server Error\r\n"
 		"Content-Length: 0\r\n\r\n";
 	kws_raw_write(jsock->ws, err, strlen(err));
+	kws_request_free(&request);
+	if (stream.param_event) {
+		switch_event_destroy(&stream.param_event);
+	}
 
 error:
 	return;
@@ -3808,13 +3833,20 @@ static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
 		cJSON * i;
 
 		for(i = json_ptr->child; i; i = i->next) {
-			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
+			char *varname;
+
+			/* Skip empty names, and the NULL ones cJSON gives array elements. */
+			if (zstr(i->string)) {
+				continue;
+			}
+
+			varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
 
 			if (i->type == cJSON_True) {
 				switch_channel_set_variable(channel, varname, "true");
 			} else if (i->type == cJSON_False) {
 				switch_channel_set_variable(channel, varname, "false");
-			} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+			} else if (!zstr(i->valuestring)) {
 				switch_channel_set_variable(channel, varname, i->valuestring);
 			}
 		}
@@ -5318,6 +5350,7 @@ static switch_status_t parse_config(const char *cf)
 			profile->mcast_sub.sock = KS_SOCK_INVALID;
 			profile->mcast_pub.sock = KS_SOCK_INVALID;
 			profile->chop_domain = SWITCH_TRUE;
+			profile->enable_uservars_namespace = SWITCH_TRUE;
 
 			for (param = switch_xml_child(xprofile, "param"); param; param = param->next) {
 				char *var = NULL;
@@ -5359,6 +5392,10 @@ static switch_status_t parse_config(const char *cf)
 					profile->blind_reg = switch_true(val);
 				} else if (!strcasecmp(var, "enable-chat-api-proto") && !zstr(val)) {
 					profile->enable_chat_api_proto = switch_true(val);
+				} else if (!strcasecmp(var, "enable-uservars-namespace") && !zstr(val)) {
+					/* Only a recognised negative turns this off, so a value
+					 * neither side spells correctly keeps the prefix. */
+					profile->enable_uservars_namespace = !switch_false(val);
 				} else if (!strcasecmp(var, "userauth") && !zstr(val)) {
 					profile->userauth = switch_core_strdup(profile->pool, val);
 				} else if (!strcasecmp(var, "chop-domain") && !zstr(val)) {

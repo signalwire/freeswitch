@@ -1602,6 +1602,7 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 
 	if (context->has_audio) {
 		AVCodecContext *c[2] = { NULL };
+		int in_channels;
 
 		if (!(c[0] = av_get_codec_context(&context->audio_st[0]))) {
 			switch_goto_status(SWITCH_STATUS_FALSE, err);
@@ -1634,7 +1635,14 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 		context->audio_st[0].sample_rate = handle->samplerate;
 		context->audio_st[1].sample_rate = handle->samplerate;
 
-		if (c[0]->sample_fmt != AV_SAMPLE_FMT_S16 || c[0]->sample_rate != handle->samplerate) {
+#if (LIBAVCODEC_VERSION_MAJOR < LIBAVFORMAT_V)
+		in_channels = c[0]->channels;
+#else
+		in_channels = c[0]->ch_layout.nb_channels;
+#endif
+
+		/* The read thread sizes its buffers by audio_st[0].channels, so a channel count mismatch must go through the resampler too */
+		if (c[0]->sample_fmt != AV_SAMPLE_FMT_S16 || c[0]->sample_rate != handle->samplerate || in_channels != context->audio_st[0].channels) {
 			int x;
 
  			for (x = 0; x < context->has_audio && x < 2 && c[x]; x++) {
@@ -1653,15 +1661,22 @@ static switch_status_t open_input_file(av_file_context_t *context, switch_file_h
 					av_opt_set_int(resample_ctx, "in_sample_fmt",      c[x]->sample_fmt,     0);
 					av_opt_set_int(resample_ctx, "in_channel_layout",
 								   (c[x]->channel_layout == 0 && c[x]->channels == 2) ? AV_CH_LAYOUT_STEREO : c[x]->channel_layout, 0);
-					av_opt_set_int(resample_ctx, "out_channel_count",  handle->channels,  0);
+					av_opt_set_int(resample_ctx, "out_channel_count",  context->audio_st[x].channels,  0);
 #else
 					av_opt_set_sample_fmt(resample_ctx, "in_sample_fmt",      c[x]->sample_fmt,     0);
-					av_opt_set_chlayout(resample_ctx, "out_chlayout",  &c[x]->ch_layout,     0);
+					{
+						/* Output must match the channel count the read thread allocates for (capped at 2), not the source layout */
+						AVChannelLayout out_ch_layout;
+
+						av_channel_layout_default(&out_ch_layout, context->audio_st[x].channels);
+						av_opt_set_chlayout(resample_ctx, "out_chlayout", &out_ch_layout, 0);
+						av_channel_layout_uninit(&out_ch_layout);
+					}
 #endif
 					av_opt_set_int(resample_ctx, "out_sample_rate",    handle->samplerate,0);
 #if (LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59,27,100))
 					av_opt_set_int(resample_ctx, "out_sample_fmt",     AV_SAMPLE_FMT_S16, 0);
-					av_opt_set_int(resample_ctx, "out_channel_layout", handle->channels == 2 ? AV_CH_LAYOUT_STEREO : AV_CH_LAYOUT_MONO, 0);
+					av_opt_set_int(resample_ctx, "out_channel_layout", context->audio_st[x].channels == 2 ? AV_CH_LAYOUT_STEREO : AV_CH_LAYOUT_MONO, 0);
 #else
 					av_opt_set_sample_fmt(resample_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
 #endif

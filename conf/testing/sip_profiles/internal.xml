@@ -107,6 +107,10 @@
     <!-- extended info parsing -->
     <!-- <param name="extended-info-parsing" value="true"/> -->
 
+    <!-- with extended-info-parsing on, lets an INFO body of content type freeswitch/api-request
+         run FreeSWITCH API commands, so enable only for trusted peers -->
+    <!-- <param name="enable-info-api-request" value="true"/> -->
+
     <!--<param name="aggressive-nat-detection" value="true"/>-->
     <!--
         There are known issues (asserts and segfaults) when 100rel is enabled.

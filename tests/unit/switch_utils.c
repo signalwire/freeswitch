@@ -488,6 +488,36 @@ FST_TEST_BEGIN(test_switch_http_parse_header)
 }
 FST_TEST_END()
 
+FST_TEST_BEGIN(test_switch_cut_path_strips_directory_components)
+{
+	size_t i;
+	struct {
+		const char *in;
+		const char *want;
+	} cases[] = {
+		{ "plain.txt",       "plain.txt" },  /* no separator: returned unchanged */
+		{ "../escape/x.txt", "x.txt"     },  /* relative components dropped */
+		{ "/etc/passwd",     "passwd"    },  /* leading absolute path dropped */
+		{ "a/../../x",       "x"         },  /* embedded .. dropped with the rest of the path */
+		{ "dir\\sub\\f.txt", "f.txt"     },  /* backslash is also a separator */
+		{ "\\../../x",       "x"         },  /* mixed: a backslash before slash-separated components */
+		{ "a/b\\c/d",        "d"         },  /* mixed: the last separator wins whichever kind it is */
+		{ "a\\b/c\\d",       "d"         },  /* mixed: backslash last */
+		{ "trailing/",       ""          },  /* nothing follows the final separator */
+		{ "trailing\\",      ""          },
+		{ "/",               ""          },  /* separator only */
+		{ "\\",              ""          },
+		{ "..",              ".."        },  /* no separator: caller must reject this residue */
+	};
+
+	fst_xcheck(switch_cut_path(NULL) == NULL, "a NULL path yields NULL");
+
+	for (i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
+		fst_check_string_equals(switch_cut_path(cases[i].in), cases[i].want);
+	}
+}
+FST_TEST_END()
+
 FST_SUITE_END()
 
 FST_MINCORE_END()

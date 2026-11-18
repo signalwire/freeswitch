@@ -2651,7 +2651,7 @@ static int get_rtt_red_seq(int want_seq, void *data, switch_size_t datalen, int 
 	*(buf + datalen) = '\0';
 
 	while (*buf & 0x80) {
-		if (buf + 3 > e) {
+		if (buf + 3 > e || count >= MAX_RED_FRAMES) {
 			*new_datalen = 0;
 			return 0;
 		}
@@ -2666,7 +2666,7 @@ static int get_rtt_red_seq(int want_seq, void *data, switch_size_t datalen, int 
 
 	idx = count - (seq - want_seq);
 
-	if (idx < 0) {
+	if (idx < 0 || idx >= MAX_RED_FRAMES) {
 		*new_datalen = 0;
 		return 0;
 	}
@@ -5101,7 +5101,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					smh->msrp_session->secure ? "s" : "",
 					ip, smh->msrp_session->local_port, smh->msrp_session->call_id);
 
-				switch_msrp_start_client(smh->msrp_session);
+				if (zstr(smh->msrp_session->remote_path)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "MSRP remote is passive but sent no path, not connecting\n");
+				} else {
+					switch_msrp_start_client(smh->msrp_session);
+				}
 			}
 
 			switch_core_session_start_text_thread(session);
