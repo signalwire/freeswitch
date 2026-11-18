@@ -1332,8 +1332,8 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	name_dup = strdup(name);
 	number_dup = strdup(number);
 	switch_assert(name_dup && number_dup);
-	name = switch_sanitize_number(name_dup);
-	number = switch_sanitize_number(number_dup);
+	name = switch_var_clean_string(switch_clean_string(switch_sanitize_number(name_dup)));
+	number = switch_var_clean_string(switch_clean_string(switch_sanitize_number(number_dup)));
 
 	if (switch_channel_inbound_display(channel)) {
 
