@@ -1469,7 +1469,12 @@ static void sofia_handle_sip_r_refer(nua_t *nua, sofia_profile_t *profile, nua_h
 	}
 }
 
-
+/* Whether s holds anything switch_ivr_originate() splits a dial string on: ',' between peers,
+   '|' between failover groups, ':_:' between enterprise legs. */
+static switch_bool_t sofia_has_dial_separator(const char *s)
+{
+	return !zstr(s) && (strpbrk(s, ",|") || strstr(s, SWITCH_ENT_ORIGINATE_DELIM)) ? SWITCH_TRUE : SWITCH_FALSE;
+}
 
 
 //sofia_dispatch_event_t *de
@@ -1922,6 +1927,16 @@ static void our_sofia_event_callback(nua_event_t event,
 
 			}
 
+			/* The target and its user part are published below as a dial string and a part of one */
+			if (sofia_has_dial_separator(refer_to) || sofia_has_dial_separator(ref_to_user)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								  "Profile [%s] rejected a REFER whose Refer-To [%s] holds a dial string separator\n", profile->name, switch_str_nil(refer_to));
+				nua_respond(nh, 400, "Bad Refer-To", NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+				switch_safe_free(method);
+				switch_safe_free(full_url);
+				break;
+			}
+
 			if (!method) {
 				method = strdup("INVITE");
 				switch_assert(method);
@@ -2041,6 +2056,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+				switch_safe_free(contact_str);
 
 				sip_to_tag(nua_handle_get_home(nh), sip->sip_to, to_tag);
 			}
