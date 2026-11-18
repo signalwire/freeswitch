@@ -1868,7 +1868,7 @@ new_req:
 		}
 
 		if (!(buffer = malloc(request->content_length + 1))) {
-			goto request_err;
+			goto err;
 		}
 
 		while(bytes < (switch_ssize_t)request->content_length) {
@@ -1878,6 +1878,8 @@ new_req:
 
 			if ((len = kws_raw_read(jsock->ws, buffer + bytes, len, WS_BLOCK)) <= 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Read error %" SWITCH_SSIZE_T_FMT"\n", len);
+				free(buffer);
+				request->keepalive = 0;
 				goto done;
 			}
 
@@ -1945,7 +1947,7 @@ new_req:
 		}
 
 		if (!(params = cJSON_CreateObject())) {
-			goto request_err;
+			goto err;
 		}
 
 		cJSON_AddItemToObject(params, "login", cJSON_CreateString(auth_user));
@@ -2036,13 +2038,14 @@ done:
 
 	return;
 
-request_err:
-	kws_request_free(&request);
-
 err:
 	err = "HTTP/1.1 500 Internal Server Error\r\n"
 		"Content-Length: 0\r\n\r\n";
 	kws_raw_write(jsock->ws, err, strlen(err));
+	kws_request_free(&request);
+	if (stream.param_event) {
+		switch_event_destroy(&stream.param_event);
+	}
 
 error:
 	return;
