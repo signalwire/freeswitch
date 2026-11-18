@@ -19,9 +19,9 @@
 #include "test/md5_helper.h"
 #include "test/util.h"
 #include "test/webm_video_source.h"
+#include "vpx/vpx_codec.h"
 #include "vpx_ports/vpx_timer.h"
 #include "./ivfenc.h"
-#include "./vpx_version.h"
 
 using std::make_tuple;
 
@@ -36,7 +36,7 @@ const char kNewEncodeOutputFile[] = "new_encode.ivf";
 /*
  DecodePerfTest takes a tuple of filename + number of threads to decode with
  */
-typedef std::tuple<const char *, unsigned> DecodePerfParam;
+using DecodePerfParam = std::tuple<const char *, unsigned int>;
 
 const DecodePerfParam kVP9DecodePerfVectors[] = {
   make_tuple("vp90-2-bbb_426x240_tile_1x1_180kbps.webm", 1),
@@ -98,7 +98,7 @@ TEST_P(DecodePerfTest, PerfTest) {
 
   printf("{\n");
   printf("\t\"type\" : \"decode_perf_test\",\n");
-  printf("\t\"version\" : \"%s\",\n", VERSION_STRING_NOSP);
+  printf("\t\"version\" : \"%s\",\n", vpx_codec_version_str());
   printf("\t\"videoName\" : \"%s\",\n", video_name);
   printf("\t\"threadCount\" : %u,\n", threads);
   printf("\t\"decodeTimeSecs\" : %f,\n", elapsed_secs);
@@ -116,11 +116,11 @@ class VP9NewEncodeDecodePerfTest
  protected:
   VP9NewEncodeDecodePerfTest()
       : EncoderTest(GET_PARAM(0)), encoding_mode_(GET_PARAM(1)), speed_(0),
-        outfile_(0), out_frames_(0) {}
+        outfile_(nullptr), out_frames_(0) {}
 
-  virtual ~VP9NewEncodeDecodePerfTest() {}
+  ~VP9NewEncodeDecodePerfTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(encoding_mode_);
 
@@ -137,8 +137,8 @@ class VP9NewEncodeDecodePerfTest
     cfg_.rc_end_usage = VPX_VBR;
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
     if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, speed_);
       encoder->Control(VP9E_SET_FRAME_PARALLEL_DECODING, 1);
@@ -146,14 +146,14 @@ class VP9NewEncodeDecodePerfTest
     }
   }
 
-  virtual void BeginPassHook(unsigned int /*pass*/) {
+  void BeginPassHook(unsigned int /*pass*/) override {
     const std::string data_path = getenv("LIBVPX_TEST_DATA_PATH");
     const std::string path_to_source = data_path + "/" + kNewEncodeOutputFile;
     outfile_ = fopen(path_to_source.c_str(), "wb");
     ASSERT_NE(outfile_, nullptr);
   }
 
-  virtual void EndPassHook() {
+  void EndPassHook() override {
     if (outfile_ != nullptr) {
       if (!fseek(outfile_, 0, SEEK_SET)) {
         ivf_write_file_header(outfile_, &cfg_, VP9_FOURCC, out_frames_);
@@ -163,7 +163,7 @@ class VP9NewEncodeDecodePerfTest
     }
   }
 
-  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
+  void FramePktHook(const vpx_codec_cx_pkt_t *pkt) override {
     ++out_frames_;
 
     // Write initial file header if first frame.
@@ -177,7 +177,7 @@ class VP9NewEncodeDecodePerfTest
               pkt->data.frame.sz);
   }
 
-  virtual bool DoDecode() const { return false; }
+  bool DoDecode() const override { return false; }
 
   void set_speed(unsigned int speed) { speed_ = speed; }
 
@@ -249,7 +249,7 @@ TEST_P(VP9NewEncodeDecodePerfTest, PerfTest) {
 
   printf("{\n");
   printf("\t\"type\" : \"decode_perf_test\",\n");
-  printf("\t\"version\" : \"%s\",\n", VERSION_STRING_NOSP);
+  printf("\t\"version\" : \"%s\",\n", vpx_codec_version_str());
   printf("\t\"videoName\" : \"%s\",\n", kNewEncodeOutputFile);
   printf("\t\"threadCount\" : %u,\n", threads);
   printf("\t\"decodeTimeSecs\" : %f,\n", elapsed_secs);

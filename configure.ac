@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.11.3-release], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.11.4-release], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
 AC_SUBST(SWITCH_VERSION_MINOR, [11])
-AC_SUBST(SWITCH_VERSION_MICRO, [3-release])
+AC_SUBST(SWITCH_VERSION_MICRO, [4-release])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -549,6 +549,28 @@ AC_ARG_ENABLE(libyuv,
 
 AM_CONDITIONAL([ENABLE_LIBYUV],[test "${enable_libyuv}" = "yes"])
 
+# libyuv's AArch64 SIMD kernels (dot-product, i8mm, SVE, SME) use instructions
+# outside the baseline armv8-a target, so they must be compiled with per-file
+# -march flags (see Makefile.am). These conditionals mirror the logic in
+# libs/libyuv/CMakeLists.txt.
+AM_CONDITIONAL([LIBYUV_AARCH64],
+  [test "x$host_cpu" = "xaarch64" || test "x$host_cpu" = "xarm64"])
+
+libyuv_have_sme=no
+AS_IF([test "x$host_cpu" = "xaarch64" || test "x$host_cpu" = "xarm64"], [
+  AC_LANG_PUSH([C])
+  libyuv_save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -march=armv8.5-a+i8mm+sme"
+  AC_MSG_CHECKING([whether $CC supports AArch64 SME kernels])
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[__arm_locally_streaming void func(void) { }
+int main(void) { return 0; }]])],
+    [libyuv_have_sme=yes])
+  AC_MSG_RESULT([$libyuv_have_sme])
+  CFLAGS="$libyuv_save_CFLAGS"
+  AC_LANG_POP([C])
+])
+AM_CONDITIONAL([LIBYUV_AARCH64_SME], [test "x$libyuv_have_sme" = "xyes"])
+
 AC_ARG_ENABLE(libvpx,
 [AC_HELP_STRING([--disable-libvpx],[build without libvpx])],[enable_libvpx="$enableval"],[enable_libvpx="yes"])
 
@@ -710,7 +732,7 @@ PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.1.1],[
     AC_MSG_ERROR([no usable spandsp; please install spandsp4 devel package or equivalent])
 ])
 
-PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.18],[
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.19],[
   AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
     AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
 ])
@@ -1249,8 +1271,6 @@ AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
 GETLIB="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getlib.sh"
 AC_SUBST(GETLIB)
-GETG729="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getg729.sh"
-AC_SUBST(GETG729)
 GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
@@ -1326,6 +1346,12 @@ PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE2], [libpcre2-8 >=  10.00])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
+PKG_CHECK_MODULES([MINIUPNPC], [miniupnpc >= 2.1])
+
+AC_CHECK_HEADER([natpmp.h], [], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
+AC_CHECK_LIB([natpmp], [initnatpmp], [NATPMP_LIBS=-lnatpmp], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
+AC_SUBST([NATPMP_LIBS])
+
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
@@ -1726,7 +1752,11 @@ if test x$HAVE_OPENSSL = x1; then
 	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
 	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
 	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required]))
-	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
+	dnl DTLS_method is what the code calls from OpenSSL 1.1.0 on; DTLSv1_method is
+	dnl the pre 1.1.0 spelling, deprecated since and gone from OpenSSL 4.
+	AC_CHECK_LIB(ssl, DTLS_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS),
+		[AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS),
+			AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated development headers required]))])
 	AC_CHECK_LIB(ssl, DTLSv1_2_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLSv1_2_method, 1, [DTLS version 1.2 is available]))
 else
 	AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required])
@@ -2089,7 +2119,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
 		src/mod/codecs/mod_codec2/Makefile
-		src/mod/codecs/mod_com_g729/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
@@ -2179,7 +2208,6 @@ AC_CONFIG_FILES([Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh
 		build/getlib.sh
-		build/getg729.sh
 		build/freeswitch.pc
 		build/standalone_module/freeswitch.pc
 		build/modmake.rules

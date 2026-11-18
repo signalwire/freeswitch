@@ -14,7 +14,7 @@
 #include <limits>
 #include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
@@ -22,6 +22,7 @@
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
+#include "vpx_config.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/vpx_dsp_common.h"
@@ -32,10 +33,10 @@ using std::make_tuple;
 using std::tuple;
 
 namespace {
-typedef void (*PartialFdctFunc)(const int16_t *in, tran_low_t *out, int stride);
+using PartialFdctFunc = void (*)(const int16_t *in, tran_low_t *out,
+                                 int stride);
 
-typedef tuple<PartialFdctFunc, int /* size */, vpx_bit_depth_t>
-    PartialFdctParam;
+using PartialFdctParam = tuple<PartialFdctFunc, int /*size*/, vpx_bit_depth_t>;
 
 tran_low_t partial_fdct_ref(const Buffer<int16_t> &in, int size) {
   int64_t sum = 0;
@@ -67,7 +68,7 @@ class PartialFdctTest : public ::testing::TestWithParam<PartialFdctParam> {
     bit_depth_ = GET_PARAM(2);
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   void RunTest() {
@@ -145,11 +146,17 @@ INSTANTIATE_TEST_SUITE_P(
 #if CONFIG_VP9_HIGHBITDEPTH
 INSTANTIATE_TEST_SUITE_P(
     NEON, PartialFdctTest,
-    ::testing::Values(make_tuple(&vpx_fdct32x32_1_neon, 32, VPX_BITS_8),
-                      make_tuple(&vpx_fdct16x16_1_neon, 16, VPX_BITS_8),
+    ::testing::Values(make_tuple(&vpx_highbd_fdct32x32_1_neon, 32, VPX_BITS_12),
+                      make_tuple(&vpx_highbd_fdct32x32_1_neon, 32, VPX_BITS_10),
+                      make_tuple(&vpx_highbd_fdct32x32_1_neon, 32, VPX_BITS_8),
+                      make_tuple(&vpx_highbd_fdct16x16_1_neon, 16, VPX_BITS_12),
+                      make_tuple(&vpx_highbd_fdct16x16_1_neon, 16, VPX_BITS_10),
+                      make_tuple(&vpx_highbd_fdct16x16_1_neon, 16, VPX_BITS_8),
                       make_tuple(&vpx_fdct8x8_1_neon, 8, VPX_BITS_12),
                       make_tuple(&vpx_fdct8x8_1_neon, 8, VPX_BITS_10),
                       make_tuple(&vpx_fdct8x8_1_neon, 8, VPX_BITS_8),
+                      make_tuple(&vpx_fdct4x4_1_neon, 4, VPX_BITS_12),
+                      make_tuple(&vpx_fdct4x4_1_neon, 4, VPX_BITS_10),
                       make_tuple(&vpx_fdct4x4_1_neon, 4, VPX_BITS_8)));
 #else
 INSTANTIATE_TEST_SUITE_P(

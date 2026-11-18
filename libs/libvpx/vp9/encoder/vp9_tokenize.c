@@ -364,13 +364,13 @@ static void tokenize_b(int plane, int block, int row, int col,
   const PLANE_TYPE type = get_plane_type(plane);
   const tran_low_t *qcoeff = BLOCK_OFFSET(p->qcoeff, block);
   const int16_t *scan, *nb;
-  const scan_order *so;
+  const ScanOrder *so;
   const int ref = is_inter_block(mi);
-  unsigned int(*const counts)[COEFF_CONTEXTS][ENTROPY_TOKENS] =
+  unsigned int (*const counts)[COEFF_CONTEXTS][ENTROPY_TOKENS] =
       td->rd_counts.coef_counts[tx_size][type][ref];
   vpx_prob(*const coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       cpi->common.fc->coef_probs[tx_size][type][ref];
-  unsigned int(*const eob_branch)[COEFF_CONTEXTS] =
+  unsigned int (*const eob_branch)[COEFF_CONTEXTS] =
       td->counts->eob_branch[tx_size][type][ref];
   const uint8_t *const band = get_band_translate(tx_size);
   const int tx_eob = 16 << (tx_size << 1);

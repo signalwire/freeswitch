@@ -370,8 +370,6 @@ SWITCH_DECLARE(void) switch_img_attenuate(switch_image_t *img)
 SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *img, int x, int y, switch_bool_t noalpha)
 {
 #ifdef SWITCH_HAVE_YUV
-	int i;
-
 	if (noalpha) {
 		switch_img_patch_rgb_noalpha(IMG, img, x, y);
 		return;
@@ -386,18 +384,8 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 		int dst_stride_argb = IMG->stride[SWITCH_PLANE_PACKED];
 		int width = MIN(img->d_w, IMG->d_w - abs(x));
 		int height = MIN(img->d_h, IMG->d_h - abs(y));
-		void (*ARGBBlendRow)(const uint8_t* src_argb, const uint8_t* src_argb1, uint8_t* dst_argb, int width) = GetARGBBlend();
 
 		// switch_img_attenuate(img);
-
-		// Coalesce rows. we have same size images, treat as a single row
-		if (src_stride_argb0 == width * 4 &&
-			src_stride_argb1 == width * 4 &&
-			x == 0 && y == 0) {
-			width *= height;
-			height = 1;
-			src_stride_argb0 = src_stride_argb1 = dst_stride_argb = 0;
-		}
 
 		if (y) {
 			src_argb1 += (y * IMG->d_w * 4);
@@ -408,12 +396,8 @@ SWITCH_DECLARE(void) switch_img_patch_rgb(switch_image_t *IMG, switch_image_t *i
 			dst_argb  += (x * 4);
 		}
 
-		for (i = 0; i < height; ++i) {
-			ARGBBlendRow(src_argb0, src_argb1, dst_argb, width);
-			src_argb0 += src_stride_argb0;
-			src_argb1 += src_stride_argb1;
-			dst_argb += dst_stride_argb;
-		}
+		/* ARGBBlend coalesces rows internally. */
+		ARGBBlend(src_argb0, src_stride_argb0, src_argb1, src_stride_argb1, dst_argb, dst_stride_argb, width, height);
 	}
 #endif
 }

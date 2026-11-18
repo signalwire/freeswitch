@@ -52089,17 +52089,53 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_FreeSWITCHfNative_EventConsumer_node
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_new_EventConsumer___(char * jarg1, char * jarg2, int jarg3) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_0___(char * jarg1, char * jarg2, int jarg3) {
   void * jresult ;
-  char *arg1 = (char *) NULL ;
-  char *arg2 = (char *) "" ;
-  int arg3 = (int) 5000 ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int arg3 ;
   EventConsumer *result = 0 ;
   
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (int)jarg3; 
   result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2,arg3);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_1___(char * jarg1, char * jarg2) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  char *arg2 = (char *) 0 ;
+  EventConsumer *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (EventConsumer *)new EventConsumer((char const *)arg1,(char const *)arg2);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_2___(char * jarg1) {
+  void * jresult ;
+  char *arg1 = (char *) 0 ;
+  EventConsumer *result = 0 ;
+  
+  arg1 = (char *)jarg1; 
+  result = (EventConsumer *)new EventConsumer((char const *)arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_3___() {
+  void * jresult ;
+  EventConsumer *result = 0 ;
+  
+  result = (EventConsumer *)new EventConsumer();
   jresult = (void *)result; 
   return jresult;
 }
@@ -52113,17 +52149,31 @@ SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_delete_EventConsumer___(voi
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_EventConsumer_bind___(void * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_EventConsumer_bind__SWIG_0___(void * jarg1, char * jarg2, char * jarg3) {
   int jresult ;
   EventConsumer *arg1 = (EventConsumer *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) "" ;
+  char *arg3 = (char *) 0 ;
   int result;
   
   arg1 = (EventConsumer *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   result = (int)(arg1)->bind((char const *)arg2,(char const *)arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_EventConsumer_bind__SWIG_1___(void * jarg1, char * jarg2) {
+  int jresult ;
+  EventConsumer *arg1 = (EventConsumer *) 0 ;
+  char *arg2 = (char *) 0 ;
+  int result;
+  
+  arg1 = (EventConsumer *)jarg1; 
+  arg2 = (char *)jarg2; 
+  result = (int)(arg1)->bind((char const *)arg2);
   jresult = result; 
   return jresult;
 }
@@ -52461,13 +52511,21 @@ SWIGEXPORT int SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_preAnswer___(voi
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_Hangup___(void * jarg1, char * jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_Hangup__SWIG_0___(void * jarg1, char * jarg2) {
   CoreSession *arg1 = (CoreSession *) 0 ;
-  char *arg2 = (char *) "normal_clearing" ;
+  char *arg2 = (char *) 0 ;
   
   arg1 = (CoreSession *)jarg1; 
   arg2 = (char *)jarg2; 
   (arg1)->hangup((char const *)arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_Hangup__SWIG_1___(void * jarg1) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  (arg1)->hangup();
 }
 
 
@@ -52549,17 +52607,39 @@ SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_Say___(void * j
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_SayPhrase___(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_SayPhrase__SWIG_0___(void * jarg1, char * jarg2, char * jarg3, char * jarg4) {
   CoreSession *arg1 = (CoreSession *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) "" ;
-  char *arg4 = (char *) NULL ;
+  char *arg3 = (char *) 0 ;
+  char *arg4 = (char *) 0 ;
   
   arg1 = (CoreSession *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (char *)jarg4; 
   (arg1)->sayPhrase((char const *)arg2,(char const *)arg3,(char const *)arg4);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_SayPhrase__SWIG_1___(void * jarg1, char * jarg2, char * jarg3) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  arg3 = (char *)jarg3; 
+  (arg1)->sayPhrase((char const *)arg2,(char const *)arg3);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_FreeSWITCHfNative_CoreSession_SayPhrase__SWIG_2___(void * jarg1, char * jarg2) {
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (CoreSession *)jarg1; 
+  arg2 = (char *)jarg2; 
+  (arg1)->sayPhrase((char const *)arg2);
 }
 
 

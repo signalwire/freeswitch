@@ -68,19 +68,23 @@ echo "test_libvpx, etc) to link the stack traces to source code lines."
 cflags="-fsanitize=${sanitizer}"
 ldflags="-fsanitize=${sanitizer}"
 
-# http://code.google.com/p/webm/issues/detail?id=570
-cflags="${cflags} -fno-strict-aliasing"
 # Useful backtraces.
 cflags="${cflags} -fno-omit-frame-pointer"
 # Exact backtraces.
 cflags="${cflags} -fno-optimize-sibling-calls"
 
-if [ "${sanitizer}" = "cfi" ]; then
-  # https://clang.llvm.org/docs/ControlFlowIntegrity.html
-  cflags="${cflags} -fno-sanitize-trap=cfi -flto -fvisibility=hidden"
-  ldflags="${ldflags} -fno-sanitize-trap=cfi -flto -fuse-ld=gold"
-  export AR="llvm-ar"
-fi
+case "${sanitizer}" in
+  cfi)
+    # https://clang.llvm.org/docs/ControlFlowIntegrity.html
+    cflags="${cflags} -fno-sanitize-trap=cfi -flto -fvisibility=hidden"
+    ldflags="${ldflags} -fno-sanitize-trap=cfi -flto -fuse-ld=gold"
+    export AR="llvm-ar"
+    ;;
+  integer|undefined)
+    # https://clang.llvm.org/docs/UndefinedBehaviorSanitizer.html
+    cflags="${cflags} -fsanitize=float-cast-overflow"
+    ;;
+esac
 
 set -x
 export CC="clang"

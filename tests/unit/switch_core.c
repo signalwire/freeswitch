@@ -706,6 +706,127 @@ FST_CORE_BEGIN("./conf")
 			}
 		}
 		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_switch_img_patch_rgb)
+		{
+			/* Odd sizes on purpose: exercise the SIMD remainder paths inside libyuv. */
+			int W = 127, H = 63;
+			/* {x, y, w, h}: the full-frame same-size case is the only one where all strides
+			   equal width*4, so it takes libyuv's coalesced single-row path; the others take
+			   the per-row path, the last one patches flush against the bottom-right corner. */
+			int cases[][4] = { {0, 0, 127, 63}, {0, 0, 61, 29}, {1, 0, 61, 29}, {0, 1, 61, 29}, {33, 17, 61, 29}, {66, 34, 61, 29} };
+			switch_bool_t noalpha[] = { SWITCH_FALSE, SWITCH_TRUE };
+			uint32_t seed = 12345;
+			int p, n, i, j;
+
+			for (n = 0; n < 2; n++) {
+				for (p = 0; p < (int)(sizeof(cases) / sizeof(cases[0])); p++) {
+					int px = cases[p][0], py = cases[p][1], w = cases[p][2], h = cases[p][3];
+					switch_image_t *IMG = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, W, H, 1);
+					switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_ARGB, w, h, 1);
+					uint8_t *pristine = malloc((size_t)W * H * 4);
+					int outside_ok = 1, region_ok = 1;
+
+					fst_check(IMG && img && pristine);
+
+					if (!IMG || !img || !pristine) {
+						switch_img_free(&IMG);
+						switch_img_free(&img);
+						switch_safe_free(pristine);
+						continue;
+					}
+
+					/* Deterministic pseudo-random pixels; alpha covers the full range */
+					for (i = 0; i < H; i++) {
+						uint8_t *row = IMG->planes[SWITCH_PLANE_PACKED] + i * IMG->stride[SWITCH_PLANE_PACKED];
+
+						for (j = 0; j < W * 4; j++) {
+							seed = seed * 1103515245 + 12345;
+							row[j] = (uint8_t)(seed >> 16);
+						}
+
+						memcpy(pristine + (size_t)i * W * 4, row, W * 4);
+					}
+
+					for (i = 0; i < h; i++) {
+						uint8_t *row = img->planes[SWITCH_PLANE_PACKED] + i * img->stride[SWITCH_PLANE_PACKED];
+
+						for (j = 0; j < w * 4; j++) {
+							seed = seed * 1103515245 + 12345;
+							row[j] = (uint8_t)(seed >> 16);
+						}
+
+						if (noalpha[n]) {
+							/* Opaque patch: the noalpha path must then copy src pixels verbatim */
+							for (j = 3; j < w * 4; j += 4) {
+								row[j] = 255;
+							}
+						}
+					}
+
+					switch_img_patch_rgb(IMG, img, px, py, noalpha[n]);
+
+					for (i = 0; i < H && outside_ok && region_ok; i++) {
+						uint8_t *row = IMG->planes[SWITCH_PLANE_PACKED] + i * IMG->stride[SWITCH_PLANE_PACKED];
+						uint8_t *old = pristine + (size_t)i * W * 4;
+						uint8_t *src = NULL;
+
+						if (i >= py && i < py + h) {
+							src = img->planes[SWITCH_PLANE_PACKED] + (i - py) * img->stride[SWITCH_PLANE_PACKED];
+						}
+
+						for (j = 0; j < W; j++) {
+							if (!src || j < px || j >= px + w) {
+								/* Pixels outside the patched region must be untouched */
+								if (memcmp(row + j * 4, old + j * 4, 4)) {
+									outside_ok = 0;
+									break;
+								}
+							} else if (noalpha[n]) {
+								/* Opaque src: expect a verbatim copy */
+								if (memcmp(row + j * 4, src + (j - px) * 4, 4)) {
+									region_ok = 0;
+									break;
+								}
+							} else {
+								/* libyuv ARGBBlend reference: dst = clamp255((((256 - a) * b) >> 8) + f), dst alpha = 255 */
+								const uint8_t *f = src + (j - px) * 4;
+								const uint8_t *b = old + j * 4;
+								uint32_t a = f[3];
+								int k;
+
+								for (k = 0; k < 3; k++) {
+									uint32_t e = (((256 - a) * b[k]) >> 8) + f[k];
+
+									if (e > 255) e = 255;
+
+									if (row[j * 4 + k] != (uint8_t)e) {
+										region_ok = 0;
+										break;
+									}
+								}
+
+								if (row[j * 4 + 3] != 255) {
+									region_ok = 0;
+								}
+
+								if (!region_ok) break;
+							}
+						}
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "patch_rgb x=%d y=%d w=%d h=%d noalpha=%d outside_ok=%d region_ok=%d\n",
+									  px, py, w, h, noalpha[n], outside_ok, region_ok);
+					fst_check(outside_ok);
+					fst_check(region_ok);
+
+					switch_img_free(&IMG);
+					switch_img_free(&img);
+					free(pristine);
+				}
+			}
+		}
+		FST_TEST_END()
 	}
 	FST_SUITE_END()
 }

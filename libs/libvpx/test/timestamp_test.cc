@@ -7,11 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/util.h"
 #include "test/video_source.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "vpx_config.h"
 
 namespace {
 
@@ -42,16 +43,16 @@ class DummyTimebaseVideoSource : public ::libvpx_test::DummyVideoSource {
            (static_cast<double>(framerate_numerator_) / framerate_denominator_);
   }
 
-  virtual vpx_codec_pts_t pts() const {
+  vpx_codec_pts_t pts() const override {
     return static_cast<vpx_codec_pts_t>(frame_ * FrameDuration() +
                                         starting_pts_ + 0.5);
   }
 
-  virtual unsigned long duration() const {
+  unsigned long duration() const override {
     return static_cast<unsigned long>(FrameDuration() + 0.5);
   }
 
-  virtual vpx_rational_t timebase() const { return timebase_; }
+  vpx_rational_t timebase() const override { return timebase_; }
 
   void set_starting_pts(int64_t starting_pts) { starting_pts_ = starting_pts; }
 
@@ -67,9 +68,9 @@ class TimestampTest
       public ::libvpx_test::CodecTestWithParam<libvpx_test::TestMode> {
  protected:
   TimestampTest() : EncoderTest(GET_PARAM(0)) {}
-  virtual ~TimestampTest() {}
+  ~TimestampTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(GET_PARAM(1));
   }
@@ -94,8 +95,15 @@ TEST_P(TimestampTest, TestVpxRollover) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
+#if CONFIG_REALTIME_ONLY
+VP8_INSTANTIATE_TEST_SUITE(TimestampTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
+VP9_INSTANTIATE_TEST_SUITE(TimestampTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
+#else
 VP8_INSTANTIATE_TEST_SUITE(TimestampTest,
                            ::testing::Values(::libvpx_test::kTwoPassGood));
 VP9_INSTANTIATE_TEST_SUITE(TimestampTest,
                            ::testing::Values(::libvpx_test::kTwoPassGood));
+#endif
 }  // namespace

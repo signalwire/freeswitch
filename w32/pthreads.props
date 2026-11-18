@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="pthreads-version.props" Condition=" '$(PthreadsVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <PthreadsLibDir>$(BaseDir)libs\pthreads-$(PthreadsVersion)_$(PthreadsBuildNumber)</PthreadsLibDir>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="pthreadsBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/pthreads-v$(PthreadsVersion)_$(PthreadsBuildNumber)/pthreads-$(PthreadsVersion)_$(PthreadsBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(PthreadsLibDir)\binaries\$(Platform)\$(Configuration)\pthread.dll"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="pthreadsHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/pthreads-v$(PthreadsVersion)_$(PthreadsBuildNumber)/pthreads-$(PthreadsVersion)_$(PthreadsBuildNumber)-headers.zip"
+           expectfileordirectory="$(PthreadsLibDir)\include\pthread.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="pthreadscopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="pthreadsBinariesDownloadTarget">
+      <ItemGroup>
+          <pthreadsFiles Include="$(PthreadsLibDir)\binaries\$(Platform)\$(Configuration)\*.dll" />
+      </ItemGroup>
+      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(Configuration)\pthread.dll')"
+          SourceFiles="@(pthreadsFiles)"
+          DestinationFiles="@(pthreadsFiles-&gt;'$(BaseDir)$(Platform)\$(Configuration)\%(Filename)%(Extension)')"
+      />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(PthreadsLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <!-- pthread.h declares struct timespec, which the Visual C++ runtime headers
+           also declare; every consumer in the tree defines this by hand today. -->
+      <PreprocessorDefinitions>_TIMESPEC_DEFINED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(PthreadsLibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>pthread.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

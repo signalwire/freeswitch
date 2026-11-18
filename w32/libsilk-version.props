@@ -2,7 +2,8 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <libsilk_Version>1.0.8</libsilk_Version>
+    <libsilk_Version>1.0.9</libsilk_Version>
+    <libsilk_BuildNumber>1</libsilk_BuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <libsilk_VersionImported>true</libsilk_VersionImported>
@@ -12,6 +13,9 @@
   <ItemGroup>
     <BuildMacro Include="libsilk_Version">
       <Value>$(libsilk_Version)</Value>
+    </BuildMacro>
+    <BuildMacro Include="libsilk_BuildNumber">
+      <Value>$(libsilk_BuildNumber)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

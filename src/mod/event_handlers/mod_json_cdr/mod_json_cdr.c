@@ -473,15 +473,17 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	json_text = cJSON_PrintUnformatted(json_cdr);
 
 	if (globals.url_count && globals.encode) {
-		switch_size_t need_bytes = strlen(json_text) * 3;
+		switch_size_t json_len = strlen(json_text);
+		switch_size_t need_bytes = json_len * 3 + 1;
 
 		json_text_escaped = malloc(need_bytes);
 		switch_assert(json_text_escaped);
 		memset(json_text_escaped, 0, need_bytes);
 		if (globals.encode == ENCODING_DEFAULT) {
-			switch_url_encode(json_text, json_text_escaped, need_bytes);
+			/* json_text may already hold %XX, so '%' is encoded rather than passed through. */
+			switch_url_encode_opt(json_text, json_text_escaped, need_bytes, SWITCH_TRUE);
 		} else {
-			switch_b64_encode((unsigned char *) json_text, need_bytes / 3, (unsigned char *) json_text_escaped, need_bytes);
+			switch_b64_encode((unsigned char *) json_text, json_len, (unsigned char *) json_text_escaped, need_bytes);
 		}
 	}
 
@@ -721,6 +723,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	if (globals.retries && !globals.delay) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5 seconds\n");
 		globals.delay = 5;
+	}
+
+	if (globals.encode == ENCODING_DEFAULT && globals.encode_values == ENCODING_DEFAULT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						  "encode=true with encode-values=true: values stay percent-encoded after the body is "
+						  "decoded, so each value needs decoding too. Set encode-values=false to send them as-is.\n");
 	}
 
 	globals.retries++;

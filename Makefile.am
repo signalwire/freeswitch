@@ -179,10 +179,9 @@ libfreeswitch_libyuv_la_SOURCES = \
 libs/libyuv/source/compare.cc	\
 libs/libyuv/source/compare_common.cc	\
 libs/libyuv/source/compare_gcc.cc	\
-libs/libyuv/source/compare_mmi.cc	\
-libs/libyuv/source/compare_msa.cc	\
-libs/libyuv/source/compare_neon64.cc	\
+libs/libyuv/source/compare_hvx.cc	\
 libs/libyuv/source/compare_neon.cc	\
+libs/libyuv/source/compare_wasm.cc	\
 libs/libyuv/source/compare_win.cc	\
 libs/libyuv/source/convert_argb.cc	\
 libs/libyuv/source/convert.cc	\
@@ -200,40 +199,87 @@ libs/libyuv/source/rotate_argb.cc	\
 libs/libyuv/source/rotate.cc	\
 libs/libyuv/source/rotate_common.cc	\
 libs/libyuv/source/rotate_gcc.cc	\
-libs/libyuv/source/rotate_mmi.cc	\
-libs/libyuv/source/rotate_msa.cc	\
-libs/libyuv/source/rotate_neon64.cc	\
+libs/libyuv/source/rotate_hvx.cc	\
+libs/libyuv/source/rotate_lasx.cc	\
+libs/libyuv/source/rotate_lsx.cc	\
 libs/libyuv/source/rotate_neon.cc	\
+libs/libyuv/source/rotate_rvv.cc	\
+libs/libyuv/source/rotate_wasm.cc	\
 libs/libyuv/source/rotate_win.cc	\
 libs/libyuv/source/row_any.cc	\
 libs/libyuv/source/row_common.cc	\
 libs/libyuv/source/row_gcc.cc	\
-libs/libyuv/source/row_mmi.cc	\
-libs/libyuv/source/row_msa.cc	\
-libs/libyuv/source/row_neon64.cc	\
+libs/libyuv/source/row_hvx.cc	\
+libs/libyuv/source/row_lasx.cc	\
+libs/libyuv/source/row_lsx.cc	\
 libs/libyuv/source/row_neon.cc	\
+libs/libyuv/source/row_rvv.cc	\
+libs/libyuv/source/row_wasm.cc	\
 libs/libyuv/source/row_win.cc	\
 libs/libyuv/source/scale_any.cc	\
 libs/libyuv/source/scale_argb.cc	\
 libs/libyuv/source/scale.cc	\
 libs/libyuv/source/scale_common.cc	\
 libs/libyuv/source/scale_gcc.cc	\
-libs/libyuv/source/scale_mmi.cc	\
-libs/libyuv/source/scale_msa.cc	\
-libs/libyuv/source/scale_neon64.cc	\
+libs/libyuv/source/scale_hvx.cc	\
+libs/libyuv/source/scale_lsx.cc	\
 libs/libyuv/source/scale_neon.cc	\
+libs/libyuv/source/scale_rgb.cc	\
+libs/libyuv/source/scale_rvv.cc	\
+libs/libyuv/source/scale_uv.cc	\
+libs/libyuv/source/scale_wasm.cc	\
 libs/libyuv/source/scale_win.cc	\
 libs/libyuv/source/video_common.cc	
 
 
 libfreeswitch_libyuv_la_CPPFLAGS = -O2 -fomit-frame-pointer -Ilibs/libyuv/include
+libfreeswitch_libyuv_la_LIBADD =
+
+# libyuv's AArch64 dot-product (udot), i8mm (usdot), SVE and SME kernels emit
+# instructions outside the baseline armv8-a target and are selected at runtime
+# by libyuv's own CPU detection. Build them as separate objects with the
+# required -march flags so the rest of the library stays portable to any
+# armv8-a CPU. This mirrors libs/libyuv/CMakeLists.txt.
+if LIBYUV_AARCH64
+noinst_LTLIBRARIES += libfreeswitch_libyuv_neon64.la
+libfreeswitch_libyuv_neon64_la_SOURCES = \
+libs/libyuv/source/compare_neon64.cc \
+libs/libyuv/source/rotate_neon64.cc \
+libs/libyuv/source/row_neon64.cc \
+libs/libyuv/source/scale_neon64.cc
+libfreeswitch_libyuv_neon64_la_CPPFLAGS = $(libfreeswitch_libyuv_la_CPPFLAGS)
+libfreeswitch_libyuv_neon64_la_CXXFLAGS = -march=armv8.2-a+dotprod+i8mm
+libfreeswitch_libyuv_la_LIBADD += libfreeswitch_libyuv_neon64.la
+
+noinst_LTLIBRARIES += libfreeswitch_libyuv_sve.la
+libfreeswitch_libyuv_sve_la_SOURCES = \
+libs/libyuv/source/rotate_sve.cc \
+libs/libyuv/source/row_sve.cc
+libfreeswitch_libyuv_sve_la_CPPFLAGS = $(libfreeswitch_libyuv_la_CPPFLAGS)
+libfreeswitch_libyuv_sve_la_CXXFLAGS = -march=armv8.5-a+i8mm+sve2
+libfreeswitch_libyuv_la_LIBADD += libfreeswitch_libyuv_sve.la
+
+if LIBYUV_AARCH64_SME
+noinst_LTLIBRARIES += libfreeswitch_libyuv_sme.la
+libfreeswitch_libyuv_sme_la_SOURCES = \
+libs/libyuv/source/rotate_sme.cc \
+libs/libyuv/source/row_sme.cc \
+libs/libyuv/source/scale_sme.cc
+libfreeswitch_libyuv_sme_la_CPPFLAGS = $(libfreeswitch_libyuv_la_CPPFLAGS)
+libfreeswitch_libyuv_sme_la_CXXFLAGS = -march=armv8.5-a+i8mm+sme
+libfreeswitch_libyuv_la_LIBADD += libfreeswitch_libyuv_sme.la
+else
+libfreeswitch_libyuv_la_CPPFLAGS += -DLIBYUV_DISABLE_SME
+endif
+endif
+
 CORE_LIBS+=libfreeswitch_libyuv.la
 endif
 
 lib_LTLIBRARIES	         = libfreeswitch.la
-libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE2_CFLAGS) $(SPEEX_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(SOFIA_SIP_CFLAGS) $(AM_CFLAGS) $(TPL_CFLAGS)
+libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE2_CFLAGS) $(SPEEX_CFLAGS) $(MINIUPNPC_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(SOFIA_SIP_CFLAGS) $(AM_CFLAGS) $(TPL_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE2_LIBS) $(SPEEX_LIBS) $(LIBEDIT_LIBS) $(SYSTEMD_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS) $(SOFIA_SIP_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE2_LIBS) $(SPEEX_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(LIBEDIT_LIBS) $(SYSTEMD_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS) $(SOFIA_SIP_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -384,17 +430,6 @@ libfreeswitch_la_SOURCES = \
 	src/switch_vpx.c \
 	libs/libteletone/src/libteletone_detect.c \
 	libs/libteletone/src/libteletone_generate.c \
-	libs/miniupnpc/miniwget.c \
-	libs/miniupnpc/minixml.c \
-	libs/miniupnpc/igd_desc_parse.c \
-	libs/miniupnpc/minisoap.c \
-	libs/miniupnpc/miniupnpc.c \
-	libs/miniupnpc/upnpreplyparse.c \
-	libs/miniupnpc/upnpcommands.c \
-	libs/miniupnpc/minissdpc.c \
-	libs/miniupnpc/upnperrors.c \
-	libs/libnatpmp/natpmp.c \
-	libs/libnatpmp/getgateway.c \
 	src/switch_uuidv7.c
 
 if ENABLE_CPP

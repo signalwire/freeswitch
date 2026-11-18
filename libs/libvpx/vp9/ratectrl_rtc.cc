@@ -12,10 +12,12 @@
 #include <new>
 
 #include "vp9/common/vp9_common.h"
+#include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_picklpf.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_codec.h"
+#include "vpx_mem/vpx_mem.h"
 
 namespace libvpx {
 
@@ -25,22 +27,16 @@ std::unique_ptr<VP9RateControlRTC> VP9RateControlRTC::Create(
                                                 VP9RateControlRTC());
   if (!rc_api) return nullptr;
   rc_api->cpi_ = static_cast<VP9_COMP *>(vpx_memalign(32, sizeof(*cpi_)));
-  if (!rc_api->cpi_) {
-    rc_api.reset();
-    return nullptr;
-  }
+  if (!rc_api->cpi_) return nullptr;
   vp9_zero(*rc_api->cpi_);
 
-  rc_api->InitRateControl(cfg);
+  if (!rc_api->InitRateControl(cfg)) return nullptr;
   if (cfg.aq_mode) {
     VP9_COMP *const cpi = rc_api->cpi_;
     cpi->segmentation_map = static_cast<uint8_t *>(
         vpx_calloc(cpi->common.mi_rows * cpi->common.mi_cols,
                    sizeof(*cpi->segmentation_map)));
-    if (!cpi->segmentation_map) {
-      rc_api.reset();
-      return nullptr;
-    }
+    if (!cpi->segmentation_map) return nullptr;
     cpi->cyclic_refresh =
         vp9_cyclic_refresh_alloc(cpi->common.mi_rows, cpi->common.mi_cols);
     cpi->cyclic_refresh->content_mode = 0;
@@ -48,7 +44,24 @@ std::unique_ptr<VP9RateControlRTC> VP9RateControlRTC::Create(
   return rc_api;
 }
 
-void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
+VP9RateControlRTC::~VP9RateControlRTC() {
+  if (cpi_) {
+    for (int layer = 0; layer < VPX_MAX_LAYERS; layer++) {
+      LAYER_CONTEXT *const lc = &cpi_->svc.layer_context[layer];
+      vpx_free(lc->map);
+      vpx_free(lc->last_coded_q_map);
+      vpx_free(lc->consec_zero_mv);
+    }
+    if (cpi_->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+      vpx_free(cpi_->segmentation_map);
+      cpi_->segmentation_map = NULL;
+      vp9_cyclic_refresh_free(cpi_->cyclic_refresh);
+    }
+    vpx_free(cpi_);
+  }
+}
+
+bool VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   VP9_COMMON *cm = &cpi_->common;
   VP9EncoderConfig *oxcf = &cpi_->oxcf;
   RATE_CONTROL *const rc = &cpi_->rc;
@@ -65,7 +78,7 @@ void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   cm->current_video_frame = 0;
   rc->kf_boost = DEFAULT_KF_BOOST;
 
-  UpdateRateControl(rc_cfg);
+  if (!UpdateRateControl(rc_cfg)) return false;
   vp9_set_mb_mi(cm, cm->width, cm->height);
 
   cpi_->use_svc = (cpi_->svc.number_spatial_layers > 1 ||
@@ -79,10 +92,31 @@ void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   vp9_rc_init(oxcf, 0, rc);
   rc->constrain_gf_key_freq_onepass_vbr = 0;
   cpi_->sf.use_nonrd_pick_mode = 1;
+  rc_is_valid_ = true;
+  return true;
 }
 
-void VP9RateControlRTC::UpdateRateControl(
+bool VP9RateControlRTC::UpdateRateControl(
     const VP9RateControlRtcConfig &rc_cfg) {
+  // Since VPX_MAX_LAYERS (12) is less than the product of VPX_SS_MAX_LAYERS (5)
+  // and VPX_TS_MAX_LAYERS (5), check all three.
+  if (rc_cfg.ss_number_layers < 1 ||
+      rc_cfg.ss_number_layers > VPX_SS_MAX_LAYERS ||
+      rc_cfg.ts_number_layers < 1 ||
+      rc_cfg.ts_number_layers > VPX_TS_MAX_LAYERS ||
+      rc_cfg.ss_number_layers * rc_cfg.ts_number_layers > VPX_MAX_LAYERS) {
+    rc_is_valid_ = false;
+    return false;
+  }
+  if (initial_width_ == 0 && initial_height_ == 0) {
+    initial_width_ = rc_cfg.width;
+    initial_height_ = rc_cfg.height;
+  }
+  if (rc_cfg.width > initial_width_ || rc_cfg.height > initial_height_) {
+    rc_is_valid_ = false;
+    return false;
+  }
+
   VP9_COMMON *cm = &cpi_->common;
   VP9EncoderConfig *oxcf = &cpi_->oxcf;
   RATE_CONTROL *const rc = &cpi_->rc;
@@ -102,18 +136,38 @@ void VP9RateControlRTC::UpdateRateControl(
   oxcf->maximum_buffer_size_ms = rc_cfg.buf_sz;
   oxcf->under_shoot_pct = rc_cfg.undershoot_pct;
   oxcf->over_shoot_pct = rc_cfg.overshoot_pct;
+  oxcf->drop_frames_water_mark = rc_cfg.frame_drop_thresh;
+  oxcf->content = rc_cfg.is_screen ? VP9E_CONTENT_SCREEN : VP9E_CONTENT_DEFAULT;
   oxcf->ss_number_layers = rc_cfg.ss_number_layers;
   oxcf->ts_number_layers = rc_cfg.ts_number_layers;
-  oxcf->temporal_layering_mode = (VP9E_TEMPORAL_LAYERING_MODE)(
-      (rc_cfg.ts_number_layers > 1) ? rc_cfg.ts_number_layers : 0);
+  oxcf->temporal_layering_mode =
+      (VP9E_TEMPORAL_LAYERING_MODE)((rc_cfg.ts_number_layers > 1)
+                                        ? rc_cfg.ts_number_layers
+                                        : 0);
 
   cpi_->oxcf.rc_max_intra_bitrate_pct = rc_cfg.max_intra_bitrate_pct;
   cpi_->oxcf.rc_max_inter_bitrate_pct = rc_cfg.max_inter_bitrate_pct;
   cpi_->framerate = rc_cfg.framerate;
   cpi_->svc.number_spatial_layers = rc_cfg.ss_number_layers;
   cpi_->svc.number_temporal_layers = rc_cfg.ts_number_layers;
+
   vp9_set_mb_mi(cm, cm->width, cm->height);
+
+  if (setjmp(cpi_->common.error.jmp)) {
+    cpi_->common.error.setjmp = 0;
+    vpx_clear_system_state();
+    return false;
+  }
+  cpi_->common.error.setjmp = 1;
+
+  for (int tl = 0; tl < cpi_->svc.number_temporal_layers; ++tl) {
+    oxcf->ts_rate_decimator[tl] = rc_cfg.ts_rate_decimator[tl];
+  }
   for (int sl = 0; sl < cpi_->svc.number_spatial_layers; ++sl) {
+    if (rc_cfg.scaling_factor_den[sl] < rc_cfg.scaling_factor_num[sl]) {
+      rc_is_valid_ = false;
+      return false;
+    }
     for (int tl = 0; tl < cpi_->svc.number_temporal_layers; ++tl) {
       const int layer =
           LAYER_IDS_TO_IDX(sl, tl, cpi_->svc.number_temporal_layers);
@@ -121,26 +175,62 @@ void VP9RateControlRTC::UpdateRateControl(
       RATE_CONTROL *const lrc = &lc->rc;
       oxcf->layer_target_bitrate[layer] =
           1000 * rc_cfg.layer_target_bitrate[layer];
+      if (rc_cfg.max_quantizers[layer] > 63 ||
+          rc_cfg.min_quantizers[layer] < 0 ||
+          rc_cfg.min_quantizers[layer] > rc_cfg.max_quantizers[layer]) {
+        rc_is_valid_ = false;
+        return false;
+      }
       lrc->worst_quality =
           vp9_quantizer_to_qindex(rc_cfg.max_quantizers[layer]);
       lrc->best_quality = vp9_quantizer_to_qindex(rc_cfg.min_quantizers[layer]);
       lc->scaling_factor_num = rc_cfg.scaling_factor_num[sl];
       lc->scaling_factor_den = rc_cfg.scaling_factor_den[sl];
-      oxcf->ts_rate_decimator[tl] = rc_cfg.ts_rate_decimator[tl];
     }
   }
   vp9_set_rc_buffer_sizes(cpi_);
   vp9_new_framerate(cpi_, cpi_->framerate);
   if (cpi_->svc.number_temporal_layers > 1 ||
       cpi_->svc.number_spatial_layers > 1) {
-    if (cm->current_video_frame == 0) vp9_init_layer_context(cpi_);
+    if (cm->current_video_frame == 0) {
+      for (int layer = 0; layer < VPX_MAX_LAYERS; layer++) {
+        LAYER_CONTEXT *const lc = &cpi_->svc.layer_context[layer];
+        vpx_free(lc->map);
+        vpx_free(lc->last_coded_q_map);
+        vpx_free(lc->consec_zero_mv);
+        lc->map = nullptr;
+        lc->last_coded_q_map = nullptr;
+        lc->consec_zero_mv = nullptr;
+      }
+      vp9_init_layer_context(cpi_);
+      // svc->framedrop_mode is not currently exposed, so only allow for
+      // full superframe drop for now.
+      cpi_->svc.framedrop_mode = FULL_SUPERFRAME_DROP;
+    }
     vp9_update_layer_context_change_config(cpi_,
                                            (int)cpi_->oxcf.target_bandwidth);
+    cpi_->svc.max_consec_drop = rc_cfg.max_consec_drop;
   }
   vp9_check_reset_rc_flag(cpi_);
+
+  cpi_->common.error.setjmp = 0;
+  rc_is_valid_ = true;
+  return true;
 }
 
-void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
+// Compute the QP for the frame. If the frame is dropped this function
+// returns kDrop, and no QP is computed. If the frame is encoded (not dropped)
+// the QP is computed and kOk is returned.
+FrameDropDecision VP9RateControlRTC::ComputeQP(
+    const VP9FrameParamsQpRTC &frame_params) {
+  if (!rc_is_valid_) return FrameDropDecision::kDrop;
+  if (frame_params.spatial_layer_id < 0 ||
+      frame_params.spatial_layer_id >= cpi_->svc.number_spatial_layers ||
+      frame_params.temporal_layer_id < 0 ||
+      frame_params.temporal_layer_id >= cpi_->svc.number_temporal_layers ||
+      initial_width_ == 0 || initial_height_ == 0) {
+    return FrameDropDecision::kDrop;
+  }
   VP9_COMMON *const cm = &cpi_->common;
   int width, height;
   cpi_->svc.spatial_layer_id = frame_params.spatial_layer_id;
@@ -157,7 +247,9 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
     cm->height = height;
   }
   vp9_set_mb_mi(cm, cm->width, cm->height);
-  cm->frame_type = frame_params.frame_type;
+  cm->frame_type = static_cast<FRAME_TYPE>(frame_params.frame_type);
+  // This is needed to ensure key frame does not get unset in rc_get_svc_params.
+  cpi_->frame_flags = (cm->frame_type == KEY_FRAME) ? FRAMEFLAGS_KEY : 0;
   cpi_->refresh_golden_frame = (cm->frame_type == KEY_FRAME) ? 1 : 0;
   cpi_->sf.use_nonrd_pick_mode = 1;
   if (cpi_->svc.number_spatial_layers == 1 &&
@@ -190,30 +282,106 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
     vp9_restore_layer_context(cpi_);
     vp9_rc_get_svc_params(cpi_);
   }
+  if (cpi_->svc.spatial_layer_id == 0) vp9_zero(cpi_->svc.drop_spatial_layer);
+  // SVC: check for skip encoding of enhancement layer if the
+  // layer target bandwidth = 0.
+  if (vp9_svc_check_skip_enhancement_layer(cpi_))
+    return FrameDropDecision::kDrop;
+  // Check for dropping this frame based on buffer level.
+  // Never drop on key frame, or if base layer is key for svc,
+  if (!frame_is_intra_only(cm) &&
+      (!cpi_->use_svc ||
+       !cpi_->svc.layer_context[cpi_->svc.temporal_layer_id].is_key_frame)) {
+    if (vp9_rc_drop_frame(cpi_)) {
+      // For FULL_SUPERFRAME_DROP mode (the only mode considered here):
+      // if the superframe drop is decided we need to save the layer context for
+      // all spatial layers, and call update_buffer_level and postencode_drop
+      // for all spatial layers.
+      if (cpi_->svc.number_spatial_layers > 1 ||
+          cpi_->svc.number_temporal_layers > 1) {
+        vp9_save_layer_context(cpi_);
+        for (int sl = 1; sl < cpi_->svc.number_spatial_layers; sl++) {
+          cpi_->svc.spatial_layer_id = sl;
+          vp9_restore_layer_context(cpi_);
+          vp9_update_buffer_level_svc_preencode(cpi_);
+          vp9_rc_postencode_update_drop_frame(cpi_);
+          vp9_save_layer_context(cpi_);
+        }
+      }
+      return FrameDropDecision::kDrop;
+    }
+  }
+  // Compute the QP for the frame.
   int bottom_index, top_index;
   cpi_->common.base_qindex =
       vp9_rc_pick_q_and_bounds(cpi_, &bottom_index, &top_index);
 
   if (cpi_->oxcf.aq_mode == CYCLIC_REFRESH_AQ) vp9_cyclic_refresh_setup(cpi_);
+  if (cpi_->svc.number_spatial_layers > 1 ||
+      cpi_->svc.number_temporal_layers > 1)
+    vp9_save_layer_context(cpi_);
+
+  cpi_->last_frame_dropped = 0;
+  cpi_->svc.last_layer_dropped[cpi_->svc.spatial_layer_id] = 0;
+  if (cpi_->svc.spatial_layer_id == cpi_->svc.number_spatial_layers - 1)
+    cpi_->svc.num_encoded_top_layer++;
+
+  return FrameDropDecision::kOk;
 }
 
-int VP9RateControlRTC::GetQP() const { return cpi_->common.base_qindex; }
+int VP9RateControlRTC::GetQP() const {
+  if (!rc_is_valid_) return 0;
+  return cpi_->common.base_qindex;
+}
 
 int VP9RateControlRTC::GetLoopfilterLevel() const {
+  if (!rc_is_valid_) return 0;
   struct loopfilter *const lf = &cpi_->common.lf;
   vp9_pick_filter_level(nullptr, cpi_, LPF_PICK_FROM_Q);
   return lf->filter_level;
 }
 
-signed char *VP9RateControlRTC::GetCyclicRefreshMap() const {
-  return cpi_->cyclic_refresh->map;
+bool VP9RateControlRTC::GetSegmentationData(
+    VP9SegmentationData *segmentation_data) const {
+  if (!rc_is_valid_) return false;
+  if (!cpi_->cyclic_refresh || !cpi_->cyclic_refresh->apply_cyclic_refresh) {
+    return false;
+  }
+
+  segmentation_data->segmentation_map = cpi_->segmentation_map;
+  segmentation_data->segmentation_map_size =
+      cpi_->common.mi_cols * cpi_->common.mi_rows;
+  segmentation_data->delta_q = cpi_->cyclic_refresh->qindex_delta;
+  segmentation_data->delta_q_size = 3u;
+  return true;
 }
 
-int *VP9RateControlRTC::GetDeltaQ() const {
-  return cpi_->cyclic_refresh->qindex_delta;
-}
-
-void VP9RateControlRTC::PostEncodeUpdate(uint64_t encoded_frame_size) {
+void VP9RateControlRTC::PostEncodeUpdate(
+    uint64_t encoded_frame_size, const VP9FrameParamsQpRTC &frame_params) {
+  if (!rc_is_valid_) return;
+  cpi_->common.frame_type = static_cast<FRAME_TYPE>(frame_params.frame_type);
+  cpi_->svc.spatial_layer_id = frame_params.spatial_layer_id;
+  cpi_->svc.temporal_layer_id = frame_params.temporal_layer_id;
+  if (cpi_->svc.number_spatial_layers > 1 ||
+      cpi_->svc.number_temporal_layers > 1) {
+    vp9_restore_layer_context(cpi_);
+    const int layer = LAYER_IDS_TO_IDX(cpi_->svc.spatial_layer_id,
+                                       cpi_->svc.temporal_layer_id,
+                                       cpi_->svc.number_temporal_layers);
+    LAYER_CONTEXT *lc = &cpi_->svc.layer_context[layer];
+    cpi_->common.base_qindex = lc->frame_qp;
+    cpi_->common.MBs = lc->MBs;
+    // For spatial-svc, allow cyclic-refresh to be applied on the spatial
+    // layers, for the base temporal layer.
+    if (cpi_->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
+        cpi_->svc.number_spatial_layers > 1 &&
+        cpi_->svc.temporal_layer_id == 0) {
+      CYCLIC_REFRESH *const cr = cpi_->cyclic_refresh;
+      cr->qindex_delta[0] = lc->qindex_delta[0];
+      cr->qindex_delta[1] = lc->qindex_delta[1];
+      cr->qindex_delta[2] = lc->qindex_delta[2];
+    }
+  }
   vp9_rc_postencode_update(cpi_, encoded_frame_size);
   if (cpi_->svc.number_spatial_layers > 1 ||
       cpi_->svc.number_temporal_layers > 1)

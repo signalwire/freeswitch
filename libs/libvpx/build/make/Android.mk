@@ -8,17 +8,15 @@
 ##  be found in the AUTHORS file in the root of the source tree.
 ##
 
+# Ignore this file during non-NDK builds.
+ifdef NDK_ROOT
 #
 # This file is to be used for compiling libvpx for Android using the NDK.
 # In an Android project place a libvpx checkout in the jni directory.
 # Run the configure script from the jni directory.  Base libvpx
 # encoder/decoder configuration will look similar to:
-# ./libvpx/configure --target=armv7-android-gcc --disable-examples \
+# ./libvpx/configure --target=arm64-android-gcc --disable-examples \
 #                    --enable-external-build
-#
-# When targeting Android, realtime-only is enabled by default.  This can
-# be overridden by adding the command line flag:
-#  --disable-realtime-only
 #
 # This will create .mk files that contain variables that contain the
 # source files to compile.
@@ -27,7 +25,7 @@
 # Android.mk file in the libvpx directory:
 # LOCAL_PATH := $(call my-dir)
 # include $(CLEAR_VARS)
-# include jni/libvpx/build/make/Android.mk
+# include libvpx/build/make/Android.mk
 #
 # By default libvpx will use the 'cpufeatures' module from the NDK. This allows
 # the library to be built with all available optimizations (SSE2->AVX512 for
@@ -36,11 +34,14 @@
 # but the resulting library *must* be run on devices supporting all of the
 # enabled extensions. They can be disabled individually with
 #   --disable-{sse2, sse3, ssse3, sse4_1, avx, avx2, avx512}
-#   --disable-neon[-asm]
+#   --disable-neon{, -asm, -neon-dotprod, -neon-i8mm}
+#   --disable-sve
 #   --disable-{dspr2, msa}
 
 #
-# Running ndk-build will build libvpx and include it in your project.
+# Running ndk-build will build libvpx and include it in your project. Set
+# APP_ABI to match the --target passed to configure:
+# https://developer.android.com/ndk/guides/application_mk#app_abi.
 #
 
 CONFIG_DIR := $(LOCAL_PATH)/
@@ -82,6 +83,8 @@ include $(LIBVPX_PATH)/libs.mk
 
 # Optimise the code. May want to revisit this setting in the future.
 LOCAL_CFLAGS := -O3
+
+LOCAL_CONLYFLAGS := -std=c11
 
 # For x86, include the source code in the search path so it will find files
 # like x86inc.asm and x86_abi_support.asm
@@ -212,3 +215,4 @@ endif
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
 $(call import-module,android/cpufeatures)
 endif
+endif  # NDK_ROOT

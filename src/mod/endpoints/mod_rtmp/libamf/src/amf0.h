@@ -25,6 +25,14 @@
 #define AMF0_TYPE_XML_DOCUMENT          0x0F
 #define AMF0_TYPE_TYPED_OBJECT          0x10
 
+/*
+  Deepest chain of nested containers (object / ECMA array / strict array) the
+  reader will build. A value past it is dropped, which an object or ECMA array
+  takes as its end and a strict array, having declared an element count, takes
+  as a failure. Real AMF0 command objects nest a handful of levels.
+*/
+#define AMF0_MAX_NESTING_DEPTH          32
+
 typedef struct __amf0_node * p_amf0_node;
 
 /* string type */

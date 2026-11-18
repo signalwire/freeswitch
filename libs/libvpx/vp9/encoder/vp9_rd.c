@@ -244,6 +244,12 @@ int vp9_compute_rd_mult_based_on_qindex(const VP9_COMP *cpi, int qindex) {
   // largest dc_quant is 21387, therefore rdmult should fit in int32_t
   int rdmult = q * q;
 
+  if (cpi->ext_ratectrl.ready &&
+      (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_RDMULT) != 0 &&
+      cpi->ext_ratectrl.ext_rdmult != VPX_DEFAULT_RDMULT) {
+    return cpi->ext_ratectrl.ext_rdmult;
+  }
+
   // Make sure this function is floating point safe.
   vpx_clear_system_state();
 
@@ -287,6 +293,11 @@ static int modulate_rdmult(const VP9_COMP *cpi, int rdmult) {
 
 int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
   int rdmult = vp9_compute_rd_mult_based_on_qindex(cpi, qindex);
+  if (cpi->ext_ratectrl.ready &&
+      (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_RDMULT) != 0 &&
+      cpi->ext_ratectrl.ext_rdmult != VPX_DEFAULT_RDMULT) {
+    return cpi->ext_ratectrl.ext_rdmult;
+  }
   return modulate_rdmult(cpi, rdmult);
 }
 
@@ -502,22 +513,6 @@ static void model_rd_norm(int xsq_q10, int *r_q10, int *d_q10) {
   *d_q10 = (dist_tab_q10[xq] * b_q10 + dist_tab_q10[xq + 1] * a_q10) >> 10;
 }
 
-static void model_rd_norm_vec(int xsq_q10[MAX_MB_PLANE],
-                              int r_q10[MAX_MB_PLANE],
-                              int d_q10[MAX_MB_PLANE]) {
-  int i;
-  const int one_q10 = 1 << 10;
-  for (i = 0; i < MAX_MB_PLANE; ++i) {
-    const int tmp = (xsq_q10[i] >> 2) + 8;
-    const int k = get_msb(tmp) - 3;
-    const int xq = (k << 3) + ((tmp >> k) & 0x7);
-    const int a_q10 = ((xsq_q10[i] - xsq_iq_q10[xq]) << 10) >> (2 + k);
-    const int b_q10 = one_q10 - a_q10;
-    r_q10[i] = (rate_tab_q10[xq] * b_q10 + rate_tab_q10[xq + 1] * a_q10) >> 10;
-    d_q10[i] = (dist_tab_q10[xq] * b_q10 + dist_tab_q10[xq + 1] * a_q10) >> 10;
-  }
-}
-
 static const uint32_t MAX_XSQ_Q10 = 245727;
 
 void vp9_model_rd_from_var_lapndz(unsigned int var, unsigned int n_log2,
@@ -543,30 +538,12 @@ void vp9_model_rd_from_var_lapndz(unsigned int var, unsigned int n_log2,
   }
 }
 
-// Implements a fixed length vector form of vp9_model_rd_from_var_lapndz where
-// vectors are of length MAX_MB_PLANE and all elements of var are non-zero.
-void vp9_model_rd_from_var_lapndz_vec(unsigned int var[MAX_MB_PLANE],
-                                      unsigned int n_log2[MAX_MB_PLANE],
-                                      unsigned int qstep[MAX_MB_PLANE],
-                                      int64_t *rate_sum, int64_t *dist_sum) {
-  int i;
-  int xsq_q10[MAX_MB_PLANE], d_q10[MAX_MB_PLANE], r_q10[MAX_MB_PLANE];
-  for (i = 0; i < MAX_MB_PLANE; ++i) {
-    const uint64_t xsq_q10_64 =
-        (((uint64_t)qstep[i] * qstep[i] << (n_log2[i] + 10)) + (var[i] >> 1)) /
-        var[i];
-    xsq_q10[i] = (int)VPXMIN(xsq_q10_64, MAX_XSQ_Q10);
-  }
-  model_rd_norm_vec(xsq_q10, r_q10, d_q10);
-  for (i = 0; i < MAX_MB_PLANE; ++i) {
-    int rate =
-        ROUND_POWER_OF_TWO(r_q10[i] << n_log2[i], 10 - VP9_PROB_COST_SHIFT);
-    int64_t dist = (var[i] * (int64_t)d_q10[i] + 512) >> 10;
-    *rate_sum += rate;
-    *dist_sum += dist;
-  }
-}
-
+// Disable gcc 12.2 false positive warning.
+// warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
                               const struct macroblockd_plane *pd,
                               ENTROPY_CONTEXT t_above[16],
@@ -604,6 +581,9 @@ void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
       break;
   }
 }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 void vp9_mv_pred(VP9_COMP *cpi, MACROBLOCK *x, uint8_t *ref_y_buffer,
                  int ref_y_stride, int ref_frame, BLOCK_SIZE block_size) {
@@ -629,7 +609,7 @@ void vp9_mv_pred(VP9_COMP *cpi, MACROBLOCK *x, uint8_t *ref_y_buffer,
                       x->mbmi_ext->ref_mvs[ref_frame][1].as_int;
 
   // Get the sad for each candidate reference mv.
-  for (i = 0; i < num_mv_refs && i < MAX_MV_REF_CANDIDATES + 1; ++i) {
+  for (i = 0; i < num_mv_refs; ++i) {
     const MV *this_mv = &pred_mv[i];
     int fp_row, fp_col;
     if (this_mv->row == INT16_MAX || this_mv->col == INT16_MAX) continue;

@@ -261,7 +261,11 @@ public class CoreSession : global::System.IDisposable {
   }
 
   public void Hangup(string cause) {
-    freeswitchPINVOKE.CoreSession_Hangup(swigCPtr, cause);
+    freeswitchPINVOKE.CoreSession_Hangup__SWIG_0(swigCPtr, cause);
+  }
+
+  public void Hangup() {
+    freeswitchPINVOKE.CoreSession_Hangup__SWIG_1(swigCPtr);
   }
 
   public void hangupState() {
@@ -292,7 +296,15 @@ public class CoreSession : global::System.IDisposable {
   }
 
   public void SayPhrase(string phrase_name, string phrase_data, string phrase_lang) {
-    freeswitchPINVOKE.CoreSession_SayPhrase(swigCPtr, phrase_name, phrase_data, phrase_lang);
+    freeswitchPINVOKE.CoreSession_SayPhrase__SWIG_0(swigCPtr, phrase_name, phrase_data, phrase_lang);
+  }
+
+  public void SayPhrase(string phrase_name, string phrase_data) {
+    freeswitchPINVOKE.CoreSession_SayPhrase__SWIG_1(swigCPtr, phrase_name, phrase_data);
+  }
+
+  public void SayPhrase(string phrase_name) {
+    freeswitchPINVOKE.CoreSession_SayPhrase__SWIG_2(swigCPtr, phrase_name);
   }
 
   public string hangupCause() {
@@ -857,11 +869,25 @@ public class EventConsumer : global::System.IDisposable {
     } 
   }
 
-  public EventConsumer(string event_name, string subclass_name, int len) : this(freeswitchPINVOKE.new_EventConsumer(event_name, subclass_name, len), true) {
+  public EventConsumer(string event_name, string subclass_name, int len) : this(freeswitchPINVOKE.new_EventConsumer__SWIG_0(event_name, subclass_name, len), true) {
+  }
+
+  public EventConsumer(string event_name, string subclass_name) : this(freeswitchPINVOKE.new_EventConsumer__SWIG_1(event_name, subclass_name), true) {
+  }
+
+  public EventConsumer(string event_name) : this(freeswitchPINVOKE.new_EventConsumer__SWIG_2(event_name), true) {
+  }
+
+  public EventConsumer() : this(freeswitchPINVOKE.new_EventConsumer__SWIG_3(), true) {
   }
 
   public int bind(string event_name, string subclass_name) {
-    int ret = freeswitchPINVOKE.EventConsumer_bind(swigCPtr, event_name, subclass_name);
+    int ret = freeswitchPINVOKE.EventConsumer_bind__SWIG_0(swigCPtr, event_name, subclass_name);
+    return ret;
+  }
+
+  public int bind(string event_name) {
+    int ret = freeswitchPINVOKE.EventConsumer_bind__SWIG_1(swigCPtr, event_name);
     return ret;
   }
 
@@ -29211,14 +29237,26 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_EventConsumer_node_index_get___")]
   public static extern uint EventConsumer_node_index_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
-  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_EventConsumer___")]
-  public static extern global::System.IntPtr new_EventConsumer(string jarg1, string jarg2, int jarg3);
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_0___")]
+  public static extern global::System.IntPtr new_EventConsumer__SWIG_0(string jarg1, string jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_1___")]
+  public static extern global::System.IntPtr new_EventConsumer__SWIG_1(string jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_2___")]
+  public static extern global::System.IntPtr new_EventConsumer__SWIG_2(string jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_new_EventConsumer__SWIG_3___")]
+  public static extern global::System.IntPtr new_EventConsumer__SWIG_3();
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_delete_EventConsumer___")]
   public static extern void delete_EventConsumer(global::System.Runtime.InteropServices.HandleRef jarg1);
 
-  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_EventConsumer_bind___")]
-  public static extern int EventConsumer_bind(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_EventConsumer_bind__SWIG_0___")]
+  public static extern int EventConsumer_bind__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_EventConsumer_bind__SWIG_1___")]
+  public static extern int EventConsumer_bind__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_EventConsumer_pop___")]
   public static extern global::System.IntPtr EventConsumer_pop(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
@@ -29301,8 +29339,11 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_preAnswer___")]
   public static extern int CoreSession_preAnswer(global::System.Runtime.InteropServices.HandleRef jarg1);
 
-  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_Hangup___")]
-  public static extern void CoreSession_Hangup(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_Hangup__SWIG_0___")]
+  public static extern void CoreSession_Hangup__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_Hangup__SWIG_1___")]
+  public static extern void CoreSession_Hangup__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_hangupState___")]
   public static extern void CoreSession_hangupState(global::System.Runtime.InteropServices.HandleRef jarg1);
@@ -29322,8 +29363,14 @@ class freeswitchPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_Say___")]
   public static extern void CoreSession_Say(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6);
 
-  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_SayPhrase___")]
-  public static extern void CoreSession_SayPhrase(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4);
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_SayPhrase__SWIG_0___")]
+  public static extern void CoreSession_SayPhrase__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3, string jarg4);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_SayPhrase__SWIG_1___")]
+  public static extern void CoreSession_SayPhrase__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, string jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_SayPhrase__SWIG_2___")]
+  public static extern void CoreSession_SayPhrase__SWIG_2(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("mod_managed", EntryPoint="CSharp_FreeSWITCHfNative_CoreSession_hangupCause___")]
   public static extern string CoreSession_hangupCause(global::System.Runtime.InteropServices.HandleRef jarg1);

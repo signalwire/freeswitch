@@ -190,6 +190,16 @@
     <ClCompile Include="..\..\libvpx\vpx_dsp\psnr.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\sse.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sse_sse4.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sse_avx2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\bitreader.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -250,24 +260,10 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_add_noise_sse2_asm.obj</Outputs>
     </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\deblock_sse2.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">nasm -Xvc -gcv8 -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">nasm -Xvc -f win32  -I".\include_x86" -I"..\..\libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasm -Xvc -gcv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vpx_dsp_x86_deblock_sse2_asm.obj</Outputs>
-    </CustomBuild>
-
-    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\post_proc_sse2.c">
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\deblock_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+
     <ClCompile Include="..\..\libvpx\vpx_dsp\vpx_convolve.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
@@ -393,6 +389,10 @@
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\inv_txfm_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\inv_txfm_avx2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+    </ClCompile>
 
     <CustomBuild Include="..\..\libvpx\vpx_dsp\x86\inv_wht_sse2.asm">
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Assembling %(Filename)%(Extension)</Message>
@@ -422,6 +422,10 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\quantize_avx.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\quantize_avx2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
@@ -464,7 +468,15 @@
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\subtract_avx2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+    </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sad_avx2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\sad_avx512.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
@@ -521,6 +533,10 @@
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\avg_pred_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vpx_dsp\x86\avg_pred_avx2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+      <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vpx_dsp\x86\variance_sse2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
@@ -1214,20 +1230,29 @@
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_temporal_filter.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
+    <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_tpl_model.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\vp9_mbgraph.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\temporal_filter_ssse3.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\temporal_filter_sse4.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_sse2.c">
-      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_avx2.c">
+    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\temporal_filter_avx2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
-    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_diamond_search_sad_avx.c">
+    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_sse2.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_ssse3.c">
+      <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_avx2.c">
       <ObjectFileName>$(IntDir)$([System.String]::Copy(%(RelativeDir)).Replace('\','_'))\</ObjectFileName>
       <AdditionalOptions>/arch:AVX</AdditionalOptions>
     </ClCompile>
@@ -1259,14 +1284,6 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_error_sse2_asm.obj</Outputs>
-    </CustomBuild>
-    <CustomBuild Include="..\..\libvpx\vp9\encoder\x86\vp9_quantize_ssse3_x86_64.asm">
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">nasm -Xvc -gcv8 -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Outputs>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Assembling %(Filename)%(Extension)</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">nasm -Xvc -f win64  -I"./include_x64" -I"../../libvpx" "%(FullPath)" -o $(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Command>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)vp9_encoder_x86_vp9_quantize_ssse3_x86_64_asm.obj</Outputs>
     </CustomBuild>
 
     <ClCompile Include="..\..\libvpx\vp9\encoder\x86\vp9_dct_intrin_sse2.c">
@@ -1322,6 +1339,7 @@
     <ClInclude Include="..\..\libvpx\vpx\vpx_image.h" />
     <ClInclude Include="..\..\libvpx\vpx\vpx_integer.h" />
     <ClInclude Include="..\..\libvpx\vpx\vpx_ext_ratectrl.h" />
+    <ClInclude Include="..\..\libvpx\vpx\vpx_tpl.h" />
     <ClInclude Include="..\..\libvpx\vpx_mem\vpx_mem.h" />
     <ClInclude Include="..\..\libvpx\vpx_mem\include\vpx_mem_intrnl.h" />
     <ClInclude Include="..\..\libvpx\vpx_scale\yv12config.h" />
@@ -1329,7 +1347,6 @@
     <ClInclude Include="..\..\libvpx\vpx_ports\bitops.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\compiler_attributes.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\mem.h" />
-    <ClInclude Include="..\..\libvpx\vpx_ports\msvc.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\static_assert.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\system_state.h" />
     <ClInclude Include="..\..\libvpx\vpx_ports\vpx_timer.h" />
@@ -1368,6 +1385,7 @@
     <ClInclude Include="..\..\libvpx\vpx_dsp\x86\mem_sse2.h" />
     <ClInclude Include="..\..\libvpx\vpx_dsp\x86\transpose_sse2.h" />
     <ClInclude Include="..\..\libvpx\vpx_util\vpx_atomics.h" />
+    <ClInclude Include="..\..\libvpx\vpx_util\vpx_pthread.h" />
     <ClInclude Include="..\..\libvpx\vpx_util\vpx_thread.h" />
     <ClInclude Include="..\..\libvpx\vpx_util\endian_inl.h" />
     <ClInclude Include="..\..\libvpx\vpx_util\vpx_write_yuv_frame.h" />
@@ -1473,6 +1491,7 @@
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_encodemv.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_extend.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_firstpass.h" />
+    <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_firstpass_stats.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_job_queue.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_lookahead.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_mcomp.h" />
@@ -1501,8 +1520,9 @@
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_noise_estimate.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_ext_ratectrl.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_temporal_filter.h" />
+    <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_tpl_model.h" />
     <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_mbgraph.h" />
-    <ClInclude Include="..\..\libvpx\vp9\encoder\x86\temporal_filter_constants.h" />
+    <ClInclude Include="..\..\libvpx\vp9\encoder\vp9_temporal_filter_constants.h" />
     <ClInclude Include="..\..\libvpx\vp9\vp9_dx_iface.h" />
     <ClInclude Include="..\..\libvpx\vp9\decoder\vp9_decodeframe.h" />
     <ClInclude Include="..\..\libvpx\vp9\decoder\vp9_decodemv.h" />

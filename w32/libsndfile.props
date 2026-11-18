@@ -8,13 +8,13 @@
     <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
 
-  <PropertyGroup>
-    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
-    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
-  </PropertyGroup>
-
   <PropertyGroup Label="UserMacros">
-    <libsndfileLibDir>$(BaseDir)libs\libsndfile-$(libsndfileVersion)</libsndfileLibDir>
+    <!-- Upstream names its archives after the target word size, not after the
+         MSBuild platform: x64 -> win64, Win32 -> win32. -->
+    <libsndfileArch Condition=" '$(Platform.ToLower())' == 'x64' ">win64</libsndfileArch>
+    <libsndfileArch Condition=" '$(libsndfileArch)' == '' ">win32</libsndfileArch>
+    <libsndfileDir>$(BaseDir)libs\libsndfile-$(libsndfileVersion)-$(libsndfileArch)</libsndfileDir>
+    <libsndfilePkgBase>https://github.com/libsndfile/libsndfile/releases/download/$(libsndfileVersion)</libsndfilePkgBase>
   </PropertyGroup>
 
   <!--
@@ -37,42 +37,42 @@
        extractto: Folder to extract an archive to
    -->
 
-  <Target Name="libsndfileBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+  <!-- One archive per platform holds the headers, the import lib and the DLL, so a
+       single download covers what used to take separate headers/binaries packages.
+       Upstream publishes Release builds only; they link the CRT statically and import
+       nothing but KERNEL32, so a Debug build can use the very same files.
+       archivecontains="binary" stops the task from looking for an inner tarball. -->
+  <Target Name="libsndfileDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/windows/packages/libsndfile/$(libsndfileVersion)/libsndfile-$(libsndfileVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
-           expectfileordirectory="$(libsndfileLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\lib\libsndfile-1.lib"
+           package="$(libsndfilePkgBase)/libsndfile-$(libsndfileVersion)-$(libsndfileArch).zip"
+           expectfileordirectory="$(libsndfileDir)\lib\sndfile.lib"
            outputfolder=""
            outputfilename=""
            extractto="$(BaseDir)libs\"
-      />
-  </Target>
-  <Target Name="libsndfileHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
-      <DownloadPackageTask
-           package="http://files.freeswitch.org/windows/packages/libsndfile/$(libsndfileVersion)/libsndfile-$(libsndfileVersion)-headers.zip"
-           expectfileordirectory="$(libsndfileLibDir)\include\sndfile.h"
-           outputfolder=""
-           outputfilename=""
-           extractto="$(BaseDir)libs\"
+           archivecontains="binary"
       />
   </Target>
 
-  <Target Name="libsndfilecopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="libsndfileBinariesDownloadTarget">
+  <!-- Copy sndfile.dll next to the FreeSWITCH binary. SkipUnchangedFiles refreshes it
+       when the source differs, so bumping the version updates the output DLL instead
+       of leaving a stale one behind. -->
+  <Target Name="libsndfilecopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="libsndfileDownloadTarget">
       <ItemGroup>
-          <libsndfileFiles Include="$(libsndfileLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\bin\libsndfile-1.dll" />
+          <libsndfileFiles Include="$(libsndfileDir)\bin\sndfile.dll" />
       </ItemGroup>
-      <Copy Condition="!exists('$(BaseDir)$(Platform)\$(LibraryConfiguration)\libsndfile-1.dll')"
+      <Copy SkipUnchangedFiles="true"
           SourceFiles="@(libsndfileFiles)"
-          DestinationFiles="@(libsndfileFiles->'$(BaseDir)$(Platform)\$(LibraryConfiguration)\%(Filename)%(Extension)')"
+          DestinationFiles="@(libsndfileFiles->'$(BaseDir)$(Platform)\$(Configuration)\%(Filename)%(Extension)')"
       />
   </Target>
 
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)libs\libsndfile-$(libsndfileVersion)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(libsndfileDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)libs\libsndfile-$(libsndfileVersion)\binaries\$(Platform)\$(LibraryConfiguration)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libsndfile-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(libsndfileDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sndfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

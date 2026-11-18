@@ -1,4 +1,7 @@
 # This is the Android makefile for libyuv for NDK.
+
+# Ignore this file during non-NDK builds.
+ifdef NDK_ROOT
 LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
@@ -9,10 +12,10 @@ LOCAL_SRC_FILES := \
     source/compare.cc           \
     source/compare_common.cc    \
     source/compare_gcc.cc       \
-    source/compare_mmi.cc       \
-    source/compare_msa.cc       \
+    source/compare_hvx.cc       \
     source/compare_neon.cc      \
     source/compare_neon64.cc    \
+    source/compare_win.cc       \
     source/convert.cc           \
     source/convert_argb.cc      \
     source/convert_from.cc      \
@@ -26,26 +29,31 @@ LOCAL_SRC_FILES := \
     source/rotate_argb.cc       \
     source/rotate_common.cc     \
     source/rotate_gcc.cc        \
-    source/rotate_mmi.cc        \
-    source/rotate_msa.cc        \
+    source/rotate_hvx.cc        \
     source/rotate_neon.cc       \
     source/rotate_neon64.cc     \
+    source/rotate_rvv.cc        \
+    source/rotate_win.cc        \
     source/row_any.cc           \
     source/row_common.cc        \
     source/row_gcc.cc           \
-    source/row_mmi.cc           \
-    source/row_msa.cc           \
+    source/row_hvx.cc           \
     source/row_neon.cc          \
     source/row_neon64.cc        \
+    source/row_rvv.cc           \
+    source/row_win.cc           \
     source/scale.cc             \
     source/scale_any.cc         \
     source/scale_argb.cc        \
     source/scale_common.cc      \
     source/scale_gcc.cc         \
-    source/scale_mmi.cc         \
-    source/scale_msa.cc         \
+    source/scale_hvx.cc         \
     source/scale_neon.cc        \
     source/scale_neon64.cc      \
+    source/scale_rgb.cc         \
+    source/scale_rvv.cc         \
+    source/scale_uv.cc          \
+    source/scale_win.cc         \
     source/video_common.cc
 
 common_CFLAGS := -Wall -fexceptions
@@ -85,20 +93,25 @@ LOCAL_MODULE_TAGS := tests
 LOCAL_CPP_EXTENSION := .cc
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/include
 LOCAL_SRC_FILES := \
-    unit_test/unit_test.cc        \
-    unit_test/basictypes_test.cc  \
-    unit_test/color_test.cc       \
-    unit_test/compare_test.cc     \
-    unit_test/convert_test.cc     \
-    unit_test/cpu_test.cc         \
-    unit_test/cpu_thread_test.cc  \
-    unit_test/math_test.cc        \
-    unit_test/planar_test.cc      \
-    unit_test/rotate_argb_test.cc \
-    unit_test/rotate_test.cc      \
-    unit_test/scale_argb_test.cc  \
-    unit_test/scale_test.cc       \
+    unit_test/basictypes_test.cc    \
+    unit_test/color_test.cc         \
+    unit_test/compare_test.cc       \
+    unit_test/convert_argb_test.cc  \
+    unit_test/convert_test.cc       \
+    unit_test/cpu_test.cc           \
+    unit_test/cpu_thread_test.cc    \
+    unit_test/math_test.cc          \
+    unit_test/planar_test.cc        \
+    unit_test/rotate_argb_test.cc   \
+    unit_test/rotate_test.cc        \
+    unit_test/scale_argb_test.cc    \
+    unit_test/scale_plane_test.cc   \
+    unit_test/scale_rgb_test.cc     \
+    unit_test/scale_test.cc         \
+    unit_test/scale_uv_test.cc      \
+    unit_test/unit_test.cc          \
     unit_test/video_common_test.cc
 
 LOCAL_MODULE := libyuv_unittest
 include $(BUILD_NATIVE_TEST)
+endif  # NDK_ROOT

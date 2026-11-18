@@ -657,7 +657,7 @@ SCGI_DECLARE(scgi_status_t) scgi_parse(scgi_socket_t sock, scgi_handle_t *handle
 	handle->sock = sock;
 	
 	handle->connected = 1;
-	sock_setup(handle);
+	if (sock_setup(handle) != SCGI_SUCCESS) goto end;
 
 	for(;;) {
 

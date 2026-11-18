@@ -15,6 +15,6 @@ wget -c https://github.com/freeswitch/freeswitch-sounds/releases/download/en-us-
 wget -c https://github.com/freeswitch/freeswitch-sounds/releases/download/en-us-callie-1.0.53/freeswitch-sounds-en-us-callie-16000-1.0.53.tar.gz
 wget -c https://github.com/freeswitch/freeswitch-sounds/releases/download/en-us-callie-1.0.53/freeswitch-sounds-en-us-callie-32000-1.0.53.tar.gz
 wget -c https://github.com/freeswitch/freeswitch-sounds/releases/download/en-us-callie-1.0.53/freeswitch-sounds-en-us-callie-48000-1.0.53.tar.gz
-wget -c http://svn.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
+wget -c https://github.com/freeswitch/windows-deps/releases/download/communicator_semi_6000_20080321/communicator_semi_6000_20080321.tar.gz
 
 

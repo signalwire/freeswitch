@@ -131,14 +131,24 @@ build_freeswitch()
 
 			;;
 		"scan-build")
-			if ! command -v scan-build-14 > /dev/null 2>&1; then
-				echo "Error: scan-build-14 command not found. Please ensure clang static analyzer is installed." >&2
+			# Use scan-build-14 for bookworm, default scan-build otherwise
+			DEBIAN_CODENAME=$(. /etc/os-release && echo "$VERSION_CODENAME")
+			if [[ "$DEBIAN_CODENAME" == "bookworm" ]]; then
+				SCAN_BUILD_CMD="scan-build-14"
+			else
+				SCAN_BUILD_CMD="scan-build"
+			fi
+
+			if ! command -v $SCAN_BUILD_CMD > /dev/null 2>&1; then
+				echo "Error: $SCAN_BUILD_CMD command not found. Please ensure clang static analyzer is installed." >&2
 				exit 1
 			fi
 
+			echo "Using: $SCAN_BUILD_CMD (Debian: $DEBIAN_CODENAME)"
+
 			mkdir -p scan-build
 
-			scan-build-14 \
+			$SCAN_BUILD_CMD \
 				--force-analyze-debug-code \
 				--status-bugs \
 				-o ./scan-build/ \

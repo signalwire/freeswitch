@@ -11,6 +11,9 @@
 #ifndef INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 #define INCLUDE_LIBYUV_PLANAR_FUNCTIONS_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 // TODO(fbarchard): Remove the following headers includes.
@@ -20,24 +23,6 @@
 #ifdef __cplusplus
 namespace libyuv {
 extern "C" {
-#endif
-
-// TODO(fbarchard): Move cpu macros to row.h
-#if defined(__pnacl__) || defined(__CLR_VER) ||            \
-    (defined(__native_client__) && defined(__x86_64__)) || \
-    (defined(__i386__) && !defined(__SSE__) && !defined(__clang__))
-#define LIBYUV_DISABLE_X86
-#endif
-// MemorySanitizer does not support assembly code yet. http://crbug.com/344505
-#if defined(__has_feature)
-#if __has_feature(memory_sanitizer)
-#define LIBYUV_DISABLE_X86
-#endif
-#endif
-// The following are available on all x86 platforms:
-#if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(_M_IX86) || defined(__x86_64__) || defined(__i386__))
-#define HAS_ARGBAFFINEROW_SSE2
 #endif
 
 // Copy a plane of data.
@@ -66,14 +51,28 @@ void Convert16To8Plane(const uint16_t* src_y,
                        int width,
                        int height);
 
+// Convert 8 bit Y to 10/12/16 bit.
+// "bits" accepts bit depths (10, 12, 16) or legacy scale values (1024, 4096,
+// 65536).
 LIBYUV_API
-void Convert8To16Plane(const uint8_t* src_y,
-                       int src_stride_y,
-                       uint16_t* dst_y,
-                       int dst_stride_y,
-                       int scale,  // 1024 for 10 bits
-                       int width,
-                       int height);
+void Convert8To16Plane(
+    const uint8_t* src_y,
+    int src_stride_y,
+    uint16_t* dst_y,
+    int dst_stride_y,
+    int bits,  // 10, 12, 16 bits (or 1024, 4096, 65536 scale)
+    int width,
+    int height);
+
+LIBYUV_API
+void Convert8To8Plane(const uint8_t* src_y,
+                      int src_stride_y,
+                      uint8_t* dst_y,
+                      int dst_stride_y,
+                      int scale,  // 220 for Y, 225 for U,V
+                      int bias,   // 16
+                      int width,
+                      int height);
 
 // Set a plane of data to a 32 bit value.
 LIBYUV_API
@@ -82,6 +81,50 @@ void SetPlane(uint8_t* dst_y,
               int width,
               int height,
               uint32_t value);
+
+// Convert a plane of tiles of 16 x H to linear.
+LIBYUV_API
+int DetilePlane(const uint8_t* src_y,
+                int src_stride_y,
+                uint8_t* dst_y,
+                int dst_stride_y,
+                int width,
+                int height,
+                int tile_height);
+
+// Convert a plane of 16 bit tiles of 16 x H to linear.
+LIBYUV_API
+int DetilePlane_16(const uint16_t* src_y,
+                   int src_stride_y,
+                   uint16_t* dst_y,
+                   int dst_stride_y,
+                   int width,
+                   int height,
+                   int tile_height);
+
+// Convert a UV plane of tiles of 16 x H into linear U and V planes.
+LIBYUV_API
+void DetileSplitUVPlane(const uint8_t* src_uv,
+                        int src_stride_uv,
+                        uint8_t* dst_u,
+                        int dst_stride_u,
+                        uint8_t* dst_v,
+                        int dst_stride_v,
+                        int width,
+                        int height,
+                        int tile_height);
+
+// Convert a Y and UV plane of tiles into interlaced YUY2.
+LIBYUV_API
+void DetileToYUY2(const uint8_t* src_y,
+                  int src_stride_y,
+                  const uint8_t* src_uv,
+                  int src_stride_uv,
+                  uint8_t* dst_yuy2,
+                  int dst_stride_yuy2,
+                  int width,
+                  int height,
+                  int tile_height);
 
 // Split interleaved UV plane into separate U and V planes.
 LIBYUV_API
@@ -104,6 +147,63 @@ void MergeUVPlane(const uint8_t* src_u,
                   int dst_stride_uv,
                   int width,
                   int height);
+
+// Split interleaved msb UV plane into separate lsb U and V planes.
+LIBYUV_API
+void SplitUVPlane_16(const uint16_t* src_uv,
+                     int src_stride_uv,
+                     uint16_t* dst_u,
+                     int dst_stride_u,
+                     uint16_t* dst_v,
+                     int dst_stride_v,
+                     int width,
+                     int height,
+                     int depth);
+
+// Merge separate lsb U and V planes into one interleaved msb UV plane.
+LIBYUV_API
+void MergeUVPlane_16(const uint16_t* src_u,
+                     int src_stride_u,
+                     const uint16_t* src_v,
+                     int src_stride_v,
+                     uint16_t* dst_uv,
+                     int dst_stride_uv,
+                     int width,
+                     int height,
+                     int depth);
+
+// Convert lsb plane to msb plane
+LIBYUV_API
+void ConvertToMSBPlane_16(const uint16_t* src_y,
+                          int src_stride_y,
+                          uint16_t* dst_y,
+                          int dst_stride_y,
+                          int width,
+                          int height,
+                          int depth);
+
+// Convert msb plane to lsb plane
+LIBYUV_API
+void ConvertToLSBPlane_16(const uint16_t* src_y,
+                          int src_stride_y,
+                          uint16_t* dst_y,
+                          int dst_stride_y,
+                          int width,
+                          int height,
+                          int depth);
+
+// Scale U and V to half width and height and merge into interleaved UV plane.
+// width and height are source size, allowing odd sizes.
+// Use for converting I444 or I422 to NV12.
+LIBYUV_API
+void HalfMergeUVPlane(const uint8_t* src_u,
+                      int src_stride_u,
+                      const uint8_t* src_v,
+                      int src_stride_v,
+                      uint8_t* dst_uv,
+                      int dst_stride_uv,
+                      int width,
+                      int height);
 
 // Swap U and V channels in interleaved UV plane.
 LIBYUV_API
@@ -139,6 +239,92 @@ void MergeRGBPlane(const uint8_t* src_r,
                    int dst_stride_rgb,
                    int width,
                    int height);
+
+// Split interleaved ARGB plane into separate R, G, B and A planes.
+// dst_a can be NULL to discard alpha plane.
+LIBYUV_API
+void SplitARGBPlane(const uint8_t* src_argb,
+                    int src_stride_argb,
+                    uint8_t* dst_r,
+                    int dst_stride_r,
+                    uint8_t* dst_g,
+                    int dst_stride_g,
+                    uint8_t* dst_b,
+                    int dst_stride_b,
+                    uint8_t* dst_a,
+                    int dst_stride_a,
+                    int width,
+                    int height);
+
+// Merge separate R, G, B and A planes into one interleaved ARGB plane.
+// src_a can be NULL to fill opaque value to alpha.
+LIBYUV_API
+void MergeARGBPlane(const uint8_t* src_r,
+                    int src_stride_r,
+                    const uint8_t* src_g,
+                    int src_stride_g,
+                    const uint8_t* src_b,
+                    int src_stride_b,
+                    const uint8_t* src_a,
+                    int src_stride_a,
+                    uint8_t* dst_argb,
+                    int dst_stride_argb,
+                    int width,
+                    int height);
+
+// Merge separate 'depth' bit R, G and B planes stored in lsb
+// into one interleaved XR30 plane.
+// depth should in range [10, 16]
+LIBYUV_API
+void MergeXR30Plane(const uint16_t* src_r,
+                    int src_stride_r,
+                    const uint16_t* src_g,
+                    int src_stride_g,
+                    const uint16_t* src_b,
+                    int src_stride_b,
+                    uint8_t* dst_ar30,
+                    int dst_stride_ar30,
+                    int width,
+                    int height,
+                    int depth);
+
+// Merge separate 'depth' bit R, G, B and A planes stored in lsb
+// into one interleaved AR64 plane.
+// src_a can be NULL to fill opaque value to alpha.
+// depth should in range [1, 16]
+LIBYUV_API
+void MergeAR64Plane(const uint16_t* src_r,
+                    int src_stride_r,
+                    const uint16_t* src_g,
+                    int src_stride_g,
+                    const uint16_t* src_b,
+                    int src_stride_b,
+                    const uint16_t* src_a,
+                    int src_stride_a,
+                    uint16_t* dst_ar64,
+                    int dst_stride_ar64,
+                    int width,
+                    int height,
+                    int depth);
+
+// Merge separate 'depth' bit R, G, B and A planes stored in lsb
+// into one interleaved ARGB plane.
+// src_a can be NULL to fill opaque value to alpha.
+// depth should in range [8, 16]
+LIBYUV_API
+void MergeARGB16To8Plane(const uint16_t* src_r,
+                         int src_stride_r,
+                         const uint16_t* src_g,
+                         int src_stride_g,
+                         const uint16_t* src_b,
+                         int src_stride_b,
+                         const uint16_t* src_a,
+                         int src_stride_a,
+                         uint8_t* dst_argb,
+                         int dst_stride_argb,
+                         int width,
+                         int height,
+                         int depth);
 
 // Copy I400.  Supports inverting.
 LIBYUV_API
@@ -184,6 +370,68 @@ int I444Copy(const uint8_t* src_y,
              int dst_stride_u,
              uint8_t* dst_v,
              int dst_stride_v,
+             int width,
+             int height);
+
+// Copy I210 to I210.
+#define I210ToI210 I210Copy
+LIBYUV_API
+int I210Copy(const uint16_t* src_y,
+             int src_stride_y,
+             const uint16_t* src_u,
+             int src_stride_u,
+             const uint16_t* src_v,
+             int src_stride_v,
+             uint16_t* dst_y,
+             int dst_stride_y,
+             uint16_t* dst_u,
+             int dst_stride_u,
+             uint16_t* dst_v,
+             int dst_stride_v,
+             int width,
+             int height);
+
+// Copy I410 to I410.
+#define I410ToI410 I410Copy
+LIBYUV_API
+int I410Copy(const uint16_t* src_y,
+             int src_stride_y,
+             const uint16_t* src_u,
+             int src_stride_u,
+             const uint16_t* src_v,
+             int src_stride_v,
+             uint16_t* dst_y,
+             int dst_stride_y,
+             uint16_t* dst_u,
+             int dst_stride_u,
+             uint16_t* dst_v,
+             int dst_stride_v,
+             int width,
+             int height);
+
+// Copy NV12. Supports inverting.
+LIBYUV_API
+int NV12Copy(const uint8_t* src_y,
+             int src_stride_y,
+             const uint8_t* src_uv,
+             int src_stride_uv,
+             uint8_t* dst_y,
+             int dst_stride_y,
+             uint8_t* dst_uv,
+             int dst_stride_uv,
+             int width,
+             int height);
+
+// Copy NV21. Supports inverting.
+LIBYUV_API
+int NV21Copy(const uint8_t* src_y,
+             int src_stride_y,
+             const uint8_t* src_vu,
+             int src_stride_vu,
+             uint8_t* dst_y,
+             int dst_stride_y,
+             uint8_t* dst_vu,
+             int dst_stride_vu,
              int width,
              int height);
 
@@ -233,22 +481,33 @@ int UYVYToNV12(const uint8_t* src_uyvy,
                int width,
                int height);
 
-// Convert NV21 to NV12.
+// Convert NV12 to NV21.
 LIBYUV_API
-int NV21ToNV12(const uint8_t* src_y,
+int NV12ToNV21(const uint8_t* src_y,
                int src_stride_y,
-               const uint8_t* src_vu,
-               int src_stride_vu,
+               const uint8_t* src_uv,
+               int src_stride_uv,
                uint8_t* dst_y,
                int dst_stride_y,
-               uint8_t* dst_uv,
-               int dst_stride_uv,
+               uint8_t* dst_vu,
+               int dst_stride_vu,
                int width,
                int height);
+
+// Alias
+#define NV21ToNV12 NV12ToNV21
 
 LIBYUV_API
 int YUY2ToY(const uint8_t* src_yuy2,
             int src_stride_yuy2,
+            uint8_t* dst_y,
+            int dst_stride_y,
+            int width,
+            int height);
+
+LIBYUV_API
+int UYVYToY(const uint8_t* src_uyvy,
+            int src_stride_uyvy,
             uint8_t* dst_y,
             int dst_stride_y,
             int width,
@@ -302,6 +561,22 @@ int I400Mirror(const uint8_t* src_y,
                int height);
 
 // Alias
+#define NV12ToNV12Mirror NV12Mirror
+
+// NV12 mirror.
+LIBYUV_API
+int NV12Mirror(const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int width,
+               int height);
+
+// Alias
 #define ARGBToARGBMirror ARGBMirror
 
 // ARGB mirror.
@@ -313,56 +588,44 @@ int ARGBMirror(const uint8_t* src_argb,
                int width,
                int height);
 
-// Convert NV12 to RGB565.
+// Alias
+#define RGB24ToRGB24Mirror RGB24Mirror
+
+// RGB24 mirror.
 LIBYUV_API
-int NV12ToRGB565(const uint8_t* src_y,
+int RGB24Mirror(const uint8_t* src_rgb24,
+                int src_stride_rgb24,
+                uint8_t* dst_rgb24,
+                int dst_stride_rgb24,
+                int width,
+                int height);
+
+// Mirror a plane of data.
+LIBYUV_API
+void MirrorPlane(const uint8_t* src_y,
                  int src_stride_y,
-                 const uint8_t* src_uv,
-                 int src_stride_uv,
-                 uint8_t* dst_rgb565,
-                 int dst_stride_rgb565,
+                 uint8_t* dst_y,
+                 int dst_stride_y,
                  int width,
                  int height);
 
-// I422ToARGB is in convert_argb.h
-// Convert I422 to BGRA.
+// Mirror a plane of 16-bit data.
 LIBYUV_API
-int I422ToBGRA(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_bgra,
-               int dst_stride_bgra,
-               int width,
-               int height);
+void MirrorPlane_16(const uint16_t* src_y,
+                    int src_stride_y,
+                    uint16_t* dst_y,
+                    int dst_stride_y,
+                    int width,
+                    int height);
 
-// Convert I422 to ABGR.
+// Mirror a plane of UV data.
 LIBYUV_API
-int I422ToABGR(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_abgr,
-               int dst_stride_abgr,
-               int width,
-               int height);
-
-// Convert I422 to RGBA.
-LIBYUV_API
-int I422ToRGBA(const uint8_t* src_y,
-               int src_stride_y,
-               const uint8_t* src_u,
-               int src_stride_u,
-               const uint8_t* src_v,
-               int src_stride_v,
-               uint8_t* dst_rgba,
-               int dst_stride_rgba,
-               int width,
-               int height);
+void MirrorUVPlane(const uint8_t* src_uv,
+                   int src_stride_uv,
+                   uint8_t* dst_uv,
+                   int dst_stride_uv,
+                   int width,
+                   int height);
 
 // Alias
 #define RGB24ToRAW RAWToRGB24
@@ -511,6 +774,10 @@ int ARGBPolynomial(const uint8_t* src_argb,
 
 // Convert plane of 16 bit shorts to half floats.
 // Source values are multiplied by scale before storing as half float.
+//
+// Note: Unlike other libyuv functions that operate on uint16_t buffers, the
+// src_stride_y and dst_stride_y parameters of HalfFloatPlane() are in bytes,
+// not in units of uint16_t.
 LIBYUV_API
 int HalfFloatPlane(const uint16_t* src_y,
                    int src_stride_y,
@@ -575,15 +842,6 @@ int ARGBCopyYToAlpha(const uint8_t* src_y,
                      int width,
                      int height);
 
-typedef void (*ARGBBlendRow)(const uint8_t* src_argb0,
-                             const uint8_t* src_argb1,
-                             uint8_t* dst_argb,
-                             int width);
-
-// Get function to Alpha Blend ARGB pixels and store to destination.
-LIBYUV_API
-ARGBBlendRow GetARGBBlend(void);
-
 // Alpha Blend ARGB images and store to destination.
 // Source is pre-multiplied by alpha using ARGBAttenuate.
 // Alpha of destination is set to 255.
@@ -596,6 +854,18 @@ int ARGBBlend(const uint8_t* src_argb0,
               int dst_stride_argb,
               int width,
               int height);
+
+// Alpha Blend unattenuated ARGB images and store to destination.
+// Source and destination are not pre-multiplied by alpha.
+LIBYUV_API
+int ARGBAlphaBlend(const uint8_t* src_argb0,
+                   int src_stride_argb0,
+                   const uint8_t* src_argb1,
+                   int src_stride_argb1,
+                   uint8_t* dst_argb,
+                   int dst_stride_argb,
+                   int width,
+                   int height);
 
 // Alpha Blend plane and store to destination.
 // Source is not pre-multiplied by alpha.
@@ -671,6 +941,17 @@ int ARGBSubtract(const uint8_t* src_argb0,
                  int width,
                  int height);
 
+// Bitwise OR ARGB image with a specified ARGB value (e.g. 0xff000000 to force
+// opaque alpha).
+LIBYUV_API
+int ARGBOr(const uint8_t* src_argb,
+           int src_stride_argb,
+           uint8_t* dst_argb,
+           int dst_stride_argb,
+           int width,
+           int height,
+           uint32_t value);
+
 // Convert I422 to YUY2.
 LIBYUV_API
 int I422ToYUY2(const uint8_t* src_y,
@@ -743,6 +1024,19 @@ int ARGBBlur(const uint8_t* src_argb,
              int height,
              int radius);
 
+// Gaussian 5x5 blur a float plane.
+// Coefficients of 1, 4, 6, 4, 1.
+// Each destination pixel is a blur of the 5x5
+// pixels from the source.
+// Source edges are clamped.
+LIBYUV_API
+int GaussPlane_F32(const float* src,
+                   int src_stride,
+                   float* dst,
+                   int dst_stride,
+                   int width,
+                   int height);
+
 // Multiply ARGB image by ARGB value.
 LIBYUV_API
 int ARGBShade(const uint8_t* src_argb,
@@ -767,6 +1061,21 @@ int InterpolatePlane(const uint8_t* src0,
                      int width,
                      int height,
                      int interpolation);
+
+// Interpolate between two images using specified amount of interpolation
+// (0 to 255) and store to destination.
+// 'interpolation' is specified as 8 bit fraction where 0 means 100% src0
+// and 255 means 1% src0 and 99% src1.
+LIBYUV_API
+int InterpolatePlane_16(const uint16_t* src0,
+                        int src_stride0,  // measured in 16 bit pixels
+                        const uint16_t* src1,
+                        int src_stride1,
+                        uint16_t* dst,
+                        int dst_stride,
+                        int width,
+                        int height,
+                        int interpolation);
 
 // Interpolate between two ARGB images using specified amount of interpolation
 // Internally calls InterpolatePlane with width * 4 (bpp).
@@ -807,29 +1116,24 @@ int I420Interpolate(const uint8_t* src0_y,
                     int height,
                     int interpolation);
 
-// Row function for copying pixels from a source with a slope to a row
-// of destination. Useful for scaling, rotation, mirror, texture mapping.
-LIBYUV_API
-void ARGBAffineRow_C(const uint8_t* src_argb,
-                     int src_argb_stride,
-                     uint8_t* dst_argb,
-                     const float* uv_dudv,
-                     int width);
-// TODO(fbarchard): Move ARGBAffineRow_SSE2 to row.h
-LIBYUV_API
-void ARGBAffineRow_SSE2(const uint8_t* src_argb,
-                        int src_argb_stride,
-                        uint8_t* dst_argb,
-                        const float* uv_dudv,
-                        int width);
-
 // Shuffle ARGB channel order.  e.g. BGRA to ARGB.
-// shuffler is 16 bytes and must be aligned.
+// shuffler is 16 bytes.
 LIBYUV_API
-int ARGBShuffle(const uint8_t* src_bgra,
-                int src_stride_bgra,
+int ARGBShuffle(const uint8_t* src_argb,
+                int src_stride_argb,
                 uint8_t* dst_argb,
                 int dst_stride_argb,
+                const uint8_t* shuffler,
+                int width,
+                int height);
+
+// Shuffle AR64 channel order.  e.g. AR64 to AB64.
+// shuffler is 16 bytes.
+LIBYUV_API
+int AR64Shuffle(const uint16_t* src_ar64,
+                int src_stride_ar64,
+                uint16_t* dst_ar64,
+                int dst_stride_ar64,
                 const uint8_t* shuffler,
                 int width,
                 int height);

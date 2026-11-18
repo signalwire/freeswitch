@@ -7,31 +7,7 @@
     <ClCompile Include="..\..\src\switch_core.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libs\libnatpmp\getgateway.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\igd_desc_parse.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\inet_pton.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\minisoap.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\minissdpc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\miniupnpc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\miniwget.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\minixml.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\libnatpmp\natpmp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\switch_apr.c">
@@ -202,15 +178,6 @@
     <ClCompile Include="..\..\src\switch_xml_config.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\upnpcommands.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\upnperrors.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\upnpreplyparse.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\switch_curl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -228,9 +195,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libs\miniupnpc\declspec.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\include\g711.h">
       <Filter>Header Files</Filter>
     </ClInclude>

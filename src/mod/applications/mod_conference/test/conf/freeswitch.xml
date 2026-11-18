@@ -28,6 +28,10 @@
       <profiles>
         <profile name="default">
         </profile>
+        <profile name="livearray">
+          <param name="conference-flags" value="livearray-sync"/>
+          <param name="domain" value="livearray.test"/>
+        </profile>
       </profiles>
     </configuration>
   </section>

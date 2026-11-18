@@ -444,6 +444,9 @@ static const arg_def_t tile_rows =
 
 static const arg_def_t enable_tpl_model =
     ARG_DEF(NULL, "enable-tpl", 1, "Enable temporal dependency model");
+static const arg_def_t enable_keyframe_filtering =
+    ARG_DEF(NULL, "enable-keyframe-filtering", 1,
+            "Enable key frame temporal filtering (0: off (default), 1: on)");
 
 static const arg_def_t lossless =
     ARG_DEF(NULL, "lossless", 1, "Lossless mode (0: false (default), 1: true)");
@@ -494,7 +497,7 @@ static const arg_def_t bitdeptharg = ARG_DEF_ENUM(
     "Bit depth for codec (8 for version <=1, 10 or 12 for version 2)",
     bitdepth_enum);
 static const arg_def_t inbitdeptharg =
-    ARG_DEF(NULL, "input-bit-depth", 1, "Bit depth of input");
+    ARG_DEF(NULL, "input-bit-depth", 1, "Actual bit depth of input source");
 #endif
 
 static const struct arg_enum_list tune_content_enum[] = {
@@ -524,10 +527,18 @@ static const arg_def_t row_mt =
 
 static const arg_def_t disable_loopfilter =
     ARG_DEF(NULL, "disable-loopfilter", 1,
-            "Control Loopfilter in VP9\n"
+            "Control Loopfilter in VP9:\n"
+            "                                          "
             "0: Loopfilter on for all frames (default)\n"
+            "                                          "
             "1: Loopfilter off for non reference frames\n"
+            "                                          "
             "2: Loopfilter off for all frames");
+static const arg_def_t validate_hbd_input =
+    ARG_DEF(NULL, "validate-hbd-input", 1,
+            "Check that input samples are within the valid range "
+            "for the chosen bit depth with high bit depth encoding (0: "
+            "disabled, 1: enabled (default))");
 #endif
 
 #if CONFIG_VP9_ENCODER
@@ -538,6 +549,7 @@ static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &tile_cols,
                                        &tile_rows,
                                        &enable_tpl_model,
+                                       &enable_keyframe_filtering,
                                        &arnr_maxframes,
                                        &arnr_strength,
                                        &arnr_type,
@@ -559,6 +571,7 @@ static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &target_level,
                                        &row_mt,
                                        &disable_loopfilter,
+                                       &validate_hbd_input,
 // NOTE: The entries above have a corresponding entry in vp9_arg_ctrl_map. The
 // entries below do not have a corresponding entry in vp9_arg_ctrl_map. They
 // must be listed at the end of vp9_args.
@@ -574,6 +587,7 @@ static const int vp9_arg_ctrl_map[] = { VP8E_SET_CPUUSED,
                                         VP9E_SET_TILE_COLUMNS,
                                         VP9E_SET_TILE_ROWS,
                                         VP9E_SET_TPL,
+                                        VP9E_SET_KEY_FRAME_FILTERING,
                                         VP8E_SET_ARNR_MAXFRAMES,
                                         VP8E_SET_ARNR_STRENGTH,
                                         VP8E_SET_ARNR_TYPE,
@@ -595,6 +609,7 @@ static const int vp9_arg_ctrl_map[] = { VP8E_SET_CPUUSED,
                                         VP9E_SET_TARGET_LEVEL,
                                         VP9E_SET_ROW_MT,
                                         VP9E_SET_DISABLE_LOOPFILTER,
+                                        VP9E_SET_VALIDATE_HBD_INPUT,
                                         0 };
 #endif
 
@@ -711,7 +726,7 @@ static void validate_positive_rational(const char *msg,
     rat->den *= -1;
   }
 
-  if (rat->num < 0) die("Error: %s must be positive\n", msg);
+  if (rat->num <= 0) die("Error: %s must be positive\n", msg);
 
   if (!rat->den) die("Error: %s has zero denominator\n", msg);
 }
@@ -844,7 +859,7 @@ static struct stream_state *new_stream(struct VpxEncoderConfig *global,
   }
 
   if (prev) {
-    memcpy(stream, prev, sizeof(*stream));
+    *stream = *prev;
     stream->index++;
     prev->next = stream;
   } else {
@@ -880,7 +895,7 @@ static struct stream_state *new_stream(struct VpxEncoderConfig *global,
 
     /* Default lag_in_frames is 0 in realtime mode CBR mode*/
     if (global->deadline == VPX_DL_REALTIME &&
-        stream->config.cfg.rc_end_usage == 1)
+        stream->config.cfg.rc_end_usage == VPX_CBR)
       stream->config.cfg.g_lag_in_frames = 0;
   }
 
@@ -895,8 +910,8 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
                                struct stream_state *stream, char **argv) {
   char **argi, **argj;
   struct arg arg;
-  static const arg_def_t **ctrl_args = no_args;
-  static const int *ctrl_args_map = NULL;
+  const arg_def_t **ctrl_args = no_args;
+  const int *ctrl_args_map = NULL;
   struct stream_config *config = &stream->config;
   int eos_mark_found = 0;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -1583,13 +1598,14 @@ static void test_decode(struct stream_state *stream,
   /* Get the internal reference frame */
   if (strcmp(codec->name, "vp8") == 0) {
     struct vpx_ref_frame ref_enc, ref_dec;
-    int width, height;
+    unsigned int aligned_width = (stream->config.cfg.g_w + 15u) & ~15u;
+    unsigned int aligned_height = (stream->config.cfg.g_h + 15u) & ~15u;
 
-    width = (stream->config.cfg.g_w + 15) & ~15;
-    height = (stream->config.cfg.g_h + 15) & ~15;
-    vpx_img_alloc(&ref_enc.img, VPX_IMG_FMT_I420, width, height, 1);
+    vpx_img_alloc(&ref_enc.img, VPX_IMG_FMT_I420, aligned_width, aligned_height,
+                  1);
     enc_img = ref_enc.img;
-    vpx_img_alloc(&ref_dec.img, VPX_IMG_FMT_I420, width, height, 1);
+    vpx_img_alloc(&ref_dec.img, VPX_IMG_FMT_I420, aligned_width, aligned_height,
+                  1);
     dec_img = ref_dec.img;
 
     ref_enc.frame_type = VP8_LAST_FRAME;
@@ -1966,10 +1982,9 @@ int main(int argc, const char **argv_) {
           } else {
             const int64_t input_pos = ftello(input.file);
             const int64_t input_pos_lagged = input_pos - lagged_count;
-            const int64_t limit = input.length;
 
             rate = cx_time ? input_pos_lagged * (int64_t)1000000 / cx_time : 0;
-            remaining = limit - input_pos + lagged_count;
+            remaining = input.length - input_pos + lagged_count;
           }
 
           average_rate =

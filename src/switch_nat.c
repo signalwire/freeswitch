@@ -33,11 +33,10 @@
  */
 
 #include <switch.h>
-#include "../libs/miniupnpc/miniwget.h"
-#include "../libs/miniupnpc/miniupnpc.h"
-#include "../libs/miniupnpc/upnpcommands.h"
-#include "../libs/miniupnpc/upnperrors.h"
-#include "../libs/libnatpmp/natpmp.h"
+#include <miniupnpc/miniwget.h>
+#include <miniupnpc/miniupnpc.h>
+#include <miniupnpc/upnpcommands.h>
+#include <natpmp.h>
 
 #define MULTICAST_BUFFSIZE 65536
 #define IP_LEN 16
@@ -68,13 +67,13 @@ static nat_globals_perm_t nat_globals_perm;
 static switch_bool_t first_init = SWITCH_TRUE;
 static switch_bool_t initialized = SWITCH_FALSE;
 
-static switch_status_t get_upnp_pubaddr(char *pub_addr)
+static switch_status_t get_upnp_pubaddr(char *pub_addr, switch_bool_t have_fallback)
 {
-	if (UPNP_GetExternalIPAddress(nat_globals.urls.controlURL, nat_globals.data.servicetype, pub_addr) == UPNPCOMMAND_SUCCESS) {
+	if (UPNP_GetExternalIPAddress(nat_globals.urls.controlURL, nat_globals.data.first.servicetype, pub_addr) == UPNPCOMMAND_SUCCESS) {
 		if (!strcmp(pub_addr, "0.0.0.0") || zstr_buf(pub_addr)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							  "uPNP Device (url: %s) returned an invalid external address of '%s'.  Disabling uPNP\n", nat_globals.urls.controlURL,
-							  pub_addr);
+			switch_log_printf(SWITCH_CHANNEL_LOG, have_fallback ? SWITCH_LOG_DEBUG : SWITCH_LOG_ERROR,
+							  "uPNP Device (url: %s) returned an invalid external address of '%s'.  %s\n", nat_globals.urls.controlURL,
+							  pub_addr, have_fallback ? "Trying the other WAN connection service" : "Disabling uPNP");
 			return SWITCH_STATUS_GENERR;
 		}
 	} else {
@@ -90,12 +89,13 @@ static int init_upnp(void)
 	struct UPNPDev *trydev = NULL;
 	char *descXML;
 	int descXMLsize = 0;
-	const char *minissdpdpath = switch_core_get_variable("local_ip_v4");
+	unsigned int scope_id = 0;
+	const char *multicastif = switch_core_get_variable("local_ip_v4");
 
 	memset(&nat_globals.urls, 0, sizeof(struct UPNPUrls));
 	memset(&nat_globals.data, 0, sizeof(struct IGDdatas));
 
-	devlist = upnpDiscover(3000, minissdpdpath, minissdpdpath, 0);
+	devlist = upnpDiscover(3000, multicastif, NULL, 0, 0, 2, NULL);
 
 	if (devlist) {
 		dev = devlist;
@@ -120,15 +120,16 @@ static int init_upnp(void)
 	}
 
 	if (dev) {
-		descXML = miniwget(dev->descURL, &descXMLsize);
+		descXML = miniwget(dev->descURL, &descXMLsize, dev->scope_id, NULL);
 
 		nat_globals.descURL = strdup(dev->descURL);
+		scope_id = dev->scope_id;
 
 		if (descXML) {
 			parserootdesc(descXML, descXMLsize, &nat_globals.data);
 			free(descXML);
 			descXML = 0;
-			GetUPNPUrls(&nat_globals.urls, &nat_globals.data, dev->descURL);
+			GetUPNPUrls(&nat_globals.urls, &nat_globals.data, dev->descURL, dev->scope_id);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unable to retrieve device description XML (%s).\n", dev->descURL);
 		}
@@ -136,9 +137,25 @@ static int init_upnp(void)
 		freeUPNPDevlist(devlist);
 	}
 
-	if (get_upnp_pubaddr(nat_globals.pub_addr) == SWITCH_STATUS_SUCCESS) {
+	if (get_upnp_pubaddr(nat_globals.pub_addr, nat_globals.data.second.servicetype[0] ? SWITCH_TRUE : SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		nat_globals.nat_type = SWITCH_NAT_TYPE_UPNP;
 		return 0;
+	}
+
+	if (nat_globals.data.second.servicetype[0]) {
+		/* the gateway lists two WAN connection services and the first one did not answer: try the other one */
+		struct IGDdatas_service first = nat_globals.data.first;
+
+		nat_globals.data.first = nat_globals.data.second;
+		nat_globals.data.second = first;
+		FreeUPNPUrls(&nat_globals.urls);
+		GetUPNPUrls(&nat_globals.urls, &nat_globals.data, nat_globals.descURL, scope_id);
+
+		if (get_upnp_pubaddr(nat_globals.pub_addr, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+			nat_globals.nat_type = SWITCH_NAT_TYPE_UPNP;
+
+			return 0;
+		}
 	}
 
 	return -2;
@@ -153,7 +170,7 @@ static int get_pmp_pubaddr(char *pub_addr)
 	const char *err = NULL;
 	int pflags;
 
-	if ((r = initnatpmp(&natpmp)) < 0) {
+	if ((r = initnatpmp(&natpmp, 0, 0)) < 0) {
 		err = "init failed";
 		goto end;
 	}
@@ -295,7 +312,7 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t * t
 
 		if (nat_globals.nat_type == SWITCH_NAT_TYPE_UPNP) {
 			/* look for our desc URL and servicetype in the packet */
-			if (strstr(buf, nat_globals.descURL) && strstr(buf, nat_globals.data.servicetype)) {
+			if (strstr(buf, nat_globals.descURL) && strstr(buf, nat_globals.data.first.servicetype)) {
 				if ((pos = strstr(buf, "NTS:"))) {
 					pos = pos + 4;
 					while (*pos && *pos == ' ') {
@@ -305,7 +322,7 @@ static void *SWITCH_THREAD_FUNC switch_nat_multicast_runtime(switch_thread_t * t
 						/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got UPnP keep alive packet: \n%s\n", buf); */
 						/* did pub ip change */
 						newip[0] = '\0';
-						if (get_upnp_pubaddr(newip) != SWITCH_STATUS_SUCCESS) {
+						if (get_upnp_pubaddr(newip, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
 											  "Unable to get current pubaddr after receiving UPnP keep alive packet.\n");
 						}
@@ -448,7 +465,7 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 	int r;
 	natpmp_t natpmp;
 
-	initnatpmp(&natpmp);
+	initnatpmp(&natpmp, 0, 0);
 
 	if (proto == SWITCH_NAT_TCP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 31104000);
@@ -497,11 +514,11 @@ static switch_status_t switch_nat_add_mapping_upnp(switch_port_t port, switch_na
 	sprintf(port_str, "%d", port);
 
 	if (proto == SWITCH_NAT_TCP) {
-		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, port_str,
-								nat_globals.pvt_addr, "FreeSWITCH", "TCP", 0);
+		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.first.servicetype, port_str, port_str,
+								nat_globals.pvt_addr, "FreeSWITCH", "TCP", NULL, NULL);
 	} else if (proto == SWITCH_NAT_UDP) {
-		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, port_str,
-								nat_globals.pvt_addr, "FreeSWITCH", "UDP", 0);
+		r = UPNP_AddPortMapping(nat_globals.urls.controlURL, nat_globals.data.first.servicetype, port_str, port_str,
+								nat_globals.pvt_addr, "FreeSWITCH", "UDP", NULL, NULL);
 	}
 
 	if (r == UPNPCOMMAND_SUCCESS) {
@@ -520,7 +537,7 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 	int r;
 	natpmp_t natpmp;
 
-	initnatpmp(&natpmp);
+	initnatpmp(&natpmp, 0, 0);
 
 	if (proto == SWITCH_NAT_TCP) {
 		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 0);
@@ -559,9 +576,9 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 	sprintf(port_str, "%d", port);
 
 	if (proto == SWITCH_NAT_TCP) {
-		r = UPNP_DeletePortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, "TCP", 0);
+		r = UPNP_DeletePortMapping(nat_globals.urls.controlURL, nat_globals.data.first.servicetype, port_str, "TCP", NULL);
 	} else if (proto == SWITCH_NAT_UDP) {
-		r = UPNP_DeletePortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, "UDP", 0);
+		r = UPNP_DeletePortMapping(nat_globals.urls.controlURL, nat_globals.data.first.servicetype, port_str, "UDP", NULL);
 	}
 
 	if (r == UPNPCOMMAND_SUCCESS) {

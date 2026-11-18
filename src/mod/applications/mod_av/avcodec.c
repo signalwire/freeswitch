@@ -42,6 +42,13 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 
+/* AV_PROFILE_* replaced FF_PROFILE_* in FFmpeg 6.1, FFmpeg 8 removed the latter */
+#ifndef AV_PROFILE_H264_BASELINE
+#define AV_PROFILE_H264_BASELINE FF_PROFILE_H264_BASELINE
+#define AV_PROFILE_H264_MAIN FF_PROFILE_H264_MAIN
+#define AV_PROFILE_H264_HIGH FF_PROFILE_H264_HIGH
+#endif
+
 int SLICE_SIZE = (SWITCH_DEFAULT_VIDEO_SIZE + 100);
 
 #define H264_NALU_BUFFER_SIZE 65536
@@ -530,7 +537,7 @@ static void init_profile(avcodec_profile_t *aprofile, const char *name)
 	aprofile->decoder_thread_count = avcodec_globals.dec_threads;
 
 	if (!strcasecmp(name, "H264")) {
-		aprofile->ctx.profile = FF_PROFILE_H264_BASELINE;
+		aprofile->ctx.profile = AV_PROFILE_H264_BASELINE;
 		aprofile->ctx.level = 31;
 #ifdef AV_CODEC_FLAG_PSNR
 		aprofile->ctx.flags |= AV_CODEC_FLAG_PSNR;
@@ -545,10 +552,15 @@ static switch_status_t buffer_h264_nalu(h264_codec_context_t *context, switch_fr
 {
 	uint8_t nalu_type = 0;
 	uint8_t *data = frame->data;
-	uint8_t nalu_hdr = *data;
+	uint8_t nalu_hdr;
 	uint8_t sync_bytes[] = {0, 0, 0, 1};
 	switch_buffer_t *buffer = context->nalu_buffer;
 
+	if (!frame->datalen) { /* one byte NAL unit header */
+		return SWITCH_STATUS_RESTART;
+	}
+
+	nalu_hdr = *data;
 	nalu_type = nalu_hdr & 0x1f;
 
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "nalu=%02x mark=%d seq=%d ts=%d len=%d\n", nalu_hdr, frame->m, frame->seq, frame->timestamp, frame->datalen);
@@ -568,8 +580,14 @@ static switch_status_t buffer_h264_nalu(h264_codec_context_t *context, switch_fr
 	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
 
 	if (nalu_type == 28) { // 0x1c FU-A
-		int start = *(data + 1) & 0x80;
-		int end = *(data + 1) & 0x40;
+		int start, end;
+
+		if (frame->datalen < 2) { /* FU indicator + FU header, the payload may be empty */
+			return SWITCH_STATUS_RESTART;
+		}
+
+		start = *(data + 1) & 0x80;
+		end = *(data + 1) & 0x40;
 
 		nalu_type = *(data + 1) & 0x1f;
 
@@ -581,6 +599,11 @@ static switch_status_t buffer_h264_nalu(h264_codec_context_t *context, switch_fr
 				switch_buffer_zero(buffer);
 			}
 		} else if (end) {
+			if (!context->nalu_28_start) {
+				/* the start fragment was lost, this tail is undecodable */
+				return SWITCH_STATUS_RESTART;
+			}
+
 			context->nalu_28_start = 0;
 		} else if (!context->nalu_28_start) {
 			return SWITCH_STATUS_RESTART;
@@ -654,6 +677,11 @@ static switch_status_t buffer_h263_packets(h264_codec_context_t *context, switch
 	int header_len = 4; // Mode A, default
 	h263_payload_header_t *h = (h263_payload_header_t *)data;
 	int delta = 0;
+
+	if (frame->datalen < 4) { /* Mode A header */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID PACKET\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (h->f) {
 		if (h->p) {
@@ -734,13 +762,15 @@ static switch_status_t buffer_h263_packets(h264_codec_context_t *context, switch
 static switch_status_t buffer_h263_rfc4629_packets(h264_codec_context_t *context, switch_frame_t *frame)
 {
 	uint8_t *data = frame->data;
-	uint16_t header = ntohs(*((uint16_t *)frame->data));
+	uint16_t header;
 	int startcode, vrc, picture_header;
 	int len = frame->datalen;
 
 	if (frame->datalen < 2) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	header = ntohs(*((uint16_t *)frame->data));
 
 	startcode      = (header & 0x0400) >> 9;
 	vrc            =  header & 0x0200;
@@ -1706,6 +1736,10 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 
 	// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d ts: %u mark:%d\n", frame->datalen, ntohl(frame->timestamp), frame->m);
 
+	if (!frame->data) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	//if (context->last_received_timestamp && context->last_received_timestamp != frame->timestamp &&
 	//	(!frame->m) && (!context->last_received_complete_picture)) {
 		// possible packet loss
@@ -1716,19 +1750,23 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
-	if (context->av_codec_id == AV_CODEC_ID_H263) {
-		status = buffer_h263_packets(context, frame);
-	} else if (context->av_codec_id == AV_CODEC_ID_H263P) {
-		status = buffer_h263_rfc4629_packets(context, frame);
-	} else {
-		status = buffer_h264_nalu(context, frame);
-	}
+	/* an empty packet adds nothing, but its marker bit still closes the picture below */
+	if (frame->datalen > 0) {
+		if (context->av_codec_id == AV_CODEC_ID_H263) {
+			status = buffer_h263_packets(context, frame);
+		} else if (context->av_codec_id == AV_CODEC_ID_H263P) {
+			status = buffer_h263_rfc4629_packets(context, frame);
+		} else {
+			status = buffer_h264_nalu(context, frame);
+		}
 
-	if (status == SWITCH_STATUS_RESTART) {
-		switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
-		switch_buffer_zero(context->nalu_buffer);
-		context->nalu_28_start = 0;
-		return SWITCH_STATUS_MORE_DATA;
+		if (status == SWITCH_STATUS_RESTART) {
+			switch_set_flag(frame, SFF_WAIT_KEY_FRAME);
+			switch_buffer_zero(context->nalu_buffer);
+			context->nalu_28_start = 0;
+
+			return SWITCH_STATUS_MORE_DATA;
+		}
 	}
 
 	if (frame->m) {
@@ -2071,7 +2109,7 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 	ctx = &aprofile->ctx;
 
-	ctx->profile = FF_PROFILE_H264_BASELINE;
+	ctx->profile = AV_PROFILE_H264_BASELINE;
 	ctx->level = 31;
 
 	for (param = switch_xml_child(profile, "param"); param; param = param->next) {
@@ -2094,11 +2132,11 @@ static void parse_profile(avcodec_profile_t *aprofile, switch_xml_t profile)
 
 			if (ctx->profile == 0 && !strcasecmp(aprofile->name, "H264")) {
 				if (!strcasecmp(value, "baseline")) {
-					ctx->profile = FF_PROFILE_H264_BASELINE;
+					ctx->profile = AV_PROFILE_H264_BASELINE;
 				} else if (!strcasecmp(value, "main")) {
-					ctx->profile = FF_PROFILE_H264_MAIN;
+					ctx->profile = AV_PROFILE_H264_MAIN;
 				} else if (!strcasecmp(value, "high")) {
-					ctx->profile = FF_PROFILE_H264_HIGH;
+					ctx->profile = AV_PROFILE_H264_HIGH;
 				}
 			}
 		} else if (!strcmp(name, "level")) {

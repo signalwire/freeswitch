@@ -13,6 +13,9 @@
 #ifndef INCLUDE_LIBYUV_VIDEO_COMMON_H_
 #define INCLUDE_LIBYUV_VIDEO_COMMON_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
@@ -50,45 +53,72 @@ extern "C" {
 // Secondary formats are converted in 2 steps.
 // Auxilliary formats call primary converters.
 enum FourCC {
-  // 9 Primary YUV formats: 5 planar, 2 biplanar, 2 packed.
+  // 15 Primary YUV formats: 6 planar, 7 biplanar, 2 packed.
   FOURCC_I420 = FOURCC('I', '4', '2', '0'),
   FOURCC_I422 = FOURCC('I', '4', '2', '2'),
   FOURCC_I444 = FOURCC('I', '4', '4', '4'),
   FOURCC_I400 = FOURCC('I', '4', '0', '0'),
   FOURCC_NV21 = FOURCC('N', 'V', '2', '1'),
   FOURCC_NV12 = FOURCC('N', 'V', '1', '2'),
+  FOURCC_NV16 = FOURCC('N', 'V', '1', '6'),
+  FOURCC_NV24 = FOURCC('N', 'V', '2', '4'),
+  FOURCC_P010 = FOURCC('P', '0', '1', '0'),
+  FOURCC_P210 = FOURCC('P', '2', '1', '0'),
+  FOURCC_P410 = FOURCC('P', '4', '1', '0'),
   FOURCC_YUY2 = FOURCC('Y', 'U', 'Y', '2'),
   FOURCC_UYVY = FOURCC('U', 'Y', 'V', 'Y'),
-  FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // unofficial fourcc. 10 bit lsb
+  FOURCC_I010 = FOURCC('I', '0', '1', '0'),  // bt.601 10 bit 420
+  FOURCC_I210 = FOURCC('I', '2', '1', '0'),  // bt.601 10 bit 422
 
-  // 1 Secondary YUV format: row biplanar.
+  // 1 Secondary YUV format: row biplanar.  deprecated.
   FOURCC_M420 = FOURCC('M', '4', '2', '0'),
 
-  // 11 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp, 1 10 bpc
+  // 13 Primary RGB formats: 4 32 bpp, 2 24 bpp, 3 16 bpp, 1 10 bpc 2 64 bpp
   FOURCC_ARGB = FOURCC('A', 'R', 'G', 'B'),
   FOURCC_BGRA = FOURCC('B', 'G', 'R', 'A'),
   FOURCC_ABGR = FOURCC('A', 'B', 'G', 'R'),
   FOURCC_AR30 = FOURCC('A', 'R', '3', '0'),  // 10 bit per channel. 2101010.
   FOURCC_AB30 = FOURCC('A', 'B', '3', '0'),  // ABGR version of 10 bit
+  FOURCC_AR64 = FOURCC('A', 'R', '6', '4'),  // 16 bit per channel.
+  FOURCC_AB64 = FOURCC('A', 'B', '6', '4'),  // ABGR version of 16 bit
   FOURCC_24BG = FOURCC('2', '4', 'B', 'G'),
   FOURCC_RAW = FOURCC('r', 'a', 'w', ' '),
   FOURCC_RGBA = FOURCC('R', 'G', 'B', 'A'),
-  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // rgb565 LE.
-  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // argb1555 LE.
-  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444 LE.
+  FOURCC_RGBP = FOURCC('R', 'G', 'B', 'P'),  // rgb565 LE. deprecated.
+  FOURCC_RGBO = FOURCC('R', 'G', 'B', 'O'),  // argb1555 LE. deprecated.
+  FOURCC_R444 = FOURCC('R', '4', '4', '4'),  // argb4444 LE. deprecated.
 
   // 1 Primary Compressed YUV format.
   FOURCC_MJPG = FOURCC('M', 'J', 'P', 'G'),
 
-  // 8 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
+  // 23 Auxiliary YUV variations: 3 with U and V planes are swapped, 1 Alias.
   FOURCC_YV12 = FOURCC('Y', 'V', '1', '2'),
   FOURCC_YV16 = FOURCC('Y', 'V', '1', '6'),
   FOURCC_YV24 = FOURCC('Y', 'V', '2', '4'),
   FOURCC_YU12 = FOURCC('Y', 'U', '1', '2'),  // Linux version of I420.
-  FOURCC_J420 = FOURCC('J', '4', '2', '0'),
-  FOURCC_J400 = FOURCC('J', '4', '0', '0'),  // unofficial fourcc
-  FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // unofficial fourcc
-  FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // unofficial fourcc
+  FOURCC_J420 =
+      FOURCC('J', '4', '2', '0'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J422 =
+      FOURCC('J', '4', '2', '2'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J444 =
+      FOURCC('J', '4', '4', '4'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_J400 =
+      FOURCC('J', '4', '0', '0'),  // jpeg (bt.601 full), unofficial fourcc
+  FOURCC_F420 = FOURCC('F', '4', '2', '0'),  // bt.709 full, unofficial fourcc
+  FOURCC_F422 = FOURCC('F', '4', '2', '2'),  // bt.709 full, unofficial fourcc
+  FOURCC_F444 = FOURCC('F', '4', '4', '4'),  // bt.709 full, unofficial fourcc
+  FOURCC_H420 = FOURCC('H', '4', '2', '0'),  // bt.709, unofficial fourcc
+  FOURCC_H422 = FOURCC('H', '4', '2', '2'),  // bt.709, unofficial fourcc
+  FOURCC_H444 = FOURCC('H', '4', '4', '4'),  // bt.709, unofficial fourcc
+  FOURCC_U420 = FOURCC('U', '4', '2', '0'),  // bt.2020, unofficial fourcc
+  FOURCC_U422 = FOURCC('U', '4', '2', '2'),  // bt.2020, unofficial fourcc
+  FOURCC_U444 = FOURCC('U', '4', '4', '4'),  // bt.2020, unofficial fourcc
+  FOURCC_F010 = FOURCC('F', '0', '1', '0'),  // bt.709 full range 10 bit 420
+  FOURCC_H010 = FOURCC('H', '0', '1', '0'),  // bt.709 10 bit 420
+  FOURCC_U010 = FOURCC('U', '0', '1', '0'),  // bt.2020 10 bit 420
+  FOURCC_F210 = FOURCC('F', '2', '1', '0'),  // bt.709 full range 10 bit 422
+  FOURCC_H210 = FOURCC('H', '2', '1', '0'),  // bt.709 10 bit 422
+  FOURCC_U210 = FOURCC('U', '2', '1', '0'),  // bt.2020 10 bit 422
 
   // 14 Auxiliary aliases.  CanonicalFourCC() maps these to canonical fourcc.
   FOURCC_IYUV = FOURCC('I', 'Y', 'U', 'V'),  // Alias for I420.
@@ -105,9 +135,9 @@ enum FourCC {
   FOURCC_BGR3 = FOURCC('B', 'G', 'R', '3'),  // Alias for 24BG.
   FOURCC_CM32 = FOURCC(0, 0, 0, 32),  // Alias for BGRA kCMPixelFormat_32ARGB
   FOURCC_CM24 = FOURCC(0, 0, 0, 24),  // Alias for RAW kCMPixelFormat_24RGB
-  FOURCC_L555 = FOURCC('L', '5', '5', '5'),  // Alias for RGBO.
-  FOURCC_L565 = FOURCC('L', '5', '6', '5'),  // Alias for RGBP.
-  FOURCC_5551 = FOURCC('5', '5', '5', '1'),  // Alias for RGBO.
+  FOURCC_L555 = FOURCC('L', '5', '5', '5'),  // Alias for RGBO. deprecated.
+  FOURCC_L565 = FOURCC('L', '5', '6', '5'),  // Alias for RGBP. deprecated.
+  FOURCC_5551 = FOURCC('5', '5', '5', '1'),  // Alias for RGBO. deprecated.
 
   // deprecated formats.  Not supported, but defined for backward compatibility.
   FOURCC_I411 = FOURCC('I', '4', '1', '1'),
@@ -131,9 +161,11 @@ enum FourCCBpp {
   FOURCC_BPP_I400 = 8,
   FOURCC_BPP_NV21 = 12,
   FOURCC_BPP_NV12 = 12,
+  FOURCC_BPP_NV16 = 16,
+  FOURCC_BPP_NV24 = 24,
   FOURCC_BPP_YUY2 = 16,
   FOURCC_BPP_UYVY = 16,
-  FOURCC_BPP_M420 = 12,
+  FOURCC_BPP_M420 = 12,  // deprecated
   FOURCC_BPP_Q420 = 12,
   FOURCC_BPP_ARGB = 32,
   FOURCC_BPP_BGRA = 32,
@@ -141,11 +173,13 @@ enum FourCCBpp {
   FOURCC_BPP_RGBA = 32,
   FOURCC_BPP_AR30 = 32,
   FOURCC_BPP_AB30 = 32,
+  FOURCC_BPP_AR64 = 64,
+  FOURCC_BPP_AB64 = 64,
   FOURCC_BPP_24BG = 24,
   FOURCC_BPP_RAW = 24,
-  FOURCC_BPP_RGBP = 16,
-  FOURCC_BPP_RGBO = 16,
-  FOURCC_BPP_R444 = 16,
+  FOURCC_BPP_RGBP = 16,  // deprecated
+  FOURCC_BPP_RGBO = 16,  // deprecated
+  FOURCC_BPP_R444 = 16,  // deprecated
   FOURCC_BPP_RGGB = 8,
   FOURCC_BPP_BGGR = 8,
   FOURCC_BPP_GRBG = 8,
@@ -158,7 +192,13 @@ enum FourCCBpp {
   FOURCC_BPP_J400 = 8,
   FOURCC_BPP_H420 = 12,
   FOURCC_BPP_H422 = 16,
-  FOURCC_BPP_H010 = 24,
+  FOURCC_BPP_I010 = 15,
+  FOURCC_BPP_I210 = 20,
+  FOURCC_BPP_H010 = 15,
+  FOURCC_BPP_H210 = 20,
+  FOURCC_BPP_P010 = 15,
+  FOURCC_BPP_P210 = 20,
+  FOURCC_BPP_P410 = 30,
   FOURCC_BPP_MJPG = 0,  // 0 means unknown.
   FOURCC_BPP_H264 = 0,
   FOURCC_BPP_IYUV = 12,

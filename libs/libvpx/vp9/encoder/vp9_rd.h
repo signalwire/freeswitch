@@ -121,11 +121,9 @@ typedef struct RD_OPT {
   int64_t prediction_type_threshes[MAX_REF_FRAMES][REFERENCE_MODES];
 
   int64_t filter_threshes[MAX_REF_FRAMES][SWITCHABLE_FILTER_CONTEXTS];
-#if CONFIG_CONSISTENT_RECODE || CONFIG_RATE_CTRL
   int64_t prediction_type_threshes_prev[MAX_REF_FRAMES][REFERENCE_MODES];
 
   int64_t filter_threshes_prev[MAX_REF_FRAMES][SWITCHABLE_FILTER_CONTEXTS];
-#endif  // CONFIG_CONSISTENT_RECODE || CONFIG_RATE_CTRL
   int RDMULT;
   int RDDIV;
   double r0;
@@ -165,11 +163,6 @@ void vp9_initialize_me_consts(struct VP9_COMP *cpi, MACROBLOCK *x, int qindex);
 
 void vp9_model_rd_from_var_lapndz(unsigned int var, unsigned int n_log2,
                                   unsigned int qstep, int *rate, int64_t *dist);
-
-void vp9_model_rd_from_var_lapndz_vec(unsigned int var[MAX_MB_PLANE],
-                                      unsigned int n_log2[MAX_MB_PLANE],
-                                      unsigned int qstep[MAX_MB_PLANE],
-                                      int64_t *rate_sum, int64_t *dist_sum);
 
 int vp9_get_switchable_rate(const struct VP9_COMP *cpi,
                             const MACROBLOCKD *const xd);

@@ -186,13 +186,18 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	uint8_t nalu_idc = 0;
 	uint8_t nalu_type = 0;
 	uint8_t *data = (uint8_t *)frame->data;
-	uint8_t nalu_hdr = *data;
+	uint8_t nalu_hdr;
 	uint8_t sync_bytes[] = {0, 0, 0, 1};
 	switch_buffer_t *buffer = context->nalu_buffer;
 	switch_size_t size = switch_buffer_inuse(buffer);
 
 	switch_assert(frame);
 
+	if (!frame->datalen) { /* one byte NAL unit header */
+		return 1;
+	}
+
+	nalu_hdr = *data;
 	nalu_idc = (nalu_hdr & 0x60) >> 5;
 	nalu_type = nalu_hdr & 0x1f;
 
@@ -219,8 +224,14 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 	if ((nalu_type == 7 || nalu_type == 8) && frame->m) frame->m = SWITCH_FALSE;
 
 	if (nalu_type == 28) { // 0x1c FU-A
-		int start = *(data + 1) & 0x80;
-		int end = *(data + 1) & 0x40;
+		int start, end;
+
+		if (frame->datalen < 2) { /* FU indicator + FU header, the payload may be empty */
+			return 1;
+		}
+
+		start = *(data + 1) & 0x80;
+		end = *(data + 1) & 0x40;
 
 		nalu_type = *(data + 1) & 0x1f;
 
@@ -236,6 +247,11 @@ static switch_size_t buffer_h264_nalu(h264_codec_context_t *context, switch_fram
 				switch_buffer_zero(buffer);
 			}
 		} else if (end) {
+			if (!context->nalu_28_start) {
+				/* the start fragment was lost, this tail is undecodable */
+				return 1;
+			}
+
 			context->nalu_28_start = 0;
 		} else if (!context->nalu_28_start) {
 			return 0;
@@ -612,6 +628,10 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	uint32_t error_code;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	if (!frame->data) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 #ifdef DEBUG_H264
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "len: %d seq: %u ts: %u mark:%d nalu:0x%x\n", frame->datalen, frame->seq, frame->timestamp, frame->m, *(uint8_t *)frame->data);
 #endif
@@ -629,7 +649,8 @@ static switch_status_t switch_h264_decode(switch_codec_t *codec, switch_frame_t 
 	context->last_received_timestamp = frame->timestamp;
 	context->last_received_complete_picture = frame->m ? SWITCH_TRUE : SWITCH_FALSE;
 
-	size = buffer_h264_nalu(context, frame);
+	/* an empty packet adds nothing, but its marker bit still closes the picture below */
+	size = frame->datalen > 0 ? buffer_h264_nalu(context, frame) : switch_buffer_inuse(context->nalu_buffer);
 
 #ifdef DEBUG_H264
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "READ buf:%ld got_key:%d st:%d m:%d size:%" SWITCH_SIZE_T_FMT "\n", size, context->got_sps, status, frame->m, size);

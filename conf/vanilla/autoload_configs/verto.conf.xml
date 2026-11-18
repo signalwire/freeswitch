@@ -26,6 +26,12 @@
            Prefer the fsapi method with jsonrpc-allowed-fsapi, which allow-lists commands
            per user. This param is here for clients that already use api+<command>. -->
       <!-- <param name="enable-chat-api-proto" value="true"/> -->
+      <!-- login userVariables become channel variables on calls from that socket.
+           Their names are prefixed with verto_uvar_, which keeps them clear of the
+           names FreeSWITCH acts on itself. Setting this false stores them under the
+           names the client sent and is not recommended: it is here only for clients
+           and dialplan that still expect the unprefixed names. -->
+      <!-- <param name="enable-uservars-namespace" value="false"/> -->
       <param name="mcast-ip" value="224.1.1.1"/>
       <param name="mcast-port" value="1337"/>
       <param name="rtp-ip" value="$${local_ip_v4}"/>
@@ -52,6 +58,7 @@
       <!-- setting this to true will allow anyone to register even with no account so use with care -->
       <param name="blind-reg" value="false"/>
       <!-- <param name="enable-chat-api-proto" value="true"/> -->
+      <!-- <param name="enable-uservars-namespace" value="false"/> -->
       <param name="rtp-ip" value="$${local_ip_v6}"/>
       <!--  <param name="ext-rtp-ip" value=""/> -->
       <param name="outbound-codec-string" value="opus,h264,vp8"/>

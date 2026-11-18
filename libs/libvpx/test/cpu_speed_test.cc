@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
@@ -26,9 +26,9 @@ class CpuSpeedTest
       : EncoderTest(GET_PARAM(0)), encoding_mode_(GET_PARAM(1)),
         set_cpu_used_(GET_PARAM(2)), min_psnr_(kMaxPSNR),
         tune_content_(VP9E_CONTENT_DEFAULT) {}
-  virtual ~CpuSpeedTest() {}
+  ~CpuSpeedTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(encoding_mode_);
     if (encoding_mode_ != ::libvpx_test::kRealTime) {
@@ -40,10 +40,10 @@ class CpuSpeedTest
     }
   }
 
-  virtual void BeginPassHook(unsigned int /*pass*/) { min_psnr_ = kMaxPSNR; }
+  void BeginPassHook(unsigned int /*pass*/) override { min_psnr_ = kMaxPSNR; }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
     if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, set_cpu_used_);
       encoder->Control(VP9E_SET_TUNE_CONTENT, tune_content_);
@@ -56,7 +56,7 @@ class CpuSpeedTest
     }
   }
 
-  virtual void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) {
+  void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) override {
     if (pkt->data.psnr.psnr[0] < min_psnr_) min_psnr_ = pkt->data.psnr.psnr[0];
   }
 
@@ -105,7 +105,7 @@ TEST_P(CpuSpeedTest, TestTuneScreen) {
   ::libvpx_test::Y4mVideoSource video("screendata.y4m", 0, 25);
   cfg_.g_timebase = video.timebase();
   cfg_.rc_2pass_vbr_minsection_pct = 5;
-  cfg_.rc_2pass_vbr_minsection_pct = 2000;
+  cfg_.rc_2pass_vbr_maxsection_pct = 2000;
   cfg_.rc_target_bitrate = 2000;
   cfg_.rc_max_quantizer = 63;
   cfg_.rc_min_quantizer = 0;
@@ -148,9 +148,6 @@ TEST_P(CpuSpeedTest, TestLowBitrate) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
-VP9_INSTANTIATE_TEST_SUITE(CpuSpeedTest,
-                           ::testing::Values(::libvpx_test::kTwoPassGood,
-                                             ::libvpx_test::kOnePassGood,
-                                             ::libvpx_test::kRealTime),
+VP9_INSTANTIATE_TEST_SUITE(CpuSpeedTest, ONE_PASS_TEST_MODES,
                            ::testing::Range(0, 10));
 }  // namespace

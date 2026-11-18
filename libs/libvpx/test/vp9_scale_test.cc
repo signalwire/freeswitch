@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vp9_rtcd.h"
 #include "./vpx_config.h"
@@ -26,17 +26,17 @@
 
 namespace libvpx_test {
 
-typedef void (*ScaleFrameFunc)(const YV12_BUFFER_CONFIG *src,
-                               YV12_BUFFER_CONFIG *dst,
-                               INTERP_FILTER filter_type, int phase_scaler);
+using ScaleFrameFunc = void (*)(const YV12_BUFFER_CONFIG *src,
+                                YV12_BUFFER_CONFIG *dst,
+                                INTERP_FILTER filter_type, int phase_scaler);
 
 class ScaleTest : public VpxScaleBase,
                   public ::testing::TestWithParam<ScaleFrameFunc> {
  public:
-  virtual ~ScaleTest() {}
+  ~ScaleTest() override = default;
 
  protected:
-  virtual void SetUp() { scale_fn_ = GetParam(); }
+  void SetUp() override { scale_fn_ = GetParam(); }
 
   void ReferenceScaleFrame(INTERP_FILTER filter_type, int phase_scaler) {
     vp9_scale_and_extend_frame_c(&img_, &ref_img_, filter_type, phase_scaler);
@@ -48,12 +48,11 @@ class ScaleTest : public VpxScaleBase,
   }
 
   void RunTest(INTERP_FILTER filter_type) {
-    static const int kNumSizesToTest = 20;
+    static const int kNumSizesToTest = 22;
     static const int kNumScaleFactorsToTest = 4;
-    static const int kSizesToTest[] = {
-      2,  4,  6,  8,  10, 12, 14, 16, 18,  20,
-      22, 24, 26, 28, 30, 32, 34, 68, 128, 134
-    };
+    static const int kSizesToTest[] = { 1,  2,  3,  4,  6,   8,  10, 12,
+                                        14, 16, 18, 20, 22,  24, 26, 28,
+                                        30, 32, 34, 68, 128, 134 };
     static const int kScaleFactors[] = { 1, 2, 3, 4 };
     for (int phase_scaler = 0; phase_scaler < 16; ++phase_scaler) {
       for (int h = 0; h < kNumSizesToTest; ++h) {

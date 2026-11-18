@@ -16,7 +16,7 @@
 #include "vpx/vpx_integer.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
-#include "vp9/encoder/x86/temporal_filter_constants.h"
+#include "vp9/encoder/vp9_temporal_filter_constants.h"
 
 // Read in 8 pixels from a and b as 8-bit unsigned integers, compute the
 // difference squared, and store as unsigned 16-bit integer to dst.

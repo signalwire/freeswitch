@@ -6,12 +6,14 @@
 # in the file PATENTS. All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("libyuv.gni")
+import("//build/config/features.gni")
+import("//build/config/sanitizers/sanitizers.gni")
 import("//testing/test.gni")
+import("libyuv.gni")
 
 declare_args() {
-  # Set to false to disable building with gflags.
-  libyuv_use_gflags = true
+  # Set to false to disable building with absl flags.
+  libyuv_use_absl_flags = true
 
   # When building a shared library using a target in WebRTC or
   # Chromium projects that depends on libyuv, setting this flag
@@ -21,26 +23,49 @@ declare_args() {
 
 config("libyuv_config") {
   include_dirs = [ "include" ]
-  if (is_android && current_cpu == "arm64") {
-    ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker64" ]
+
+  # Define CHROMIUM to tell cpu_id to avoid sandbox unsafe system calls.
+  defines = [ "CHROMIUM" ]
+  if (libyuv_enable_rowwin) {
+    defines += [ "LIBYUV_ENABLE_ROWWIN=1" ]
   }
-  if (is_android && current_cpu != "arm64") {
-    ldflags = [ "-Wl,--dynamic-linker,/system/bin/linker" ]
+  if (!libyuv_use_neon) {
+    defines += [ "LIBYUV_DISABLE_NEON" ]
+  }
+  if (!libyuv_use_sve) {
+    defines += [ "LIBYUV_DISABLE_SVE" ]
+  }
+  if (!libyuv_use_sme) {
+    defines += [ "LIBYUV_DISABLE_SME" ]
+  }
+  if (libyuv_disable_rvv) {
+    defines += [ "LIBYUV_DISABLE_RVV" ]
+  } else if (libyuv_use_rvv) {
+    defines += [ "LIBYUV_RVV" ]
+  }
+  if (!libyuv_use_lsx) {
+    defines += [ "LIBYUV_DISABLE_LSX" ]
+  }
+  if (!libyuv_use_lasx) {
+    defines += [ "LIBYUV_DISABLE_LASX" ]
+  }
+  if (current_cpu == "wasm") {
+    cflags_cc = [ "-msimd128" ]
   }
 }
 
 # This target is built when no specific target is specified on the command line.
 group("default") {
   testonly = true
-  deps = [
-    ":libyuv",
-  ]
+  deps = [ ":libyuv" ]
   if (libyuv_include_tests) {
     deps += [
       ":compare",
       ":cpuid",
+      ":i444tonv12_eg",
       ":libyuv_unittest",
       ":psnr",
+      ":yuvconstants",
       ":yuvconvert",
     ]
   }
@@ -50,30 +75,38 @@ group("libyuv") {
   all_dependent_configs = [ ":libyuv_config" ]
   deps = []
 
-  if (is_win && target_cpu == "x64") {
+  if (is_win && target_cpu == "x64" && current_toolchain == default_toolchain) {
     # Compile with clang in order to get inline assembly
-    public_deps = [
-      ":libyuv_internal(//build/toolchain/win:win_clang_x64)",
-    ]
+    public_deps = [ ":libyuv_internal(//build/toolchain/win:win_clang_x64)" ]
   } else {
-    public_deps = [
-      ":libyuv_internal",
-    ]
+    public_deps = [ ":libyuv_internal" ]
   }
 
   if (libyuv_use_neon) {
     deps += [ ":libyuv_neon" ]
   }
 
-  if (libyuv_use_msa) {
-    deps += [ ":libyuv_msa" ]
+  if (libyuv_use_sve) {
+    deps += [ ":libyuv_sve" ]
   }
 
-  if (libyuv_use_mmi) {
-    deps += [ ":libyuv_mmi" ]
+  if (libyuv_use_sme) {
+    deps += [ ":libyuv_sme" ]
   }
 
-  if (!is_ios) {
+  if (libyuv_use_rvv && !libyuv_disable_rvv) {
+    deps += [ ":libyuv_rvv" ]
+  }
+
+  if (libyuv_use_lsx) {
+    deps += [ ":libyuv_lsx" ]
+  }
+
+  if (libyuv_use_lasx) {
+    deps += [ ":libyuv_lasx" ]
+  }
+
+  if (!is_ios && !libyuv_disable_jpeg) {
     # Make sure that clients of libyuv link with libjpeg. This can't go in
     # libyuv_internal because in Windows x64 builds that will generate a clang
     # build of libjpeg, and we don't want two copies.
@@ -89,20 +122,26 @@ static_library("libyuv_internal") {
     "include/libyuv.h",
     "include/libyuv/basic_types.h",
     "include/libyuv/compare.h",
+    "include/libyuv/compare_row.h",
     "include/libyuv/convert.h",
     "include/libyuv/convert_argb.h",
     "include/libyuv/convert_from.h",
     "include/libyuv/convert_from_argb.h",
     "include/libyuv/cpu_id.h",
+    "include/libyuv/cpu_support.h",
+    "include/libyuv/loongson_intrinsics.h",
     "include/libyuv/mjpeg_decoder.h",
     "include/libyuv/planar_functions.h",
     "include/libyuv/rotate.h",
     "include/libyuv/rotate_argb.h",
     "include/libyuv/rotate_row.h",
     "include/libyuv/row.h",
+    "include/libyuv/row_sve.h",
     "include/libyuv/scale.h",
     "include/libyuv/scale_argb.h",
+    "include/libyuv/scale_rgb.h",
     "include/libyuv/scale_row.h",
+    "include/libyuv/scale_uv.h",
     "include/libyuv/version.h",
     "include/libyuv/video_common.h",
 
@@ -110,6 +149,8 @@ static_library("libyuv_internal") {
     "source/compare.cc",
     "source/compare_common.cc",
     "source/compare_gcc.cc",
+    "source/compare_hvx.cc",
+    "source/compare_wasm.cc",
     "source/compare_win.cc",
     "source/convert.cc",
     "source/convert_argb.cc",
@@ -127,16 +168,24 @@ static_library("libyuv_internal") {
     "source/rotate_argb.cc",
     "source/rotate_common.cc",
     "source/rotate_gcc.cc",
+    "source/rotate_hvx.cc",
+    "source/rotate_wasm.cc",
     "source/rotate_win.cc",
     "source/row_any.cc",
     "source/row_common.cc",
     "source/row_gcc.cc",
+    "source/row_hvx.cc",
+    "source/row_wasm.cc",
     "source/row_win.cc",
     "source/scale.cc",
     "source/scale_any.cc",
     "source/scale_argb.cc",
     "source/scale_common.cc",
     "source/scale_gcc.cc",
+    "source/scale_hvx.cc",
+    "source/scale_rgb.cc",
+    "source/scale_uv.cc",
+    "source/scale_wasm.cc",
     "source/scale_win.cc",
     "source/video_common.cc",
   ]
@@ -150,7 +199,7 @@ static_library("libyuv_internal") {
     configs += [ "//build/config/gcc:symbol_visibility_default" ]
   }
 
-  if (!is_ios) {
+  if ((!is_ios || use_blink) && !libyuv_disable_jpeg) {
     defines += [ "HAVE_JPEG" ]
 
     # Needed to pull in libjpeg headers. Can't add //third_party:jpeg to deps
@@ -158,9 +207,7 @@ static_library("libyuv_internal") {
     deps += [ "//third_party:jpeg_includes" ]
   }
 
-  # Always enable optimization for Release and NaCl builds (to workaround
-  # crbug.com/538243).
-  if (!is_debug || is_nacl) {
+  if (!is_debug) {
     configs -= [ "//build/config/compiler:default_optimization" ]
 
     # Enable optimize for speed (-O2) over size (-Os).
@@ -192,60 +239,125 @@ if (libyuv_use_neon) {
       "source/scale_neon64.cc",
     ]
 
-    deps = [
-      ":libyuv_internal",
-    ]
+    deps = [ ":libyuv_internal" ]
 
     public_configs = [ ":libyuv_config" ]
 
-    # Always enable optimization for Release and NaCl builds (to workaround
-    # crbug.com/538243).
-    if (!is_debug) {
-      configs -= [ "//build/config/compiler:default_optimization" ]
+    if (current_cpu == "arm64") {
+      # The -march arguments below are incompatible with libc++ modules.
+      use_libcxx_modules = false
 
-      # Enable optimize for speed (-O2) over size (-Os).
-      # TODO(fbarchard): Consider optimize_speed which is O3.
-      configs += [ "//build/config/compiler:optimize_max" ]
-    }
-
-    if (current_cpu != "arm64") {
-      configs -= [ "//build/config/compiler:compiler_arm_fpu" ]
-      cflags = [ "-mfpu=neon" ]
+      # TODO(thakis): Do we get this from global flags already? Is this needed?
+      cflags = [ "-march=armv8-a+dotprod+i8mm" ]
     }
   }
 }
 
-if (libyuv_use_msa) {
-  static_library("libyuv_msa") {
+if (libyuv_use_sve) {
+  static_library("libyuv_sve") {
     sources = [
-      # MSA Source Files
-      "source/compare_msa.cc",
-      "source/rotate_msa.cc",
-      "source/row_msa.cc",
-      "source/scale_msa.cc",
+      "source/rotate_sve.cc",
+      "source/row_sve.cc",
     ]
 
-    deps = [
-      ":libyuv_internal",
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+
+    # The -march arguments below are incompatible with libc++ modules.
+    use_libcxx_modules = false
+
+    # SVE2 is an Armv9-A feature, but use Armv8.5-A for compatibility.
+    cflags = [ "-march=armv8.5-a+i8mm+sve2" ]
+  }
+}
+
+if (libyuv_use_sme) {
+  static_library("libyuv_sme") {
+    sources = [
+      "source/rotate_sme.cc",
+      "source/row_sme.cc",
+      "source/scale_sme.cc",
     ]
+
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+
+    # The -march arguments below are incompatible with libc++ modules.
+    use_libcxx_modules = false
+
+    # SME is an Armv9-A feature, but use Armv8.5-A for compatibility with
+    # processors like Apple M4/M5 that support SME without SVE.
+    cflags = [ "-march=armv8.5-a+i8mm+sme" ]
+  }
+}
+
+if (libyuv_use_rvv && !libyuv_disable_rvv) {
+  static_library("libyuv_rvv") {
+    sources = [
+      "source/rotate_rvv.cc",
+      "source/row_rvv.cc",
+      "source/scale_rvv.cc",
+    ]
+
+    deps = [ ":libyuv_internal" ]
+
+    public_configs = [ ":libyuv_config" ]
+
+    # The -march arguments below are incompatible with libc++ modules.
+    use_libcxx_modules = false
+
+    if (current_cpu == "riscv64") {
+      cflags = [
+        "-march=rv64gcv",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+      ]
+    } else {
+      cflags = [
+        "-march=rv32gcv",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+      ]
+    }
+  }
+}
+
+if (libyuv_use_lsx) {
+  static_library("libyuv_lsx") {
+    sources = [
+      # LSX Source Files
+      "source/rotate_lsx.cc",
+      "source/row_lsx.cc",
+      "source/scale_lsx.cc",
+    ]
+
+    cflags_cc = [
+      "-mlsx",
+      "-Wno-c++11-narrowing",
+    ]
+
+    deps = [ ":libyuv_internal" ]
 
     public_configs = [ ":libyuv_config" ]
   }
 }
 
-if (libyuv_use_mmi) {
-  static_library("libyuv_mmi") {
+if (libyuv_use_lasx) {
+  static_library("libyuv_lasx") {
     sources = [
-      # MMI Source Files
-      "source/compare_mmi.cc",
-      "source/rotate_mmi.cc",
-      "source/row_mmi.cc",
-      "source/scale_mmi.cc",
+      # LASX Source Files
+      "source/rotate_lasx.cc",
+      "source/row_lasx.cc",
     ]
 
-    deps = [
-      ":libyuv_internal",
+    cflags_cc = [
+      "-mlasx",
+      "-Wno-c++11-narrowing",
     ]
+
+    deps = [ ":libyuv_internal" ]
 
     public_configs = [ ":libyuv_config" ]
   }
@@ -267,19 +379,36 @@ if (libyuv_include_tests) {
       ]
     }
   }
+
   config("libyuv_unittest_config") {
     defines = [ "GTEST_RELATIVE_PATH" ]
+  }
+
+  if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+      is_msan) {
+    # Override the relative PT_INTERP from //third_party/instrumented_libs so
+    # standalone test binaries can be launched from any working directory
+    # (such as the builder root on LUCI Linux MSan).
+    config("libyuv_msan_ldflags") {
+      if (msan_track_origins == 0) {
+        _msan_archive = "msan-no-origins-noble-lib"
+      } else {
+        _msan_archive = "msan-chained-origins-noble-lib"
+      }
+      _ld_linux = rebase_path(
+              "//third_party/instrumented_libs/binaries/$_msan_archive/lib/ld-linux-x86-64.so.2")
+      ldflags = [ "-Wl,--dynamic-linker=$_ld_linux" ]
+    }
   }
 
   test("libyuv_unittest") {
     testonly = true
 
     sources = [
-      # sources
-      # headers
       "unit_test/basictypes_test.cc",
       "unit_test/color_test.cc",
       "unit_test/compare_test.cc",
+      "unit_test/convert_argb_test.cc",
       "unit_test/convert_test.cc",
       "unit_test/cpu_test.cc",
       "unit_test/cpu_thread_test.cc",
@@ -288,7 +417,10 @@ if (libyuv_include_tests) {
       "unit_test/rotate_argb_test.cc",
       "unit_test/rotate_test.cc",
       "unit_test/scale_argb_test.cc",
+      "unit_test/scale_plane_test.cc",
+      "unit_test/scale_rgb_test.cc",
       "unit_test/scale_test.cc",
+      "unit_test/scale_uv_test.cc",
       "unit_test/unit_test.cc",
       "unit_test/unit_test.h",
       "unit_test/video_common_test.cc",
@@ -300,20 +432,28 @@ if (libyuv_include_tests) {
     ]
 
     defines = []
-    if (libyuv_use_gflags) {
-      defines += [ "LIBYUV_USE_GFLAGS" ]
-      deps += [ "//third_party/gflags" ]
+    if (libyuv_use_absl_flags) {
+      defines += [ "LIBYUV_USE_ABSL_FLAGS" ]
+      deps += [
+        "//third_party/abseil-cpp/absl/flags:flag",
+        "//third_party/abseil-cpp/absl/flags:parse",
+      ]
     }
 
     configs += [ ":libyuv_unittest_warnings_config" ]
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
 
-    public_deps = [
-      "//testing/gtest",
-    ]
+    public_deps = [ "//testing/gtest" ]
     public_configs = [ ":libyuv_unittest_config" ]
 
-    if (is_linux) {
+    if (is_linux || is_chromeos) {
       cflags = [ "-fexceptions" ]
+
+      # For enabling ASLR.
+      ldflags = [ "-pie" ]
     }
     if (is_ios) {
       configs -= [ "//build/config/compiler:default_symbols" ]
@@ -323,15 +463,10 @@ if (libyuv_include_tests) {
     if (!is_ios && !libyuv_disable_jpeg) {
       defines += [ "HAVE_JPEG" ]
     }
-    if (is_android) {
-      deps += [ "//testing/android/native_test:native_test_native_code" ]
-    }
 
     # TODO(YangZhang): These lines can be removed when high accuracy
     # YUV to RGB to Neon is ported.
-    if ((target_cpu == "armv7" || target_cpu == "armv7s" ||
-         (target_cpu == "arm" && arm_version >= 7) || target_cpu == "arm64") &&
-        (arm_use_neon || arm_optionally_use_neon)) {
+    if (target_cpu == "arm" || target_cpu == "arm64") {
       defines += [ "LIBYUV_NEON" ]
     }
 
@@ -349,11 +484,13 @@ if (libyuv_include_tests) {
       # sources
       "util/compare.cc",
     ]
-    deps = [
-      ":libyuv",
-    ]
-    if (is_linux) {
+    deps = [ ":libyuv" ]
+    if (is_linux || is_chromeos) {
       cflags = [ "-fexceptions" ]
+    }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
     }
   }
 
@@ -362,11 +499,28 @@ if (libyuv_include_tests) {
       # sources
       "util/yuvconvert.cc",
     ]
-    deps = [
-      ":libyuv",
-    ]
-    if (is_linux) {
+    deps = [ ":libyuv" ]
+    if (is_linux || is_chromeos) {
       cflags = [ "-fexceptions" ]
+    }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
+  }
+
+  executable("yuvconstants") {
+    sources = [
+      # sources
+      "util/yuvconstants.c",
+    ]
+    deps = [ ":libyuv" ]
+    if (is_linux || is_chromeos) {
+      cflags = [ "-fexceptions" ]
+    }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
     }
   }
 
@@ -377,12 +531,26 @@ if (libyuv_include_tests) {
       "util/psnr_main.cc",
       "util/ssim.cc",
     ]
-    deps = [
-      ":libyuv",
-    ]
+    deps = [ ":libyuv" ]
 
     if (!is_ios && !libyuv_disable_jpeg) {
       defines = [ "HAVE_JPEG" ]
+    }
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
+  }
+
+  executable("i444tonv12_eg") {
+    sources = [
+      # sources
+      "util/i444tonv12_eg.cc",
+    ]
+    deps = [ ":libyuv" ]
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
     }
   }
 
@@ -391,8 +559,25 @@ if (libyuv_include_tests) {
       # sources
       "util/cpuid.c",
     ]
-    deps = [
-      ":libyuv",
-    ]
+    deps = [ ":libyuv" ]
+    if (!build_with_chromium && prebuilt_instrumented_libraries_available &&
+        is_msan) {
+      configs += [ ":libyuv_msan_ldflags" ]
+    }
+  }
+}
+
+if (!build_with_chromium) {
+  # GN evaluates each .gn file once per toolchain, so restricting to default
+  # toolchain will ensure write_file() is called only once.
+  if (current_toolchain == default_toolchain) {
+    # Write debug logs to gn_logs.txt.
+    # This is also required for Siso builds.
+    import("//build/gn_logs.gni")
+    lines = [
+              "Generated during 'gn gen' by //BUILD.gn.",
+              "",
+            ] + build_gn_logs
+    write_file("$root_build_dir/gn_logs.txt", lines)
   }
 }

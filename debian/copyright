@@ -1246,14 +1246,6 @@ Copyright: 2000-2005 The Apache Software Foundation or its licensors
  1992-1996 Regents of the University of Michigan
 License: Apache-2.0 and OpenLDAP and BSD-like
 
-Files: libs/miniupnpc/*
-Copyright: 2005-2009, Thomas Bernard
-License: BSD-3-clause
-
-Files: libs/miniupnpc/bsdqueue.h
-Copyright: 1991,1993, The Regents of the University of California
-License: BSD-3-clause
-
 Files: libs/js/*
 Copyright: 1998-2006 Mozilla <http://www.mozilla.org/>
  1996-2000 Netscape Communications Corporation
@@ -1556,10 +1548,6 @@ License: BSD-like
 Files: libs/libtpl-1.5/src/tpl.[ch]
 Copyright: 2005-2010, Troy D. Hanson
 License: BSD-2-clause
-
-Files: libs/libnatpmp/*
-Copyright: 2007-2008, Thomas BERNARD <miniupnp@free.fr>
-License: ISC
 
 Files: libs/libwebsockets/*
 Copyright: 2010-2011 Andy Green <andy@warmcat.com>
