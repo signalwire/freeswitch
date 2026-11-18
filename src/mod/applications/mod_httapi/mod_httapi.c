@@ -1889,7 +1889,7 @@ static switch_status_t do_config(void)
 
 
 		/* Defaults */
-		profile->ua = ua;
+		profile->ua = switch_core_strdup(globals.pool, ua);
 		profile->conference_params.use_profile = "default";
 		profile->perms.set_params = 1;
 		profile->perms.conference.enabled = 1;
