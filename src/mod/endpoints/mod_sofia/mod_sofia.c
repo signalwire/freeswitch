@@ -1084,6 +1084,9 @@ static switch_status_t sofia_read_text_frame(switch_core_session_t *session, swi
 			switch_msrp_msg_destroy(&msrp_msg);
 			status = SWITCH_STATUS_SUCCESS;
 		} else {
+			if (msrp_msg) {
+				switch_msrp_msg_destroy(&msrp_msg);
+			}
 			rframe->datalen = 2;
 			rframe->flags = SFF_CNG;
 			*frame = rframe;

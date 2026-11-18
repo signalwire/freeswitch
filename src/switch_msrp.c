@@ -679,6 +679,8 @@ SWITCH_DECLARE(switch_status_t) switch_msrp_msg_add_header(switch_msrp_msg_t *ms
 	default: break;
 	}
 
+	switch_safe_free(data);
+
 	return status;
 }
 
@@ -697,7 +699,7 @@ static char *msrp_parse_header(char *start, int skip, const char *end, switch_ms
 	if (q > p) {
 		if (*(q-1) == '\r') *(q-1) = '\0';
 		*q = '\0';
-		switch_msrp_msg_add_header(msrp_msg, htype, p);
+		switch_msrp_msg_add_header(msrp_msg, htype, "%s", p);
 		return q + 1;
 	}
 	return start;
@@ -716,9 +718,15 @@ static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_m
 
 			while(*q && q < end && *q != ' ') q++;
 
+			if (q == p && q < end) {
+				/* empty transaction id: there is no end-line delimiter to frame the body */
+				msrp_msg->state = MSRP_ST_ERROR;
+				goto done;
+			}
+
 			if (q > p) {
 				*q = '\0';
-				switch_msrp_msg_add_header(msrp_msg, MSRP_H_TRASACTION_ID, p);
+				switch_msrp_msg_add_header(msrp_msg, MSRP_H_TRASACTION_ID, "%s", p);
 				switch_msrp_msg_add_header(msrp_msg, MSRP_H_DELIMITER, "-------%s", p);
 				msrp_msg->state = MSRP_ST_PARSE_HEADER;
 			}
@@ -748,7 +756,7 @@ static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_m
 					if (q > p) {
 						if (*(q-1) == '\r') *(q-1) = '\0';
 						*q = '\0';
-						switch_msrp_msg_add_header(msrp_msg, MSRP_H_CODE_DESCRIPTION, p);
+						switch_msrp_msg_add_header(msrp_msg, MSRP_H_CODE_DESCRIPTION, "%s", p);
 						p = ++q;
 					}
 				}
@@ -793,7 +801,6 @@ static switch_msrp_msg_t *msrp_parse_headers(char *start, int len, switch_msrp_m
 			if (q > p) {
 				*q = '\0';
 				msrp_msg->byte_start = atoi(p);
-				switch_assert(msrp_msg->byte_start > 0);
 				p = ++q;
 				if (*p && *p == '*') {
 					msrp_msg->range_star = 1;
@@ -909,13 +916,19 @@ static switch_msrp_msg_t *msrp_parse_buffer(char *buf, int len, switch_msrp_msg_
 			return msrp_msg;
 		}
 
+		if (zstr(msrp_msg->delimiter)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP body without a delimiter\n");
+			msrp_msg->state = MSRP_ST_ERROR;
+
+			return msrp_msg;
+		}
+
 		if (msrp_msg->range_star) { /* the * case */
 			/*hope we can find the delimiter at the end*/
 			int dlen;
 			char *delim_pos = NULL;
 			switch_size_t payload_bytes;
 
-			switch_assert(msrp_msg->delimiter);
 			dlen = strlen(msrp_msg->delimiter);
 
 			/* Need room for the trailing delimiter framing; a shorter
@@ -1013,13 +1026,22 @@ switch_status_t msrp_reply(switch_msrp_client_socket_t *csock, switch_msrp_msg_t
 {
 	char buf[2048];
 	switch_size_t len;
-	sprintf(buf, "MSRP %s 200 OK\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
+	int ret;
+
+	ret = snprintf(buf, sizeof(buf), "MSRP %s 200 OK\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
 		"%s$\r\n",
 		msrp_msg->transaction_id,
 		switch_str_nil(switch_msrp_msg_get_header(msrp_msg, MSRP_H_FROM_PATH)),
 		switch_str_nil(switch_msrp_msg_get_header(msrp_msg, MSRP_H_TO_PATH)),
 		msrp_msg->delimiter);
-	len = strlen(buf);
+
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MSRP reply does not fit %" SWITCH_SIZE_T_FMT " bytes, not sent\n", sizeof(buf));
+
+		return SWITCH_STATUS_FALSE;
+	}
+
+	len = ret;
 
 	return msrp_socket_send(csock, buf, &len);
 }
@@ -1028,7 +1050,9 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 {
 	char buf[2048];
 	switch_size_t len;
-	sprintf(buf, "MSRP %s REPORT\r\nTo-Path: %s\r\nFrom-Path: %s\r\nMessage-ID: %s\r\n"
+	int ret;
+
+	ret = snprintf(buf, sizeof(buf), "MSRP %s REPORT\r\nTo-Path: %s\r\nFrom-Path: %s\r\nMessage-ID: %s\r\n"
 		"Status: 000 %s\r\nByte-Range: 1-%" SWITCH_SIZE_T_FMT "/%" SWITCH_SIZE_T_FMT
 		"\r\n%s$\r\n",
 		msrp_msg->transaction_id,
@@ -1039,7 +1063,14 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 		msrp_msg->accumulated_bytes ? msrp_msg->accumulated_bytes : msrp_msg->byte_end,
 		msrp_msg->bytes,
 		msrp_msg->delimiter);
-	len = strlen(buf);
+
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "MSRP report does not fit %" SWITCH_SIZE_T_FMT " bytes, not sent\n", sizeof(buf));
+
+		return SWITCH_STATUS_FALSE;
+	}
+
+	len = ret;
 
 	if (globals.debug) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "report: %" SWITCH_SIZE_T_FMT " bytes [\n%s]\n", len, buf);
 
@@ -1048,10 +1079,15 @@ switch_status_t msrp_report(switch_msrp_client_socket_t *csock, switch_msrp_msg_
 
 static switch_bool_t msrp_find_uuid(char *uuid, const char *to_path)
 {
-	int len = strlen(to_path);
+	int len;
 	int i;
 	int slash_count = 0;
-	switch_assert(to_path);
+
+	if (!to_path) {
+		return SWITCH_FALSE;
+	}
+
+	len = strlen(to_path);
 	for(i=0; i<len; i++){
 		if (*(to_path + i) == '/') {
 			if (++slash_count == 3) break;
@@ -1059,7 +1095,7 @@ static switch_bool_t msrp_find_uuid(char *uuid, const char *to_path)
 	}
 	if (slash_count < 3) return SWITCH_FALSE;
 	if (len - i++ < 36) return SWITCH_FALSE;
-	switch_snprintf(uuid, 37, to_path + i);
+	switch_snprintf(uuid, 37, "%s", to_path + i);
 	return SWITCH_TRUE;
 }
 
@@ -1068,12 +1104,13 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 	worker_helper_t *helper = (worker_helper_t *) obj;
 	switch_msrp_client_socket_t *csock = &helper->csock;
 	switch_memory_pool_t *pool = helper->pool;
-	char buf[MSRP_BUFF_SIZE];
+	char buf[MSRP_BUFF_SIZE + 1]; /* received data is NUL-terminated in the extra byte */
 	char *p;
 	char *last_p;
 	switch_size_t len = MSRP_BUFF_SIZE;
 	switch_status_t status;
 	switch_msrp_msg_t *msrp_msg = NULL;
+	switch_msrp_msg_t *setup_msg = NULL;
 	char uuid[128] = { 0 };
 	switch_msrp_session_t *msrp_session = NULL;
 	int sanity = 10;
@@ -1082,18 +1119,22 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 
 	if (client_mode) {
 		switch_sockaddr_t *sa = NULL;
-		switch_msrp_msg_t *setup_msg = switch_msrp_msg_create();
 		const char *remote_ip = NULL;
 		switch_port_t remote_port = 0;
 		char *dup = NULL;
 		char *p = NULL;
 
+		setup_msg = switch_msrp_msg_create();
 		switch_assert(setup_msg);
 		switch_assert(helper->msrp_session);
 		msrp_session = helper->msrp_session;
 		msrp_session->running = 1;
 
-		switch_assert(msrp_session->remote_path);
+		if (zstr(msrp_session->remote_path)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP %s has no remote path to connect to\n", msrp_session->call_id);
+			goto end;
+		}
+
 		dup = switch_core_strdup(pool, msrp_session->remote_path);
 		switch_assert(dup);
 
@@ -1118,8 +1159,9 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			}
 		}
 
-		if (!remote_ip || remote_port <= 0) {
+		if (zstr(remote_ip) || remote_port <= 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error get remote MSRP ip:port from path: [%s]\n", msrp_session->remote_path);
+			goto end;
 		}
 
 		if (switch_sockaddr_info_get(&sa, remote_ip, SWITCH_UNSPEC, remote_port, 0, pool) != SWITCH_STATUS_SUCCESS) {
@@ -1161,7 +1203,11 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "MSRP setup TLS %s\n", msrp_session->call_id);
 
 			ssl = SSL_new(globals.ssl_client_ctx);
-			assert(ssl);
+			if (!ssl) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP %s cannot create a TLS client session\n", msrp_session->call_id);
+				goto end;
+			}
+
 			csock->ssl = ssl;
 			SSL_set_fd(ssl, sockdes);
 
@@ -1219,7 +1265,11 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			switch_assert(sockdes != SWITCH_SOCK_INVALID);
 
 			ssl = SSL_new(globals.ssl_ctx);
-			assert(ssl);
+			if (!ssl) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MSRP cannot create a TLS server session\n");
+				goto end;
+			}
+
 			csock->ssl = ssl;
 
 			SSL_set_fd(ssl, sockdes);
@@ -1255,6 +1305,7 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		}
 
 		if (status == SWITCH_STATUS_SUCCESS) {
+			buf[len] = '\0';
 			msrp_msg = msrp_parse_buffer(buf, len, NULL, pool);
 			switch_assert(msrp_msg);
 		} else {
@@ -1300,7 +1351,12 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 			}
 
 			msrp_session = switch_core_media_get_msrp_session(session);
-			switch_assert(msrp_session);
+			if (!msrp_session) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Session %s has no MSRP session\n", uuid);
+				switch_core_session_rwunlock(session);
+				goto end;
+			}
+
 			msrp_session->csock = csock;
 			msrp_session->running = 1;
 
@@ -1317,13 +1373,16 @@ static void *SWITCH_THREAD_FUNC msrp_worker(switch_thread_t *thread, void *obj)
 		// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes: %" SWITCH_SIZE_T_FMT "\n", len);
 
 		if (len == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "read bytes: %" SWITCH_SIZE_T_FMT "\n", len);
-			continue;
+			/* only a TLS read reports success with no data, and only once the peer has closed */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "MSRP connection closed by peer\n");
+			break;
 		}
 
 		if (helper->debug) dump_buffer(buf, (p - buf) + len, __LINE__, 0);
 
 	again:
+		/* p + len is the end of the received data on every path that reaches here */
+		p[len] = '\0';
 		msrp_msg = msrp_parse_buffer(last_p, p - last_p + len, msrp_msg, pool);
 
 		switch_assert(msrp_msg);
@@ -1431,6 +1490,15 @@ end:
 	if (ssl) SSL_free(ssl);
 
 	if (msrp_session) msrp_session->running = 0;
+
+	if (msrp_msg) {
+		switch_msrp_msg_destroy(&msrp_msg);
+	}
+
+	/* set only when a client connection failed before its setup SEND */
+	if (setup_msg) {
+		switch_msrp_msg_destroy(&setup_msg);
+	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "MSRP worker down %s\n", msrp_session ? msrp_session->call_id : "!");
 
@@ -1542,6 +1610,8 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 	const char *to_path = msrp_h_to_path ? msrp_h_to_path : ms->remote_path;
 	const char *from_path = msrp_h_from_path ? msrp_h_from_path: ms->local_path;
 	const char *content_type = switch_msrp_msg_get_header(msrp_msg, MSRP_H_CONTENT_TYPE);
+	switch_size_t room;
+	int ret;
 
 	if (msrp_msg->payload_bytes == 2 && msrp_msg->payload && !strncmp(msrp_msg->payload, "\r\n", 2)) {
 		// discard \r\n appended in uuid_send_text
@@ -1553,6 +1623,12 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if (!to_path) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_WARNING, "NO TO PATH\n");
+
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (zstr(content_type)) {
 		content_type = "text/plain";
 	}
@@ -1560,7 +1636,7 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 	random_string(transaction_id, MSRP_TRANS_ID_LEN);
 	switch_uuid_str(message_id, sizeof(message_id));
 
-	sprintf(buf, "MSRP %s SEND\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
+	ret = snprintf(buf, sizeof(buf), "MSRP %s SEND\r\nTo-Path: %s\r\nFrom-Path: %s\r\n"
 		"Message-ID: %s\r\n"
 		"Byte-Range: 1-%" SWITCH_SIZE_T_FMT "/%" SWITCH_SIZE_T_FMT "\r\n"
 		"%s%s%s",
@@ -1574,25 +1650,43 @@ static switch_status_t switch_msrp_do_send(switch_msrp_session_t *ms, switch_msr
 		msrp_msg->payload ? content_type : "",
 		msrp_msg->payload ? "\r\n\r\n" : "");
 
-	len = strlen(buf);
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf)) {
+		goto too_large;
+	}
+
+	len = ret;
 
 	if (msrp_msg->payload) {
-		if (len + msrp_msg->payload_bytes >= MSRP_BUFF_SIZE) {
-			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_ERROR, "payload too large! %" SWITCH_SIZE_T_FMT "\n", len + msrp_msg->payload_bytes);
-			return SWITCH_STATUS_FALSE;
+		/* at least one byte is left after the header */
+		room = sizeof(buf) - len;
+
+		/* the payload and its CRLF, leaving room for the end-line */
+		if (msrp_msg->payload_bytes + 2 >= room) {
+			goto too_large;
 		}
+
 		memcpy(buf + len, msrp_msg->payload, msrp_msg->payload_bytes);
 		len += msrp_msg->payload_bytes;
-		sprintf(buf + len, "\r\n");
+		memcpy(buf + len, "\r\n", 2);
 		len += 2;
 	}
 
-	sprintf(buf + len, "-------%s$\r\n", transaction_id);
-	len += (10 + strlen(transaction_id));
+	ret = snprintf(buf + len, sizeof(buf) - len, "-------%s$\r\n", transaction_id);
+
+	if (ret < 0 || (switch_size_t)ret >= sizeof(buf) - len) {
+		goto too_large;
+	}
+
+	len += ret;
 
 	if (globals.debug) dump_buffer(buf, len, __LINE__, 1);
 
 	return ms->csock ? msrp_socket_send(ms->csock, buf, &len) : SWITCH_STATUS_FALSE;
+
+too_large:
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, ms->call_id, SWITCH_LOG_ERROR, "MSRP message does not fit %" SWITCH_SIZE_T_FMT " bytes, not sent\n", sizeof(buf));
+
+	return SWITCH_STATUS_FALSE;
 }
 
 SWITCH_DECLARE (switch_status_t) switch_msrp_perform_send(switch_msrp_session_t *ms, switch_msrp_msg_t *msrp_msg, const char *file, const char *func, int line)
@@ -1683,6 +1777,7 @@ SWITCH_DECLARE(void) switch_msrp_msg_destroy(switch_msrp_msg_t **msg)
 	}
 
 	switch_safe_free(msrp_msg->payload);
+	switch_safe_free(*msg);
 	*msg = NULL;
 }
 
@@ -1701,14 +1796,25 @@ SWITCH_STANDARD_APP(msrp_recv_file_function)
 	switch_channel_answer(channel);
 
 	if (zstr(data)) {
-		filename = switch_channel_get_variable(channel, "sip_msrp_file_name");
+		const char *sip_file_name = switch_channel_get_variable(channel, "sip_msrp_file_name");
+		const char *safe_name;
 
-		if (zstr(filename)) {
+		if (zstr(sip_file_name)) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No file specified.\n");
+
 			return;
 		}
 
-		filename = switch_core_session_sprintf(session, "%s%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR, filename);
+		/* The name is taken from the remote SDP file-selector. Reduce it to its final
+		   path component so the opened file always stays inside the receive directory. */
+		safe_name = switch_cut_path(sip_file_name);
+		if (zstr(safe_name) || !strcmp(safe_name, ".") || !strcmp(safe_name, "..")) {
+			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Rejecting remote file name '%s'\n", sip_file_name);
+
+			return;
+		}
+
+		filename = switch_core_session_sprintf(session, "%s%s%s", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR, safe_name);
 	}
 
 	if (!(msrp_session = switch_core_media_get_msrp_session(session))) {
@@ -1741,7 +1847,7 @@ SWITCH_STANDARD_APP(msrp_recv_file_function)
 			}
 		}
 
-		switch_safe_free(msrp_msg);
+		switch_msrp_msg_destroy(&msrp_msg);
 	}
 
 	switch_file_close(fd);
@@ -1837,12 +1943,14 @@ SWITCH_STANDARD_API(uuid_msrp_send_function)
 
 	if (!(msession = switch_core_session_locate(argv[0]))) {
 		stream->write_function(stream, "-ERR Usage: cannot locate session.\n");
+		switch_safe_free(mycmd);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!(msrp_session = switch_core_media_get_msrp_session(msession))) {
 		stream->write_function(stream, "-ERR No msrp_session.\n");
 		switch_core_session_rwunlock(msession);
+		switch_safe_free(mycmd);
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -1853,10 +1961,12 @@ SWITCH_STANDARD_API(uuid_msrp_send_function)
 	switch_msrp_msg_destroy(&msrp_msg);
 	stream->write_function(stream, "+OK message sent\n");
 	switch_core_session_rwunlock(msession);
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 
 error:
 	stream->write_function(stream, "-ERR Usage: uuid_msrp_send <uuid> msg\n");
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 

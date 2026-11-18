@@ -5101,7 +5101,11 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 					smh->msrp_session->secure ? "s" : "",
 					ip, smh->msrp_session->local_port, smh->msrp_session->call_id);
 
-				switch_msrp_start_client(smh->msrp_session);
+				if (zstr(smh->msrp_session->remote_path)) {
+					switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "MSRP remote is passive but sent no path, not connecting\n");
+				} else {
+					switch_msrp_start_client(smh->msrp_session);
+				}
 			}
 
 			switch_core_session_start_text_thread(session);
