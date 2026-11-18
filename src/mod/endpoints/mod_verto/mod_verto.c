@@ -1077,11 +1077,16 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 			cJSON * i;
 
 			for(i = json_ptr->child; i; i = i->next) {
+				/* Skip empty names, and the NULL ones cJSON gives array elements. */
+				if (zstr(i->string)) {
+					continue;
+				}
+
 				if (i->type == cJSON_True) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "true");
 				} else if (i->type == cJSON_False) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, "false");
-				} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+				} else if (!zstr(i->valuestring)) {
 					switch_event_add_header_string(req_params, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
 				}
 			}
@@ -1153,11 +1158,16 @@ static switch_bool_t check_auth(jsock_t *jsock, cJSON *params, int *code, char *
 
 				switch_mutex_lock(jsock->flag_mutex);
 				for (i = json_ptr->child; i; i = i->next) {
+					/* Skip empty names, and the NULL ones cJSON gives array elements. */
+					if (zstr(i->string)) {
+						continue;
+					}
+
 					if (i->type == cJSON_True) {
 						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "true");
 					} else if (i->type == cJSON_False) {
 						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, "false");
-					} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+					} else if (!zstr(i->valuestring)) {
 						switch_event_add_header_string(jsock->user_vars, SWITCH_STACK_BOTTOM, i->string, i->valuestring);
 					}
 				}
@@ -3811,13 +3821,20 @@ static void parse_user_vars(cJSON *obj, switch_core_session_t *session)
 		cJSON * i;
 
 		for(i = json_ptr->child; i; i = i->next) {
-			char *varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
+			char *varname;
+
+			/* Skip empty names, and the NULL ones cJSON gives array elements. */
+			if (zstr(i->string)) {
+				continue;
+			}
+
+			varname = switch_core_session_sprintf(session, "verto_dvar_%s", i->string);
 
 			if (i->type == cJSON_True) {
 				switch_channel_set_variable(channel, varname, "true");
 			} else if (i->type == cJSON_False) {
 				switch_channel_set_variable(channel, varname, "false");
-			} else if (!zstr(i->string) && !zstr(i->valuestring)) {
+			} else if (!zstr(i->valuestring)) {
 				switch_channel_set_variable(channel, varname, i->valuestring);
 			}
 		}
