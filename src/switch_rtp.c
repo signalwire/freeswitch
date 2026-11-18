@@ -4398,8 +4398,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 		while (key_material && (mki_idx < *key_material_n)) {
 
-			if (key_material->mki_size < 1) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "MKI bad key size at MKI %d\n", mki_idx);
+			if (key_material->mki_size < 1 || key_material->mki_size > SRTP_MAX_MKI_LEN) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "MKI bad key size %u at MKI %d (allowed 1..%d)\n",
+								  key_material->mki_size, mki_idx, SRTP_MAX_MKI_LEN);
+
 				return SWITCH_STATUS_FALSE;
 			}
 
@@ -4409,7 +4411,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			/* Setup MKI. */
-			mki->mki_id = switch_core_alloc(rtp_session->pool, sizeof(key_material->mki_size));
+			mki->mki_id = switch_core_alloc(rtp_session->pool, key_material->mki_size);
 			if (!mki->mki_id) {
 				return SWITCH_STATUS_FALSE;
 			}
@@ -4419,7 +4421,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 				return SWITCH_STATUS_FALSE;
 			}
 
-			memcpy(mki->mki_id, &key_material->mki_id, key_material->mki_size);
+			/* The id lives in an unsigned int: copy no more than its width, bytes past it stay zero. */
+			memcpy(mki->mki_id, &key_material->mki_id,
+				   key_material->mki_size < sizeof(key_material->mki_id) ? key_material->mki_size : sizeof(key_material->mki_id));
 			mki->mki_size = key_material->mki_size;
 			memcpy(mki->key, key_material->raw_key, keysalt_len);
 
