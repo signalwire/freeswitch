@@ -435,16 +435,16 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			tech_pvt->profile->ob_failed_calls++;
+			sofia_count_call(tech_pvt->profile->flag_mutex, &tech_pvt->profile->ob_failed_calls);
 		} else {
-			tech_pvt->profile->ib_failed_calls++;
+			sofia_count_call(tech_pvt->profile->flag_mutex, &tech_pvt->profile->ib_failed_calls);
 		}
 
 		if (gateway_ptr) {
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-				gateway_ptr->ob_failed_calls++;
+				sofia_count_call(gateway_ptr->profile->flag_mutex, &gateway_ptr->ob_failed_calls);
 			} else {
-				gateway_ptr->ib_failed_calls++;
+				sofia_count_call(gateway_ptr->profile->flag_mutex, &gateway_ptr->ib_failed_calls);
 			}
 		}
 	}
@@ -3005,18 +3005,22 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					if (!strcmp(vvar, profile->name)) {	/* not an alias */
 						for (gp = profile->gateways; gp; gp = gp->next) {
 							char *pkey = switch_mprintf("%s::%s", profile->name, gp->name);
+							uint32_t gp_ib_failed = sofia_read_call_count(gp->profile->flag_mutex, &gp->ib_failed_calls);
+							uint32_t gp_ib = sofia_read_call_count(gp->profile->flag_mutex, &gp->ib_calls);
+							uint32_t gp_ob_failed = sofia_read_call_count(gp->profile->flag_mutex, &gp->ob_failed_calls);
+							uint32_t gp_ob = sofia_read_call_count(gp->profile->flag_mutex, &gp->ob_calls);
 
 							switch_assert(gp->state < REG_STATE_LAST);
 
 							c++;
-							ib_failed += gp->ib_failed_calls;
-							ib += gp->ib_calls;
-							ob_failed += gp->ob_failed_calls;
-							ob += gp->ob_calls;
+							ib_failed += gp_ib_failed;
+							ib += gp_ib;
+							ob_failed += gp_ob_failed;
+							ob += gp_ob;
 
 							stream->write_function(stream, "%25s\t%32s\t%s\t%6.2f\t%u/%u\t%u/%u",
 												   pkey, gp->register_to, sofia_state_names[gp->state], gp->ping_time,
-												   gp->ib_failed_calls, gp->ib_calls, gp->ob_failed_calls, gp->ob_calls);
+												   gp_ib_failed, gp_ib, gp_ob_failed, gp_ob);
 							free(pkey);
 
 							if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
@@ -3066,10 +3070,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
 				stream->write_function(stream, "Uptime  \t%lds\n", gp->status == SOFIA_GATEWAY_UP ? (switch_time_now()-gp->uptime)/1000000 : 0);
-				stream->write_function(stream, "CallsIN \t%u\n", gp->ib_calls);
-				stream->write_function(stream, "CallsOUT\t%u\n", gp->ob_calls);
-				stream->write_function(stream, "FailedCallsIN\t%u\n", gp->ib_failed_calls);
-				stream->write_function(stream, "FailedCallsOUT\t%u\n", gp->ob_failed_calls);
+				stream->write_function(stream, "CallsIN \t%u\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ib_calls));
+				stream->write_function(stream, "CallsOUT\t%u\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ob_calls));
+				stream->write_function(stream, "FailedCallsIN\t%u\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ib_failed_calls));
+				stream->write_function(stream, "FailedCallsOUT\t%u\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ob_failed_calls));
 				stream->write_function(stream, "%s\n", line);
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -3156,10 +3160,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					if (profile->max_registrations_perext > 0) {
 						stream->write_function(stream, "MAX-REG-PEREXT   \t%d\n", profile->max_registrations_perext);
 					}
-					stream->write_function(stream, "CALLS-IN         \t%u\n", profile->ib_calls);
-					stream->write_function(stream, "FAILED-CALLS-IN  \t%u\n", profile->ib_failed_calls);
-					stream->write_function(stream, "CALLS-OUT        \t%u\n", profile->ob_calls);
-					stream->write_function(stream, "FAILED-CALLS-OUT \t%u\n", profile->ob_failed_calls);
+					stream->write_function(stream, "CALLS-IN         \t%u\n", sofia_read_call_count(profile->flag_mutex, &profile->ib_calls));
+					stream->write_function(stream, "FAILED-CALLS-IN  \t%u\n", sofia_read_call_count(profile->flag_mutex, &profile->ib_failed_calls));
+					stream->write_function(stream, "CALLS-OUT        \t%u\n", sofia_read_call_count(profile->flag_mutex, &profile->ob_calls));
+					stream->write_function(stream, "FAILED-CALLS-OUT \t%u\n", sofia_read_call_count(profile->flag_mutex, &profile->ob_failed_calls));
 					stream->write_function(stream, "REGISTRATIONS    \t%lu\n", sofia_profile_reg_count(profile));
 				}
 
@@ -3317,10 +3321,10 @@ static void xml_gateway_status(sofia_gateway_t *gp, switch_stream_handle_t *stre
 	stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
 	stream->write_function(stream, "    <status>%s</status>\n", status_names[gp->status]);
 	stream->write_function(stream, "    <uptime-usec>%ld</uptime-usec>\n", gp->status == SOFIA_GATEWAY_UP ? switch_time_now()-gp->uptime : 0);
-	stream->write_function(stream, "    <calls-in>%u</calls-in>\n", gp->ib_calls);
-	stream->write_function(stream, "    <calls-out>%u</calls-out>\n", gp->ob_calls);
-	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", gp->ib_failed_calls);
-	stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", gp->ob_failed_calls);
+	stream->write_function(stream, "    <calls-in>%u</calls-in>\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ib_calls));
+	stream->write_function(stream, "    <calls-out>%u</calls-out>\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ob_calls));
+	stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ib_failed_calls));
+	stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", sofia_read_call_count(gp->profile->flag_mutex, &gp->ob_failed_calls));
 
 	if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_FAIL_WAIT || gp->state == REG_STATE_TRYING) {
 		time_t now = switch_epoch_time_now(NULL);
@@ -3457,10 +3461,10 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 						stream->write_function(stream, "    <max-registrations-per-extension>%d</max-registrations-per-extension>\n",
 										   profile->max_registrations_perext);
 					}
-					stream->write_function(stream, "    <calls-in>%u</calls-in>\n", profile->ib_calls);
-					stream->write_function(stream, "    <calls-out>%u</calls-out>\n", profile->ob_calls);
-					stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", profile->ib_failed_calls);
-					stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", profile->ob_failed_calls);
+					stream->write_function(stream, "    <calls-in>%u</calls-in>\n", sofia_read_call_count(profile->flag_mutex, &profile->ib_calls));
+					stream->write_function(stream, "    <calls-out>%u</calls-out>\n", sofia_read_call_count(profile->flag_mutex, &profile->ob_calls));
+					stream->write_function(stream, "    <failed-calls-in>%u</failed-calls-in>\n", sofia_read_call_count(profile->flag_mutex, &profile->ib_failed_calls));
+					stream->write_function(stream, "    <failed-calls-out>%u</failed-calls-out>\n", sofia_read_call_count(profile->flag_mutex, &profile->ob_failed_calls));
 					stream->write_function(stream, "    <registrations>%lu</registrations>\n", sofia_profile_reg_count(profile));
 					stream->write_function(stream, "  </profile-info>\n");
 				}
@@ -4887,7 +4891,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		if (gateway_ptr->status != SOFIA_GATEWAY_UP) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Gateway \'%s\' is down!\n", gw);
 			cause = SWITCH_CAUSE_GATEWAY_DOWN;
-			gateway_ptr->ob_failed_calls++;
+			sofia_count_call(gateway_ptr->profile->flag_mutex, &gateway_ptr->ob_failed_calls);
 			goto error;
 		}
 
@@ -4911,7 +4915,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 				tech_pvt->transport = sofia_glue_str2transport(tp_param);
 				if (tech_pvt->transport == SOFIA_TRANSPORT_UNKNOWN) {
 					cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
-					gateway_ptr->ob_failed_calls++;
+					sofia_count_call(gateway_ptr->profile->flag_mutex, &gateway_ptr->ob_failed_calls);
 					goto error;
 				}
 			}
@@ -4960,7 +4964,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 			tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
 		}
 
-		gateway_ptr->ob_calls++;
+		sofia_count_call(gateway_ptr->profile->flag_mutex, &gateway_ptr->ob_calls);
 
 		if (!zstr(gateway_ptr->from_domain) && !switch_channel_get_variable(nchannel, "sip_invite_domain")) {
 
@@ -5291,9 +5295,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	if (profile) {
 		if (cause == SWITCH_CAUSE_SUCCESS) {
-			profile->ob_calls++;
+			sofia_count_call(profile->flag_mutex, &profile->ob_calls);
 		} else {
-			profile->ob_failed_calls++;
+			sofia_count_call(profile->flag_mutex, &profile->ob_failed_calls);
 		}
 		sofia_glue_release_profile(profile);
 	}
