@@ -107,6 +107,10 @@
     <!-- extended info parsing -->
     <!-- <param name="extended-info-parsing" value="true"/> -->
 
+    <!-- with extended-info-parsing on, lets an INFO body of content type freeswitch/api-request
+         run FreeSWITCH API commands, so enable only for trusted peers -->
+    <!-- <param name="enable-info-api-request" value="true"/> -->
+
     <!-- lets an inbound MESSAGE to api+<command> run FreeSWITCH API commands, so enable only for trusted peers -->
     <!-- <param name="enable-chat-api-proto" value="true"/> -->
 

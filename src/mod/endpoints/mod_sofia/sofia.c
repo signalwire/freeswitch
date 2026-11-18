@@ -5612,6 +5612,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
 						}
+					} else if (!strcasecmp(var, "enable-info-api-request")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_INFO_API_REQUEST);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ENABLE_INFO_API_REQUEST);
+						}
 					} else if (!strcasecmp(var, "nonce-ttl") && !zstr(val)) {
 						profile->nonce_ttl = atoi(val);
 					} else if (!strcasecmp(var, "max-auth-validity") && !zstr(val)) {
@@ -9952,9 +9958,41 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					return;
 
 				} else if (!strcasecmp(sip->sip_content_type->c_subtype, "api-request")) {
-					char *cmd = strdup(sip->sip_payload->pl_data);
+					char *cmd;
 					char *arg;
+					char network_ip[80] = "";
+					int network_port = 0;
+					size_t log_len;
 					switch_stream_handle_t stream = { 0 };
+
+					/* leaves the buffer empty when the message carries no address info */
+					sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+
+					/* Both log lines below print the body's first line only, capped: the body comes
+					   from the request, has no length bound, and may hold line breaks. */
+					log_len = strcspn(sip->sip_payload->pl_data, "\r\n");
+					if (log_len > 256) {
+						log_len = 256;
+					}
+
+					if (!sofia_test_pflag(profile, PFLAG_ENABLE_INFO_API_REQUEST)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										  "Profile [%s] rejected an INFO from %s:%d requesting a FreeSWITCH API command [%.*s]. "
+										  "Set enable-info-api-request=true on the profile to permit it.\n",
+										  profile->name, network_ip, network_port, (int) log_len, sip->sip_payload->pl_data);
+
+						nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg),
+									TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+									TAG_END());
+
+						return;
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+									  "Profile [%s] running a FreeSWITCH API command requested by an INFO from %s:%d [%.*s]\n",
+									  profile->name, network_ip, network_port, (int) log_len, sip->sip_payload->pl_data);
+
+					cmd = strdup(sip->sip_payload->pl_data);
 
 					switch_assert(cmd);
 					SWITCH_STANDARD_STREAM(stream);
