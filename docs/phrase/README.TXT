@@ -8,9 +8,9 @@ language.  If you are capable of recording each language please do so and
 contribute them to the project.  As phrases are added, the files will need to be
 updated for the respective phrase_xx.xml file.
 make_checks.sh - script to compare phrase_en.xml with other language xml files.
-Script output contans prompt elements with attributes:
+Script output contains prompt elements with attributes:
 translated - value 'false' or not displayed;
-transpated-to - tranlation value if exists;
+translated-to - translation value if exists;
 more-then-one-translation - displayed if exist two or more for given wav file.
 
 How can you contribute?

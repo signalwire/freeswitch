@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_ENCODER_VP9_ETHREAD_H_
-#define VP9_ENCODER_VP9_ETHREAD_H_
+#ifndef VPX_VP9_ENCODER_VP9_ETHREAD_H_
+#define VPX_VP9_ENCODER_VP9_ETHREAD_H_
+
+#include "vpx_util/vpx_pthread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +19,7 @@ extern "C" {
 
 #define MAX_NUM_TILE_COLS (1 << 6)
 #define MAX_NUM_TILE_ROWS 4
-#define MAX_NUM_THREADS 80
+#define MAX_NUM_THREADS 64
 
 struct VP9_COMP;
 struct ThreadData;
@@ -33,14 +35,19 @@ typedef struct EncWorkerData {
 // Encoder row synchronization
 typedef struct VP9RowMTSyncData {
 #if CONFIG_MULTITHREAD
-  pthread_mutex_t *mutex_;
-  pthread_cond_t *cond_;
+  pthread_mutex_t *mutex;
+  pthread_cond_t *cond;
 #endif
   // Allocate memory to store the sb/mb block index in each row.
   int *cur_col;
   int sync_range;
   int rows;
 } VP9RowMTSync;
+
+// Frees EncWorkerData related allocations made by vp9_encode_*_mt().
+// row_mt specific data is freed with vp9_row_mt_mem_dealloc() and is not
+// called by this function.
+void vp9_encode_free_mt_data(struct VP9_COMP *cpi);
 
 void vp9_encode_tiles_mt(struct VP9_COMP *cpi);
 
@@ -69,4 +76,4 @@ void vp9_temporal_filter_row_mt(struct VP9_COMP *cpi);
 }  // extern "C"
 #endif
 
-#endif  // VP9_ENCODER_VP9_ETHREAD_H_
+#endif  // VPX_VP9_ENCODER_VP9_ETHREAD_H_

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "apr_general.h"
-#include "apr_random.h"
-#include "apr_thread_proc.h"
+#include "fspr_general.h"
+#include "fspr_random.h"
+#include "fspr_thread_proc.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,15 +43,15 @@ static void hexdump(const unsigned char *b,int n)
     printf("\n");
     }
 
-static apr_random_t *r;
+static fspr_random_t *r;
 
-typedef apr_status_t APR_THREAD_FUNC rnd_fn(apr_random_t *r,void *b,apr_size_t n);
+typedef fspr_status_t APR_THREAD_FUNC rnd_fn(fspr_random_t *r,void *b,fspr_size_t n);
 
-static void rand_run_kat(abts_case *tc,rnd_fn *f,apr_random_t *r,
+static void rand_run_kat(abts_case *tc,rnd_fn *f,fspr_random_t *r,
                          const unsigned char expected[128])
     {
     unsigned char c[128];
-    apr_status_t rv;
+    fspr_status_t rv;
 
     rv=f(r,c,128);
     ABTS_INT_EQUAL(tc,0,rv);
@@ -65,11 +65,11 @@ static void rand_run_kat(abts_case *tc,rnd_fn *f,apr_random_t *r,
         }
     }
 
-static int rand_check_kat(rnd_fn *f,apr_random_t *r,
+static int rand_check_kat(rnd_fn *f,fspr_random_t *r,
                           const unsigned char expected[128])
     {
     unsigned char c[128];
-    apr_status_t rv;
+    fspr_status_t rv;
 
     rv=f(r,c,128);
     if(rv)
@@ -79,18 +79,18 @@ static int rand_check_kat(rnd_fn *f,apr_random_t *r,
     return 0;
     }
 
-static void rand_add_zeroes(apr_random_t *r)
+static void rand_add_zeroes(fspr_random_t *r)
     {
     static unsigned char c[2048];
 
-    apr_random_add_entropy(r,c,sizeof c);
+    fspr_random_add_entropy(r,c,sizeof c);
     }
 
-static void rand_run_seed_short(abts_case *tc,rnd_fn *f,apr_random_t *r,
+static void rand_run_seed_short(abts_case *tc,rnd_fn *f,fspr_random_t *r,
                                 int count)
     {
     int i;
-    apr_status_t rv;
+    fspr_status_t rv;
     char c[1];
 
     for(i=0 ; i < count ; ++i)
@@ -101,8 +101,8 @@ static void rand_run_seed_short(abts_case *tc,rnd_fn *f,apr_random_t *r,
 
 static void rand_seed_short(abts_case *tc, void *data)
     {
-    r=apr_random_standard_new(p);
-    rand_run_seed_short(tc,apr_random_insecure_bytes,r,32);
+    r=fspr_random_standard_new(p);
+    rand_run_seed_short(tc,fspr_random_insecure_bytes,r,32);
     }
 
 static void rand_kat(abts_case *tc, void *data)
@@ -126,12 +126,12 @@ static void rand_kat(abts_case *tc, void *data)
           0x87,0xec,0x2e,0xb1,0x2d,0x6a,0xbd,0x46 };
 
     rand_add_zeroes(r);
-    rand_run_kat(tc,apr_random_insecure_bytes,r,expected);
+    rand_run_kat(tc,fspr_random_insecure_bytes,r,expected);
     }    
 
 static void rand_seed_short2(abts_case *tc, void *data)
     {
-    rand_run_seed_short(tc,apr_random_secure_bytes,r,320);
+    rand_run_seed_short(tc,fspr_random_secure_bytes,r,320);
     }
 
 static void rand_kat2(abts_case *tc, void *data)
@@ -155,13 +155,13 @@ static void rand_kat2(abts_case *tc, void *data)
           0xed,0xd2,0xde,0xce,0x18,0x70,0x57,0x12 };
 
     rand_add_zeroes(r);
-    rand_run_kat(tc,apr_random_secure_bytes,r,expected);
+    rand_run_kat(tc,fspr_random_secure_bytes,r,expected);
     }    
 
 static void rand_barrier(abts_case *tc, void *data)
     {
-    apr_random_barrier(r);
-    rand_run_seed_short(tc,apr_random_secure_bytes,r,320);
+    fspr_random_barrier(r);
+    rand_run_seed_short(tc,fspr_random_secure_bytes,r,320);
     }
 
 static void rand_kat3(abts_case *tc, void *data)
@@ -184,7 +184,7 @@ static void rand_kat3(abts_case *tc, void *data)
           0x04,0xbf,0x32,0xd6,0xdc,0xb7,0x31,0x01,
           0x29,0x51,0x51,0xb3,0x19,0x6e,0xe4,0xf8 };
 
-    rand_run_kat(tc,apr_random_insecure_bytes,r,expected);
+    rand_run_kat(tc,fspr_random_insecure_bytes,r,expected);
     }    
 
 static void rand_kat4(abts_case *tc, void *data)
@@ -208,14 +208,14 @@ static void rand_kat4(abts_case *tc, void *data)
           0x17,0x35,0x5f,0x35,0x8d,0x55,0x0c,0x07 };
 
     rand_add_zeroes(r);
-    rand_run_kat(tc,apr_random_secure_bytes,r,expected);
+    rand_run_kat(tc,fspr_random_secure_bytes,r,expected);
     }    
 
 #if APR_HAS_FORK
 static void rand_fork(abts_case *tc, void *data)
     {
-    apr_proc_t proc;
-    apr_status_t rv;
+    fspr_proc_t proc;
+    fspr_status_t rv;
     unsigned char expected[128]=
         {  0xac,0x93,0xd2,0x5c,0xc7,0xf5,0x8d,0xc2,
            0xd8,0x8d,0xb6,0x7a,0x94,0xe1,0x83,0x4c,
@@ -234,22 +234,22 @@ static void rand_fork(abts_case *tc, void *data)
            0x32,0x8a,0x54,0x01,0xd0,0xaf,0x3f,0x13,
            0xc1,0x7f,0x10,0x2e,0x08,0x1c,0x28,0x4b, };
 
-    rv=apr_proc_fork(&proc,p);
+    rv=fspr_proc_fork(&proc,p);
     if(rv == APR_INCHILD)
         {
         int n;
 
-        n=rand_check_kat(apr_random_secure_bytes,r,expected);
+        n=rand_check_kat(fspr_random_secure_bytes,r,expected);
 
         exit(n);
         }
     else if(rv == APR_INPARENT)
         {
         int exitcode;
-        apr_exit_why_e why;
+        fspr_exit_why_e why;
 
-        rand_run_kat(tc,apr_random_secure_bytes,r,expected);
-        apr_proc_wait(&proc,&exitcode,&why,APR_WAIT);
+        rand_run_kat(tc,fspr_random_secure_bytes,r,expected);
+        fspr_proc_wait(&proc,&exitcode,&why,APR_WAIT);
         if(why != APR_PROC_EXIT)
             {
             ABTS_FAIL(tc,"Child terminated abnormally");

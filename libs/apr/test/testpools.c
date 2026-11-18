@@ -15,10 +15,10 @@
  */
 
 
-#include "apr_general.h"
-#include "apr_pools.h"
-#include "apr_errno.h"
-#include "apr_file_io.h"
+#include "fspr_general.h"
+#include "fspr_pools.h"
+#include "fspr_errno.h"
+#include "fspr_file_io.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -29,15 +29,15 @@
 
 #define ALLOC_BYTES 1024
 
-static apr_pool_t *pmain = NULL;
-static apr_pool_t *pchild = NULL;
+static fspr_pool_t *pmain = NULL;
+static fspr_pool_t *pchild = NULL;
 
 static void alloc_bytes(abts_case *tc, void *data)
 {
     int i;
     char *alloc;
     
-    alloc = apr_palloc(pmain, ALLOC_BYTES);
+    alloc = fspr_palloc(pmain, ALLOC_BYTES);
     ABTS_PTR_NOTNULL(tc, alloc);
 
     for (i=0;i<ALLOC_BYTES;i++) {
@@ -55,7 +55,7 @@ static void calloc_bytes(abts_case *tc, void *data)
     int i;
     char *alloc;
     
-    alloc = apr_pcalloc(pmain, ALLOC_BYTES);
+    alloc = fspr_pcalloc(pmain, ALLOC_BYTES);
     ABTS_PTR_NOTNULL(tc, alloc);
 
     for (i=0;i<ALLOC_BYTES;i++) {
@@ -66,75 +66,75 @@ static void calloc_bytes(abts_case *tc, void *data)
 
 static void parent_pool(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_pool_create(&pmain, NULL);
+    rv = fspr_pool_create(&pmain, NULL);
     ABTS_INT_EQUAL(tc, rv, APR_SUCCESS);
     ABTS_PTR_NOTNULL(tc, pmain);
 }
 
 static void child_pool(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_pool_create(&pchild, pmain);
+    rv = fspr_pool_create(&pchild, pmain);
     ABTS_INT_EQUAL(tc, rv, APR_SUCCESS);
     ABTS_PTR_NOTNULL(tc, pchild);
 }
 
 static void test_ancestor(abts_case *tc, void *data)
 {
-    ABTS_INT_EQUAL(tc, 1, apr_pool_is_ancestor(pmain, pchild));
+    ABTS_INT_EQUAL(tc, 1, fspr_pool_is_ancestor(pmain, pchild));
 }
 
 static void test_notancestor(abts_case *tc, void *data)
 {
-    ABTS_INT_EQUAL(tc, 0, apr_pool_is_ancestor(pchild, pmain));
+    ABTS_INT_EQUAL(tc, 0, fspr_pool_is_ancestor(pchild, pmain));
 }
 
-static apr_status_t success_cleanup(void *data)
+static fspr_status_t success_cleanup(void *data)
 {
     return APR_SUCCESS;
 }
 
 static char *checker_data = "Hello, world.";
 
-static apr_status_t checker_cleanup(void *data)
+static fspr_status_t checker_cleanup(void *data)
 {
     return data == checker_data ? APR_SUCCESS : APR_EGENERAL;
 }
 
 static void test_cleanups(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     int n;
 
     /* do this several times to test the cleanup freelist handling. */
     for (n = 0; n < 5; n++) {
-        apr_pool_cleanup_register(pchild, NULL, success_cleanup,
+        fspr_pool_cleanup_register(pchild, NULL, success_cleanup,
                                   success_cleanup);
-        apr_pool_cleanup_register(pchild, checker_data, checker_cleanup,
+        fspr_pool_cleanup_register(pchild, checker_data, checker_cleanup,
                                   success_cleanup);
-        apr_pool_cleanup_register(pchild, NULL, checker_cleanup, 
+        fspr_pool_cleanup_register(pchild, NULL, checker_cleanup, 
                                   success_cleanup);
 
-        rv = apr_pool_cleanup_run(p, NULL, success_cleanup);
+        rv = fspr_pool_cleanup_run(p, NULL, success_cleanup);
         ABTS_ASSERT(tc, "nullop cleanup run OK", rv == APR_SUCCESS);
-        rv = apr_pool_cleanup_run(p, checker_data, checker_cleanup);
+        rv = fspr_pool_cleanup_run(p, checker_data, checker_cleanup);
         ABTS_ASSERT(tc, "cleanup passed correct data", rv == APR_SUCCESS);
-        rv = apr_pool_cleanup_run(p, NULL, checker_cleanup);
+        rv = fspr_pool_cleanup_run(p, NULL, checker_cleanup);
         ABTS_ASSERT(tc, "cleanup passed correct data", rv == APR_EGENERAL);
 
         if (n == 2) {
             /* clear the pool to check that works */
-            apr_pool_clear(pchild);
+            fspr_pool_clear(pchild);
         }
 
         if (n % 2 == 0) {
             /* throw another random cleanup into the mix */
-            apr_pool_cleanup_register(pchild, NULL,
-                                      apr_pool_cleanup_null,
-                                      apr_pool_cleanup_null);
+            fspr_pool_cleanup_register(pchild, NULL,
+                                      fspr_pool_cleanup_null,
+                                      fspr_pool_cleanup_null);
         }
     }
 }

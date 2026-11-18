@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<result> 
-  <interpretation grammar="session:request1@form-level.store" confidence="0.97">
-    <instance>one</instance>
-    <input mode="speech">one</input>
-  </interpretation>
-</result>

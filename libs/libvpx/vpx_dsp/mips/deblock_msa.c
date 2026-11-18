@@ -8,44 +8,45 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
 #include <stdlib.h>
 
-#include "./macros_msa.h"
+#include "./vpx_dsp_rtcd.h"
+#include "vpx_dsp/mips/macros_msa.h"
 
 extern const int16_t vpx_rv[];
 
-#define VPX_TRANSPOSE8x16_UB_UB(in0, in1, in2, in3, in4, in5, in6, in7, out0,  \
-                                out1, out2, out3, out4, out5, out6, out7,      \
-                                out8, out9, out10, out11, out12, out13, out14, \
-                                out15)                                         \
-  {                                                                            \
-    v8i16 temp0, temp1, temp2, temp3, temp4;                                   \
-    v8i16 temp5, temp6, temp7, temp8, temp9;                                   \
-                                                                               \
-    ILVR_B4_SH(in1, in0, in3, in2, in5, in4, in7, in6, temp0, temp1, temp2,    \
-               temp3);                                                         \
-    ILVR_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                      \
-    ILVRL_W2_SH(temp5, temp4, temp6, temp7);                                   \
-    ILVL_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                      \
-    ILVRL_W2_SH(temp5, temp4, temp8, temp9);                                   \
-    ILVL_B4_SH(in1, in0, in3, in2, in5, in4, in7, in6, temp0, temp1, temp2,    \
-               temp3);                                                         \
-    ILVR_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                      \
-    ILVRL_W2_UB(temp5, temp4, out8, out10);                                    \
-    ILVL_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                      \
-    ILVRL_W2_UB(temp5, temp4, out12, out14);                                   \
-    out0 = (v16u8)temp6;                                                       \
-    out2 = (v16u8)temp7;                                                       \
-    out4 = (v16u8)temp8;                                                       \
-    out6 = (v16u8)temp9;                                                       \
-    out9 = (v16u8)__msa_ilvl_d((v2i64)out8, (v2i64)out8);                      \
-    out11 = (v16u8)__msa_ilvl_d((v2i64)out10, (v2i64)out10);                   \
-    out13 = (v16u8)__msa_ilvl_d((v2i64)out12, (v2i64)out12);                   \
-    out15 = (v16u8)__msa_ilvl_d((v2i64)out14, (v2i64)out14);                   \
-    out1 = (v16u8)__msa_ilvl_d((v2i64)out0, (v2i64)out0);                      \
-    out3 = (v16u8)__msa_ilvl_d((v2i64)out2, (v2i64)out2);                      \
-    out5 = (v16u8)__msa_ilvl_d((v2i64)out4, (v2i64)out4);                      \
-    out7 = (v16u8)__msa_ilvl_d((v2i64)out6, (v2i64)out6);                      \
+#define VPX_TRANSPOSE8x16_UB_UB(                                            \
+    in0, in1, in2, in3, in4, in5, in6, in7, out0, out1, out2, out3, out4,   \
+    out5, out6, out7, out8, out9, out10, out11, out12, out13, out14, out15) \
+  {                                                                         \
+    v8i16 temp0, temp1, temp2, temp3, temp4;                                \
+    v8i16 temp5, temp6, temp7, temp8, temp9;                                \
+                                                                            \
+    ILVR_B4_SH(in1, in0, in3, in2, in5, in4, in7, in6, temp0, temp1, temp2, \
+               temp3);                                                      \
+    ILVR_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                   \
+    ILVRL_W2_SH(temp5, temp4, temp6, temp7);                                \
+    ILVL_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                   \
+    ILVRL_W2_SH(temp5, temp4, temp8, temp9);                                \
+    ILVL_B4_SH(in1, in0, in3, in2, in5, in4, in7, in6, temp0, temp1, temp2, \
+               temp3);                                                      \
+    ILVR_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                   \
+    ILVRL_W2_UB(temp5, temp4, out8, out10);                                 \
+    ILVL_H2_SH(temp1, temp0, temp3, temp2, temp4, temp5);                   \
+    ILVRL_W2_UB(temp5, temp4, out12, out14);                                \
+    out0 = (v16u8)temp6;                                                    \
+    out2 = (v16u8)temp7;                                                    \
+    out4 = (v16u8)temp8;                                                    \
+    out6 = (v16u8)temp9;                                                    \
+    out9 = (v16u8)__msa_ilvl_d((v2i64)out8, (v2i64)out8);                   \
+    out11 = (v16u8)__msa_ilvl_d((v2i64)out10, (v2i64)out10);                \
+    out13 = (v16u8)__msa_ilvl_d((v2i64)out12, (v2i64)out12);                \
+    out15 = (v16u8)__msa_ilvl_d((v2i64)out14, (v2i64)out14);                \
+    out1 = (v16u8)__msa_ilvl_d((v2i64)out0, (v2i64)out0);                   \
+    out3 = (v16u8)__msa_ilvl_d((v2i64)out2, (v2i64)out2);                   \
+    out5 = (v16u8)__msa_ilvl_d((v2i64)out4, (v2i64)out4);                   \
+    out7 = (v16u8)__msa_ilvl_d((v2i64)out6, (v2i64)out6);                   \
   }
 
 #define VPX_AVER_IF_RETAIN(above2_in, above1_in, src_in, below1_in, below2_in, \
@@ -141,6 +142,19 @@ extern const int16_t vpx_rv[];
     in11 = (v16u8)__msa_ilvl_d((v2i64)temp7, (v2i64)temp7);                  \
   }
 
+static INLINE unsigned char filter_scalar(
+    unsigned char v, unsigned char p_above2, unsigned char p_above1,
+    unsigned char p_below1, unsigned char p_below2, unsigned char flimit) {
+  if ((abs(v - p_above2) < flimit) && (abs(v - p_above1) < flimit) &&
+      (abs(v - p_below1) < flimit) && (abs(v - p_below2) < flimit)) {
+    const unsigned char k1 = (p_above2 + p_above1 + 1) >> 1;
+    const unsigned char k2 = (p_below2 + p_below1 + 1) >> 1;
+    const unsigned char k3 = (k1 + k2 + 1) >> 1;
+    return (k3 + v + 1) >> 1;
+  }
+  return v;
+}
+
 static void postproc_down_across_chroma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
                                             int32_t src_stride,
                                             int32_t dst_stride, int32_t cols,
@@ -150,12 +164,15 @@ static void postproc_down_across_chroma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
   uint8_t *f_orig = f;
   uint8_t *p_dst_st = dst_ptr;
   uint16_t col;
+  int32_t r;
   uint64_t out0, out1, out2, out3;
   v16u8 above2, above1, below2, below1, src, ref, ref_temp;
   v16u8 inter0, inter1, inter2, inter3, inter4, inter5;
   v16u8 inter6, inter7, inter8, inter9, inter10, inter11;
+  const int32_t aligned_16 = cols & ~15;
+  const int32_t aligned_8 = cols & ~7;
 
-  for (col = (cols / 16); col--;) {
+  for (col = aligned_16 / 16; col--;) {
     ref = LD_UB(f);
     LD_UB2(p_src - 2 * src_stride, src_stride, above2, above1);
     src = LD_UB(p_src);
@@ -183,7 +200,7 @@ static void postproc_down_across_chroma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     f += 16;
   }
 
-  if (0 != (cols / 16)) {
+  if (cols & 8) {
     ref = LD_UB(f);
     LD_UB2(p_src - 2 * src_stride, src_stride, above2, above1);
     src = LD_UB(p_src);
@@ -216,12 +233,33 @@ static void postproc_down_across_chroma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     SD4(out0, out1, out2, out3, p_dst + 4 * dst_stride, dst_stride);
   }
 
+  for (col = aligned_8; col < cols; col++) {
+    for (r = 0; r < 8; r++) {
+      const uint8_t *s = src_ptr + r * src_stride;
+      uint8_t *d = dst_ptr + r * dst_stride;
+      const uint8_t p_above2 = s[col - 2 * src_stride];
+      const uint8_t p_above1 = s[col - src_stride];
+      const uint8_t p_below1 = s[col + src_stride];
+      const uint8_t p_below2 = s[col + 2 * src_stride];
+      const uint8_t v = s[col];
+      d[col] =
+          filter_scalar(v, p_above2, p_above1, p_below1, p_below2, f_orig[col]);
+    }
+  }
+
+  for (r = 0; r < 8; r++) {
+    uint8_t *d = dst_ptr + r * dst_stride;
+    d[-2] = d[-1] = d[0];
+    d[cols] = d[cols + 1] = d[cols - 1];
+  }
+
   f = f_orig;
   p_dst = dst_ptr - 2;
   LD_UB8(p_dst, dst_stride, inter0, inter1, inter2, inter3, inter4, inter5,
          inter6, inter7);
 
-  for (col = 0; col < (cols / 8); ++col) {
+  for (col = 0; col < aligned_8 / 8; ++col) {
+    const int is_last_block = col == aligned_8 / 8 - 1 && cols == aligned_8;
     ref = LD_UB(f);
     f += 8;
     VPX_TRANSPOSE12x8_UB_UB(inter0, inter1, inter2, inter3, inter4, inter5,
@@ -253,14 +291,14 @@ static void postproc_down_across_chroma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     below2 = inter9;
     ref_temp = (v16u8)__msa_splati_b((v16i8)ref, 5);
     VPX_AVER_IF_RETAIN(above2, above1, src, below1, below2, ref_temp, inter7);
-    if (col == (cols / 8 - 1)) {
+    if (is_last_block) {
       above2 = inter9;
     } else {
       above2 = inter10;
     }
     ref_temp = (v16u8)__msa_splati_b((v16i8)ref, 6);
     VPX_AVER_IF_RETAIN(above1, src, below1, below2, above2, ref_temp, inter8);
-    if (col == (cols / 8 - 1)) {
+    if (is_last_block) {
       above1 = inter9;
     } else {
       above1 = inter11;
@@ -285,6 +323,38 @@ static void postproc_down_across_chroma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     ST8x1_UB(inter9, (p_dst_st + 7 * dst_stride));
     p_dst_st += 8;
   }
+
+  for (r = 0; r < 8; r++) {
+    uint8_t *dst_row = dst_ptr + r * dst_stride;
+    const uint8_t prev_p2 =
+        aligned_8 >= 2 ? dst_row[aligned_8 - 2] : dst_row[0];
+    const uint8_t prev_p1 =
+        aligned_8 >= 1 ? dst_row[aligned_8 - 1] : dst_row[0];
+    uint8_t d[4] = { 0 };
+
+    for (col = aligned_8; col < cols; col++) {
+      const uint8_t p_left2 =
+          col == aligned_8
+              ? prev_p2
+              : (col == aligned_8 + 1 ? prev_p1 : dst_row[col - 2]);
+      const uint8_t p_left1 = col == aligned_8 ? prev_p1 : dst_row[col - 1];
+      const uint8_t p_right1 = dst_row[col + 1];
+      const uint8_t p_right2 = dst_row[col + 2];
+      const uint8_t v = dst_row[col];
+
+      d[col & 3] =
+          filter_scalar(v, p_left2, p_left1, p_right1, p_right2, f_orig[col]);
+
+      if (col >= aligned_8 + 2) dst_row[col - 2] = d[(col - 2) & 3];
+    }
+
+    if (cols - aligned_8 >= 2) {
+      dst_row[cols - 2] = d[(cols - 2) & 3];
+      dst_row[cols - 1] = d[(cols - 1) & 3];
+    } else if (cols - aligned_8 == 1) {
+      dst_row[cols - 1] = d[(cols - 1) & 3];
+    }
+  }
 }
 
 static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
@@ -296,14 +366,17 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
   uint8_t *p_dst_st = dst_ptr;
   uint8_t *f_orig = f;
   uint16_t col;
+  int32_t r;
   uint64_t out0, out1, out2, out3;
   v16u8 above2, above1, below2, below1;
   v16u8 src, ref, ref_temp;
   v16u8 inter0, inter1, inter2, inter3, inter4, inter5, inter6;
   v16u8 inter7, inter8, inter9, inter10, inter11;
   v16u8 inter12, inter13, inter14, inter15;
+  const int32_t aligned_16 = cols & ~15;
+  const int32_t aligned_8 = cols & ~7;
 
-  for (col = (cols / 16); col--;) {
+  for (col = aligned_16 / 16; col--;) {
     ref = LD_UB(f);
     LD_UB2(p_src - 2 * src_stride, src_stride, above2, above1);
     src = LD_UB(p_src);
@@ -348,7 +421,7 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     f += 16;
   }
 
-  if (0 != (cols / 16)) {
+  if (cols & 8) {
     ref = LD_UB(f);
     LD_UB2(p_src - 2 * src_stride, src_stride, above2, above1);
     src = LD_UB(p_src);
@@ -409,6 +482,26 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     SD4(out0, out1, out2, out3, p_dst + 12 * dst_stride, dst_stride);
   }
 
+  for (col = aligned_8; col < cols; col++) {
+    for (r = 0; r < 16; r++) {
+      const uint8_t *s = src_ptr + r * src_stride;
+      uint8_t *d = dst_ptr + r * dst_stride;
+      const uint8_t p_above2 = s[col - 2 * src_stride];
+      const uint8_t p_above1 = s[col - src_stride];
+      const uint8_t p_below1 = s[col + src_stride];
+      const uint8_t p_below2 = s[col + 2 * src_stride];
+      const uint8_t v = s[col];
+      d[col] =
+          filter_scalar(v, p_above2, p_above1, p_below1, p_below2, f_orig[col]);
+    }
+  }
+
+  for (r = 0; r < 16; r++) {
+    uint8_t *d = dst_ptr + r * dst_stride;
+    d[-2] = d[-1] = d[0];
+    d[cols] = d[cols + 1] = d[cols - 1];
+  }
+
   f = f_orig;
   p_dst = dst_ptr - 2;
   LD_UB8(p_dst, dst_stride, inter0, inter1, inter2, inter3, inter4, inter5,
@@ -416,7 +509,8 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
   LD_UB8(p_dst + 8 * dst_stride, dst_stride, inter8, inter9, inter10, inter11,
          inter12, inter13, inter14, inter15);
 
-  for (col = 0; col < cols / 8; ++col) {
+  for (col = 0; col < aligned_8 / 8; ++col) {
+    const int is_last_block = col == aligned_8 / 8 - 1 && cols == aligned_8;
     ref = LD_UB(f);
     f += 8;
     TRANSPOSE12x16_B(inter0, inter1, inter2, inter3, inter4, inter5, inter6,
@@ -450,14 +544,14 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     below2 = inter9;
     ref_temp = (v16u8)__msa_splati_b((v16i8)ref, 5);
     VPX_AVER_IF_RETAIN(above2, above1, src, below1, below2, ref_temp, inter7);
-    if (col == (cols / 8 - 1)) {
+    if (is_last_block) {
       above2 = inter9;
     } else {
       above2 = inter10;
     }
     ref_temp = (v16u8)__msa_splati_b((v16i8)ref, 6);
     VPX_AVER_IF_RETAIN(above1, src, below1, below2, above2, ref_temp, inter8);
-    if (col == (cols / 8 - 1)) {
+    if (is_last_block) {
       above1 = inter9;
     } else {
       above1 = inter11;
@@ -496,24 +590,57 @@ static void postproc_down_across_luma_msa(uint8_t *src_ptr, uint8_t *dst_ptr,
     ST8x1_UB(above1, (p_dst_st + 15 * dst_stride));
     p_dst_st += 8;
   }
+
+  for (r = 0; r < 16; r++) {
+    uint8_t *dst_row = dst_ptr + r * dst_stride;
+    const uint8_t prev_p2 =
+        aligned_8 >= 2 ? dst_row[aligned_8 - 2] : dst_row[0];
+    const uint8_t prev_p1 =
+        aligned_8 >= 1 ? dst_row[aligned_8 - 1] : dst_row[0];
+    uint8_t d[4] = { 0 };
+
+    for (col = aligned_8; col < cols; col++) {
+      const uint8_t p_left2 =
+          col == aligned_8
+              ? prev_p2
+              : (col == aligned_8 + 1 ? prev_p1 : dst_row[col - 2]);
+      const uint8_t p_left1 = col == aligned_8 ? prev_p1 : dst_row[col - 1];
+      const uint8_t p_right1 = dst_row[col + 1];
+      const uint8_t p_right2 = dst_row[col + 2];
+      const uint8_t v = dst_row[col];
+
+      d[col & 3] =
+          filter_scalar(v, p_left2, p_left1, p_right1, p_right2, f_orig[col]);
+
+      if (col >= aligned_8 + 2) dst_row[col - 2] = d[(col - 2) & 3];
+    }
+
+    if (cols - aligned_8 >= 2) {
+      dst_row[cols - 2] = d[(cols - 2) & 3];
+      dst_row[cols - 1] = d[(cols - 1) & 3];
+    } else if (cols - aligned_8 == 1) {
+      dst_row[cols - 1] = d[(cols - 1) & 3];
+    }
+  }
 }
 
 void vpx_post_proc_down_and_across_mb_row_msa(uint8_t *src, uint8_t *dst,
                                               int32_t src_stride,
                                               int32_t dst_stride, int32_t cols,
                                               uint8_t *f, int32_t size) {
+  assert(size == 8 || size == 16);
   if (8 == size) {
     postproc_down_across_chroma_msa(src, dst, src_stride, dst_stride, cols, f);
-  } else if (16 == size) {
+  } else {
     postproc_down_across_luma_msa(src, dst, src_stride, dst_stride, cols, f);
   }
 }
 
-void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
-                                   int32_t rows, int32_t cols, int32_t flimit) {
+void vpx_mbpost_proc_across_ip_msa(uint8_t *src, int32_t pitch, int32_t rows,
+                                   int32_t cols, int32_t flimit) {
   int32_t row, col, cnt;
-  uint8_t *src_dup = src_ptr;
-  v16u8 src0, src, tmp_orig;
+  uint8_t *src_dup = src;
+  v16u8 src0, src1, tmp_orig;
   v16u8 tmp = { 0 };
   v16i8 zero = { 0 };
   v8u16 sum_h, src_r_h, src_l_h;
@@ -532,13 +659,13 @@ void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
     src_dup[cols + 16] = src_dup[cols - 1];
     tmp_orig = (v16u8)__msa_ldi_b(0);
     tmp_orig[15] = tmp[15];
-    src = LD_UB(src_dup - 8);
-    src[15] = 0;
-    ILVRL_B2_UH(zero, src, src_r_h, src_l_h);
+    src1 = LD_UB(src_dup - 8);
+    src1[15] = 0;
+    ILVRL_B2_UH(zero, src1, src_r_h, src_l_h);
     src_r_w = __msa_dotp_u_w(src_r_h, src_r_h);
     src_r_w += __msa_dotp_u_w(src_l_h, src_l_h);
     sum_sq = HADD_SW_S32(src_r_w) + 16;
-    sum_h = __msa_hadd_u_h(src, src);
+    sum_h = __msa_hadd_u_h(src1, src1);
     sum = HADD_UH_U32(sum_h);
     {
       v16u8 src7, src8, src_r, src_l;
@@ -567,8 +694,8 @@ void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
           sum_l[cnt + 1] = sum_l[cnt] + sub_l[cnt + 1];
         }
         sum = sum_l[7];
-        src = LD_UB(src_dup + 16 * col);
-        ILVRL_B2_UH(zero, src, src_r_h, src_l_h);
+        src1 = LD_UB(src_dup + 16 * col);
+        ILVRL_B2_UH(zero, src1, src_r_h, src_l_h);
         src7 = (v16u8)((const8 + sum_r + (v8i16)src_r_h) >> 4);
         src8 = (v16u8)((const8 + sum_l + (v8i16)src_l_h) >> 4);
         tmp = (v16u8)__msa_pckev_b((v16i8)src8, (v16i8)src7);
@@ -614,7 +741,7 @@ void vpx_mbpost_proc_across_ip_msa(uint8_t *src_ptr, int32_t pitch,
         total3 = (total3 < flimit_vec);
         PCKEV_H2_SH(total1, total0, total3, total2, mask0, mask1);
         mask = __msa_pckev_b((v16i8)mask1, (v16i8)mask0);
-        tmp = __msa_bmz_v(tmp, src, (v16u8)mask);
+        tmp = __msa_bmz_v(tmp, src1, (v16u8)mask);
 
         if (col == 0) {
           uint64_t src_d;

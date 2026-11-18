@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_network_io.h"
-#include "apr_lib.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_network_io.h"
+#include "fspr_lib.h"
 #include <sys/time.h>
 
-APR_DECLARE(apr_status_t) apr_socket_send(apr_socket_t *sock, const char *buf,
-                                          apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_send(fspr_socket_t *sock, const char *buf,
+                                          fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     int fds, err = 0;
 
     if (*len > 65536) {
@@ -65,10 +65,10 @@ APR_DECLARE(apr_status_t) apr_socket_send(apr_socket_t *sock, const char *buf,
 
 
 
-APR_DECLARE(apr_status_t) apr_socket_recv(apr_socket_t *sock, char *buf,
-                                          apr_size_t *len)
+APR_DECLARE(fspr_status_t) fspr_socket_recv(fspr_socket_t *sock, char *buf,
+                                          fspr_size_t *len)
 {
-    apr_ssize_t rv;
+    fspr_ssize_t rv;
     int fds, err = 0;
 
     do {
@@ -105,11 +105,11 @@ APR_DECLARE(apr_status_t) apr_socket_recv(apr_socket_t *sock, char *buf,
 
 
 
-APR_DECLARE(apr_status_t) apr_socket_sendv(apr_socket_t *sock, 
+APR_DECLARE(fspr_status_t) fspr_socket_sendv(fspr_socket_t *sock, 
                                            const struct iovec *vec, 
-                                           apr_int32_t nvec, apr_size_t *len)
+                                           fspr_int32_t nvec, fspr_size_t *len)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     struct iovec *tmpvec;
     int fds, err = 0;
     int nv_tosend, total = 0;

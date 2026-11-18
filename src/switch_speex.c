@@ -470,7 +470,7 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 /**
  * read default settings from speex.conf
  */
-static void load_configuration()
+static void load_configuration(void)
 {
 	switch_xml_t xml = NULL, cfg = NULL;
 

@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_strings.h"
-#include "apr.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_private.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_strings.h"
+#include "fspr.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_private.h"
 
 #if APR_HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
 #define APR_WANT_STRFUNC
-#include "apr_want.h"
+#include "fspr_want.h"
 
-struct apr_ipsubnet_t {
+struct fspr_ipsubnet_t {
     int family;
 #if APR_HAVE_IPV6
-    apr_uint32_t sub[4]; /* big enough for IPv4 and IPv6 addresses */
-    apr_uint32_t mask[4];
+    fspr_uint32_t sub[4]; /* big enough for IPv4 and IPv6 addresses */
+    fspr_uint32_t mask[4];
 #else
-    apr_uint32_t sub[1];
-    apr_uint32_t mask[1];
+    fspr_uint32_t sub[1];
+    fspr_uint32_t mask[1];
 #endif
 };
 
@@ -68,12 +68,12 @@ static void *getservbyname(const char *name, const char *proto)
 }
 #endif
 
-static apr_status_t get_local_addr(apr_socket_t *sock)
+static fspr_status_t get_local_addr(fspr_socket_t *sock)
 {
     sock->local_addr->salen = sizeof(sock->local_addr->sa);
     if (getsockname(sock->socketdes, (struct sockaddr *)&sock->local_addr->sa,
                     &sock->local_addr->salen) < 0) {
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
     else {
         sock->local_port_unknown = sock->local_interface_unknown = 0;
@@ -83,12 +83,12 @@ static apr_status_t get_local_addr(apr_socket_t *sock)
     }
 }
 
-static apr_status_t get_remote_addr(apr_socket_t *sock)
+static fspr_status_t get_remote_addr(fspr_socket_t *sock)
 {
     sock->remote_addr->salen = sizeof(sock->remote_addr->sa);
     if (getpeername(sock->socketdes, (struct sockaddr *)&sock->remote_addr->sa,
                     &sock->remote_addr->salen) < 0) {
-        return apr_get_netos_error();
+        return fspr_get_netos_error();
     }
     else {
         sock->remote_addr_unknown = 0;
@@ -98,11 +98,11 @@ static apr_status_t get_remote_addr(apr_socket_t *sock)
     }
 }
 
-APR_DECLARE(apr_status_t) apr_sockaddr_ip_get(char **addr,
-                                         apr_sockaddr_t *sockaddr)
+APR_DECLARE(fspr_status_t) fspr_sockaddr_ip_get(char **addr,
+                                         fspr_sockaddr_t *sockaddr)
 {
-    *addr = apr_palloc(sockaddr->pool, sockaddr->addr_str_len);
-    apr_inet_ntop(sockaddr->family,
+    *addr = fspr_palloc(sockaddr->pool, sockaddr->addr_str_len);
+    fspr_inet_ntop(sockaddr->family,
                   sockaddr->ipaddr_ptr,
                   *addr,
                   sockaddr->addr_str_len);
@@ -119,7 +119,7 @@ APR_DECLARE(apr_status_t) apr_sockaddr_ip_get(char **addr,
     return APR_SUCCESS;
 }
 
-void apr_sockaddr_vars_set(apr_sockaddr_t *addr, int family, apr_port_t port)
+void fspr_sockaddr_vars_set(fspr_sockaddr_t *addr, int family, fspr_port_t port)
 {
     addr->family = family;
     addr->sa.sin.sin_family = family;
@@ -145,13 +145,13 @@ void apr_sockaddr_vars_set(apr_sockaddr_t *addr, int family, apr_port_t port)
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_socket_addr_get(apr_sockaddr_t **sa,
-                                           apr_interface_e which,
-                                           apr_socket_t *sock)
+APR_DECLARE(fspr_status_t) fspr_socket_addr_get(fspr_sockaddr_t **sa,
+                                           fspr_interface_e which,
+                                           fspr_socket_t *sock)
 {
     if (which == APR_LOCAL) {
         if (sock->local_interface_unknown || sock->local_port_unknown) {
-            apr_status_t rv = get_local_addr(sock);
+            fspr_status_t rv = get_local_addr(sock);
 
             if (rv != APR_SUCCESS) {
                 return rv;
@@ -161,7 +161,7 @@ APR_DECLARE(apr_status_t) apr_socket_addr_get(apr_sockaddr_t **sa,
     }
     else if (which == APR_REMOTE) {
         if (sock->remote_addr_unknown) {
-            apr_status_t rv = get_remote_addr(sock);
+            fspr_status_t rv = get_remote_addr(sock);
 
             if (rv != APR_SUCCESS) {
                 return rv;
@@ -176,15 +176,15 @@ APR_DECLARE(apr_status_t) apr_socket_addr_get(apr_sockaddr_t **sa,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_parse_addr_port(char **addr,
+APR_DECLARE(fspr_status_t) fspr_parse_addr_port(char **addr,
                                               char **scope_id,
-                                              apr_port_t *port,
+                                              fspr_port_t *port,
                                               const char *str,
-                                              apr_pool_t *p)
+                                              fspr_pool_t *p)
 {
     const char *ch, *lastchar;
     int big_port;
-    apr_size_t addrlen;
+    fspr_size_t addrlen;
 
     *addr = NULL;         /* assume not specified */
     *scope_id = NULL;     /* assume not specified */
@@ -194,7 +194,7 @@ APR_DECLARE(apr_status_t) apr_parse_addr_port(char **addr,
      * is specified in the string.
      */
     ch = lastchar = str + strlen(str) - 1;
-    while (ch >= str && apr_isdigit(*ch)) {
+    while (ch >= str && fspr_isdigit(*ch)) {
         --ch;
     }
 
@@ -245,7 +245,7 @@ APR_DECLARE(apr_status_t) apr_parse_addr_port(char **addr,
                 return APR_EINVAL;
             }
             addrlen = scope_delim - str - 1;
-            *scope_id = apr_palloc(p, end_bracket - scope_delim);
+            *scope_id = fspr_palloc(p, end_bracket - scope_delim);
             memcpy(*scope_id, scope_delim + 1, end_bracket - scope_delim - 1);
             (*scope_id)[end_bracket - scope_delim - 1] = '\0';
         }
@@ -253,12 +253,12 @@ APR_DECLARE(apr_status_t) apr_parse_addr_port(char **addr,
             addrlen = addrlen - 2; /* minus 2 for '[' and ']' */
         }
 
-        *addr = apr_palloc(p, addrlen + 1);
+        *addr = fspr_palloc(p, addrlen + 1);
         memcpy(*addr,
                str + 1,
                addrlen);
         (*addr)[addrlen] = '\0';
-        if (apr_inet_pton(AF_INET6, *addr, &ipaddr) != 1) {
+        if (fspr_inet_pton(AF_INET6, *addr, &ipaddr) != 1) {
             *addr = NULL;
             *scope_id = NULL;
             *port = 0;
@@ -271,7 +271,7 @@ APR_DECLARE(apr_status_t) apr_parse_addr_port(char **addr,
         /* XXX If '%' is not a valid char in a DNS name, we *could* check 
          *     for bogus scope ids first.
          */
-        *addr = apr_palloc(p, addrlen + 1);
+        *addr = fspr_palloc(p, addrlen + 1);
         memcpy(*addr, str, addrlen);
         (*addr)[addrlen] = '\0';
     }
@@ -280,13 +280,13 @@ APR_DECLARE(apr_status_t) apr_parse_addr_port(char **addr,
 
 #if defined(HAVE_GETADDRINFO)
 
-static apr_status_t call_resolver(apr_sockaddr_t **sa,
-                                  const char *hostname, apr_int32_t family,
-                                  apr_port_t port, apr_int32_t flags, 
-                                  apr_pool_t *p)
+static fspr_status_t call_resolver(fspr_sockaddr_t **sa,
+                                  const char *hostname, fspr_int32_t family,
+                                  fspr_port_t port, fspr_int32_t flags, 
+                                  fspr_pool_t *p)
 {
     struct addrinfo hints, *ai, *ai_list;
-    apr_sockaddr_t *prev_sa;
+    fspr_sockaddr_t *prev_sa;
     int error;
     char *servname = NULL; 
 
@@ -331,7 +331,7 @@ static apr_status_t call_resolver(apr_sockaddr_t **sa,
         }
         else
 #endif /* _AIX */
-        servname = apr_itoa(p, port);
+        servname = fspr_itoa(p, port);
 #endif /* OSF1 */
     }
     error = getaddrinfo(hostname, servname, &hints, &ai_list);
@@ -365,7 +365,7 @@ static apr_status_t call_resolver(apr_sockaddr_t **sa,
     prev_sa = NULL;
     ai = ai_list;
     while (ai) { /* while more addresses to report */
-        apr_sockaddr_t *new_sa;
+        fspr_sockaddr_t *new_sa;
 
         /* Ignore anything bogus: getaddrinfo in some old versions of
          * glibc will return AF_UNIX entries for APR_UNSPEC+AI_PASSIVE
@@ -375,15 +375,15 @@ static apr_status_t call_resolver(apr_sockaddr_t **sa,
             continue;
         }
 
-        new_sa = apr_pcalloc(p, sizeof(apr_sockaddr_t));
+        new_sa = fspr_pcalloc(p, sizeof(fspr_sockaddr_t));
 
         new_sa->pool = p;
         memcpy(&new_sa->sa, ai->ai_addr, ai->ai_addrlen);
-        apr_sockaddr_vars_set(new_sa, ai->ai_family, port);
+        fspr_sockaddr_vars_set(new_sa, ai->ai_family, port);
 
         if (!prev_sa) { /* first element in new list */
             if (hostname) {
-                new_sa->hostname = apr_pstrdup(p, hostname);
+                new_sa->hostname = fspr_pstrdup(p, hostname);
             }
             *sa = new_sa;
         }
@@ -399,13 +399,13 @@ static apr_status_t call_resolver(apr_sockaddr_t **sa,
     return APR_SUCCESS;
 }
 
-static apr_status_t find_addresses(apr_sockaddr_t **sa, 
-                                   const char *hostname, apr_int32_t family,
-                                   apr_port_t port, apr_int32_t flags, 
-                                   apr_pool_t *p)
+static fspr_status_t find_addresses(fspr_sockaddr_t **sa, 
+                                   const char *hostname, fspr_int32_t family,
+                                   fspr_port_t port, fspr_int32_t flags, 
+                                   fspr_pool_t *p)
 {
     if (flags & APR_IPV4_ADDR_OK) {
-        apr_status_t error = call_resolver(sa, hostname, AF_INET, port, flags, p);
+        fspr_status_t error = call_resolver(sa, hostname, AF_INET, port, flags, p);
 
 #if APR_HAVE_IPV6
         if (error) {
@@ -417,7 +417,7 @@ static apr_status_t find_addresses(apr_sockaddr_t **sa,
     }
 #if APR_HAVE_IPV6
     else if (flags & APR_IPV6_ADDR_OK) {
-        apr_status_t error = call_resolver(sa, hostname, AF_INET6, port, flags, p);
+        fspr_status_t error = call_resolver(sa, hostname, AF_INET6, port, flags, p);
 
         if (error) {
             family = AF_INET; /* try again */
@@ -433,13 +433,13 @@ static apr_status_t find_addresses(apr_sockaddr_t **sa,
 
 #else /* end of HAVE_GETADDRINFO code */
 
-static apr_status_t find_addresses(apr_sockaddr_t **sa, 
-                                   const char *hostname, apr_int32_t family,
-                                   apr_port_t port, apr_int32_t flags, 
-                                   apr_pool_t *p)
+static fspr_status_t find_addresses(fspr_sockaddr_t **sa, 
+                                   const char *hostname, fspr_int32_t family,
+                                   fspr_port_t port, fspr_int32_t flags, 
+                                   fspr_pool_t *p)
 {
     struct hostent *hp;
-    apr_sockaddr_t *prev_sa;
+    fspr_sockaddr_t *prev_sa;
     int curaddr;
 #if APR_HAS_THREADS && !defined(GETHOSTBYNAME_IS_THREAD_SAFE) && \
     defined(HAVE_GETHOSTBYNAME_R) && !defined(BEOS)
@@ -498,7 +498,7 @@ static apr_status_t find_addresses(apr_sockaddr_t **sa,
 
         if (!hp) {
 #ifdef WIN32
-            return apr_get_netos_error();
+            return fspr_get_netos_error();
 #else
             return (h_errno + APR_OS_START_SYSERR);
 #endif
@@ -508,15 +508,15 @@ static apr_status_t find_addresses(apr_sockaddr_t **sa,
     prev_sa = NULL;
     curaddr = 0;
     while (hp->h_addr_list[curaddr]) {
-        apr_sockaddr_t *new_sa = apr_pcalloc(p, sizeof(apr_sockaddr_t));
+        fspr_sockaddr_t *new_sa = fspr_pcalloc(p, sizeof(fspr_sockaddr_t));
 
         new_sa->pool = p;
         new_sa->sa.sin.sin_addr = *(struct in_addr *)hp->h_addr_list[curaddr];
-        apr_sockaddr_vars_set(new_sa, AF_INET, port);
+        fspr_sockaddr_vars_set(new_sa, AF_INET, port);
 
         if (!prev_sa) { /* first element in new list */
             if (orig_hostname) {
-                new_sa->hostname = apr_pstrdup(p, orig_hostname);
+                new_sa->hostname = fspr_pstrdup(p, orig_hostname);
             }
             *sa = new_sa;
         }
@@ -534,12 +534,12 @@ static apr_status_t find_addresses(apr_sockaddr_t **sa,
 
 #endif /* end of !HAVE_GETADDRINFO code */
 
-APR_DECLARE(apr_status_t) apr_sockaddr_info_get(apr_sockaddr_t **sa,
+APR_DECLARE(fspr_status_t) fspr_sockaddr_info_get(fspr_sockaddr_t **sa,
                                                 const char *hostname, 
-                                                apr_int32_t family, apr_port_t port,
-                                                apr_int32_t flags, apr_pool_t *p)
+                                                fspr_int32_t family, fspr_port_t port,
+                                                fspr_int32_t flags, fspr_pool_t *p)
 {
-    apr_int32_t masked;
+    fspr_int32_t masked;
     *sa = NULL;
 
     if ((masked = flags & (APR_IPV4_ADDR_OK | APR_IPV6_ADDR_OK))) {
@@ -568,9 +568,9 @@ APR_DECLARE(apr_status_t) apr_sockaddr_info_get(apr_sockaddr_t **sa,
     return find_addresses(sa, hostname, family, port, flags, p);
 }
 
-APR_DECLARE(apr_status_t) apr_getnameinfo(char **hostname,
-                                          apr_sockaddr_t *sockaddr,
-                                          apr_int32_t flags)
+APR_DECLARE(fspr_status_t) fspr_getnameinfo(char **hostname,
+                                          fspr_sockaddr_t *sockaddr,
+                                          fspr_int32_t flags)
 {
 #if defined(HAVE_GETNAMEINFO)
     int rc;
@@ -597,7 +597,7 @@ APR_DECLARE(apr_status_t) apr_getnameinfo(char **hostname,
         struct sockaddr_in tmpsa;
         tmpsa.sin_family = AF_INET;
         tmpsa.sin_port = 0;
-        tmpsa.sin_addr.s_addr = ((apr_uint32_t *)sockaddr->ipaddr_ptr)[3];
+        tmpsa.sin_addr.s_addr = ((fspr_uint32_t *)sockaddr->ipaddr_ptr)[3];
 #ifdef SIN6_LEN
         tmpsa.sin_len = sizeof(tmpsa);
 #endif
@@ -635,7 +635,7 @@ APR_DECLARE(apr_status_t) apr_getnameinfo(char **hostname,
             return rc + APR_OS_START_EAIERR; /* return the EAI_ error */
         }
     }
-    *hostname = sockaddr->hostname = apr_pstrdup(sockaddr->pool, 
+    *hostname = sockaddr->hostname = fspr_pstrdup(sockaddr->pool, 
                                                  tmphostname);
     return APR_SUCCESS;
 #else
@@ -678,12 +678,12 @@ APR_DECLARE(apr_status_t) apr_getnameinfo(char **hostname,
 #endif
 
     if (hptr) {
-        *hostname = sockaddr->hostname = apr_pstrdup(sockaddr->pool, hptr->h_name);
+        *hostname = sockaddr->hostname = fspr_pstrdup(sockaddr->pool, hptr->h_name);
         return APR_SUCCESS;
     }
     *hostname = NULL;
 #if defined(WIN32)
-    return apr_get_netos_error();
+    return fspr_get_netos_error();
 #elif defined(OS2)
     return h_errno;
 #else
@@ -692,7 +692,7 @@ APR_DECLARE(apr_status_t) apr_getnameinfo(char **hostname,
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_getservbyname(apr_sockaddr_t *sockaddr,
+APR_DECLARE(fspr_status_t) fspr_getservbyname(fspr_sockaddr_t *sockaddr,
                                             const char *servname)
 {
     struct servent *se;
@@ -702,7 +702,7 @@ APR_DECLARE(apr_status_t) apr_getservbyname(apr_sockaddr_t *sockaddr,
 
     if ((se = getservbyname(servname, NULL)) != NULL){
         sockaddr->port = htons(se->s_port);
-        sockaddr->servname = apr_pstrdup(sockaddr->pool, servname);
+        sockaddr->servname = fspr_pstrdup(sockaddr->pool, servname);
         sockaddr->sa.sin.sin_port = se->s_port;
         return APR_SUCCESS;
     }
@@ -717,8 +717,8 @@ APR_DECLARE(apr_status_t) apr_getservbyname(apr_sockaddr_t *sockaddr,
          &((struct in6_addr *)(b)->ipaddr_ptr)->s6_addr[12],  \
          (a)->ipaddr_len))
 
-APR_DECLARE(int) apr_sockaddr_equal(const apr_sockaddr_t *addr1,
-                                    const apr_sockaddr_t *addr2)
+APR_DECLARE(int) fspr_sockaddr_equal(const fspr_sockaddr_t *addr1,
+                                    const fspr_sockaddr_t *addr2)
 {
     if (addr1->ipaddr_len == addr2->ipaddr_len &&
         !memcmp(addr1->ipaddr_ptr, addr2->ipaddr_ptr, addr1->ipaddr_len)) {
@@ -735,7 +735,7 @@ APR_DECLARE(int) apr_sockaddr_equal(const apr_sockaddr_t *addr1,
     return 0; /* not equal */
 }
 
-static apr_status_t parse_network(apr_ipsubnet_t *ipsub, const char *network)
+static fspr_status_t parse_network(fspr_ipsubnet_t *ipsub, const char *network)
 {
     /* legacy syntax for ip addrs: a.b.c. ==> a.b.c.0/24 for example */
     int shift;
@@ -757,10 +757,10 @@ static apr_status_t parse_network(apr_ipsubnet_t *ipsub, const char *network)
     shift = 24;
     while (*s) {
         t = s;
-        if (!apr_isdigit(*t)) {
+        if (!fspr_isdigit(*t)) {
             return APR_EBADIP;
         }
-        while (apr_isdigit(*t)) {
+        while (fspr_isdigit(*t)) {
             ++t;
         }
         if (*t == '.') {
@@ -793,7 +793,7 @@ static apr_status_t parse_network(apr_ipsubnet_t *ipsub, const char *network)
  * APR_BADMASK    mask portion is not valid
  */
 
-static apr_status_t parse_ip(apr_ipsubnet_t *ipsub, const char *ipstr, int network_allowed)
+static fspr_status_t parse_ip(fspr_ipsubnet_t *ipsub, const char *ipstr, int network_allowed)
 {
     /* supported flavors of IP:
      *
@@ -810,10 +810,10 @@ static apr_status_t parse_ip(apr_ipsubnet_t *ipsub, const char *ipstr, int netwo
     int rc;
 
 #if APR_HAVE_IPV6
-    rc = apr_inet_pton(AF_INET6, ipstr, ipsub->sub);
+    rc = fspr_inet_pton(AF_INET6, ipstr, ipsub->sub);
     if (rc == 1) {
         if (IN6_IS_ADDR_V4MAPPED((struct in6_addr *)ipsub->sub)) {
-            /* apr_ipsubnet_test() assumes that we don't create IPv4-mapped IPv6
+            /* fspr_ipsubnet_test() assumes that we don't create IPv4-mapped IPv6
              * addresses; this of course forces the user to specify IPv4 addresses
              * in a.b.c.d style instead of ::ffff:a.b.c.d style.
              */
@@ -824,7 +824,7 @@ static apr_status_t parse_ip(apr_ipsubnet_t *ipsub, const char *ipstr, int netwo
     else
 #endif
     {
-        rc = apr_inet_pton(AF_INET, ipstr, ipsub->sub);
+        rc = fspr_inet_pton(AF_INET, ipstr, ipsub->sub);
         if (rc == 1) {
             ipsub->family = AF_INET;
         }
@@ -848,28 +848,28 @@ static int looks_like_ip(const char *ipstr)
     }
 
     /* simple IPv4 address string check */
-    while ((*ipstr == '.') || apr_isdigit(*ipstr))
+    while ((*ipstr == '.') || fspr_isdigit(*ipstr))
         ipstr++;
     return (*ipstr == '\0');
 }
 
-static void fix_subnet(apr_ipsubnet_t *ipsub)
+static void fix_subnet(fspr_ipsubnet_t *ipsub)
 {
     /* in case caller specified more bits in network address than are
      * valid according to the mask, turn off the extra bits
      */
     int i;
 
-    for (i = 0; i < sizeof ipsub->mask / sizeof(apr_int32_t); i++) {
+    for (i = 0; i < sizeof ipsub->mask / sizeof(fspr_int32_t); i++) {
         ipsub->sub[i] &= ipsub->mask[i];
     }
 }
 
 /* be sure not to store any IPv4 address as a v4-mapped IPv6 address */
-APR_DECLARE(apr_status_t) apr_ipsubnet_create(apr_ipsubnet_t **ipsub, const char *ipstr, 
-                                              const char *mask_or_numbits, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_ipsubnet_create(fspr_ipsubnet_t **ipsub, const char *ipstr, 
+                                              const char *mask_or_numbits, fspr_pool_t *p)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *endptr;
     long bits, maxbits = 32;
 
@@ -882,7 +882,7 @@ APR_DECLARE(apr_status_t) apr_ipsubnet_create(apr_ipsubnet_t **ipsub, const char
         return APR_EINVAL;
     }
 
-    *ipsub = apr_pcalloc(p, sizeof(apr_ipsubnet_t));
+    *ipsub = fspr_pcalloc(p, sizeof(fspr_ipsubnet_t));
 
     /* assume ipstr is an individual IP address, not a subnet */
     memset((*ipsub)->mask, 0xFF, sizeof (*ipsub)->mask);
@@ -902,7 +902,7 @@ APR_DECLARE(apr_status_t) apr_ipsubnet_create(apr_ipsubnet_t **ipsub, const char
         if (*endptr == '\0' && bits > 0 && bits <= maxbits) {
             /* valid num-bits string; fill in mask appropriately */
             int cur_entry = 0;
-            apr_int32_t cur_bit_value;
+            fspr_int32_t cur_bit_value;
 
             memset((*ipsub)->mask, 0, sizeof (*ipsub)->mask);
             while (bits > 32) {
@@ -918,7 +918,7 @@ APR_DECLARE(apr_status_t) apr_ipsubnet_create(apr_ipsubnet_t **ipsub, const char
             }
             (*ipsub)->mask[cur_entry] = htonl((*ipsub)->mask[cur_entry]);
         }
-        else if (apr_inet_pton(AF_INET, mask_or_numbits, (*ipsub)->mask) == 1 &&
+        else if (fspr_inet_pton(AF_INET, mask_or_numbits, (*ipsub)->mask) == 1 &&
             (*ipsub)->family == AF_INET) {
             /* valid IPv4 netmask */
         }
@@ -932,7 +932,7 @@ APR_DECLARE(apr_status_t) apr_ipsubnet_create(apr_ipsubnet_t **ipsub, const char
     return APR_SUCCESS;
 }
 
-APR_DECLARE(int) apr_ipsubnet_test(apr_ipsubnet_t *ipsub, apr_sockaddr_t *sa)
+APR_DECLARE(int) fspr_ipsubnet_test(fspr_ipsubnet_t *ipsub, fspr_sockaddr_t *sa)
 {
 #if APR_HAVE_IPV6
     /* XXX This line will segv on Win32 build with APR_HAVE_IPV6,
@@ -946,12 +946,12 @@ APR_DECLARE(int) apr_ipsubnet_test(apr_ipsubnet_t *ipsub, apr_sockaddr_t *sa)
     }
     else if (IN6_IS_ADDR_V4MAPPED((struct in6_addr *)sa->ipaddr_ptr)) {
         if (ipsub->family == AF_INET &&
-            (((apr_uint32_t *)sa->ipaddr_ptr)[3] & ipsub->mask[0]) == ipsub->sub[0]) {
+            (((fspr_uint32_t *)sa->ipaddr_ptr)[3] & ipsub->mask[0]) == ipsub->sub[0]) {
             return 1;
         }
     }
     else {
-        apr_uint32_t *addr = (apr_uint32_t *)sa->ipaddr_ptr;
+        fspr_uint32_t *addr = (fspr_uint32_t *)sa->ipaddr_ptr;
 
         if ((addr[0] & ipsub->mask[0]) == ipsub->sub[0] &&
             (addr[1] & ipsub->mask[1]) == ipsub->sub[1] &&

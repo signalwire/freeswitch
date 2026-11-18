@@ -25,9 +25,9 @@
 #include <limits.h>
 #endif
 
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_errno.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_errno.h"
 
 /* I haven't bothered to check for APR_ENOTIMPL here, AFAIK, all string
  * functions exist on all platforms.
@@ -49,7 +49,7 @@ static void test_strtok(abts_case *tc, void *data)
             " \r\n\3\2\1"
         },
         {
-            NULL,  /* but who cares if apr_strtok() segfaults? */
+            NULL,  /* but who cares if fspr_strtok() segfaults? */
             " \t"
         },
 #if 0     /* don't do this... you deserve to segfault */
@@ -74,11 +74,11 @@ static void test_strtok(abts_case *tc, void *data)
         char *str1, *str2;
         char *state;
 
-        str1 = apr_pstrdup(p, cases[curtc].input);
-        str2 = apr_pstrdup(p, cases[curtc].input);
+        str1 = fspr_pstrdup(p, cases[curtc].input);
+        str2 = fspr_pstrdup(p, cases[curtc].input);
 
         do {
-            retval1 = apr_strtok(str1, cases[curtc].sep, &state);
+            retval1 = fspr_strtok(str1, cases[curtc].sep, &state);
             retval2 = strtok(str2, cases[curtc].sep);
 
             if (!retval1) {
@@ -97,7 +97,7 @@ static void test_strtok(abts_case *tc, void *data)
 static void snprintf_noNULL(abts_case *tc, void *data)
 {
     char buff[100];
-    char *testing = apr_palloc(p, 10);
+    char *testing = fspr_palloc(p, 10);
 
     testing[0] = 't';
     testing[1] = 'e';
@@ -108,7 +108,7 @@ static void snprintf_noNULL(abts_case *tc, void *data)
     testing[6] = 'g';
     
     /* If this test fails, we are going to seg fault. */
-    apr_snprintf(buff, sizeof(buff), "%.*s", 7, testing);
+    fspr_snprintf(buff, sizeof(buff), "%.*s", 7, testing);
     ABTS_STR_NEQUAL(tc, buff, testing, 7);
 }
 
@@ -116,7 +116,7 @@ static void snprintf_0NULL(abts_case *tc, void *data)
 {
     int rv;
 
-    rv = apr_snprintf(NULL, 0, "%sBAR", "FOO");
+    rv = fspr_snprintf(NULL, 0, "%sBAR", "FOO");
     ABTS_INT_EQUAL(tc, 6, rv);
 }
 
@@ -125,7 +125,7 @@ static void snprintf_0nonNULL(abts_case *tc, void *data)
     int rv;
     char *buff = "testing";
 
-    rv = apr_snprintf(buff, 0, "%sBAR", "FOO");
+    rv = fspr_snprintf(buff, 0, "%sBAR", "FOO");
     ABTS_INT_EQUAL(tc, 6, rv);
     ABTS_ASSERT(tc, "buff unmangled", strcmp(buff, "FOOBAR") != 0);
 }
@@ -135,15 +135,15 @@ static void snprintf_underflow(abts_case *tc, void *data)
     char buf[20];
     int rv;
 
-    rv = apr_snprintf(buf, sizeof buf, "%.2f", (double)0.0001);
+    rv = fspr_snprintf(buf, sizeof buf, "%.2f", (double)0.0001);
     ABTS_INT_EQUAL(tc, 4, rv);
     ABTS_STR_EQUAL(tc, "0.00", buf);
     
-    rv = apr_snprintf(buf, sizeof buf, "%.2f", (double)0.001);
+    rv = fspr_snprintf(buf, sizeof buf, "%.2f", (double)0.001);
     ABTS_INT_EQUAL(tc, 4, rv);
     ABTS_STR_EQUAL(tc, "0.00", buf);
     
-    rv = apr_snprintf(buf, sizeof buf, "%.2f", (double)0.01);
+    rv = fspr_snprintf(buf, sizeof buf, "%.2f", (double)0.01);
     ABTS_INT_EQUAL(tc, 4, rv);
     ABTS_STR_EQUAL(tc, "0.01", buf);
 }
@@ -151,20 +151,20 @@ static void snprintf_underflow(abts_case *tc, void *data)
 static void string_error(abts_case *tc, void *data)
 {
      char buf[128], *rv;
-     apr_status_t n;
+     fspr_status_t n;
 
      buf[0] = '\0';
-     rv = apr_strerror(APR_ENOENT, buf, sizeof buf);
+     rv = fspr_strerror(APR_ENOENT, buf, sizeof buf);
      ABTS_PTR_EQUAL(tc, buf, rv);
      ABTS_TRUE(tc, strlen(buf) > 0);
 
-     rv = apr_strerror(APR_TIMEUP, buf, sizeof buf);
+     rv = fspr_strerror(APR_TIMEUP, buf, sizeof buf);
      ABTS_PTR_EQUAL(tc, buf, rv);
      ABTS_STR_EQUAL(tc, "The timeout specified has expired", buf);
      
      /* throw some randomish numbers at it to check for robustness */
      for (n = 1; n < 1000000; n *= 2) {
-         apr_strerror(n, buf, sizeof buf);
+         fspr_strerror(n, buf, sizeof buf);
      }
 }
 
@@ -176,10 +176,10 @@ static void string_long(abts_case *tc, void *data)
     memset(s, 'A', SIZE);
     s[SIZE] = '\0';
 
-    apr_psprintf(p, "%s", s);
+    fspr_psprintf(p, "%s", s);
 }
 
-/* ### FIXME: apr.h/apr_strings.h should provide these! */
+/* ### FIXME: apr.h/fspr_strings.h should provide these! */
 #define MY_LLONG_MAX (APR_INT64_C(9223372036854775807))
 #define MY_LLONG_MIN (-MY_LLONG_MAX - APR_INT64_C(1))
 
@@ -188,7 +188,7 @@ static void string_strtoi64(abts_case *tc, void *data)
     static const struct {
         int errnum, base;
         const char *in, *end;
-        apr_int64_t result;
+        fspr_int64_t result;
     } ts[] = {
         
         /* base 10 tests */
@@ -243,22 +243,22 @@ static void string_strtoi64(abts_case *tc, void *data)
 
     for (n = 0; n < sizeof(ts)/sizeof(ts[0]); n++) {
         char *end = "end ptr not changed";
-        apr_int64_t result;
+        fspr_int64_t result;
         int errnum;
         
         errno = 0;
-        result = apr_strtoi64(ts[n].in, &end, ts[n].base);
+        result = fspr_strtoi64(ts[n].in, &end, ts[n].base);
         errnum = errno;
 
         ABTS_ASSERT(tc,
-                 apr_psprintf(p, "for '%s': result was %" APR_INT64_T_FMT 
+                 fspr_psprintf(p, "for '%s': result was %" APR_INT64_T_FMT 
                               " not %" APR_INT64_T_FMT, ts[n].in,
                               result, ts[n].result),
                  result == ts[n].result);
         
         if (ts[n].errnum != -1) {
             ABTS_ASSERT(tc,
-                     apr_psprintf(p, "for '%s': errno was %d not %d", ts[n].in,
+                     fspr_psprintf(p, "for '%s': errno was %d not %d", ts[n].in,
                                   errnum, ts[n].errnum),
                      ts[n].errnum == errnum);
         }
@@ -268,7 +268,7 @@ static void string_strtoi64(abts_case *tc, void *data)
             ABTS_PTR_EQUAL(tc, ts[n].in + strlen(ts[n].in), end);
         } else if (ts[n].end != (void *)-1) {
             ABTS_ASSERT(tc,
-                     apr_psprintf(p, "for '%s', end was '%s' not '%s'",
+                     fspr_psprintf(p, "for '%s', end was '%s' not '%s'",
                                   ts[n].in, end, ts[n].end),
                      strcmp(ts[n].end, end) == 0);
         }
@@ -277,14 +277,14 @@ static void string_strtoi64(abts_case *tc, void *data)
 
 static void string_strtoff(abts_case *tc, void *data)
 {
-    apr_off_t off;
+    fspr_off_t off;
 
     ABTS_ASSERT(tc, "strtoff fails on out-of-range integer",
-                apr_strtoff(&off, "999999999999999999999999999999",
+                fspr_strtoff(&off, "999999999999999999999999999999",
                             NULL, 10) != APR_SUCCESS);
 
     ABTS_ASSERT(tc, "strtoff failed for 1234",
-                apr_strtoff(&off, "1234", NULL, 10) == APR_SUCCESS);
+                fspr_strtoff(&off, "1234", NULL, 10) == APR_SUCCESS);
 
     ABTS_ASSERT(tc, "strtoff failed to parse 1234", off == 1234);
 }
@@ -292,25 +292,25 @@ static void string_strtoff(abts_case *tc, void *data)
 /* random-ish checks for strfsize buffer overflows */
 static void overflow_strfsize(abts_case *tc, void *data)
 {
-    apr_off_t off;
+    fspr_off_t off;
     char buf[7];
 
     buf[5] = '$';
     buf[6] = '@';
 
     for (off = -9999; off < 20000; off++) {
-        apr_strfsize(off, buf);
+        fspr_strfsize(off, buf);
     }
     for (; off < 9999999; off += 9) {
-        apr_strfsize(off, buf);
+        fspr_strfsize(off, buf);
     }
     for (; off < 999999999; off += 999) {
-        apr_strfsize(off, buf);
+        fspr_strfsize(off, buf);
     }
     for (off = 1; off < LONG_MAX && off > 0; off *= 2) {
-        apr_strfsize(off, buf);
-        apr_strfsize(off + 1, buf);
-        apr_strfsize(off - 1, buf);
+        fspr_strfsize(off, buf);
+        fspr_strfsize(off + 1, buf);
+        fspr_strfsize(off - 1, buf);
     }
 
     ABTS_ASSERT(tc, "strfsize overflowed", buf[5] == '$');
@@ -320,7 +320,7 @@ static void overflow_strfsize(abts_case *tc, void *data)
 static void string_strfsize(abts_case *tc, void *data)
 {
     static const struct {
-        apr_off_t size;
+        fspr_off_t size;
         const char *buf;
     } ts[] = {
         { -1,   "  - " },
@@ -334,14 +334,14 @@ static void string_strfsize(abts_case *tc, void *data)
         { 103809024, " 99M" },
         { 1047527424, "1.0G" } /* "999M" would be more correct */
     };
-    apr_size_t n;
+    fspr_size_t n;
 
     for (n = 0; n < sizeof(ts)/sizeof(ts[0]); n++) {
         char buf[6], *ret;
         
         buf[5] = '%';
 
-        ret = apr_strfsize(ts[n].size, buf);
+        ret = fspr_strfsize(ts[n].size, buf);
         ABTS_ASSERT(tc, "strfsize returned wrong buffer", ret == buf);
         ABTS_ASSERT(tc, "strfsize overflowed", buf[5] == '%');
 
@@ -357,10 +357,10 @@ static void snprintf_overflow(abts_case *tc, void *data)
     buf[2] = '4';
     buf[3] = '2';
 
-    rv = apr_snprintf(buf, 2, "%s", "a");
+    rv = fspr_snprintf(buf, 2, "%s", "a");
     ABTS_INT_EQUAL(tc, 1, rv);
 
-    rv = apr_snprintf(buf, 2, "%s", "abcd");
+    rv = fspr_snprintf(buf, 2, "%s", "abcd");
     ABTS_INT_EQUAL(tc, 1, rv);
 
     ABTS_STR_EQUAL(tc, buf, "a");

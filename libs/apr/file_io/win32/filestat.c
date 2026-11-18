@@ -14,28 +14,28 @@
  * limitations under the License.
  */
 
-#include "apr.h"
+#include "fspr.h"
 #include <aclapi.h>
-#include "apr_private.h"
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_errno.h"
-#include "apr_time.h"
+#include "fspr_private.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_errno.h"
+#include "fspr_time.h"
 #include <sys/stat.h>
-#include "apr_arch_atime.h"
-#include "apr_arch_misc.h"
+#include "fspr_arch_atime.h"
+#include "fspr_arch_misc.h"
 
 /* We have to assure that the file name contains no '*'s, or other
  * wildcards when using FindFirstFile to recover the true file name.
  */
-static apr_status_t test_safe_name(const char *name)
+static fspr_status_t test_safe_name(const char *name)
 {
     /* Only accept ':' in the second position of the filename,
      * as the drive letter delimiter:
      */
-    if (apr_isalpha(*name) && (name[1] == ':')) {
+    if (fspr_isalpha(*name) && (name[1] == ':')) {
         name += 2;
     }
     while (*name) {
@@ -50,12 +50,12 @@ static apr_status_t test_safe_name(const char *name)
     return APR_SUCCESS;
 }
 
-static apr_status_t free_localheap(void *heap) {
+static fspr_status_t free_localheap(void *heap) {
     LocalFree(heap);
     return APR_SUCCESS;
 }
 
-static apr_gid_t worldid = NULL;
+static fspr_gid_t worldid = NULL;
 
 static void free_world(void)
 {
@@ -72,13 +72,13 @@ typedef enum prot_scope_e {
     prot_scope_user =  8
 } prot_scope_e;
 
-static apr_fileperms_t convert_prot(ACCESS_MASK acc, prot_scope_e scope)
+static fspr_fileperms_t convert_prot(ACCESS_MASK acc, prot_scope_e scope)
 {
     /* These choices are based on the single filesystem bit that controls
      * the given behavior.  They are -not- recommended for any set protection
      * function, such a function should -set- use GENERIC_READ/WRITE/EXECUTE
      */
-    apr_fileperms_t prot = 0;
+    fspr_fileperms_t prot = 0;
     if (acc & FILE_EXECUTE)
         prot |= APR_WEXECUTE;
     if (acc & FILE_WRITE_DATA)
@@ -88,7 +88,7 @@ static apr_fileperms_t convert_prot(ACCESS_MASK acc, prot_scope_e scope)
     return (prot << scope);
 }
 
-static void resolve_prot(apr_finfo_t *finfo, apr_int32_t wanted, PACL dacl)
+static void resolve_prot(fspr_finfo_t *finfo, fspr_int32_t wanted, PACL dacl)
 {
     TRUSTEE_W ident = {NULL, NO_MULTIPLE_TRUSTEE, TRUSTEE_IS_SID};
     ACCESS_MASK acc;
@@ -139,11 +139,11 @@ static void resolve_prot(apr_finfo_t *finfo, apr_int32_t wanted, PACL dacl)
     }
 }
 
-static apr_status_t resolve_ident(apr_finfo_t *finfo, const char *fname,
-                                  apr_int32_t wanted, apr_pool_t *pool)
+static fspr_status_t resolve_ident(fspr_finfo_t *finfo, const char *fname,
+                                  fspr_int32_t wanted, fspr_pool_t *pool)
 {
-    apr_file_t *thefile = NULL;
-    apr_status_t rv;
+    fspr_file_t *thefile = NULL;
+    fspr_status_t rv;
     /* 
      * NT5 (W2K) only supports symlinks in the same manner as mount points.
      * This code should eventually take that into account, for now treat
@@ -153,28 +153,28 @@ static apr_status_t resolve_ident(apr_finfo_t *finfo, const char *fname,
      * user, group or permissions.
      */
     
-    if ((rv = apr_file_open(&thefile, fname, APR_OPENINFO
+    if ((rv = fspr_file_open(&thefile, fname, APR_OPENINFO
                           | ((wanted & APR_FINFO_LINK) ? APR_OPENLINK : 0)
                           | ((wanted & (APR_FINFO_PROT | APR_FINFO_OWNER))
                                 ? APR_READCONTROL : 0),
                             APR_OS_DEFAULT, pool)) == APR_SUCCESS) {
-        rv = apr_file_info_get(finfo, wanted, thefile);
+        rv = fspr_file_info_get(finfo, wanted, thefile);
         finfo->filehand = NULL;
-        apr_file_close(thefile);
+        fspr_file_close(thefile);
     }
     else if (APR_STATUS_IS_EACCES(rv) && (wanted & (APR_FINFO_PROT 
                                                   | APR_FINFO_OWNER))) {
         /* We have a backup plan.  Perhaps we couldn't grab READ_CONTROL?
          * proceed without asking for that permission...
          */
-        if ((rv = apr_file_open(&thefile, fname, APR_OPENINFO
+        if ((rv = fspr_file_open(&thefile, fname, APR_OPENINFO
                               | ((wanted & APR_FINFO_LINK) ? APR_OPENLINK : 0),
                                 APR_OS_DEFAULT, pool)) == APR_SUCCESS) {
-            rv = apr_file_info_get(finfo, wanted & ~(APR_FINFO_PROT 
+            rv = fspr_file_info_get(finfo, wanted & ~(APR_FINFO_PROT 
                                                  | APR_FINFO_OWNER),
                                  thefile);
             finfo->filehand = NULL;
-            apr_file_close(thefile);
+            fspr_file_close(thefile);
         }
     }
 
@@ -188,7 +188,7 @@ static apr_status_t resolve_ident(apr_finfo_t *finfo, const char *fname,
     return rv;
 }
 
-static void guess_protection_bits(apr_finfo_t *finfo)
+static void guess_protection_bits(fspr_finfo_t *finfo)
 {
     /* Read, write execute for owner.  In the Win9x environment, any
      * readable file is executable (well, not entirely 100% true, but
@@ -207,20 +207,20 @@ static void guess_protection_bits(apr_finfo_t *finfo)
     finfo->valid |= APR_FINFO_UPROT | APR_FINFO_GPROT | APR_FINFO_WPROT;
 }
 
-apr_status_t more_finfo(apr_finfo_t *finfo, const void *ufile, 
-                        apr_int32_t wanted, int whatfile)
+fspr_status_t more_finfo(fspr_finfo_t *finfo, const void *ufile, 
+                        fspr_int32_t wanted, int whatfile)
 {
     PSID user = NULL, grp = NULL;
     PACL dacl = NULL;
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    if (apr_os_level < APR_WIN_NT)
+    if (fspr_os_level < APR_WIN_NT)
         guess_protection_bits(finfo);
     else if (wanted & (APR_FINFO_PROT | APR_FINFO_OWNER))
     {
         /* On NT this request is incredibly expensive, but accurate.
          * Since the WinNT-only functions below are protected by the
-         * (apr_os_level < APR_WIN_NT) case above, we need no extra
+         * (fspr_os_level < APR_WIN_NT) case above, we need no extra
          * tests, but remember GetNamedSecurityInfo & GetSecurityInfo
          * are not supported on 9x.
          */
@@ -233,7 +233,7 @@ apr_status_t more_finfo(apr_finfo_t *finfo, const void *ufile,
         if (wanted & APR_FINFO_PROT)
             sinf |= DACL_SECURITY_INFORMATION;
         if (whatfile == MORE_OF_WFSPEC) {
-            apr_wchar_t *wfile = (apr_wchar_t*) ufile;
+            fspr_wchar_t *wfile = (fspr_wchar_t*) ufile;
             int fix = 0;
             if (wcsncmp(wfile, L"\\\\?\\", 4) == 0) {
                 fix = 4;
@@ -266,8 +266,8 @@ apr_status_t more_finfo(apr_finfo_t *finfo, const void *ufile,
         else
             return APR_INCOMPLETE;
         if (rv == ERROR_SUCCESS)
-            apr_pool_cleanup_register(finfo->pool, pdesc, free_localheap, 
-                                 apr_pool_cleanup_null);
+            fspr_pool_cleanup_register(finfo->pool, pdesc, free_localheap, 
+                                 fspr_pool_cleanup_null);
         else
             user = grp = dacl = NULL;
 
@@ -303,9 +303,9 @@ apr_status_t more_finfo(apr_finfo_t *finfo, const void *ufile,
  * if this is a CHR filetype.  If it's reasonably certain it can't be,
  * then the function returns 0.
  */
-int fillin_fileinfo(apr_finfo_t *finfo, 
+int fillin_fileinfo(fspr_finfo_t *finfo, 
                     WIN32_FILE_ATTRIBUTE_DATA *wininfo, 
-                    int byhandle, apr_int32_t wanted) 
+                    int byhandle, fspr_int32_t wanted) 
 {
     DWORD *sizes = &wininfo->nFileSizeHigh + byhandle;
     int warn = 0;
@@ -317,10 +317,10 @@ int fillin_fileinfo(apr_finfo_t *finfo,
     FileTimeToAprTime(&finfo->mtime, &wininfo->ftLastWriteTime);
 
 #if APR_HAS_LARGE_FILES
-    finfo->size =  (apr_off_t)sizes[1]
-                | ((apr_off_t)sizes[0] << 32);
+    finfo->size =  (fspr_off_t)sizes[1]
+                | ((fspr_off_t)sizes[0] << 32);
 #else
-    finfo->size = (apr_off_t)sizes[1];
+    finfo->size = (fspr_off_t)sizes[1];
     if (finfo->size < 0 || sizes[0])
         finfo->size = 0x7fffffff;
 #endif
@@ -369,20 +369,20 @@ int fillin_fileinfo(apr_finfo_t *finfo,
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo, apr_int32_t wanted,
-                                            apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_info_get(fspr_finfo_t *finfo, fspr_int32_t wanted,
+                                            fspr_file_t *thefile)
 {
     BY_HANDLE_FILE_INFORMATION FileInfo;
 
     if (thefile->buffered) {
         /* XXX: flush here is not mutex protected */
-        apr_status_t rv = apr_file_flush(thefile);
+        fspr_status_t rv = fspr_file_flush(thefile);
         if (rv != APR_SUCCESS)
             return rv;
     }
 
     if (!GetFileInformationByHandle(thefile->filehand, &FileInfo)) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 
     fillin_fileinfo(finfo, (WIN32_FILE_ATTRIBUTE_DATA *) &FileInfo, 1, wanted);
@@ -416,8 +416,8 @@ APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo, apr_int32_t want
     finfo->fname = thefile->fname;
  
     /* Extra goodies known only by GetFileInformationByHandle() */
-    finfo->inode  =  (apr_ino_t)FileInfo.nFileIndexLow
-                  | ((apr_ino_t)FileInfo.nFileIndexHigh << 32);
+    finfo->inode  =  (fspr_ino_t)FileInfo.nFileIndexLow
+                  | ((fspr_ino_t)FileInfo.nFileIndexHigh << 32);
     finfo->device = FileInfo.dwVolumeSerialNumber;
     finfo->nlink  = FileInfo.nNumberOfLinks;
 
@@ -432,21 +432,21 @@ APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo, apr_int32_t want
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_perms_set(const char *fname,
-                                           apr_fileperms_t perms)
+APR_DECLARE(fspr_status_t) fspr_file_perms_set(const char *fname,
+                                           fspr_fileperms_t perms)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
-                                   apr_int32_t wanted, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_stat(fspr_finfo_t *finfo, const char *fname,
+                                   fspr_int32_t wanted, fspr_pool_t *pool)
 {
     /* XXX: is constant - needs testing - which requires a lighter-weight root test fn */
     int isroot = 0;
-    apr_status_t ident_rv = 0;
-    apr_status_t rv;
+    fspr_status_t ident_rv = 0;
+    fspr_status_t rv;
 #if APR_HAS_UNICODE_FS
-    apr_wchar_t wfname[APR_PATH_MAX];
+    fspr_wchar_t wfname[APR_PATH_MAX];
 
 #endif
     char *filename = NULL;
@@ -489,12 +489,12 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
         }
 
         if (rv = utf8_to_unicode_path(wfname, sizeof(wfname) 
-                                            / sizeof(apr_wchar_t), fname))
+                                            / sizeof(fspr_wchar_t), fname))
             return rv;
         if (!(wanted & APR_FINFO_NAME)) {
             if (!GetFileAttributesExW(wfname, GetFileExInfoStandard, 
                                       &FileInfo.i))
-                return apr_get_os_error();
+                return fspr_get_os_error();
         }
         else {
             /* Guard against bogus wildcards and retrieve by name
@@ -508,13 +508,13 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
             }
             hFind = FindFirstFileW(wfname, &FileInfo.w);
             if (hFind == INVALID_HANDLE_VALUE)
-                return apr_get_os_error();
+                return fspr_get_os_error();
             FindClose(hFind);
             if (unicode_to_utf8_path(tmpname, sizeof(tmpname), 
                                      FileInfo.w.cFileName)) {
                 return APR_ENAMETOOLONG;
             }
-            filename = apr_pstrdup(pool, tmpname);
+            filename = fspr_pstrdup(pool, tmpname);
         }
     }
 #endif
@@ -523,17 +523,17 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
     {
         char *root = NULL;
         const char *test = fname;
-        rv = apr_filepath_root(&root, &test, APR_FILEPATH_NATIVE, pool);
+        rv = fspr_filepath_root(&root, &test, APR_FILEPATH_NATIVE, pool);
         isroot = (root && *root && !(*test));
 
-        if ((apr_os_level >= APR_WIN_98) && (!(wanted & APR_FINFO_NAME) || isroot))
+        if ((fspr_os_level >= APR_WIN_98) && (!(wanted & APR_FINFO_NAME) || isroot))
         {
             /* cannot use FindFile on a Win98 root, it returns \*
              * GetFileAttributesExA is not available on Win95
              */
             if (!GetFileAttributesExA(fname, GetFileExInfoStandard, 
                                      &FileInfo.i)) {
-                return apr_get_os_error();
+                return fspr_get_os_error();
             }
         }
         else if (isroot) {
@@ -543,7 +543,7 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
             {
                 finfo->pool = pool;
                 finfo->filetype = 0;
-                finfo->mtime = apr_time_now();
+                finfo->mtime = fspr_time_now();
                 finfo->protection |= APR_WREAD | APR_WEXECUTE | APR_WWRITE;
                 finfo->protection |= (finfo->protection << prot_scope_group) 
                                    | (finfo->protection << prot_scope_user);
@@ -567,10 +567,10 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
             }
             hFind = FindFirstFileA(fname, &FileInfo.n);
             if (hFind == INVALID_HANDLE_VALUE) {
-                return apr_get_os_error();
+                return fspr_get_os_error();
     	    } 
             FindClose(hFind);
-            filename = apr_pstrdup(pool, FileInfo.n.cFileName);
+            filename = fspr_pstrdup(pool, FileInfo.n.cFileName);
         }
     }
 #endif
@@ -583,12 +583,12 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
              * to reliably translate char devices to the path '\\.\device'
              * so go ask for the full path.
              */
-            if (apr_os_level >= APR_WIN_NT)
+            if (fspr_os_level >= APR_WIN_NT)
             {
 #if APR_HAS_UNICODE_FS
-                apr_wchar_t tmpname[APR_FILE_MAX];
-                apr_wchar_t *tmpoff = NULL;
-                if (GetFullPathNameW(wfname, sizeof(tmpname) / sizeof(apr_wchar_t),
+                fspr_wchar_t tmpname[APR_FILE_MAX];
+                fspr_wchar_t *tmpoff = NULL;
+                if (GetFullPathNameW(wfname, sizeof(tmpname) / sizeof(fspr_wchar_t),
                                      tmpname, &tmpoff))
                 {
                     if (!wcsncmp(tmpname, L"\\\\.\\", 4)) {
@@ -646,7 +646,7 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
     if (wanted &= ~finfo->valid) {
         /* Caller wants more than APR_FINFO_MIN | APR_FINFO_NAME */
 #if APR_HAS_UNICODE_FS
-        if (apr_os_level >= APR_WIN_NT)
+        if (fspr_os_level >= APR_WIN_NT)
             return more_finfo(finfo, wfname, wanted, MORE_OF_WFSPEC);
 #endif
         return more_finfo(finfo, fname, wanted, MORE_OF_FSPEC);
@@ -655,15 +655,15 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
-                                             apr_fileattrs_t attributes,
-                                             apr_fileattrs_t attr_mask,
-                                             apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_attrs_set(const char *fname,
+                                             fspr_fileattrs_t attributes,
+                                             fspr_fileattrs_t attr_mask,
+                                             fspr_pool_t *pool)
 {
     DWORD flags;
-    apr_status_t rv;
+    fspr_status_t rv;
 #if APR_HAS_UNICODE_FS
-    apr_wchar_t wfname[APR_PATH_MAX];
+    fspr_wchar_t wfname[APR_PATH_MAX];
 #endif
 
     /* Don't do anything if we can't handle the requested attributes */
@@ -689,7 +689,7 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
 #endif
 
     if (flags == 0xFFFFFFFF)
-        return apr_get_os_error();
+        return fspr_get_os_error();
 
     if (attr_mask & APR_FILE_ATTR_READONLY)
     {
@@ -721,20 +721,20 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
 #endif
 
     if (rv == 0)
-        return apr_get_os_error();
+        return fspr_get_os_error();
 
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
-                                             apr_time_t mtime,
-                                             apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_mtime_set(const char *fname,
+                                             fspr_time_t mtime,
+                                             fspr_pool_t *pool)
 {
-    apr_file_t *thefile;
-    apr_status_t rv;
+    fspr_file_t *thefile;
+    fspr_status_t rv;
 
-    rv = apr_file_open(&thefile, fname,
+    rv = fspr_file_open(&thefile, fname,
                        APR_READ | APR_WRITEATTRS,
                        APR_OS_DEFAULT, pool);
     if (!rv)
@@ -745,16 +745,16 @@ APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
 
         if (!GetFileTime(thefile->filehand,
                          &file_ctime, &file_atime, &file_mtime))
-            rv = apr_get_os_error();
+            rv = fspr_get_os_error();
         else
         {
             AprTimeToFileTime(&file_mtime, mtime);
             if (!SetFileTime(thefile->filehand,
                              &file_ctime, &file_atime, &file_mtime))
-                rv = apr_get_os_error();
+                rv = fspr_get_os_error();
         }
 
-        apr_file_close(thefile);
+        fspr_file_close(thefile);
     }
 
     return rv;

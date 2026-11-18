@@ -15,21 +15,6 @@
 #include "vpx_ports/mem.h"
 #include "vpx_ports/system_state.h"
 
-void vpx_ssim_parms_16x16_c(const uint8_t *s, int sp, const uint8_t *r, int rp,
-                            uint32_t *sum_s, uint32_t *sum_r,
-                            uint32_t *sum_sq_s, uint32_t *sum_sq_r,
-                            uint32_t *sum_sxr) {
-  int i, j;
-  for (i = 0; i < 16; i++, s += sp, r += rp) {
-    for (j = 0; j < 16; j++) {
-      *sum_s += s[j];
-      *sum_r += r[j];
-      *sum_sq_s += s[j] * s[j];
-      *sum_sq_r += r[j] * r[j];
-      *sum_sxr += s[j] * r[j];
-    }
-  }
-}
 void vpx_ssim_parms_8x8_c(const uint8_t *s, int sp, const uint8_t *r, int rp,
                           uint32_t *sum_s, uint32_t *sum_r, uint32_t *sum_sq_s,
                           uint32_t *sum_sq_r, uint32_t *sum_sxr) {
@@ -73,7 +58,7 @@ static const int64_t cc2_12 = 61817334;  // (64^2*(.03*4095)^2
 static double similarity(uint32_t sum_s, uint32_t sum_r, uint32_t sum_sq_s,
                          uint32_t sum_sq_r, uint32_t sum_sxr, int count,
                          uint32_t bd) {
-  int64_t ssim_n, ssim_d;
+  double ssim_n, ssim_d;
   int64_t c1, c2;
   if (bd == 8) {
     // scale the constants by number of pixels
@@ -90,14 +75,14 @@ static double similarity(uint32_t sum_s, uint32_t sum_r, uint32_t sum_sq_s,
     assert(0);
   }
 
-  ssim_n = (2 * sum_s * sum_r + c1) *
-           ((int64_t)2 * count * sum_sxr - (int64_t)2 * sum_s * sum_r + c2);
+  ssim_n = (2.0 * sum_s * sum_r + c1) *
+           (2.0 * count * sum_sxr - 2.0 * sum_s * sum_r + c2);
 
-  ssim_d = (sum_s * sum_s + sum_r * sum_r + c1) *
-           ((int64_t)count * sum_sq_s - (int64_t)sum_s * sum_s +
-            (int64_t)count * sum_sq_r - (int64_t)sum_r * sum_r + c2);
+  ssim_d = ((double)sum_s * sum_s + (double)sum_r * sum_r + c1) *
+           ((double)count * sum_sq_s - (double)sum_s * sum_s +
+            (double)count * sum_sq_r - (double)sum_r * sum_r + c2);
 
-  return ssim_n * 1.0 / ssim_d;
+  return ssim_n / ssim_d;
 }
 
 static double ssim_8x8(const uint8_t *s, int sp, const uint8_t *r, int rp) {
@@ -284,7 +269,7 @@ double vpx_get_ssim_metrics(uint8_t *img1, int img1_pitch, uint8_t *img2,
   for (i = 0; i < height;
        i += 4, img1 += img1_pitch * 4, img2 += img2_pitch * 4) {
     for (j = 0; j < width; j += 4, ++c) {
-      Ssimv sv = { 0 };
+      Ssimv sv = { 0, 0, 0, 0, 0, 0 };
       double ssim;
       double ssim2;
       double dssim;

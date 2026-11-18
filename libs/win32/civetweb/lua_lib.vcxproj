@@ -22,7 +22,7 @@
     <ProjectGuid>{8F5E5D77-D269-4665-9E27-1045DA6CF0D8}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>lua_lib</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

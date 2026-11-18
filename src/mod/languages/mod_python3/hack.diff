@@ -1,0 +1,84 @@
+--- mod_python_wrap.cpp.old	2024-11-08 21:22:49.064934340 +0000
++++ mod_python_wrap.cpp	2024-11-12 13:45:20.822756877 +0000
+@@ -3492,7 +3492,9 @@
+     if (csize <= size) {
+       if (val) {
+ 	if (csize) memcpy(val, cptr, csize*sizeof(char));
++#ifndef __clang_analyzer__
+ 	if (csize < size) memset(val + csize, 0, (size - csize)*sizeof(char));
++#endif
+       }
+       if (alloc == SWIG_NEWOBJ) {
+ 	delete[] cptr;
+@@ -4689,7 +4691,7 @@
+   char arg2 ;
+   void *argp1 = 0 ;
+   int res1 = 0 ;
+-  char val2 ;
++  char val2 = '\0';
+   int ecode2 = 0 ;
+   PyObject *swig_obj[2] ;
+   
+@@ -4799,7 +4801,7 @@
+   PyObject *resultobj = 0;
+   char arg1 ;
+   uint32_t arg2 = (uint32_t) SWITCH_DEFAULT_DTMF_DURATION ;
+-  char val1 ;
++  char val1 = '\0';
+   int ecode1 = 0 ;
+   void *argp2 ;
+   int res2 = 0 ;
+@@ -6371,7 +6373,9 @@
+     } 
+     arg3 = static_cast< int >(val3);
+   }
++  Py_BEGIN_ALLOW_THREADS;
+   result = (Event *)(arg1)->pop(arg2,arg3);
++  Py_END_ALLOW_THREADS;
+   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, SWIG_POINTER_OWN |  0 );
+   return resultobj;
+ fail:
+@@ -9779,7 +9783,7 @@
+   
+   if ((nobjs < 0) || (nobjs > 0)) SWIG_fail;
+   result = (PYTHON::Session *)new PYTHON::Session();
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   return resultobj;
+ fail:
+   return NULL;
+@@ -9809,7 +9813,7 @@
+   }
+   arg2 = reinterpret_cast< CoreSession * >(argp2);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1,arg2);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+   return resultobj;
+ fail:
+@@ -9833,7 +9837,7 @@
+   }
+   arg1 = reinterpret_cast< char * >(buf1);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+   return resultobj;
+ fail:
+@@ -9856,7 +9860,7 @@
+   }
+   arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
+   result = (PYTHON::Session *)new PYTHON::Session(arg1);
+-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 );
++  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_PYTHON__Session, SWIG_POINTER_NEW |  0 ); result->setPython(self);
+   return resultobj;
+ fail:
+   return NULL;
+@@ -10520,6 +10524,7 @@
+     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Session_setSelf" "', argument " "1"" of type '" "PYTHON::Session *""'"); 
+   }
+   arg1 = reinterpret_cast< PYTHON::Session * >(argp1);
++  if (!arg1) SWIG_exception_fail(SWIG_ValueError, "in method '" "Session_setSelf" "', argument " "1"" is NULL"); 
+   arg2 = swig_obj[1];
+   (arg1)->setSelf(arg2);
+   resultobj = SWIG_Py_Void();

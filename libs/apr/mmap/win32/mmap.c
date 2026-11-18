@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_mmap.h"
-#include "apr_errno.h"
-#include "apr_arch_file_io.h"
-#include "apr_portable.h"
-#include "apr_strings.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_mmap.h"
+#include "fspr_errno.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_portable.h"
+#include "fspr_strings.h"
 
 #if APR_HAS_MMAP
 
-static apr_status_t mmap_cleanup(void *themmap)
+static fspr_status_t mmap_cleanup(void *themmap)
 {
-    apr_mmap_t *mm = themmap;
-    apr_mmap_t *next = APR_RING_NEXT(mm,link);
-    apr_status_t rv = 0;
+    fspr_mmap_t *mm = themmap;
+    fspr_mmap_t *next = APR_RING_NEXT(mm,link);
+    fspr_status_t rv = 0;
 
     /* we no longer refer to the mmaped region */
     APR_RING_REMOVE(mm,link);
@@ -44,7 +44,7 @@ static apr_status_t mmap_cleanup(void *themmap)
     if (mm->mv) {
         if (!UnmapViewOfFile(mm->mv))
         {
-            apr_status_t rv = apr_get_os_error();
+            fspr_status_t rv = fspr_get_os_error();
             CloseHandle(mm->mhandle);
             mm->mv = NULL;
             mm->mhandle = NULL;
@@ -56,7 +56,7 @@ static apr_status_t mmap_cleanup(void *themmap)
     {
         if (!CloseHandle(mm->mhandle))
         {
-            apr_status_t rv = apr_get_os_error();
+            fspr_status_t rv = fspr_get_os_error();
             CloseHandle(mm->mhandle);
             mm->mhandle = NULL;
             return rv;
@@ -66,9 +66,9 @@ static apr_status_t mmap_cleanup(void *themmap)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new, apr_file_t *file,
-                                          apr_off_t offset, apr_size_t size,
-                                          apr_int32_t flag, apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_mmap_create(fspr_mmap_t **new, fspr_file_t *file,
+                                          fspr_off_t offset, fspr_size_t size,
+                                          fspr_int32_t flag, fspr_pool_t *cont)
 {
     static DWORD memblock = 0;
     DWORD fmaccess = 0;
@@ -100,10 +100,10 @@ APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new, apr_file_t *file,
         memblock = si.dwAllocationGranularity;
     }   
     
-    *new = apr_pcalloc(cont, sizeof(apr_mmap_t));
+    *new = fspr_pcalloc(cont, sizeof(fspr_mmap_t));
     (*new)->pstart = (offset / memblock) * memblock;
     (*new)->poffset = offset - (*new)->pstart;
-    (*new)->psize = (apr_size_t)((*new)->poffset) + size;
+    (*new)->psize = (fspr_size_t)((*new)->poffset) + size;
     /* The size of the CreateFileMapping object is the current size
      * of the size of the mmap object (e.g. file size), not the size 
      * of the mapped region!
@@ -114,7 +114,7 @@ APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new, apr_file_t *file,
     if (!(*new)->mhandle || (*new)->mhandle == INVALID_HANDLE_VALUE)
     {
         *new = NULL;
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 
     offlo = (DWORD)(*new)->pstart;
@@ -123,7 +123,7 @@ APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new, apr_file_t *file,
                                offlo, (*new)->psize);
     if (!(*new)->mv)
     {
-        apr_status_t rv = apr_get_os_error();
+        fspr_status_t rv = fspr_get_os_error();
         CloseHandle((*new)->mhandle);
         *new = NULL;
         return rv;
@@ -135,28 +135,28 @@ APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new, apr_file_t *file,
     APR_RING_ELEM_INIT(*new, link);
 
     /* register the cleanup... */
-    apr_pool_cleanup_register((*new)->cntxt, (void*)(*new), mmap_cleanup,
-                         apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*new)->cntxt, (void*)(*new), mmap_cleanup,
+                         fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_mmap_dup(apr_mmap_t **new_mmap,
-                                       apr_mmap_t *old_mmap,
-                                       apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_mmap_dup(fspr_mmap_t **new_mmap,
+                                       fspr_mmap_t *old_mmap,
+                                       fspr_pool_t *p)
 {
-    *new_mmap = (apr_mmap_t *)apr_pmemdup(p, old_mmap, sizeof(apr_mmap_t));
+    *new_mmap = (fspr_mmap_t *)fspr_pmemdup(p, old_mmap, sizeof(fspr_mmap_t));
     (*new_mmap)->cntxt = p;
 
     APR_RING_INSERT_AFTER(old_mmap, *new_mmap, link);
 
-    apr_pool_cleanup_register(p, *new_mmap, mmap_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(p, *new_mmap, mmap_cleanup,
+                              fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_mmap_delete(apr_mmap_t *mm)
+APR_DECLARE(fspr_status_t) fspr_mmap_delete(fspr_mmap_t *mm)
 {
-    return apr_pool_cleanup_run(mm->cntxt, mm, mmap_cleanup);
+    return fspr_pool_cleanup_run(mm->cntxt, mm, mmap_cleanup);
 }
 
 #endif

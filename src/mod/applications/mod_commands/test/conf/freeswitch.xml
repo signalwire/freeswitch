@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+
+  <section name="configuration" description="Various Configuration">
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+      </modules>
+    </configuration>
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="true"/>
+        <param name="loglevel" value="debug"/>
+      </settings>
+    </configuration>
+
+    <configuration name="timezones.conf" description="Timezones">
+      <timezones>
+          <zone name="GMT" value="GMT0" />
+      </timezones>
+    </configuration>
+  </section>
+
+  <section name="dialplan" description="Regex/XML Dialplan">
+    <context name="default">
+      <extension name="sample">
+        <condition>
+          <action application="info"/>
+        </condition>
+      </extension>
+    </context>
+  </section>
+</document>

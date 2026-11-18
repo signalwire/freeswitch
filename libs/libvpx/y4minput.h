@@ -11,8 +11,8 @@
  *  Copyright (C) 2002-2010 The Xiph.Org Foundation and contributors.
  */
 
-#ifndef Y4MINPUT_H_
-#define Y4MINPUT_H_
+#ifndef VPX_Y4MINPUT_H_
+#define VPX_Y4MINPUT_H_
 
 #include <stdio.h>
 #include "vpx/vpx_image.h"
@@ -56,8 +56,16 @@ struct y4m_input {
   unsigned int bit_depth;
 };
 
-int y4m_input_open(y4m_input *_y4m, FILE *_fin, char *_skip, int _nskip,
-                   int only_420);
+/**
+ * Open the input file, treating it as Y4M. |y4m_ctx| is filled in after
+ * reading it. The |skip_buffer| indicates bytes that were previously read
+ * from |file|, to do input-type detection; this buffer will be read before
+ * the |file| is read. It is of size |num_skip|, which *must* be 8 or less.
+ *
+ * Returns 0 on success, -1 on failure.
+ */
+int y4m_input_open(y4m_input *y4m_ctx, FILE *file, char *skip_buffer,
+                   int num_skip, int only_420);
 void y4m_input_close(y4m_input *_y4m);
 int y4m_input_fetch_frame(y4m_input *_y4m, FILE *_fin, vpx_image_t *img);
 
@@ -65,4 +73,4 @@ int y4m_input_fetch_frame(y4m_input *_y4m, FILE *_fin, vpx_image_t *img);
 }  // extern "C"
 #endif
 
-#endif  // Y4MINPUT_H_
+#endif  // VPX_Y4MINPUT_H_

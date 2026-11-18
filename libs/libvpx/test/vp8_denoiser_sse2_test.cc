@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "test/acm_random.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
@@ -21,6 +21,7 @@
 #include "vp8/encoder/denoising.h"
 #include "vp8/common/reconinter.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_config.h"
 #include "vpx_mem/vpx_mem.h"
 
 using libvpx_test::ACMRandom;
@@ -30,17 +31,22 @@ namespace {
 const int kNumPixels = 16 * 16;
 class VP8DenoiserTest : public ::testing::TestWithParam<int> {
  public:
-  virtual ~VP8DenoiserTest() {}
+  ~VP8DenoiserTest() override = default;
 
-  virtual void SetUp() { increase_denoising_ = GetParam(); }
+  void SetUp() override { increase_denoising_ = GetParam(); }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   int increase_denoising_;
 };
 
+// TODO(https://crbug.com/webm/1718): This test fails with gcc 8-10.
+#if defined(__GNUC__) && __GNUC__ >= 8
+TEST_P(VP8DenoiserTest, DISABLED_BitexactCheck) {
+#else
 TEST_P(VP8DenoiserTest, BitexactCheck) {
+#endif
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = 4000;
   const int stride = 16;
@@ -87,7 +93,7 @@ TEST_P(VP8DenoiserTest, BitexactCheck) {
     // Check bitexactness.
     for (int h = 0; h < 16; ++h) {
       for (int w = 0; w < 16; ++w) {
-        EXPECT_EQ(avg_block_c[h * stride + w], avg_block_sse2[h * stride + w]);
+        ASSERT_EQ(avg_block_c[h * stride + w], avg_block_sse2[h * stride + w]);
       }
     }
 
@@ -103,12 +109,12 @@ TEST_P(VP8DenoiserTest, BitexactCheck) {
     // Check bitexactness.
     for (int h = 0; h < 16; ++h) {
       for (int w = 0; w < 16; ++w) {
-        EXPECT_EQ(avg_block_c[h * stride + w], avg_block_sse2[h * stride + w]);
+        ASSERT_EQ(avg_block_c[h * stride + w], avg_block_sse2[h * stride + w]);
       }
     }
   }
 }
 
 // Test for all block size.
-INSTANTIATE_TEST_CASE_P(SSE2, VP8DenoiserTest, ::testing::Values(0, 1));
+INSTANTIATE_TEST_SUITE_P(SSE2, VP8DenoiserTest, ::testing::Values(0, 1));
 }  // namespace

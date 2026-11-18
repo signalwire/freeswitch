@@ -105,6 +105,8 @@
 	<!-- <param name="ssl-key-password" value="MyPrivateKeyPassword"/> -->
 	<!-- optional timeout -->
 	<!-- <param name="timeout" value="10"/> -->
+	<!-- optional: maximum amount of time in seconds that is allowed to make the connection to the server -->
+	<!-- <param name="connect-timeout" value="2"/> -->
 
 	<!-- optional: use a custom CA certificate in PEM format to verify the peer
 	     with. This is useful if you are acting as your own certificate authority.

@@ -1157,39 +1157,6 @@
       		<prompt phrase="woodlark" filename="woodlark.wav"/>
       		<prompt phrase="yesteryear" filename="yesteryear.wav"/>
     	</base256>
-    	<zrtp>
-      		<!-- Event prompts -->
-      		<prompt phrase="Добро пожаловать в агента регистрации шифрования ZRTP" filename="zrtp-enroll_welcome.wav"/>
-      		<!-- Welcome to the ZRTP security enrollment agent.   -->
-      		<prompt phrase="Вы должны выбрать строку аутентификации с партнером по разговору, Если она не совпадет, система сообщит Вам разрывом линии." filename="zrtp-check_sas.wav"/>
-      		<!-- You must check the authentication string with your partner. If it doesn't match, it indicates the presence of a wire tapper.   -->
-      		<prompt phrase="Только телефоны, прошедшие аутентификацию, могут быть сконфигурированы для доверия системе для обеспечения ZRTP шифрованных звонков, так что такой звонок не даст эффекта." filename="zrtp-enroll_not_sip_registered.wav"/>
-      		<!-- Only phones that are authenticated can be configured to trust this system to relay ZRTP secured calls.  Your phone is not authenticated with this system, so this call will have no effect.  -->
-      		<prompt phrase="Ваш телефон сообщит, что он уже доверяет системе для перенаправления ZRTP шифрованных звонков, так что больше делать ничего не нужно будет" filename="zrtp-enroll_already_enrolled.wav"/>
-      		<!-- Your phone indicates that it already trusts this system to relay ZRTP secured calls, so you do not need to do anything more. -->
-      		<prompt phrase="Только телефоны, с поддержкой протокола ZRTP могут использовать такую функцию. Ваш телефон не поддерживает ZRTP протокол и звонок не даст эффекта ZRTP защиты." filename="zrtp-enroll_notzrtp.wav"/>
-      		<!-- Only phones equipped with the ZRTP protocol can use this extension. Your phone is not a ZRTP-enable phone, so this call will have no effect.-->
-      		<prompt phrase="Система оборудована для проведения шифрованных ZRTP звонков. Вы должны решить, если вы хотите чтобы система была задействована для приема и возможно мониторинга Ваших защищенных звонков. Вы можете повесить трубку после окончания разговора." filename="zrtp-enroll_confirmed.wav"/>
-      		<!-- This system is equipped to handle ZRTP encrypted phone calls. You must decide if you want to allow this system to be in a position to intercept and possibly monitor your secure phone calls. You may hang up after you've done this. -->
-      		<prompt phrase="Договоритесь с партнером по разговору о парольной фразе." filename="zrtp-is_secure.wav"/>
-      		<!-- Verbally compare this authentication code with your partner.   -->
-      		<prompt phrase="Парольная фраза на данный момент не проверена" filename="zrtp-is_unverified.wav"/>
-      		<!-- Authentication code is now unverified.   -->
-      		<prompt phrase="Парольная фраза проверена." filename="zrtp-is_verified.wav"/>
-      		<!-- Authentication code is now verified.   -->
-      		<prompt phrase="Спасибо за звонок. До свидания." filename="zrtp-thankyou_goodbye.wav"/>
-      		<!-- Thank you for calling. Goodbye.   -->
-      		<prompt phrase="Что-то происходит не так." filename="zrtp-somethings_wrong.wav"/>
-      		<!-- Something's wrong   -->
-      		<prompt phrase="Ошибка." filename="zrtp-status_error.wav"/>
-      		<!-- Error.   -->
-      		<prompt phrase="Ваш разговор не шифруется" filename="zrtp-status_notsecure.wav"/>
-      		<!-- Call is not secure.   -->
-      		<prompt phrase="Ваш разговор шифруется." filename="zrtp-status_secure.wav"/>
-      		<!-- Call is secure.   -->
-      		<prompt phrase="Шифрованный вызов." filename="zrtp-status_securing.wav"/>
-      		<!-- Securing call.   -->
-    	</zrtp>
     	<users>
     		<prompt phrase="Для отправки факса" filename="to_send_a_fax.wav"/>
     		<prompt phrase="Абонент с номером ... не отвечает, пожалуйста..." filename="no_answer_please.wav"/>

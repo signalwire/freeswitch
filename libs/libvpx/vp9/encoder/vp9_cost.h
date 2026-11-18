@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_ENCODER_VP9_COST_H_
-#define VP9_ENCODER_VP9_COST_H_
+#ifndef VPX_VP9_ENCODER_VP9_COST_H_
+#define VPX_VP9_ENCODER_VP9_COST_H_
 
 #include "vpx_dsp/prob.h"
 #include "vpx/vpx_integer.h"
@@ -29,9 +29,8 @@ extern const uint16_t vp9_prob_cost[256];
 
 #define vp9_cost_bit(prob, bit) vp9_cost_zero((bit) ? 256 - (prob) : (prob))
 
-static INLINE unsigned int cost_branch256(const unsigned int ct[2],
-                                          vpx_prob p) {
-  return ct[0] * vp9_cost_zero(p) + ct[1] * vp9_cost_one(p);
+static INLINE uint64_t cost_branch256(const unsigned int ct[2], vpx_prob p) {
+  return (uint64_t)ct[0] * vp9_cost_zero(p) + (uint64_t)ct[1] * vp9_cost_one(p);
 }
 
 static INLINE int treed_cost(vpx_tree tree, const vpx_prob *probs, int bits,
@@ -55,4 +54,4 @@ void vp9_cost_tokens_skip(int *costs, const vpx_prob *probs, vpx_tree tree);
 }  // extern "C"
 #endif
 
-#endif  // VP9_ENCODER_VP9_COST_H_
+#endif  // VPX_VP9_ENCODER_VP9_COST_H_

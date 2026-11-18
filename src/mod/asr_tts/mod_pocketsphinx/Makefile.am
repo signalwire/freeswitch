@@ -13,17 +13,23 @@ SPHINXBASE_LA2=$(SPHINXBASE_BUILDDIR)/src/libsphinxad/libsphinxad.la
 POCKETSPHINX_LA=$(POCKETSPHINX_BUILDDIR)/src/libpocketsphinx/libpocketsphinx.la
 
 SPHINXMODEL=communicator_semi_6000_20080321
+SPHINX_MIRROR=https://github.com/freeswitch/windows-deps/releases/download
 
 mod_LTLIBRARIES = mod_pocketsphinx.la
 mod_pocketsphinx_la_SOURCES  = mod_pocketsphinx.c
-mod_pocketsphinx_la_CFLAGS   = $(AM_CFLAGS) -I$(SPHINXBASE_DIR)/include -I$(POCKETSPHINX_DIR)/include
-mod_pocketsphinx_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(POCKETSPHINX_LA) $(SPHINXBASE_LA) $(SPHINXBASE_LA2)
 mod_pocketsphinx_la_LDFLAGS  = -avoid-version -module -no-undefined -shared
+if HAVE_POCKETSPHINX
+mod_pocketsphinx_la_CFLAGS   = $(AM_CFLAGS) $(SPHINXBASE_CFLAGS) $(POCKETSPHINX_CFLAGS) -DPOCKETSPHINX_MAJOR_VERSION=$(POCKETSPHINX_MAJOR_VERSION)
+mod_pocketsphinx_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(POCKETSPHINX_LDFLAGS) $(SPHINXBASE_LDFLAGS)
+else
+mod_pocketsphinx_la_CFLAGS   = $(AM_CFLAGS) -I$(SPHINXBASE_DIR)/include -I$(POCKETSPHINX_DIR)/include -DPOCKETSPHINX_MAJOR_VERSION=0
+mod_pocketsphinx_la_LIBADD   = $(switch_builddir)/libfreeswitch.la $(POCKETSPHINX_LA) $(SPHINXBASE_LA) $(SPHINXBASE_LA2)
 
 BUILT_SOURCES=$(POCKETSPHINX_LA) $(SPHINXBASE_LA) $(SPHINXBASE_LA2)
+endif
 
 $(SPHINXBASE_DIR):
-	$(GETLIB) $(SPHINXBASE).tar.gz
+	$(GETLIB) $(SPHINX_MIRROR)/$(SPHINXBASE) $(SPHINXBASE).tar.gz
 
 $(SPHINXBASE_BUILDDIR)/Makefile: $(SPHINXBASE_DIR)
 	mkdir -p $(SPHINXBASE_BUILDDIR)
@@ -41,7 +47,7 @@ $(SPHINXBASE_LA2): $(SPHINXBASE_BUILDDIR)/buildstamp
 	$(TOUCH_TARGET)
 
 $(POCKETSPHINX_DIR):
-	$(GETLIB) $(POCKETSPHINX).tar.gz
+	$(GETLIB) $(SPHINX_MIRROR)/$(POCKETSPHINX) $(POCKETSPHINX).tar.gz
 
 $(POCKETSPHINX_BUILDDIR)/Makefile: $(POCKETSPHINX_DIR) $(SPHINXBASE_LA) $(SPHINXBASE_LA2)
 	mkdir -p $(POCKETSPHINX_BUILDDIR)
@@ -59,12 +65,15 @@ $(DESTDIR)$(grammardir)/model:
 	mkdir -p $(DESTDIR)$(grammardir)/model
 
 $(DESTDIR)$(grammardir)/model/communicator:
-	$(GETLIB) $(SPHINXMODEL).tar.gz
+	$(GETLIB) $(SPHINX_MIRROR)/$(SPHINXMODEL) $(SPHINXMODEL).tar.gz
 	mkdir -p $(DESTDIR)$(grammardir)/model/communicator
 	cp -rp $(switch_srcdir)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(grammardir)/model/communicator
 
 dictionary:
 	@install -m0644 $(POCKETSPHINX_DIR)/model/lm/en_US/cmu07a.dic $(DESTDIR)$(grammardir)/default.dic
 
+if HAVE_POCKETSPHINX
+install-data-local: $(POCKETSPHINX_DIR) $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator dictionary
+else
 install-data-local: $(DESTDIR)$(grammardir)/model $(DESTDIR)$(grammardir)/model/communicator dictionary
-
+endif

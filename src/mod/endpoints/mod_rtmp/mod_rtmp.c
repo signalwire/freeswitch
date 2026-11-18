@@ -1565,7 +1565,7 @@ static switch_status_t config_profile(rtmp_profile_t *profile, switch_bool_t rel
 
 	for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
 		const char *name = switch_xml_attr_soft(x_profile, "name");
-		if (strcmp(name, profile->name)) {
+		if (profile && strcmp(name, profile->name)) {
 			continue;
 		}
 

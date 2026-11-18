@@ -2,7 +2,7 @@
     NOTICE:
     
     This context is usually accessed via authenticated callers on the sip profile on port 5060 
-    or transfered callers from the public context which arrived via the sip profile on port 5080.
+    or transferred callers from the public context which arrived via the sip profile on port 5080.
     
     Authenticated users will use the user_context variable on the user to determine what context
     they can access.  You can also add a user in the directory with the cidr= attribute acl.conf.xml
@@ -116,24 +116,6 @@
       </condition>
     </extension>
     -->
-    <!--
-	snom button demo, call 9000 to make button 2 mapped to transfer the current call to a conference
-    -->
-
-    <extension name="snom-demo-2">
-      <condition field="destination_number" expression="^9001$">
-	<action application="eval" data="${snom_bind_key(2 off DND ${sip_from_user} ${sip_from_host} ${sofia_profile_name} message notused)}"/>
-	<action application="transfer" data="3000"/>
-      </condition>
-    </extension>
-    
-    <extension name="snom-demo-1">
-      <condition field="destination_number" expression="^9000$">
-	<!--<key> <light> <label> <user> <host> <profile> <action_name> <action>-->
-	<action application="eval" data="${snom_bind_key(2 on DND ${sip_from_user} ${sip_from_host} ${sofia_profile_name} message api+uuid_transfer ${uuid} 9001)}"/>
-	<action application="playback" data="$${hold_music}"/>
-      </condition>
-    </extension>
 
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
@@ -330,7 +312,7 @@
     </extension>
 
     <!-- Create a conference on the fly and pull someone in at the same time. --> 
-    <extension name="dyanmic conference">
+    <extension name="dynamic conference">
       <condition field="destination_number" expression="^5001$">
 	<action application="conference" data="bridge:mydynaconf:sofia/${use_profile}/1234@conference.freeswitch.org"/>
       </condition>

@@ -47,7 +47,7 @@ struct fs_ctx {
   unsigned *col_buf;
 };
 
-static void fs_ctx_init(fs_ctx *_ctx, int _w, int _h, int _nlevels) {
+static int fs_ctx_init(fs_ctx *_ctx, int _w, int _h, int _nlevels) {
   unsigned char *data;
   size_t data_size;
   int lw;
@@ -71,6 +71,7 @@ static void fs_ctx_init(fs_ctx *_ctx, int _w, int _h, int _nlevels) {
     lh = (lh + 1) >> 1;
   }
   data = (unsigned char *)malloc(data_size);
+  if (!data) return -1;
   _ctx->level = (fs_level *)data;
   _ctx->nlevels = _nlevels;
   data += _nlevels * sizeof(*_ctx->level);
@@ -95,6 +96,7 @@ static void fs_ctx_init(fs_ctx *_ctx, int _w, int _h, int _nlevels) {
     lh = (lh + 1) >> 1;
   }
   _ctx->col_buf = (unsigned *)data;
+  return 0;
 }
 
 static void fs_ctx_clear(fs_ctx *_ctx) { free(_ctx->level); }
@@ -128,10 +130,12 @@ static void fs_downsample_level(fs_ctx *_ctx, int _l) {
       int i1;
       i0 = 2 * i;
       i1 = FS_MINI(i0 + 1, w2);
-      dst1[j * w + i] = src1[j0offs + i0] + src1[j0offs + i1] +
-                        src1[j1offs + i0] + src1[j1offs + i1];
-      dst2[j * w + i] = src2[j0offs + i0] + src2[j0offs + i1] +
-                        src2[j1offs + i0] + src2[j1offs + i1];
+      dst1[j * w + i] =
+          (uint32_t)((int64_t)src1[j0offs + i0] + src1[j0offs + i1] +
+                     src1[j1offs + i0] + src1[j1offs + i1]);
+      dst2[j * w + i] =
+          (uint32_t)((int64_t)src2[j0offs + i0] + src2[j0offs + i1] +
+                     src2[j1offs + i0] + src2[j1offs + i1]);
     }
   }
 }
@@ -220,12 +224,12 @@ static void fs_apply_luminance(fs_ctx *_ctx, int _l, int bit_depth) {
   ssim = _ctx->level[_l].ssim;
   c1 = (double)(ssim_c1 * 4096 * (1 << 4 * _l));
   for (j = 0; j < h; j++) {
-    unsigned mux;
-    unsigned muy;
+    int64_t mux;
+    int64_t muy;
     int i0;
     int i1;
-    mux = 5 * col_sums_x[0];
-    muy = 5 * col_sums_y[0];
+    mux = (int64_t)5 * col_sums_x[0];
+    muy = (int64_t)5 * col_sums_y[0];
     for (i = 1; i < 4; i++) {
       i1 = FS_MINI(i, w - 1);
       mux += col_sums_x[i1];
@@ -237,8 +241,8 @@ static void fs_apply_luminance(fs_ctx *_ctx, int _l, int bit_depth) {
       if (i + 1 < w) {
         i0 = FS_MAXI(0, i - 4);
         i1 = FS_MINI(i + 4, w - 1);
-        mux += col_sums_x[i1] - col_sums_x[i0];
-        muy += col_sums_x[i1] - col_sums_x[i0];
+        mux += (int)col_sums_x[i1] - (int)col_sums_x[i0];
+        muy += (int)col_sums_x[i1] - (int)col_sums_x[i0];
       }
     }
     if (j + 1 < h) {
@@ -246,8 +250,10 @@ static void fs_apply_luminance(fs_ctx *_ctx, int _l, int bit_depth) {
       for (i = 0; i < w; i++) col_sums_x[i] -= im1[j0offs + i];
       for (i = 0; i < w; i++) col_sums_y[i] -= im2[j0offs + i];
       j1offs = FS_MINI(j + 4, h - 1) * w;
-      for (i = 0; i < w; i++) col_sums_x[i] += im1[j1offs + i];
-      for (i = 0; i < w; i++) col_sums_y[i] += im2[j1offs + i];
+      for (i = 0; i < w; i++)
+        col_sums_x[i] = (uint32_t)((int64_t)col_sums_x[i] + im1[j1offs + i]);
+      for (i = 0; i < w; i++)
+        col_sums_y[i] = (uint32_t)((int64_t)col_sums_y[i] + im2[j1offs + i]);
     }
   }
 }
@@ -343,18 +349,18 @@ static void fs_calc_structure(fs_ctx *_ctx, int _l, int bit_depth) {
   for (j = 0; j < h + 4; j++) {
     if (j < h - 1) {
       for (i = 0; i < w - 1; i++) {
-        unsigned g1;
-        unsigned g2;
-        unsigned gx;
-        unsigned gy;
-        g1 = abs((int)im1[(j + 1) * w + i + 1] - (int)im1[j * w + i]);
-        g2 = abs((int)im1[(j + 1) * w + i] - (int)im1[j * w + i + 1]);
+        int64_t g1;
+        int64_t g2;
+        int64_t gx;
+        int64_t gy;
+        g1 = labs((int64_t)im1[(j + 1) * w + i + 1] - (int64_t)im1[j * w + i]);
+        g2 = labs((int64_t)im1[(j + 1) * w + i] - (int64_t)im1[j * w + i + 1]);
         gx = 4 * FS_MAXI(g1, g2) + FS_MINI(g1, g2);
-        g1 = abs((int)im2[(j + 1) * w + i + 1] - (int)im2[j * w + i]);
-        g2 = abs((int)im2[(j + 1) * w + i] - (int)im2[j * w + i + 1]);
-        gy = 4 * FS_MAXI(g1, g2) + FS_MINI(g1, g2);
-        gx_buf[(j & 7) * stride + i + 4] = gx;
-        gy_buf[(j & 7) * stride + i + 4] = gy;
+        g1 = labs((int64_t)im2[(j + 1) * w + i + 1] - (int64_t)im2[j * w + i]);
+        g2 = labs((int64_t)im2[(j + 1) * w + i] - (int64_t)im2[j * w + i + 1]);
+        gy = ((int64_t)4 * FS_MAXI(g1, g2) + FS_MINI(g1, g2));
+        gx_buf[(j & 7) * stride + i + 4] = (uint32_t)gx;
+        gy_buf[(j & 7) * stride + i + 4] = (uint32_t)gy;
       }
     } else {
       memset(gx_buf + (j & 7) * stride, 0, stride * sizeof(*gx_buf));
@@ -452,7 +458,7 @@ static double calc_ssim(const uint8_t *_src, int _systride, const uint8_t *_dst,
   double ret;
   int l;
   ret = 1;
-  fs_ctx_init(&ctx, _w, _h, FS_NLEVELS);
+  if (fs_ctx_init(&ctx, _w, _h, FS_NLEVELS)) return 99.0;
   fs_downsample_level0(&ctx, _src, _systride, _dst, _dystride, _w, _h, _bd,
                        _shift);
   for (l = 0; l < FS_NLEVELS - 1; l++) {

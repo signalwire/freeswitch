@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_COMMON_VP9_ENTROPY_H_
-#define VP9_COMMON_VP9_ENTROPY_H_
+#ifndef VPX_VP9_COMMON_VP9_ENTROPY_H_
+#define VPX_VP9_COMMON_VP9_ENTROPY_H_
 
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/prob.h"
@@ -36,11 +36,13 @@ extern "C" {
 #define CATEGORY5_TOKEN 9   // 35-66 Extra Bits 5+1
 #define CATEGORY6_TOKEN 10  // 67+   Extra Bits 14+1
 #define EOB_TOKEN 11        // EOB   Extra Bits 0+0
+#define MAX_TOKEN EOB_TOKEN
 
 #define ENTROPY_TOKENS 12
 
 #define ENTROPY_NODES 11
 
+#define MAX_ENERGY_CLASS 5
 DECLARE_ALIGNED(16, extern const uint8_t, vp9_pt_energy_class[ENTROPY_TOKENS]);
 
 #define CAT1_MIN_VAL 5
@@ -137,7 +139,6 @@ static INLINE const uint8_t *get_band_translate(TX_SIZE tx_size) {
 // 128 lists of probabilities are stored for the following ONE node probs:
 // 1, 3, 5, 7, ..., 253, 255
 // In between probabilities are interpolated linearly
-
 #define COEFF_PROB_MODELS 255
 
 #define UNCONSTRAINED_NODES 3
@@ -195,4 +196,4 @@ static INLINE int get_entropy_context(TX_SIZE tx_size, const ENTROPY_CONTEXT *a,
 }  // extern "C"
 #endif
 
-#endif  // VP9_COMMON_VP9_ENTROPY_H_
+#endif  // VPX_VP9_COMMON_VP9_ENTROPY_H_

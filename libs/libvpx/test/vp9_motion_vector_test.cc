@@ -8,12 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include <memory>
+
+#include "gtest/gtest.h"
 
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/util.h"
 #include "test/yuv_video_source.h"
+#include "vpx_config.h"
 
 namespace {
 #define MAX_EXTREME_MV 1
@@ -21,8 +24,10 @@ namespace {
 
 // Encoding modes
 const libvpx_test::TestMode kEncodingModeVectors[] = {
+#if !CONFIG_REALTIME_ONLY
   ::libvpx_test::kTwoPassGood, ::libvpx_test::kOnePassGood,
-  ::libvpx_test::kRealTime,
+#endif
+  ::libvpx_test::kRealTime
 };
 
 // Encoding speeds
@@ -40,9 +45,9 @@ class MotionVectorTestLarge
       : EncoderTest(GET_PARAM(0)), encoding_mode_(GET_PARAM(1)),
         cpu_used_(GET_PARAM(2)), mv_test_mode_(GET_PARAM(3)) {}
 
-  virtual ~MotionVectorTestLarge() {}
+  ~MotionVectorTestLarge() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(encoding_mode_);
     if (encoding_mode_ != ::libvpx_test::kRealTime) {
@@ -57,9 +62,9 @@ class MotionVectorTestLarge
     }
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
-    if (video->frame() == 1) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
+    if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, cpu_used_);
       encoder->Control(VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, mv_test_mode_);
       if (encoding_mode_ != ::libvpx_test::kRealTime) {
@@ -81,17 +86,17 @@ TEST_P(MotionVectorTestLarge, OverallTest) {
   cfg_.g_profile = 0;
   init_flags_ = VPX_CODEC_USE_PSNR;
 
-  testing::internal::scoped_ptr<libvpx_test::VideoSource> video;
+  std::unique_ptr<libvpx_test::VideoSource> video;
   video.reset(new libvpx_test::YUVVideoSource(
       "niklas_640_480_30.yuv", VPX_IMG_FMT_I420, 3840, 2160,  // 2048, 1080,
       30, 1, 0, 5));
 
-  ASSERT_TRUE(video.get() != NULL);
+  ASSERT_NE(video.get(), nullptr);
   ASSERT_NO_FATAL_FAILURE(RunLoop(video.get()));
 }
 
-VP9_INSTANTIATE_TEST_CASE(MotionVectorTestLarge,
-                          ::testing::ValuesIn(kEncodingModeVectors),
-                          ::testing::ValuesIn(kCpuUsedVectors),
-                          ::testing::ValuesIn(kMVTestModes));
+VP9_INSTANTIATE_TEST_SUITE(MotionVectorTestLarge,
+                           ::testing::ValuesIn(kEncodingModeVectors),
+                           ::testing::ValuesIn(kCpuUsedVectors),
+                           ::testing::ValuesIn(kMVTestModes));
 }  // namespace

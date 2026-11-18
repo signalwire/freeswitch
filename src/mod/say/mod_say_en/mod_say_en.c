@@ -67,6 +67,18 @@ SWITCH_MODULE_DEFINITION(mod_say_en, mod_say_en_load, NULL, NULL);
 		say_args->method = smeth; say_args->type = stype;				\
 	}																	\
 
+#define say_num_goto_status(_sh, num, meth, tag) {						\
+		char tmp[80];													\
+		switch_status_t tstatus;										\
+		switch_say_args_t tsay_args = *say_args;						\
+		tsay_args.type = SST_ITEMS;										\
+		tsay_args.method = meth;										\
+		switch_snprintf(tmp, sizeof(tmp), "%u", (unsigned)num);			\
+		if ((tstatus = en_say_general_count(_sh, tmp, &tsay_args)) !=	\
+			SWITCH_STATUS_SUCCESS) {									\
+			switch_goto_status(tstatus, tag);							\
+		}																\
+	}
 
 
 static switch_status_t play_group(switch_say_method_t method, int a, int b, int c, char *what, switch_say_file_handle_t *sh)
@@ -184,7 +196,7 @@ static switch_status_t en_say_general_count(switch_say_file_handle_t *sh, char *
 
 static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, switch_say_args_t *say_args)
 {
-	int32_t t = 0;
+	int64_t t = 0;
 	switch_time_t target = 0, target_now = 0;
 	switch_time_exp_t tm, tm_now;
 	uint8_t say_date = 0, say_time = 0, say_year = 0, say_month = 0, say_dow = 0, say_day = 0, say_yesterday = 0, say_today = 0;
@@ -275,7 +287,7 @@ static switch_status_t en_say_time(switch_say_file_handle_t *sh, char *tosay, sw
 
 	if (strchr(tosay, ':')) {
 		switch_time_t tme  = switch_str_time(tosay);
-		t = (int32_t) ((tme) / (int64_t) (1000000));
+		t = (int64_t) ((tme) / (int64_t) (1000000));
 		
 		target = switch_time_make(t, 0);
 		target_now = switch_micro_time_now();
@@ -527,13 +539,13 @@ static switch_status_t say_ip(switch_say_file_handle_t *sh,
 
 	*d++ = '\0';
 
-	say_num(sh, atoi(a), say_args->method);
+	say_num_goto_status(sh, atoi(a), say_args->method, end);
 	switch_say_file(sh, "digits/dot");
-	say_num(sh, atoi(b), say_args->method);
+	say_num_goto_status(sh, atoi(b), say_args->method, end);
 	switch_say_file(sh, "digits/dot");
-	say_num(sh, atoi(c), say_args->method);
+	say_num_goto_status(sh, atoi(c), say_args->method, end);
 	switch_say_file(sh, "digits/dot");
-	say_num(sh, atoi(d), say_args->method);
+	say_num_goto_status(sh, atoi(d), say_args->method, end);
 
  end:
 

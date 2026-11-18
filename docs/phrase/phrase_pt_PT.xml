@@ -984,23 +984,5 @@
       <prompt phrase="woodlark" filename="woodlark.wav"/>
       <prompt phrase="yesteryear" filename="yesteryear.wav"/>
     </base256>
-    <zrtp>
-      <!-- Event prompts -->
-      <prompt phrase="Bem-vindo ao agente de registo ZRTP." filename="zrtp-enroll_welcome.wav"/>
-      <prompt phrase="Deve verificar a chave de autenticação com destinatário. Se não for igual, indica a presença de uma escuta." filename="zrtp-check_sas.wav"/>
-      <prompt phrase="Apenas telefones que estão autenticados podem ser configurados para usarem este sistema de retransmissão ZRTP para chamadas com modo de segurança activo. Se o seu telefone não está autenticado com o sistema, esta chamada não terá qualquer efeito." filename="zrtp-enroll_not_sip_registered.wav"/>
-      <prompt phrase="O seu telefone indica que já confia neste sistema de retransmissão ZRTP para chamadas com o modo de segurança activo, portanto você já não precisa de fazer mais nada." filename="zrtp-enroll_already_enrolled.wav"/>
-      <prompt phrase="Apenas telefones equipados com o protocolo ZRTP podem usar esta extensão. O seu telefone não suporta ZRTP, portanto esta chamada não terá qualquer efeito." filename="zrtp-enroll_notzrtp.wav"/>
-      <prompt phrase="Este sistema está preparado para suportar chamadas telefónicas encriptadas em ZRTP. Você deve determinar se deseja permitir que o sistema possa interceptar ou gravar as suas chamadas telefónicas com o modo de segurança activado. Você pode desligar após confirmar este comportamento." filename="zrtp-enroll_confirmed.wav"/>
-      <prompt phrase="Comparando verbalmente o código desta autenticação com o destinatário." filename="zrtp-is_secure.wav"/>
-      <prompt phrase="O código de autenticação não foi verificado." filename="zrtp-is_unverified.wav"/>
-      <prompt phrase="O código de autenticação foi verificado." filename="zrtp-is_verified.wav"/>
-      <prompt phrase="Obrigado por telefonar. Até breve." filename="zrtp-thankyou_goodbye.wav"/>
-      <prompt phrase="Algo está errado" filename="zrtp-somethings_wrong.wav"/>
-      <prompt phrase="Erro." filename="zrtp-status_error.wav"/>
-      <prompt phrase="O modo de segurança não está activo na chamada." filename="zrtp-status_notsecure.wav"/> 
-      <prompt phrase="O modo de segurança está activo na chamada." filename="zrtp-status_secure.wav"/>
-      <prompt phrase="Activando o modo de segurança na chamada." filename="zrtp-status_securing.wav"/>
-    </zrtp>
   </pt_PT>
 </language>

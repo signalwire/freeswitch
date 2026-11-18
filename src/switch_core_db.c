@@ -181,9 +181,14 @@ SWITCH_DECLARE(int) switch_core_db_load_extension(switch_core_db_t *db, const ch
 	int ret = 0;
 	char *err = NULL;
 
+#ifdef SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION
+	sqlite3_db_config(db, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0);
+	ret = sqlite3_load_extension(db, extension, 0, &err);
+#else
 	sqlite3_enable_load_extension(db, 1);
 	ret = sqlite3_load_extension(db, extension, 0, &err);
 	sqlite3_enable_load_extension(db, 0);
+#endif
 
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "LOAD EXTENSION ERR [%s]\n", err);

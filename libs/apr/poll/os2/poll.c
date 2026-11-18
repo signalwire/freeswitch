@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_poll.h"
-#include "apr_arch_networkio.h"
+#include "fspr.h"
+#include "fspr_poll.h"
+#include "fspr_arch_networkio.h"
 
-APR_DECLARE(apr_status_t) apr_poll(apr_pollfd_t *aprset, apr_int32_t num,
-                      apr_int32_t *nsds, apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_poll(fspr_pollfd_t *aprset, fspr_int32_t num,
+                      fspr_int32_t *nsds, fspr_interval_time_t timeout)
 {
     int *pollset;
     int i;

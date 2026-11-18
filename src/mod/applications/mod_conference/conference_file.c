@@ -164,6 +164,11 @@ switch_status_t conference_file_play(conference_obj_t *conference, char *file, u
 
 	switch_assert(conference != NULL);
 
+        if (!conference_utils_test_flag(conference, CFLAG_RUNNING)) {
+                return SWITCH_STATUS_FALSE;
+	}
+
+
 	if (zstr(file)) {
 		return SWITCH_STATUS_NOTFOUND;
 	}

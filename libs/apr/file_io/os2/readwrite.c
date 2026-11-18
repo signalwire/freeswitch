@@ -17,14 +17,14 @@
 #define INCL_DOS
 #define INCL_DOSERRORS
 
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
 
 #include <malloc.h>
 
-APR_DECLARE(apr_status_t) apr_file_read(apr_file_t *thefile, void *buf, apr_size_t *nbytes)
+APR_DECLARE(fspr_status_t) fspr_file_read(fspr_file_t *thefile, void *buf, fspr_size_t *nbytes)
 {
     ULONG rc = 0;
     ULONG bytesread;
@@ -39,13 +39,13 @@ APR_DECLARE(apr_status_t) apr_file_read(apr_file_t *thefile, void *buf, apr_size
         ULONG blocksize;
         ULONG size = *nbytes;
 
-        apr_thread_mutex_lock(thefile->mutex);
+        fspr_thread_mutex_lock(thefile->mutex);
 
         if (thefile->direction == 1) {
-            int rv = apr_file_flush(thefile);
+            int rv = fspr_file_flush(thefile);
 
             if (rv != APR_SUCCESS) {
-                apr_thread_mutex_unlock(thefile->mutex);
+                fspr_thread_mutex_unlock(thefile->mutex);
                 return rv;
             }
 
@@ -79,7 +79,7 @@ APR_DECLARE(apr_status_t) apr_file_read(apr_file_t *thefile, void *buf, apr_size
         }
 
         *nbytes = rc == 0 ? pos - (char *)buf : 0;
-        apr_thread_mutex_unlock(thefile->mutex);
+        fspr_thread_mutex_unlock(thefile->mutex);
 
         if (*nbytes == 0 && rc == 0 && thefile->eof_hit) {
             return APR_EOF;
@@ -122,7 +122,7 @@ APR_DECLARE(apr_status_t) apr_file_read(apr_file_t *thefile, void *buf, apr_size
 
 
 
-APR_DECLARE(apr_status_t) apr_file_write(apr_file_t *thefile, const void *buf, apr_size_t *nbytes)
+APR_DECLARE(fspr_status_t) fspr_file_write(fspr_file_t *thefile, const void *buf, fspr_size_t *nbytes)
 {
     ULONG rc = 0;
     ULONG byteswritten;
@@ -137,7 +137,7 @@ APR_DECLARE(apr_status_t) apr_file_write(apr_file_t *thefile, const void *buf, a
         int blocksize;
         int size = *nbytes;
 
-        apr_thread_mutex_lock(thefile->mutex);
+        fspr_thread_mutex_lock(thefile->mutex);
 
         if ( thefile->direction == 0 ) {
             // Position file pointer for writing at the offset we are logically reading from
@@ -150,7 +150,7 @@ APR_DECLARE(apr_status_t) apr_file_write(apr_file_t *thefile, const void *buf, a
 
         while (rc == 0 && size > 0) {
             if (thefile->bufpos == APR_FILE_BUFSIZE)   // write buffer is full
-                rc = apr_file_flush(thefile);
+                rc = fspr_file_flush(thefile);
 
             blocksize = size > APR_FILE_BUFSIZE - thefile->bufpos ? APR_FILE_BUFSIZE - thefile->bufpos : size;
             memcpy(thefile->buffer + thefile->bufpos, pos, blocksize);
@@ -159,7 +159,7 @@ APR_DECLARE(apr_status_t) apr_file_write(apr_file_t *thefile, const void *buf, a
             size -= blocksize;
         }
 
-        apr_thread_mutex_unlock(thefile->mutex);
+        fspr_thread_mutex_unlock(thefile->mutex);
         return APR_FROM_OS_ERROR(rc);
     } else {
         if (thefile->flags & APR_APPEND) {
@@ -194,7 +194,7 @@ APR_DECLARE(apr_status_t) apr_file_write(apr_file_t *thefile, const void *buf, a
 
 #ifdef HAVE_WRITEV
 
-APR_DECLARE(apr_status_t) apr_file_writev(apr_file_t *thefile, const struct iovec *vec, apr_size_t nvec, apr_size_t *nbytes)
+APR_DECLARE(fspr_status_t) fspr_file_writev(fspr_file_t *thefile, const struct iovec *vec, fspr_size_t nvec, fspr_size_t *nbytes)
 {
     int bytes;
     if ((bytes = writev(thefile->filedes, vec, nvec)) < 0) {
@@ -210,7 +210,7 @@ APR_DECLARE(apr_status_t) apr_file_writev(apr_file_t *thefile, const struct iove
 
 
 
-APR_DECLARE(apr_status_t) apr_file_putc(char ch, apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_putc(char ch, fspr_file_t *thefile)
 {
     ULONG rc;
     ULONG byteswritten;
@@ -230,24 +230,24 @@ APR_DECLARE(apr_status_t) apr_file_putc(char ch, apr_file_t *thefile)
 
 
 
-APR_DECLARE(apr_status_t) apr_file_ungetc(char ch, apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_ungetc(char ch, fspr_file_t *thefile)
 {
-    apr_off_t offset = -1;
-    return apr_file_seek(thefile, APR_CUR, &offset);
+    fspr_off_t offset = -1;
+    return fspr_file_seek(thefile, APR_CUR, &offset);
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_getc(char *ch, apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_getc(char *ch, fspr_file_t *thefile)
 {
     ULONG rc;
-    apr_size_t bytesread;
+    fspr_size_t bytesread;
 
     if (!thefile->isopen) {
         return APR_EBADF;
     }
 
     bytesread = 1;
-    rc = apr_file_read(thefile, ch, &bytesread);
+    rc = fspr_file_read(thefile, ch, &bytesread);
 
     if (rc) {
         return rc;
@@ -263,16 +263,16 @@ APR_DECLARE(apr_status_t) apr_file_getc(char *ch, apr_file_t *thefile)
 
 
 
-APR_DECLARE(apr_status_t) apr_file_puts(const char *str, apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_puts(const char *str, fspr_file_t *thefile)
 {
-    apr_size_t len;
+    fspr_size_t len;
 
     len = strlen(str);
-    return apr_file_write(thefile, str, &len); 
+    return fspr_file_write(thefile, str, &len); 
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_flush(apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_flush(fspr_file_t *thefile)
 {
     if (thefile->buffered) {
         ULONG written = 0;
@@ -296,15 +296,15 @@ APR_DECLARE(apr_status_t) apr_file_flush(apr_file_t *thefile)
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_gets(char *str, int len, apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_gets(char *str, int len, fspr_file_t *thefile)
 {
-    apr_size_t readlen;
-    apr_status_t rv = APR_SUCCESS;
+    fspr_size_t readlen;
+    fspr_status_t rv = APR_SUCCESS;
     int i;    
 
     for (i = 0; i < len-1; i++) {
         readlen = 1;
-        rv = apr_file_read(thefile, str+i, &readlen);
+        rv = fspr_file_read(thefile, str+i, &readlen);
 
         if (rv != APR_SUCCESS) {
             break;
@@ -332,7 +332,7 @@ APR_DECLARE(apr_status_t) apr_file_gets(char *str, int len, apr_file_t *thefile)
 
 
 
-APR_DECLARE_NONSTD(int) apr_file_printf(apr_file_t *fptr, 
+APR_DECLARE_NONSTD(int) fspr_file_printf(fspr_file_t *fptr, 
                                         const char *format, ...)
 {
     int cc;
@@ -345,8 +345,8 @@ APR_DECLARE_NONSTD(int) apr_file_printf(apr_file_t *fptr,
         return 0;
     }
     va_start(ap, format);
-    len = apr_vsnprintf(buf, HUGE_STRING_LEN, format, ap);
-    cc = apr_file_puts(buf, fptr);
+    len = fspr_vsnprintf(buf, HUGE_STRING_LEN, format, ap);
+    cc = fspr_file_puts(buf, fptr);
     va_end(ap);
     free(buf);
     return (cc == APR_SUCCESS) ? len : -1;
@@ -354,7 +354,7 @@ APR_DECLARE_NONSTD(int) apr_file_printf(apr_file_t *fptr,
 
 
 
-apr_status_t apr_file_check_read(apr_file_t *fd)
+fspr_status_t fspr_file_check_read(fspr_file_t *fd)
 {
     int rc;
 

@@ -25,7 +25,7 @@
  *
  * Michael Jerris <mike@jerris.com>
  *
- * switch_regex.h -- pcre wrapper and extensions Header
+ * switch_regex.h -- pcre2 wrapper and extensions Header
  *
  */
 /*! \file switch_regex.h
@@ -40,18 +40,26 @@ SWITCH_BEGIN_EXTERN_C
  * @ingroup FREESWITCH
  * @{
  */
-	typedef struct real_pcre switch_regex_t;
 
-SWITCH_DECLARE(switch_regex_t *) switch_regex_compile(const char *pattern, int options, const char **errorptr, int *erroroffset,
-													  const unsigned char *tables);
+#define SWITCH_PCRE2 1
 
-SWITCH_DECLARE(int) switch_regex_copy_substring(const char *subject, int *ovector, int stringcount, int stringnumber, char *buffer, int size);
+typedef struct pcre2_real_code switch_regex_t;
+typedef struct pcre2_real_match_data_8 switch_regex_match_t;
+typedef struct pcre2_real_compile_context_8 switch_regex_compile_context_t;
 
+SWITCH_DECLARE(switch_regex_t *) switch_regex_compile(const char *pattern, int options, int *errorcode, unsigned int *erroroffset,
+													  switch_regex_compile_context_t *ccontext);
+
+SWITCH_DECLARE(int) switch_regex_copy_substring(switch_regex_match_t *match_data, int stringnumber, char *buffer, size_t *size);
+
+SWITCH_DECLARE(void) switch_regex_match_free(void *data);
 SWITCH_DECLARE(void) switch_regex_free(void *data);
 
-SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expression, switch_regex_t **new_re, int *ovector, uint32_t olen);
-SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_t *re, int match_count, const char *data, const char *field_data,
-												 char *substituted, switch_size_t len, int *ovector);
+SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expression, switch_regex_t **new_re, switch_regex_match_t **new_match_data);
+#define switch_regex(field, expression) switch_regex_perform(field, expression, NULL, NULL)
+
+SWITCH_DECLARE(void) switch_perform_substitution(switch_regex_match_t *match_data, const char *data,
+												 char *substituted, switch_size_t len);
 
 /*!
  \brief Function to evaluate an expression against a string
@@ -70,11 +78,16 @@ SWITCH_DECLARE(switch_status_t) switch_regex_match(const char *target, const cha
 */
 SWITCH_DECLARE(switch_status_t) switch_regex_match_partial(const char *target, const char *expression, int *partial_match);
 
-SWITCH_DECLARE(void) switch_capture_regex(switch_regex_t *re, int match_count, const char *field_data,
-										  int *ovector, const char *var, switch_cap_callback_t callback, void *user_data);
+SWITCH_DECLARE(void) switch_capture_regex(switch_regex_match_t *match_data, int match_count,
+										  const char *var, switch_cap_callback_t callback, void *user_data);
 
 SWITCH_DECLARE_NONSTD(void) switch_regex_set_var_callback(const char *var, const char *val, void *user_data);
 SWITCH_DECLARE_NONSTD(void) switch_regex_set_event_header_callback(const char *var, const char *val, void *user_data);
+
+#define switch_regex_match_safe_free(match_data)	if (match_data) {\
+				switch_regex_match_free(match_data);\
+				match_data = NULL;\
+			}
 
 #define switch_regex_safe_free(re)	if (re) {\
 				switch_regex_free(re);\

@@ -20,3 +20,14 @@ else
 mod_amr_la_CFLAGS += -DAMR_PASSTHROUGH
 endif
 
+if HAVE_AMR
+noinst_PROGRAMS = test/test_amr
+
+test_test_amr_SOURCES = test/test_amr.c
+test_test_amr_CFLAGS = $(AM_CFLAGS) -I./ -I../ -DSWITCH_TEST_BASE_DIR_FOR_CONF=\"${abs_builddir}/test\" -DSWITCH_TEST_BASE_DIR_OVERRIDE=\"${abs_builddir}/test\" $(AMR_CFLAGS)
+test_test_amr_LDFLAGS = $(AM_LDFLAGS) -avoid-version -no-undefined $(freeswitch_LDFLAGS) $(switch_builddir)/libfreeswitch.la $(CORE_LIBS) $(APR_LIBS) $(AMR_LIBS)
+
+TESTS = $(noinst_PROGRAMS)
+endif
+
+

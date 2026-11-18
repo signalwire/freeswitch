@@ -124,14 +124,6 @@ typedef struct {
 	double z;
 } switch_xyz_color_t;
 
-/**\brief Representation of a rectangle on a surface */
-typedef struct switch_image_rect {
-	unsigned int x; /**< leftmost column */
-	unsigned int y; /**< topmost row */
-	unsigned int w; /**< width */
-	unsigned int h; /**< height */
-} switch_image_rect_t;
-
 typedef enum {
 	SWITCH_CONVERT_FMT_YUYV = 0
 } switch_convert_fmt_t;
@@ -201,26 +193,6 @@ SWITCH_DECLARE(switch_image_t *)switch_img_wrap(switch_image_t  *img,
 						unsigned int d_h,
 						unsigned int align,
 						unsigned char *img_data);
-
-
-/*!\brief Set the rectangle identifying the displayed portion of the image
-*
-* Updates the displayed rectangle (aka viewport) on the image surface to
-* match the specified coordinates and size.
-*
-* \param[in]    img       Image descriptor
-* \param[in]    x         leftmost column
-* \param[in]    y         topmost row
-* \param[in]    w         width
-* \param[in]    h         height
-*
-* \return 0 if the requested rectangle is valid, nonzero otherwise.
-*/
-SWITCH_DECLARE(int) switch_img_set_rect(switch_image_t  *img,
-				   unsigned int  x,
-				   unsigned int  y,
-				   unsigned int  w,
-				   unsigned int  h);
 
 /*!\brief patch a small img to a big IMG at position x,y
 *
@@ -390,11 +362,22 @@ SWITCH_DECLARE(void) switch_img_patch_hole(switch_image_t *IMG, switch_image_t *
 
 SWITCH_DECLARE(switch_status_t) switch_png_patch_img(switch_png_t *use_png, switch_image_t *img, int x, int y);
 SWITCH_DECLARE(switch_image_t *) switch_img_read_png(const char *file_name, switch_img_fmt_t img_fmt);
+SWITCH_DECLARE(switch_image_t *) switch_img_read_png_from_memory(void *mem, size_t size, switch_img_fmt_t img_fmt);
 SWITCH_DECLARE(switch_status_t) switch_img_write_png(switch_image_t *img, char *file_name);
 SWITCH_DECLARE(switch_status_t) switch_png_open(switch_png_t **pngP, const char *file_name);
 SWITCH_DECLARE(void) switch_png_free(switch_png_t **pngP);
 SWITCH_DECLARE(switch_status_t) switch_img_data_url_png(switch_image_t *img, char **urlP);
-																
+SWITCH_DECLARE(switch_status_t) switch_img_data_url(switch_image_t *img, char **urlP, const char *type, int quality);
+
+/*!\brief Read an image file to switch_image_t */
+SWITCH_DECLARE(switch_image_t *) switch_img_read_from_file(const char *file_name, switch_img_fmt_t img_fmt);
+/*!\brief Write an image file, supported formats png,jpg,bmp,tga,hdr
+* \param[in]    img       The image descriptor
+* \param[in]    file_name The file_name to write
+* \param[in]    quality   Only used in jpg, 1 ~ 100
+*/
+SWITCH_DECLARE(switch_status_t) switch_img_write_to_file(switch_image_t *img, const char* file_name, int quality);
+
 /*!\brief put a small img over a big IMG at position x,y, with alpha transparency
 *
 * Both IMG and img must be non-NULL
@@ -410,6 +393,7 @@ SWITCH_DECLARE(void) switch_img_overlay(switch_image_t *IMG, switch_image_t *img
 SWITCH_DECLARE(switch_status_t) switch_img_mirror(switch_image_t *src, switch_image_t **destP);
 SWITCH_DECLARE(switch_status_t) switch_img_scale(switch_image_t *src, switch_image_t **destP, int width, int height);
 SWITCH_DECLARE(switch_status_t) switch_img_fit(switch_image_t **srcP, int width, int height, switch_img_fit_t fit);
+SWITCH_DECLARE(void) switch_img_calc_fit(switch_image_t *src, int width, int height, int *new_wP, int *new_hP);
 SWITCH_DECLARE(switch_img_position_t) parse_img_position(const char *name);
 SWITCH_DECLARE(switch_img_fit_t) parse_img_fit(const char *name);
 SWITCH_DECLARE(void) switch_img_find_position(switch_img_position_t pos, int sw, int sh, int iw, int ih, int *xP, int *yP);
@@ -436,7 +420,7 @@ SWITCH_DECLARE(switch_status_t) switch_img_to_raw(switch_image_t *src, void *des
 * \param[in]    width     The raw data width
 * \param[in]    height    The raw data height
 */
-SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t *dest, void *src, switch_img_fmt_t fmt, int width, int height);
+SWITCH_DECLARE(switch_status_t) switch_img_from_raw(switch_image_t** destP, void *src, switch_img_fmt_t fmt, int width, int height);
 SWITCH_DECLARE(switch_image_t *) switch_img_write_text_img(int w, int h, switch_bool_t full, const char *text);
 
 SWITCH_DECLARE(switch_image_t *) switch_img_read_file(const char* file_name);

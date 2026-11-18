@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr_strings.h"
+#include "fspr_strings.h"
 
 void print_hello(char str[256]);
 int count_reps(int reps);
 
 void print_hello(char str[256])
 {
-    apr_cpystrn(str, "Hello - I'm a DSO!\n", strlen("Hello - I'm a DSO!\n") + 1);
+    fspr_cpystrn(str, "Hello - I'm a DSO!\n", strlen("Hello - I'm a DSO!\n") + 1);
 }
 
 int count_reps(int reps)

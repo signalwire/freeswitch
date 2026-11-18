@@ -356,6 +356,7 @@ struct switch_file_handle {
 	switch_size_t samples_in;
 	switch_size_t samples_out;
 	int32_t vol;
+	int32_t volgranular;
 	switch_audio_resampler_t *resampler;
 	switch_buffer_t *buffer;
 	switch_byte_t *dbuf;
@@ -675,8 +676,14 @@ struct switch_codec_fmtp {
 	int bits_per_second;
 	/*! number of microseconds of media in one packet (ptime * 1000) */
 	int microseconds_per_packet;
-	/*! stereo  */
-	int stereo;
+	/*! maximum ptime in ms */
+	int max_ptime;
+	/*! minimum ptime in ms */
+	int min_ptime;
+	/*! stereo, typically bidirectional */
+	int stereo; 
+	/* sender properties (stereo) */
+	int sprop_stereo;
 	/*! private data for the codec module to store handle specific info */
 	void *private_info;
 
@@ -854,8 +861,8 @@ struct switch_json_api_interface {
 	struct switch_json_api_interface *next;
 };
 
-#define PROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
-#define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+#define PROTECT_INTERFACE(_it) if (_it) {switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); switch_mutex_lock(_it->reflock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+#define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock);}	//if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
 
 #include "switch_frame.h"
 

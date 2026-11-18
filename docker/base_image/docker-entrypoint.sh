@@ -43,7 +43,7 @@ wget_helper() {
     local SOUND_FILE=$1
     grep -q $SOUND_FILE /usr/share/freeswitch/sounds/soundfiles_present.txt 2> /dev/null
     if [ "$?" -eq 0 ]; then
-        echo "Skiping download of $SOUND_FILE. Already present"
+        echo "Skipping download of $SOUND_FILE. Already present"
         return
     fi
     wget $BASEURL/$SOUND_FILE
@@ -99,7 +99,7 @@ SOUND_RATES=$(echo "$SOUND_RATES" | sed -e 's/:/\n/g')
 SOUND_TYPES=$(echo "$SOUND_TYPES" | sed -e 's/:/\n/g')
 
 if [ -z "$SOUND_RATES" -o -z "$SOUND_TYPES" ]; then
-	echo "Environment variables 'SOUND_RATES' or 'SOUND_TYPES' not defined. Skiping sound files checking."
+	echo "Environment variables 'SOUND_RATES' or 'SOUND_TYPES' not defined. Skipping sound files checking."
 else
 	download_sound_types
 	extract_sound_files

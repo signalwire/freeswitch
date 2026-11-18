@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "win32/apr_arch_threadproc.h"
-#include "apr_thread_proc.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_errno.h"
-#include "apr_portable.h"
+#include "win32/fspr_arch_threadproc.h"
+#include "fspr_thread_proc.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_errno.h"
+#include "fspr_portable.h"
 
-APR_DECLARE(apr_status_t) apr_threadkey_private_create(apr_threadkey_t **key,
+APR_DECLARE(fspr_status_t) fspr_threadkey_private_create(fspr_threadkey_t **key,
                                                     void (*dest)(void *),
-                                                    apr_pool_t *pool)
+                                                    fspr_pool_t *pool)
 {
-    (*key) = (apr_threadkey_t *)apr_palloc(pool, sizeof(apr_threadkey_t));
+    (*key) = (fspr_threadkey_t *)fspr_palloc(pool, sizeof(fspr_threadkey_t));
     if ((*key) == NULL) {
         return APR_ENOMEM;
     }
@@ -35,64 +35,64 @@ APR_DECLARE(apr_status_t) apr_threadkey_private_create(apr_threadkey_t **key,
     if (((*key)->key = TlsAlloc()) != 0xFFFFFFFF) {
         return APR_SUCCESS;
     }
-    return apr_get_os_error();
+    return fspr_get_os_error();
 }
 
-APR_DECLARE(apr_status_t) apr_threadkey_private_get(void **new,
-                                                 apr_threadkey_t *key)
+APR_DECLARE(fspr_status_t) fspr_threadkey_private_get(void **new,
+                                                 fspr_threadkey_t *key)
 {
     if ((*new) = TlsGetValue(key->key)) {
         return APR_SUCCESS;
     }
-    return apr_get_os_error();
+    return fspr_get_os_error();
 }
 
-APR_DECLARE(apr_status_t) apr_threadkey_private_set(void *priv,
-                                                 apr_threadkey_t *key)
+APR_DECLARE(fspr_status_t) fspr_threadkey_private_set(void *priv,
+                                                 fspr_threadkey_t *key)
 {
     if (TlsSetValue(key->key, priv)) {
         return APR_SUCCESS;
     }
-    return apr_get_os_error();
+    return fspr_get_os_error();
 }
 
-APR_DECLARE(apr_status_t) apr_threadkey_private_delete(apr_threadkey_t *key)
+APR_DECLARE(fspr_status_t) fspr_threadkey_private_delete(fspr_threadkey_t *key)
 {
     if (TlsFree(key->key)) {
         return APR_SUCCESS; 
     }
-    return apr_get_os_error();
+    return fspr_get_os_error();
 }
 
-APR_DECLARE(apr_status_t) apr_threadkey_data_get(void **data, const char *key,
-                                                apr_threadkey_t *threadkey)
+APR_DECLARE(fspr_status_t) fspr_threadkey_data_get(void **data, const char *key,
+                                                fspr_threadkey_t *threadkey)
 {
-    return apr_pool_userdata_get(data, key, threadkey->pool);
+    return fspr_pool_userdata_get(data, key, threadkey->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_threadkey_data_set(void *data, const char *key,
-                                                apr_status_t (*cleanup)(void *),
-                                                apr_threadkey_t *threadkey)
+APR_DECLARE(fspr_status_t) fspr_threadkey_data_set(void *data, const char *key,
+                                                fspr_status_t (*cleanup)(void *),
+                                                fspr_threadkey_t *threadkey)
 {
-    return apr_pool_userdata_set(data, key, cleanup, threadkey->pool);
+    return fspr_pool_userdata_set(data, key, cleanup, threadkey->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_os_threadkey_get(apr_os_threadkey_t *thekey,
-                                               apr_threadkey_t *key)
+APR_DECLARE(fspr_status_t) fspr_os_threadkey_get(fspr_os_threadkey_t *thekey,
+                                               fspr_threadkey_t *key)
 {
     *thekey = key->key;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_threadkey_put(apr_threadkey_t **key,
-                                               apr_os_threadkey_t *thekey,
-                                               apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_threadkey_put(fspr_threadkey_t **key,
+                                               fspr_os_threadkey_t *thekey,
+                                               fspr_pool_t *pool)
 {
     if (pool == NULL) {
         return APR_ENOPOOL;
     }
     if ((*key) == NULL) {
-        (*key) = (apr_threadkey_t *)apr_palloc(pool, sizeof(apr_threadkey_t));
+        (*key) = (fspr_threadkey_t *)fspr_palloc(pool, sizeof(fspr_threadkey_t));
         (*key)->pool = pool;
     }
     (*key)->key = *thekey;

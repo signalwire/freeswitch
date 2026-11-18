@@ -24,7 +24,7 @@ goto Done
 @echo #  "apr-util\uri\uri_delims.h" on the build machine.
 
 @echo Fixing up the APR headers
-copy ..\include\apr.hnw ..\include\apr.h
+copy ..\include\fspr.hnw ..\include\fspr.h
 
 @echo Fixing up the APR-Util headers
 copy ..\..\apr-util\include\apu.hnw ..\..\apr-util\include\apu.h

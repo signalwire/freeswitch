@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_thread_mutex.h"
-#include "apr_arch_inherit.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_thread_mutex.h"
+#include "fspr_arch_inherit.h"
 
 #ifdef NETWARE
 #include "nks/dirio.h"
-#include "apr_hash.h"
+#include "fspr_hash.h"
 #include "fsio.h"
 #endif
 
-apr_status_t apr_unix_file_cleanup(void *thefile)
+fspr_status_t fspr_unix_file_cleanup(void *thefile)
 {
-    apr_file_t *file = thefile;
-    apr_status_t flush_rv = APR_SUCCESS, rv = APR_SUCCESS;
+    fspr_file_t *file = thefile;
+    fspr_status_t flush_rv = APR_SUCCESS, rv = APR_SUCCESS;
 
     if (file->buffered) {
-        flush_rv = apr_file_flush(file);
+        flush_rv = fspr_file_flush(file);
     }
     if (close(file->filedes) == 0) {
         file->filedes = -1;
@@ -41,7 +41,7 @@ apr_status_t apr_unix_file_cleanup(void *thefile)
         }
 #if APR_HAS_THREADS
         if (file->thlock) {
-            rv = apr_thread_mutex_destroy(file->thlock);
+            rv = fspr_thread_mutex_destroy(file->thlock);
         }
 #endif
     }
@@ -51,9 +51,9 @@ apr_status_t apr_unix_file_cleanup(void *thefile)
     }
 #ifndef WAITIO_USES_POLL
     if (file->pollset != NULL) {
-        int pollset_rv = apr_pollset_destroy(file->pollset);
+        int pollset_rv = fspr_pollset_destroy(file->pollset);
         /* If the file close failed, return its error value,
-         * not apr_pollset_destroy()'s.
+         * not fspr_pollset_destroy()'s.
          */
         if (rv == APR_SUCCESS) {
             rv = pollset_rv;
@@ -63,17 +63,17 @@ apr_status_t apr_unix_file_cleanup(void *thefile)
     return rv != APR_SUCCESS ? rv : flush_rv;
 }
 
-APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, 
+APR_DECLARE(fspr_status_t) fspr_file_open(fspr_file_t **new, 
                                         const char *fname, 
-                                        apr_int32_t flag, 
-                                        apr_fileperms_t perm, 
-                                        apr_pool_t *pool)
+                                        fspr_int32_t flag, 
+                                        fspr_fileperms_t perm, 
+                                        fspr_pool_t *pool)
 {
-    apr_os_file_t fd;
+    fspr_os_file_t fd;
     int oflags = 0;
 #if APR_HAS_THREADS
-    apr_thread_mutex_t *thlock;
-    apr_status_t rv;
+    fspr_thread_mutex_t *thlock;
+    fspr_status_t rv;
 #endif
 
     if ((flag & APR_READ) && (flag & APR_WRITE)) {
@@ -121,7 +121,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
 
 #if APR_HAS_THREADS
     if ((flag & APR_BUFFERED) && (flag & APR_XTHREAD)) {
-        rv = apr_thread_mutex_create(&thlock,
+        rv = fspr_thread_mutex_create(&thlock,
                                      APR_THREAD_MUTEX_DEFAULT, pool);
         if (rv) {
             return rv;
@@ -133,24 +133,24 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
         fd = open(fname, oflags, 0666);
     }
     else {
-        fd = open(fname, oflags, apr_unix_perms2mode(perm));
+        fd = open(fname, oflags, fspr_unix_perms2mode(perm));
     } 
     if (fd < 0) {
        return errno;
     }
 
-    (*new) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
+    (*new) = (fspr_file_t *)fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*new)->pool = pool;
     (*new)->flags = flag;
     (*new)->filedes = fd;
 
-    (*new)->fname = apr_pstrdup(pool, fname);
+    (*new)->fname = fspr_pstrdup(pool, fname);
 
     (*new)->blocking = BLK_ON;
     (*new)->buffered = (flag & APR_BUFFERED) > 0;
 
     if ((*new)->buffered) {
-        (*new)->buffer = apr_palloc(pool, APR_FILE_BUFSIZE);
+        (*new)->buffer = fspr_palloc(pool, APR_FILE_BUFSIZE);
 #if APR_HAS_THREADS
         if ((*new)->flags & APR_XTHREAD) {
             (*new)->thlock = thlock;
@@ -170,25 +170,25 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new,
     (*new)->dataRead = 0;
     (*new)->direction = 0;
 #ifndef WAITIO_USES_POLL
-    /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
+    /* Start out with no pollset.  fspr_wait_for_io_or_timeout() will
      * initialize the pollset if needed.
      */
     (*new)->pollset = NULL;
 #endif
     if (!(flag & APR_FILE_NOCLEANUP)) {
-        apr_pool_cleanup_register((*new)->pool, (void *)(*new), 
-                                  apr_unix_file_cleanup, 
-                                  apr_unix_file_cleanup);
+        fspr_pool_cleanup_register((*new)->pool, (void *)(*new), 
+                                  fspr_unix_file_cleanup, 
+                                  fspr_unix_file_cleanup);
     }
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_close(apr_file_t *file)
+APR_DECLARE(fspr_status_t) fspr_file_close(fspr_file_t *file)
 {
-    return apr_pool_cleanup_run(file->pool, file, apr_unix_file_cleanup);
+    return fspr_pool_cleanup_run(file->pool, file, fspr_unix_file_cleanup);
 }
 
-APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_remove(const char *path, fspr_pool_t *pool)
 {
     if (unlink(path) == 0) {
         return APR_SUCCESS;
@@ -198,9 +198,9 @@ APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
     }
 }
 
-APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path, 
+APR_DECLARE(fspr_status_t) fspr_file_rename(const char *from_path, 
                                           const char *to_path,
-                                          apr_pool_t *p)
+                                          fspr_pool_t *p)
 {
     if (rename(from_path, to_path) != 0) {
         return errno;
@@ -208,20 +208,20 @@ APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_file_get(apr_os_file_t *thefile, 
-                                          apr_file_t *file)
+APR_DECLARE(fspr_status_t) fspr_os_file_get(fspr_os_file_t *thefile, 
+                                          fspr_file_t *file)
 {
     *thefile = file->filedes;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file, 
-                                          apr_os_file_t *thefile,
-                                          apr_int32_t flags, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_file_put(fspr_file_t **file, 
+                                          fspr_os_file_t *thefile,
+                                          fspr_int32_t flags, fspr_pool_t *pool)
 {
     int *dafile = thefile;
     
-    (*file) = apr_pcalloc(pool, sizeof(apr_file_t));
+    (*file) = fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*file)->pool = pool;
     (*file)->eof_hit = 0;
     (*file)->blocking = BLK_UNKNOWN; /* in case it is a pipe */
@@ -232,18 +232,18 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
     (*file)->buffered = (flags & APR_BUFFERED) > 0;
 
 #ifndef WAITIO_USES_POLL
-    /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
+    /* Start out with no pollset.  fspr_wait_for_io_or_timeout() will
      * initialize the pollset if needed.
      */
     (*file)->pollset = NULL;
 #endif
 
     if ((*file)->buffered) {
-        (*file)->buffer = apr_palloc(pool, APR_FILE_BUFSIZE);
+        (*file)->buffer = fspr_palloc(pool, APR_FILE_BUFSIZE);
 #if APR_HAS_THREADS
         if ((*file)->flags & APR_XTHREAD) {
-            apr_status_t rv;
-            rv = apr_thread_mutex_create(&((*file)->thlock),
+            fspr_status_t rv;
+            rv = fspr_thread_mutex_create(&((*file)->thlock),
                                          APR_THREAD_MUTEX_DEFAULT, pool);
             if (rv) {
                 return rv;
@@ -254,7 +254,7 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
     return APR_SUCCESS;
 }    
 
-APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
+APR_DECLARE(fspr_status_t) fspr_file_eof(fspr_file_t *fptr)
 {
     if (fptr->eof_hit == 1) {
         return APR_EOF;
@@ -262,32 +262,32 @@ APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
     return APR_SUCCESS;
 }   
 
-APR_DECLARE(apr_status_t) apr_file_open_stderr(apr_file_t **thefile, 
-                                               apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stderr(fspr_file_t **thefile, 
+                                               fspr_pool_t *pool)
 {
     int fd = STDERR_FILENO;
 
-    return apr_os_file_put(thefile, &fd, 0, pool);
+    return fspr_os_file_put(thefile, &fd, 0, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_stdout(apr_file_t **thefile, 
-                                               apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stdout(fspr_file_t **thefile, 
+                                               fspr_pool_t *pool)
 {
     int fd = STDOUT_FILENO;
 
-    return apr_os_file_put(thefile, &fd, 0, pool);
+    return fspr_os_file_put(thefile, &fd, 0, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_stdin(apr_file_t **thefile, 
-                                              apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stdin(fspr_file_t **thefile, 
+                                              fspr_pool_t *pool)
 {
     int fd = STDIN_FILENO;
 
-    return apr_os_file_put(thefile, &fd, 0, pool);
+    return fspr_os_file_put(thefile, &fd, 0, pool);
 }
 
-APR_IMPLEMENT_INHERIT_SET(file, flags, pool, apr_unix_file_cleanup)
+APR_IMPLEMENT_INHERIT_SET(file, flags, pool, fspr_unix_file_cleanup)
 
-APR_IMPLEMENT_INHERIT_UNSET(file, flags, pool, apr_unix_file_cleanup)
+APR_IMPLEMENT_INHERIT_UNSET(file, flags, pool, fspr_unix_file_cleanup)
 
 APR_POOL_IMPLEMENT_ACCESSOR(file)

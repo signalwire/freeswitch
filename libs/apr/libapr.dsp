@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /FD /c
-# ADD CPP /nologo /MD /W3 /O2 /Oy- /Zi /I "./include" /I "./include/arch" /I "./include/arch/win32" /I "./include/arch/unix" /D "NDEBUG" /D "APR_DECLARE_EXPORT" /D "WIN32" /D "_WINDOWS" /Fd"Release\libapr_src" /FD /c
+# ADD CPP /nologo /MD /W3 /O2 /Oy- /Zi /I "./include" /I "./include/arch" /I "./include/arch/win32" /I "./include/arch/unix" /D "NDEBUG" /D "APR_DECLARE_EXPORT" /D "WIN32" /D "_WINDOWS" /Fd"Release\libfspr_src" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -75,7 +75,7 @@ PostBuild_Cmds=if exist $(OUTDIR)\libapr-1.dll.manifest mt.exe -manifest $(OUTDI
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MDd /W3 /EHsc /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /FD /c
-# ADD CPP /nologo /MDd /W3 /EHsc /Zi /Od /I "./include" /I "./include/arch" /I "./include/arch/win32" /I "./include/arch/unix" /D "_DEBUG" /D "APR_DECLARE_EXPORT" /D "WIN32" /D "_WINDOWS" /Fd"Debug\libapr_src" /FD /c
+# ADD CPP /nologo /MDd /W3 /EHsc /Zi /Od /I "./include" /I "./include/arch" /I "./include/arch/win32" /I "./include/arch/unix" /D "_DEBUG" /D "APR_DECLARE_EXPORT" /D "WIN32" /D "_WINDOWS" /Fd"Debug\libfspr_src" /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -107,7 +107,7 @@ PostBuild_Cmds=if exist $(OUTDIR)\libapr-1.dll.manifest mt.exe -manifest $(OUTDI
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\atomic\win32\apr_atomic.c
+SOURCE=.\atomic\win32\fspr_atomic.c
 # End Source File
 # End Group
 # Begin Group "dso"
@@ -211,7 +211,7 @@ SOURCE=.\locks\win32\thread_rwlock.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\memory\unix\apr_pools.c
+SOURCE=.\memory\unix\fspr_pools.c
 # End Source File
 # End Group
 # Begin Group "misc"
@@ -219,7 +219,7 @@ SOURCE=.\memory\unix\apr_pools.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\misc\win32\apr_app.c
+SOURCE=.\misc\win32\fspr_app.c
 # PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
@@ -320,7 +320,7 @@ SOURCE=.\network_io\win32\sockopt.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\passwd\apr_getpass.c
+SOURCE=.\passwd\fspr_getpass.c
 # End Source File
 # End Group
 # Begin Group "random"
@@ -328,7 +328,7 @@ SOURCE=.\passwd\apr_getpass.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\random\unix\apr_random.c
+SOURCE=.\random\unix\fspr_random.c
 # End Source File
 # Begin Source File
 
@@ -352,27 +352,27 @@ SOURCE=.\shmem\win32\shm.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\strings\apr_cpystrn.c
+SOURCE=.\strings\fspr_cpystrn.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\strings\apr_fnmatch.c
+SOURCE=.\strings\fspr_fnmatch.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\strings\apr_snprintf.c
+SOURCE=.\strings\fspr_snprintf.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\strings\apr_strings.c
+SOURCE=.\strings\fspr_strings.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\strings\apr_strnatcmp.c
+SOURCE=.\strings\fspr_strnatcmp.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\strings\apr_strtok.c
+SOURCE=.\strings\fspr_strtok.c
 # End Source File
 # End Group
 # Begin Group "tables"
@@ -380,11 +380,11 @@ SOURCE=.\strings\apr_strtok.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\tables\apr_hash.c
+SOURCE=.\tables\fspr_hash.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\tables\apr_tables.c
+SOURCE=.\tables\fspr_tables.c
 # End Source File
 # End Group
 # Begin Group "threadproc"
@@ -441,51 +441,51 @@ SOURCE=.\user\win32\userinfo.c
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_atime.h
+SOURCE=.\include\arch\win32\fspr_arch_atime.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_dso.h
+SOURCE=.\include\arch\win32\fspr_arch_dso.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_file_io.h
+SOURCE=.\include\arch\win32\fspr_arch_file_io.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_inherit.h
+SOURCE=.\include\arch\win32\fspr_arch_inherit.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_misc.h
+SOURCE=.\include\arch\win32\fspr_arch_misc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_networkio.h
+SOURCE=.\include\arch\win32\fspr_arch_networkio.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_thread_mutex.h
+SOURCE=.\include\arch\win32\fspr_arch_thread_mutex.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_thread_rwlock.h
+SOURCE=.\include\arch\win32\fspr_arch_thread_rwlock.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_threadproc.h
+SOURCE=.\include\arch\win32\fspr_arch_threadproc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_arch_utf8.h
+SOURCE=.\include\arch\win32\fspr_arch_utf8.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\win32\apr_private.h
+SOURCE=.\include\arch\win32\fspr_private.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\arch\apr_private_common.h
+SOURCE=.\include\arch\fspr_private_common.h
 # End Source File
 # End Group
 # Begin Group "Public Header Files"
@@ -493,35 +493,35 @@ SOURCE=.\include\arch\apr_private_common.h
 # PROP Default_Filter ""
 # Begin Source File
 
-SOURCE=.\include\apr.h.in
+SOURCE=.\include\fspr.h.in
 # PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr.hnw
+SOURCE=.\include\fspr.hnw
 # PROP Exclude_From_Build 1
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr.hw
+SOURCE=.\include\fspr.hw
 
 !IF  "$(CFG)" == "libapr - Win32 Release"
 
 # Begin Custom Build - Creating apr.h from apr.hw
-InputPath=.\include\apr.hw
+InputPath=.\include\fspr.hw
 
-".\include\apr.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	type .\include\apr.hw > .\include\apr.h
+".\include\fspr.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	type .\include\fspr.hw > .\include\fspr.h
 
 # End Custom Build
 
 !ELSEIF  "$(CFG)" == "libapr - Win32 Debug"
 
 # Begin Custom Build - Creating apr.h from apr.hw
-InputPath=.\include\apr.hw
+InputPath=.\include\fspr.hw
 
-".\include\apr.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	type .\include\apr.hw > .\include\apr.h
+".\include\fspr.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	type .\include\fspr.hw > .\include\fspr.h
 
 # End Custom Build
 
@@ -530,139 +530,139 @@ InputPath=.\include\apr.hw
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_allocator.h
+SOURCE=.\include\fspr_allocator.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_atomic.h
+SOURCE=.\include\fspr_atomic.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_dso.h
+SOURCE=.\include\fspr_dso.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_env.h
+SOURCE=.\include\fspr_env.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_errno.h
+SOURCE=.\include\fspr_errno.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_file_info.h
+SOURCE=.\include\fspr_file_info.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_file_io.h
+SOURCE=.\include\fspr_file_io.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_fnmatch.h
+SOURCE=.\include\fspr_fnmatch.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_general.h
+SOURCE=.\include\fspr_general.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_getopt.h
+SOURCE=.\include\fspr_getopt.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_global_mutex.h
+SOURCE=.\include\fspr_global_mutex.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_hash.h
+SOURCE=.\include\fspr_hash.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_inherit.h
+SOURCE=.\include\fspr_inherit.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_lib.h
+SOURCE=.\include\fspr_lib.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_mmap.h
+SOURCE=.\include\fspr_mmap.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_network_io.h
+SOURCE=.\include\fspr_network_io.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_poll.h
+SOURCE=.\include\fspr_poll.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_pools.h
+SOURCE=.\include\fspr_pools.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_portable.h
+SOURCE=.\include\fspr_portable.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_proc_mutex.h
+SOURCE=.\include\fspr_proc_mutex.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_ring.h
+SOURCE=.\include\fspr_ring.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_shm.h
+SOURCE=.\include\fspr_shm.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_signal.h
+SOURCE=.\include\fspr_signal.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_strings.h
+SOURCE=.\include\fspr_strings.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_support.h
+SOURCE=.\include\fspr_support.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_tables.h
+SOURCE=.\include\fspr_tables.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_thread_cond.h
+SOURCE=.\include\fspr_thread_cond.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_thread_mutex.h
+SOURCE=.\include\fspr_thread_mutex.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_thread_proc.h
+SOURCE=.\include\fspr_thread_proc.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_thread_rwlock.h
+SOURCE=.\include\fspr_thread_rwlock.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_time.h
+SOURCE=.\include\fspr_time.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_user.h
+SOURCE=.\include\fspr_user.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_version.h
+SOURCE=.\include\fspr_version.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\include\apr_want.h
+SOURCE=.\include\fspr_want.h
 # End Source File
 # End Group
 # Begin Source File

@@ -24,15 +24,11 @@
 #include "vpx/vp8dx.h"
 #endif
 
-#if defined(_WIN32) || defined(__OS2__)
+#include "vpx/vpx_codec.h"
+
+#if defined(_WIN32)
 #include <io.h>
 #include <fcntl.h>
-
-#ifdef __OS2__
-#define _setmode setmode
-#define _fileno fileno
-#define _O_BINARY O_BINARY
-#endif
 #endif
 
 #define LOG_ERROR(label)               \
@@ -46,9 +42,17 @@
     va_end(ap);                        \
   } while (0)
 
+#if CONFIG_ENCODERS
+/* Swallow warnings about unused results of fread/fwrite */
+static size_t wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+  return fread(ptr, size, nmemb, stream);
+}
+#define fread wrap_fread
+#endif
+
 FILE *set_binary_mode(FILE *stream) {
   (void)stream;
-#if defined(_WIN32) || defined(__OS2__)
+#if defined(_WIN32)
   _setmode(_fileno(stream), _O_BINARY);
 #endif
   return stream;
@@ -69,8 +73,8 @@ void warn(const char *fmt, ...) { LOG_ERROR("Warning"); }
 void die_codec(vpx_codec_ctx_t *ctx, const char *s) {
   const char *detail = vpx_codec_error_detail(ctx);
 
-  printf("%s: %s\n", s, vpx_codec_error(ctx));
-  if (detail) printf("    %s\n", detail);
+  fprintf(stderr, "%s: %s\n", s, vpx_codec_error(ctx));
+  if (detail) fprintf(stderr, "    %s\n", detail);
   exit(EXIT_FAILURE);
 }
 
@@ -83,10 +87,14 @@ int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame) {
 
   for (plane = 0; plane < 3; ++plane) {
     uint8_t *ptr;
-    const int w = vpx_img_plane_width(yuv_frame, plane);
+    int w = vpx_img_plane_width(yuv_frame, plane);
     const int h = vpx_img_plane_height(yuv_frame, plane);
     int r;
-
+    // Assuming that for nv12 we read all chroma data at once
+    if (yuv_frame->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
+    // NV12 UV plane is interleaved, so it has twice the width of a subsampled
+    // plane.
+    if (yuv_frame->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = w * 2;
     /* Determine the correct plane based on the image format. The for-loop
      * always counts in Y,U,V order, but this may not match the order of
      * the data on disk.
@@ -200,8 +208,6 @@ const VpxInterface *get_vpx_decoder_by_fourcc(uint32_t fourcc) {
 
 #endif  // CONFIG_DECODERS
 
-// TODO(dkovalev): move this function to vpx_image.{c, h}, so it will be part
-// of vpx_image_t support
 int vpx_img_plane_width(const vpx_image_t *img, int plane) {
   if (plane > 0 && img->x_chroma_shift > 0)
     return (img->d_w + 1) >> img->x_chroma_shift;
@@ -218,17 +224,23 @@ int vpx_img_plane_height(const vpx_image_t *img, int plane) {
 
 void vpx_img_write(const vpx_image_t *img, FILE *file) {
   int plane;
+  const int bytespp = (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1;
 
   for (plane = 0; plane < 3; ++plane) {
     const unsigned char *buf = img->planes[plane];
     const int stride = img->stride[plane];
-    const int w = vpx_img_plane_width(img, plane) *
-                  ((img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
+    int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
     int y;
 
+    // Assuming that for nv12 we write all chroma data at once
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
+    // NV12 UV plane is interleaved, so it has twice the width of a subsampled
+    // plane.
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = w * 2;
+
     for (y = 0; y < h; ++y) {
-      fwrite(buf, 1, w, file);
+      fwrite(buf, bytespp, w, file);
       buf += stride;
     }
   }
@@ -236,17 +248,23 @@ void vpx_img_write(const vpx_image_t *img, FILE *file) {
 
 int vpx_img_read(vpx_image_t *img, FILE *file) {
   int plane;
+  const int bytespp = (img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1;
 
   for (plane = 0; plane < 3; ++plane) {
     unsigned char *buf = img->planes[plane];
     const int stride = img->stride[plane];
-    const int w = vpx_img_plane_width(img, plane) *
-                  ((img->fmt & VPX_IMG_FMT_HIGHBITDEPTH) ? 2 : 1);
+    int w = vpx_img_plane_width(img, plane);
     const int h = vpx_img_plane_height(img, plane);
     int y;
 
+    // Assuming that for nv12 we read all chroma data at once
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane > 1) break;
+    // NV12 UV plane is interleaved, so it has twice the width of a subsampled
+    // plane.
+    if (img->fmt == VPX_IMG_FMT_NV12 && plane == 1) w = w * 2;
+
     for (y = 0; y < h; ++y) {
-      if (fread(buf, 1, w, file) != (size_t)w) return 0;
+      if (fread(buf, bytespp, w, file) != (size_t)w) return 0;
       buf += stride;
     }
   }
@@ -266,6 +284,88 @@ double sse_to_psnr(double samples, double peak, double sse) {
   }
 }
 
+#if CONFIG_ENCODERS
+int read_frame(struct VpxInputContext *input_ctx, vpx_image_t *img) {
+  FILE *f = input_ctx->file;
+  y4m_input *y4m = &input_ctx->y4m;
+  int shortread = 0;
+
+  if (input_ctx->file_type == FILE_TYPE_Y4M) {
+    if (y4m_input_fetch_frame(y4m, f, img) < 1) return 0;
+  } else {
+    shortread = read_yuv_frame(input_ctx, img);
+  }
+
+  return !shortread;
+}
+
+int file_is_y4m(const char detect[4]) {
+  if (memcmp(detect, "YUV4", 4) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+int fourcc_is_ivf(const char detect[4]) {
+  if (memcmp(detect, "DKIF", 4) == 0) {
+    return 1;
+  }
+  return 0;
+}
+
+void open_input_file(struct VpxInputContext *input) {
+  /* Parse certain options from the input file, if possible */
+  input->file = strcmp(input->filename, "-") ? fopen(input->filename, "rb")
+                                             : set_binary_mode(stdin);
+
+  if (!input->file) fatal("Failed to open input file");
+
+  if (!fseeko(input->file, 0, SEEK_END)) {
+    /* Input file is seekable. Figure out how long it is, so we can get
+     * progress info.
+     */
+    input->length = ftello(input->file);
+    rewind(input->file);
+  }
+
+  /* Default to 1:1 pixel aspect ratio. */
+  input->pixel_aspect_ratio.numerator = 1;
+  input->pixel_aspect_ratio.denominator = 1;
+
+  /* For RAW input sources, these bytes will applied on the first frame
+   *  in read_frame().
+   */
+  input->detect.buf_read = fread(input->detect.buf, 1, 4, input->file);
+  input->detect.position = 0;
+
+  if (input->detect.buf_read == 4 && file_is_y4m(input->detect.buf)) {
+    if (y4m_input_open(&input->y4m, input->file, input->detect.buf, 4,
+                       input->only_i420) >= 0) {
+      input->file_type = FILE_TYPE_Y4M;
+      input->width = input->y4m.pic_w;
+      input->height = input->y4m.pic_h;
+      input->pixel_aspect_ratio.numerator = input->y4m.par_n;
+      input->pixel_aspect_ratio.denominator = input->y4m.par_d;
+      input->framerate.numerator = input->y4m.fps_n;
+      input->framerate.denominator = input->y4m.fps_d;
+      input->fmt = input->y4m.vpx_fmt;
+      input->bit_depth = input->y4m.bit_depth;
+    } else {
+      fatal("Unsupported Y4M stream.");
+    }
+  } else if (input->detect.buf_read == 4 && fourcc_is_ivf(input->detect.buf)) {
+    fatal("IVF is not supported as input.");
+  } else {
+    input->file_type = FILE_TYPE_RAW;
+  }
+}
+
+void close_input_file(struct VpxInputContext *input) {
+  fclose(input->file);
+  if (input->file_type == FILE_TYPE_Y4M) y4m_input_close(&input->y4m);
+}
+#endif
+
 // TODO(debargha): Consolidate the functions below into a separate file.
 #if CONFIG_VP9_HIGHBITDEPTH
 static void highbd_img_upshift(vpx_image_t *dst, vpx_image_t *src,
@@ -284,7 +384,7 @@ static void highbd_img_upshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I42216:
     case VPX_IMG_FMT_I44416:
     case VPX_IMG_FMT_I44016: break;
-    default: fatal("Unsupported image conversion"); break;
+    default: fatal("Unsupported image conversion");
   }
   for (plane = 0; plane < 3; plane++) {
     int w = src->d_w;
@@ -320,7 +420,7 @@ static void lowbd_img_upshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I422:
     case VPX_IMG_FMT_I444:
     case VPX_IMG_FMT_I440: break;
-    default: fatal("Unsupported image conversion"); break;
+    default: fatal("Unsupported image conversion");
   }
   for (plane = 0; plane < 3; plane++) {
     int w = src->d_w;
@@ -361,7 +461,7 @@ void vpx_img_truncate_16_to_8(vpx_image_t *dst, vpx_image_t *src) {
     case VPX_IMG_FMT_I422:
     case VPX_IMG_FMT_I444:
     case VPX_IMG_FMT_I440: break;
-    default: fatal("Unsupported image conversion"); break;
+    default: fatal("Unsupported image conversion");
   }
   for (plane = 0; plane < 3; plane++) {
     int w = src->d_w;
@@ -396,7 +496,7 @@ static void highbd_img_downshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I42216:
     case VPX_IMG_FMT_I44416:
     case VPX_IMG_FMT_I44016: break;
-    default: fatal("Unsupported image conversion"); break;
+    default: fatal("Unsupported image conversion");
   }
   for (plane = 0; plane < 3; plane++) {
     int w = src->d_w;
@@ -430,7 +530,7 @@ static void lowbd_img_downshift(vpx_image_t *dst, vpx_image_t *src,
     case VPX_IMG_FMT_I422:
     case VPX_IMG_FMT_I444:
     case VPX_IMG_FMT_I440: break;
-    default: fatal("Unsupported image conversion"); break;
+    default: fatal("Unsupported image conversion");
   }
   for (plane = 0; plane < 3; plane++) {
     int w = src->d_w;
@@ -459,3 +559,225 @@ void vpx_img_downshift(vpx_image_t *dst, vpx_image_t *src, int down_shift) {
   }
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
+int compare_img(const vpx_image_t *const img1, const vpx_image_t *const img2) {
+  uint32_t l_w = img1->d_w;
+  uint32_t c_w = (img1->d_w + img1->x_chroma_shift) >> img1->x_chroma_shift;
+  const uint32_t c_h =
+      (img1->d_h + img1->y_chroma_shift) >> img1->y_chroma_shift;
+  uint32_t i;
+  int match = 1;
+
+  match &= (img1->fmt == img2->fmt);
+  match &= (img1->d_w == img2->d_w);
+  match &= (img1->d_h == img2->d_h);
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (img1->fmt & VPX_IMG_FMT_HIGHBITDEPTH) {
+    l_w *= 2;
+    c_w *= 2;
+  }
+#endif
+
+  for (i = 0; i < img1->d_h; ++i)
+    match &= (memcmp(img1->planes[VPX_PLANE_Y] + i * img1->stride[VPX_PLANE_Y],
+                     img2->planes[VPX_PLANE_Y] + i * img2->stride[VPX_PLANE_Y],
+                     l_w) == 0);
+
+  for (i = 0; i < c_h; ++i)
+    match &= (memcmp(img1->planes[VPX_PLANE_U] + i * img1->stride[VPX_PLANE_U],
+                     img2->planes[VPX_PLANE_U] + i * img2->stride[VPX_PLANE_U],
+                     c_w) == 0);
+
+  for (i = 0; i < c_h; ++i)
+    match &= (memcmp(img1->planes[VPX_PLANE_V] + i * img1->stride[VPX_PLANE_V],
+                     img2->planes[VPX_PLANE_V] + i * img2->stride[VPX_PLANE_V],
+                     c_w) == 0);
+
+  return match;
+}
+
+#define mmin(a, b) ((a) < (b) ? (a) : (b))
+
+#if CONFIG_VP9_HIGHBITDEPTH
+void find_mismatch_high(const vpx_image_t *const img1,
+                        const vpx_image_t *const img2, int yloc[4], int uloc[4],
+                        int vloc[4]) {
+  uint16_t *plane1, *plane2;
+  uint32_t stride1, stride2;
+  const uint32_t bsize = 64;
+  const uint32_t bsizey = bsize >> img1->y_chroma_shift;
+  const uint32_t bsizex = bsize >> img1->x_chroma_shift;
+  const uint32_t c_w =
+      (img1->d_w + img1->x_chroma_shift) >> img1->x_chroma_shift;
+  const uint32_t c_h =
+      (img1->d_h + img1->y_chroma_shift) >> img1->y_chroma_shift;
+  int match = 1;
+  uint32_t i, j;
+  yloc[0] = yloc[1] = yloc[2] = yloc[3] = -1;
+  plane1 = (uint16_t *)img1->planes[VPX_PLANE_Y];
+  plane2 = (uint16_t *)img2->planes[VPX_PLANE_Y];
+  stride1 = img1->stride[VPX_PLANE_Y] / 2;
+  stride2 = img2->stride[VPX_PLANE_Y] / 2;
+  for (i = 0, match = 1; match && i < img1->d_h; i += bsize) {
+    for (j = 0; match && j < img1->d_w; j += bsize) {
+      int k, l;
+      const int si = mmin(i + bsize, img1->d_h) - i;
+      const int sj = mmin(j + bsize, img1->d_w) - j;
+      for (k = 0; match && k < si; ++k) {
+        for (l = 0; match && l < sj; ++l) {
+          if (*(plane1 + (i + k) * stride1 + j + l) !=
+              *(plane2 + (i + k) * stride2 + j + l)) {
+            yloc[0] = i + k;
+            yloc[1] = j + l;
+            yloc[2] = *(plane1 + (i + k) * stride1 + j + l);
+            yloc[3] = *(plane2 + (i + k) * stride2 + j + l);
+            match = 0;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  uloc[0] = uloc[1] = uloc[2] = uloc[3] = -1;
+  plane1 = (uint16_t *)img1->planes[VPX_PLANE_U];
+  plane2 = (uint16_t *)img2->planes[VPX_PLANE_U];
+  stride1 = img1->stride[VPX_PLANE_U] / 2;
+  stride2 = img2->stride[VPX_PLANE_U] / 2;
+  for (i = 0, match = 1; match && i < c_h; i += bsizey) {
+    for (j = 0; match && j < c_w; j += bsizex) {
+      int k, l;
+      const int si = mmin(i + bsizey, c_h - i);
+      const int sj = mmin(j + bsizex, c_w - j);
+      for (k = 0; match && k < si; ++k) {
+        for (l = 0; match && l < sj; ++l) {
+          if (*(plane1 + (i + k) * stride1 + j + l) !=
+              *(plane2 + (i + k) * stride2 + j + l)) {
+            uloc[0] = i + k;
+            uloc[1] = j + l;
+            uloc[2] = *(plane1 + (i + k) * stride1 + j + l);
+            uloc[3] = *(plane2 + (i + k) * stride2 + j + l);
+            match = 0;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  vloc[0] = vloc[1] = vloc[2] = vloc[3] = -1;
+  plane1 = (uint16_t *)img1->planes[VPX_PLANE_V];
+  plane2 = (uint16_t *)img2->planes[VPX_PLANE_V];
+  stride1 = img1->stride[VPX_PLANE_V] / 2;
+  stride2 = img2->stride[VPX_PLANE_V] / 2;
+  for (i = 0, match = 1; match && i < c_h; i += bsizey) {
+    for (j = 0; match && j < c_w; j += bsizex) {
+      int k, l;
+      const int si = mmin(i + bsizey, c_h - i);
+      const int sj = mmin(j + bsizex, c_w - j);
+      for (k = 0; match && k < si; ++k) {
+        for (l = 0; match && l < sj; ++l) {
+          if (*(plane1 + (i + k) * stride1 + j + l) !=
+              *(plane2 + (i + k) * stride2 + j + l)) {
+            vloc[0] = i + k;
+            vloc[1] = j + l;
+            vloc[2] = *(plane1 + (i + k) * stride1 + j + l);
+            vloc[3] = *(plane2 + (i + k) * stride2 + j + l);
+            match = 0;
+            break;
+          }
+        }
+      }
+    }
+  }
+}
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+void find_mismatch(const vpx_image_t *const img1, const vpx_image_t *const img2,
+                   int yloc[4], int uloc[4], int vloc[4]) {
+  const uint32_t bsize = 64;
+  const uint32_t bsizey = bsize >> img1->y_chroma_shift;
+  const uint32_t bsizex = bsize >> img1->x_chroma_shift;
+  const uint32_t c_w =
+      (img1->d_w + img1->x_chroma_shift) >> img1->x_chroma_shift;
+  const uint32_t c_h =
+      (img1->d_h + img1->y_chroma_shift) >> img1->y_chroma_shift;
+  int match = 1;
+  uint32_t i, j;
+  yloc[0] = yloc[1] = yloc[2] = yloc[3] = -1;
+  for (i = 0, match = 1; match && i < img1->d_h; i += bsize) {
+    for (j = 0; match && j < img1->d_w; j += bsize) {
+      int k, l;
+      const int si = mmin(i + bsize, img1->d_h) - i;
+      const int sj = mmin(j + bsize, img1->d_w) - j;
+      for (k = 0; match && k < si; ++k) {
+        for (l = 0; match && l < sj; ++l) {
+          if (*(img1->planes[VPX_PLANE_Y] +
+                (i + k) * img1->stride[VPX_PLANE_Y] + j + l) !=
+              *(img2->planes[VPX_PLANE_Y] +
+                (i + k) * img2->stride[VPX_PLANE_Y] + j + l)) {
+            yloc[0] = i + k;
+            yloc[1] = j + l;
+            yloc[2] = *(img1->planes[VPX_PLANE_Y] +
+                        (i + k) * img1->stride[VPX_PLANE_Y] + j + l);
+            yloc[3] = *(img2->planes[VPX_PLANE_Y] +
+                        (i + k) * img2->stride[VPX_PLANE_Y] + j + l);
+            match = 0;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  uloc[0] = uloc[1] = uloc[2] = uloc[3] = -1;
+  for (i = 0, match = 1; match && i < c_h; i += bsizey) {
+    for (j = 0; match && j < c_w; j += bsizex) {
+      int k, l;
+      const int si = mmin(i + bsizey, c_h - i);
+      const int sj = mmin(j + bsizex, c_w - j);
+      for (k = 0; match && k < si; ++k) {
+        for (l = 0; match && l < sj; ++l) {
+          if (*(img1->planes[VPX_PLANE_U] +
+                (i + k) * img1->stride[VPX_PLANE_U] + j + l) !=
+              *(img2->planes[VPX_PLANE_U] +
+                (i + k) * img2->stride[VPX_PLANE_U] + j + l)) {
+            uloc[0] = i + k;
+            uloc[1] = j + l;
+            uloc[2] = *(img1->planes[VPX_PLANE_U] +
+                        (i + k) * img1->stride[VPX_PLANE_U] + j + l);
+            uloc[3] = *(img2->planes[VPX_PLANE_U] +
+                        (i + k) * img2->stride[VPX_PLANE_U] + j + l);
+            match = 0;
+            break;
+          }
+        }
+      }
+    }
+  }
+  vloc[0] = vloc[1] = vloc[2] = vloc[3] = -1;
+  for (i = 0, match = 1; match && i < c_h; i += bsizey) {
+    for (j = 0; match && j < c_w; j += bsizex) {
+      int k, l;
+      const int si = mmin(i + bsizey, c_h - i);
+      const int sj = mmin(j + bsizex, c_w - j);
+      for (k = 0; match && k < si; ++k) {
+        for (l = 0; match && l < sj; ++l) {
+          if (*(img1->planes[VPX_PLANE_V] +
+                (i + k) * img1->stride[VPX_PLANE_V] + j + l) !=
+              *(img2->planes[VPX_PLANE_V] +
+                (i + k) * img2->stride[VPX_PLANE_V] + j + l)) {
+            vloc[0] = i + k;
+            vloc[1] = j + l;
+            vloc[2] = *(img1->planes[VPX_PLANE_V] +
+                        (i + k) * img1->stride[VPX_PLANE_V] + j + l);
+            vloc[3] = *(img2->planes[VPX_PLANE_V] +
+                        (i + k) * img2->stride[VPX_PLANE_V] + j + l);
+            match = 0;
+            break;
+          }
+        }
+      }
+    }
+  }
+}

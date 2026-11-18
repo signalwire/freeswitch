@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="opus-version.props" Condition=" '$(opusVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+
+  <PropertyGroup>
+    <opusPropsImported>true</opusPropsImported>
+  </PropertyGroup>
+
+  <PropertyGroup Label="UserMacros">
+    <opusDir>$(BaseDir)libs\opus-$(opusVersion)</opusDir>
+    <opusBinDir>$(opusDir)\binaries\$(Platform)\$(Configuration)</opusBinDir>
+    <opusPkgBase>https://github.com/freeswitch/opus-packaging/releases/download/opus-v$(opusVersion)</opusPkgBase>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <!-- Download + extract the public headers (platform/configuration independent). -->
+  <Target Name="opusHeadersDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
+    <DownloadPackageTask
+        package="$(opusPkgBase)/opus-$(opusVersion)-headers.zip"
+        expectfileordirectory="$(opusDir)\include\opus\opus.h"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+
+  <!-- Download + extract the per-platform, per-configuration binaries (DLL + import lib). -->
+  <Target Name="opusBinariesDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="7za">
+    <DownloadPackageTask
+        package="$(opusPkgBase)/opus-$(opusVersion)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+        expectfileordirectory="$(opusBinDir)\opus.lib"
+        outputfolder=""
+        outputfilename=""
+        extractto="$(BaseDir)libs\"
+    />
+  </Target>
+
+  <!-- Copy opus.dll next to the FreeSWITCH binary. SkipUnchangedFiles refreshes it
+       when the source differs, so republishing a package for the same version (or
+       switching configuration) updates the output DLL instead of leaving a stale one. -->
+  <Target Name="opusCopyTarget" BeforeTargets="CustomBuild" DependsOnTargets="opusBinariesDownloadTarget">
+    <Message Text="Copying opus.dll to the freeswitch output folder." Importance="High" />
+    <ItemGroup>
+      <opusFiles Include="$(opusBinDir)\*.dll"/>
+    </ItemGroup>
+    <Copy SkipUnchangedFiles="true"
+          SourceFiles="@(opusFiles)"
+          DestinationFiles="@(opusFiles->'$(BaseDir)\$(Platform)\$(Configuration)\%(Filename)%(Extension)')"
+    />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- Both roots: `include` serves #include <opus/opus.h>, `include\opus` serves
+           the plain #include "opus.h" that mod_opus and mod_opusfile use. -->
+      <AdditionalIncludeDirectories>$(opusDir)\include;$(opusDir)\include\opus;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(opusBinDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opus.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include <memory>
+
+#include "gtest/gtest.h"
 
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
@@ -60,21 +62,25 @@ class VpxEncoderParmsGetToDecoder
   VpxEncoderParmsGetToDecoder()
       : EncoderTest(GET_PARAM(0)), encode_parms(GET_PARAM(1)) {}
 
-  virtual ~VpxEncoderParmsGetToDecoder() {}
+  ~VpxEncoderParmsGetToDecoder() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
+#if CONFIG_REALTIME_ONLY
+    SetMode(::libvpx_test::kRealTime);
+#else
     SetMode(::libvpx_test::kTwoPassGood);
     cfg_.g_lag_in_frames = 25;
+#endif
     cfg_.g_error_resilient = encode_parms.error_resilient;
     dec_cfg_.threads = 4;
     test_video_ = GET_PARAM(2);
     cfg_.rc_target_bitrate = test_video_.bitrate;
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
-    if (video->frame() == 1) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
+    if (video->frame() == 0) {
       encoder->Control(VP9E_SET_COLOR_SPACE, encode_parms.cs);
       encoder->Control(VP9E_SET_COLOR_RANGE, encode_parms.color_range);
       encoder->Control(VP9E_SET_LOSSLESS, encode_parms.lossless);
@@ -93,9 +99,9 @@ class VpxEncoderParmsGetToDecoder
     }
   }
 
-  virtual bool HandleDecodeResult(const vpx_codec_err_t res_dec,
-                                  const libvpx_test::VideoSource & /*video*/,
-                                  libvpx_test::Decoder *decoder) {
+  bool HandleDecodeResult(const vpx_codec_err_t res_dec,
+                          const libvpx_test::VideoSource & /*video*/,
+                          libvpx_test::Decoder *decoder) override {
     vpx_codec_ctx_t *const vp9_decoder = decoder->GetDecoder();
     vpx_codec_alg_priv_t *const priv =
         reinterpret_cast<vpx_codec_alg_priv_t *>(vp9_decoder->priv);
@@ -138,14 +144,14 @@ class VpxEncoderParmsGetToDecoder
 TEST_P(VpxEncoderParmsGetToDecoder, BitstreamParms) {
   init_flags_ = VPX_CODEC_USE_PSNR;
 
-  testing::internal::scoped_ptr<libvpx_test::VideoSource> video(
+  std::unique_ptr<libvpx_test::VideoSource> video(
       new libvpx_test::Y4mVideoSource(test_video_.name, 0, test_video_.frames));
-  ASSERT_TRUE(video.get() != NULL);
+  ASSERT_NE(video.get(), nullptr);
 
   ASSERT_NO_FATAL_FAILURE(RunLoop(video.get()));
 }
 
-VP9_INSTANTIATE_TEST_CASE(VpxEncoderParmsGetToDecoder,
-                          ::testing::ValuesIn(kVP9EncodeParameterSet),
-                          ::testing::ValuesIn(kVP9EncodePerfTestVectors));
+VP9_INSTANTIATE_TEST_SUITE(VpxEncoderParmsGetToDecoder,
+                           ::testing::ValuesIn(kVP9EncodeParameterSet),
+                           ::testing::ValuesIn(kVP9EncodePerfTestVectors));
 }  // namespace

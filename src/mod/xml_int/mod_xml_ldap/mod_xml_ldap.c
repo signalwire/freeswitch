@@ -32,8 +32,6 @@
  *
  */
 #include <switch.h>
-#include <stdlib.h>
-#include <string.h>
 #include <lber.h>
 #include <ldap.h>
 
@@ -126,6 +124,10 @@ struct xml_ldap_attribute {
         xml_ldap_attribute_t *next;
 };
 
+static struct {
+    switch_memory_pool_t *pool;
+} globals;
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_ldap_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_ldap_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_ldap, mod_xml_ldap_load, mod_xml_ldap_shutdown, NULL);
@@ -152,6 +154,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_ldap_load)
 
         /* connect my internal structure to the blank pointer passed to me */
         *module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+        memset(&globals, 0, sizeof(globals));
+        globals.pool = pool;
 
         SWITCH_ADD_API(xml_ldap_api_interface, "xml_ldap", "XML LDAP", xml_ldap_function, XML_LDAP_SYNTAX);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "XML LDAP module loading...\n");
@@ -189,10 +194,11 @@ static switch_status_t do_config(void)
         for (binding_tag = switch_xml_child(bindings_tag, "binding"); binding_tag; binding_tag = binding_tag->next) {
                 char *bname = (char *) switch_xml_attr_soft(binding_tag, "name");
 
-	        if (!(binding = malloc(sizeof(*binding)))) {
-                       goto done;
-                }
-                memset(binding, 0, sizeof(*binding));
+				if (!(binding = switch_core_alloc(globals.pool, sizeof(*binding)))) {
+					goto done;
+				}
+
+				memset(binding, 0, sizeof(*binding));
                 binding->attr_list = attr_list;
 
                 for (param = switch_xml_child(binding_tag, "param"); param; param = param->next) {
@@ -215,22 +221,22 @@ static switch_status_t do_config(void)
                                }
 
                                if (val) {
-                                       binding->filter = strdup(val);
+                                       binding->filter = switch_core_strdup(globals.pool, val);
                                        printf("binding filter %s to %s\n", binding->filter, binding->bindings);
                                }
                        } else if (!strncasecmp(var, "basedn", strlen(val))) {
-                               binding->basedn = strdup(val);
+                               binding->basedn = switch_core_strdup(globals.pool, val);
                        } else if (!strncasecmp(var, "binddn", strlen(val))) {
-                               binding->binddn = strdup(val);
+                               binding->binddn = switch_core_strdup(globals.pool, val);
                        } else if (!strncasecmp(var, "bindpass", strlen(val))) {
-                               binding->bindpass = strdup(val);
+                               binding->bindpass = switch_core_strdup(globals.pool, val);
                        } else if (!strncasecmp(var, "url", strlen(val))) {
-                               binding->url = strdup(val);
+                               binding->url = switch_core_strdup(globals.pool, val);
                        }
                 }
 
                 if (binding && binding->bt == XML_LDAP_DIRECTORY) {
-                       attr_list = malloc(sizeof(*attr_list));
+                       attr_list = switch_core_alloc(globals.pool, sizeof(*attr_list));
                        attr_list = memset(attr_list, 0, sizeof(*attr_list));
                        binding->attr_list = attr_list;
 
@@ -243,212 +249,212 @@ static switch_status_t do_config(void)
                                if (!strncasecmp("id", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_ID;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("cidr", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_CIDR;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("number-alias", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_NUMBER_ALIAS;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("dial-string", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_DIAL_STRING;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("password", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_PASSWORD;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("reverse-auth-user", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_REV_AUTH_USER;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("reverse-auth-pass", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_REV_AUTH_PASS;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("a1-hash", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_A1_HASH;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-password", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_PASSWORD;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-enabled", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_ENABLED;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-mailfrom", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_MAILFROM;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-mailto", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_MAILTO;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-notify-mailto", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_NOTIFY_MAILTO;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-attach-file", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_ATTACH_FILE;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-message-ext", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_MESSAGE_EXT;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-email-all-messages", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_EMAIL_ALL_MSGS;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-keep-local-after-mail", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_KEEP_LOCAL_AFTER_MAIL;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-notify-email-all-messages", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_NOTIFY_EMAIL_ALL_MSGS;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-skip-instructions", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_SKIP_INSTRUCTIONS;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-cc", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_CC;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm-disk-quota", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_DISK_QUOTA;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                /* Variables */
                                } else if (!strncasecmp("accountcode", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_ACCOUNTCODE;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("user_context", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_USER_CONTEXT;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("vm_mailbox", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_VM_MAILBOX;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("callgroup", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_CALLGROUP;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("toll_allow", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_TOLL_ALLOW;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("effective_caller_id_number", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_EFF_CLIDNUM;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("effective_caller_id_name", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_EFF_CLIDNAME;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("outbound_caller_id_number", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_OUT_CLIDNUM;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                } else if (!strncasecmp("outbound_caller_id_name", n, strlen(n))) {
                                        attr_list->type = LDAP_EXTEN_OUT_CLIDNAME;
                                        attr_list->len = strlen(m);
-                                       attr_list->val = strdup(m);
-                                       attr_list->next = malloc(sizeof(*attr_list));
+                                       attr_list->val = switch_core_strdup(globals.pool, m);
+                                       attr_list->next = switch_core_alloc(globals.pool, sizeof(*attr_list));
                                        attr_list->next = memset(attr_list->next, 0, sizeof(*attr_list));
                                        attr_list = attr_list->next;
                                }
@@ -574,9 +580,7 @@ static switch_status_t trydir(switch_xml_t *pxml, int *xoff, LDAP * ld, char *di
 
    cleanup:
         switch_safe_free(filter);
-        switch_safe_free(basedn)
-        switch_safe_free(dir_exten);
-        switch_safe_free(dir_domain);
+        switch_safe_free(basedn);
 
         return ret;
 }
@@ -717,8 +721,10 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
                                 case XML_LDAP_DIRECTORY:
                                         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "from cb got %s=%s\n", hi->name, hi->value);
                                         if (!strncmp(hi->name, "user", strlen(hi->name))) {
+                                                switch_safe_free(dir_exten);
                                                 dir_exten = strdup(hi->value);
                                         } else if (!strncmp(hi->name, "domain", strlen(hi->name))) {
+                                                switch_safe_free(dir_domain);
                                                 dir_domain = strdup(hi->value);
                                         }
                                         break;
@@ -764,6 +770,8 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
         switch_xml_toxml_buf(xml, buf, 0, 0, 1);
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,"XML providing:\n%s\n", buf);
         switch_safe_free(buf);
+        switch_safe_free(dir_exten);
+        switch_safe_free(dir_domain);
 
         if (ret != SWITCH_STATUS_SUCCESS) {
                 switch_xml_free(xml);

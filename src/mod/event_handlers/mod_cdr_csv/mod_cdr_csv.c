@@ -272,7 +272,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 }
 
 
-static void do_rotate_all()
+static void do_rotate_all(void)
 {
 	switch_hash_index_t *hi;
 	void *val;
@@ -294,7 +294,7 @@ static void do_rotate_all()
 }
 
 
-static void do_teardown()
+static void do_teardown(void)
 {
 	switch_hash_index_t *hi;
 	void *val;

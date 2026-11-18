@@ -8,21 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include "args.h"
 
 #include "vpx/vpx_integer.h"
-#include "vpx_ports/msvc.h"
 
-#if defined(__GNUC__) && __GNUC__
-extern void die(const char *fmt, ...) __attribute__((noreturn));
+#if defined(__GNUC__)
+__attribute__((noreturn)) extern void die(const char *fmt, ...);
+#elif defined(_MSC_VER)
+__declspec(noreturn) extern void die(const char *fmt, ...);
 #else
 extern void die(const char *fmt, ...);
 #endif
 
-struct arg arg_init(char **argv) {
+static struct arg arg_init(char **argv) {
   struct arg a;
 
   a.argv = argv;
@@ -81,6 +83,7 @@ const char *arg_next(struct arg *arg) {
 
 char **argv_dup(int argc, const char **argv) {
   char **new_argv = malloc((argc + 1) * sizeof(*argv));
+  if (!new_argv) return NULL;
 
   memcpy(new_argv, argv, argc * sizeof(*argv));
   new_argv[argc] = NULL;
@@ -88,24 +91,31 @@ char **argv_dup(int argc, const char **argv) {
 }
 
 void arg_show_usage(FILE *fp, const struct arg_def *const *defs) {
-  char option_text[40] = { 0 };
-
   for (; *defs; defs++) {
     const struct arg_def *def = *defs;
     char *short_val = def->has_val ? " <arg>" : "";
     char *long_val = def->has_val ? "=<arg>" : "";
+    int n = 0;
 
+    // Short options are indented with two spaces. Long options are indented
+    // with 12 spaces.
     if (def->short_name && def->long_name) {
       char *comma = def->has_val ? "," : ",      ";
 
-      snprintf(option_text, 37, "-%s%s%s --%s%6s", def->short_name, short_val,
-               comma, def->long_name, long_val);
+      n = fprintf(fp, "  -%s%s%s --%s%s", def->short_name, short_val, comma,
+                  def->long_name, long_val);
     } else if (def->short_name)
-      snprintf(option_text, 37, "-%s%s", def->short_name, short_val);
+      n = fprintf(fp, "  -%s%s", def->short_name, short_val);
     else if (def->long_name)
-      snprintf(option_text, 37, "          --%s%s", def->long_name, long_val);
+      n = fprintf(fp, "            --%s%s", def->long_name, long_val);
 
-    fprintf(fp, "  %-37s\t%s\n", option_text, def->desc);
+    // Descriptions are indented with 40 spaces. If an option is 40 characters
+    // or longer, its description starts on the next line.
+    if (n < 40)
+      for (int i = 0; i < 40 - n; i++) fputc(' ', fp);
+    else
+      fputs("\n                                        ", fp);
+    fprintf(fp, "%s\n", def->desc);
 
     if (def->enums) {
       const struct arg_enum_list *listptr;
@@ -132,7 +142,6 @@ unsigned int arg_parse_uint(const struct arg *arg) {
   }
 
   die("Option %s: Invalid character '%c'\n", arg->name, *endptr);
-  return 0;
 }
 
 int arg_parse_int(const struct arg *arg) {
@@ -149,7 +158,6 @@ int arg_parse_int(const struct arg *arg) {
   }
 
   die("Option %s: Invalid character '%c'\n", arg->name, *endptr);
-  return 0;
 }
 
 struct vpx_rational {
@@ -206,7 +214,6 @@ int arg_parse_enum(const struct arg *arg) {
     if (!strcmp(arg->val, listptr->name)) return listptr->val;
 
   die("Option %s: Invalid value '%s'\n", arg->name, arg->val);
-  return 0;
 }
 
 int arg_parse_enum_or_int(const struct arg *arg) {

@@ -15,7 +15,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "apr_app"=".\build\apr_app.dsp" - Package Owner=<4>
+Project: "fspr_app"=".\build\fspr_app.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -42,7 +42,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "libapr_app"=".\build\libapr_app.dsp" - Package Owner=<4>
+Project: "libfspr_app"=".\build\libfspr_app.dsp" - Package Owner=<4>
 
 Package=<5>
 {{{

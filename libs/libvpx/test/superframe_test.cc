@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <climits>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include <tuple>
+
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
@@ -18,36 +20,36 @@ namespace {
 
 const int kTestMode = 0;
 
-typedef std::tr1::tuple<libvpx_test::TestMode, int> SuperframeTestParam;
+using SuperframeTestParam = std::tuple<libvpx_test::TestMode, int>;
 
 class SuperframeTest
     : public ::libvpx_test::EncoderTest,
       public ::libvpx_test::CodecTestWithParam<SuperframeTestParam> {
  protected:
   SuperframeTest()
-      : EncoderTest(GET_PARAM(0)), modified_buf_(NULL), last_sf_pts_(0) {}
-  virtual ~SuperframeTest() {}
+      : EncoderTest(GET_PARAM(0)), modified_buf_(nullptr), last_sf_pts_(0) {}
+  ~SuperframeTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     const SuperframeTestParam input = GET_PARAM(1);
-    const libvpx_test::TestMode mode = std::tr1::get<kTestMode>(input);
+    const libvpx_test::TestMode mode = std::get<kTestMode>(input);
     SetMode(mode);
     sf_count_ = 0;
     sf_count_max_ = INT_MAX;
   }
 
-  virtual void TearDown() { delete[] modified_buf_; }
+  void TearDown() override { delete[] modified_buf_; }
 
-  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
-                                  libvpx_test::Encoder *encoder) {
-    if (video->frame() == 1) {
+  void PreEncodeFrameHook(libvpx_test::VideoSource *video,
+                          libvpx_test::Encoder *encoder) override {
+    if (video->frame() == 0) {
       encoder->Control(VP8E_SET_ENABLEAUTOALTREF, 1);
     }
   }
 
-  virtual const vpx_codec_cx_pkt_t *MutateEncoderOutputHook(
-      const vpx_codec_cx_pkt_t *pkt) {
+  const vpx_codec_cx_pkt_t *MutateEncoderOutputHook(
+      const vpx_codec_cx_pkt_t *pkt) override {
     if (pkt->kind != VPX_CODEC_CX_FRAME_PKT) return pkt;
 
     const uint8_t *buffer = reinterpret_cast<uint8_t *>(pkt->data.frame.buf);
@@ -93,7 +95,7 @@ TEST_P(SuperframeTest, TestSuperframeIndexIsOptional) {
   EXPECT_EQ(sf_count_, 1);
 }
 
-VP9_INSTANTIATE_TEST_CASE(
+VP9_INSTANTIATE_TEST_SUITE(
     SuperframeTest,
     ::testing::Combine(::testing::Values(::libvpx_test::kTwoPassGood),
                        ::testing::Values(0)));

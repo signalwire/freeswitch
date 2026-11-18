@@ -10,9 +10,10 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 #include <string>
 #include <vector>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "./vpx_config.h"
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
@@ -37,23 +38,22 @@ std::ostream &operator<<(std::ostream &os, const DecodeParam &dp) {
 class InvalidFileTest : public ::libvpx_test::DecoderTest,
                         public ::libvpx_test::CodecTestWithParam<DecodeParam> {
  protected:
-  InvalidFileTest() : DecoderTest(GET_PARAM(0)), res_file_(NULL) {}
+  InvalidFileTest() : DecoderTest(GET_PARAM(0)), res_file_(nullptr) {}
 
-  virtual ~InvalidFileTest() {
-    if (res_file_ != NULL) fclose(res_file_);
+  ~InvalidFileTest() override {
+    if (res_file_ != nullptr) fclose(res_file_);
   }
 
   void OpenResFile(const std::string &res_file_name_) {
     res_file_ = libvpx_test::OpenTestDataFile(res_file_name_);
-    ASSERT_TRUE(res_file_ != NULL)
+    ASSERT_NE(res_file_, nullptr)
         << "Result file open failed. Filename: " << res_file_name_;
   }
 
-  virtual bool HandleDecodeResult(
-      const vpx_codec_err_t res_dec,
-      const libvpx_test::CompressedVideoSource &video,
-      libvpx_test::Decoder *decoder) {
-    EXPECT_TRUE(res_file_ != NULL);
+  bool HandleDecodeResult(const vpx_codec_err_t res_dec,
+                          const libvpx_test::CompressedVideoSource &video,
+                          libvpx_test::Decoder *decoder) override {
+    EXPECT_NE(res_file_, nullptr);
     int expected_res_dec;
 
     // Read integer result.
@@ -89,7 +89,7 @@ class InvalidFileTest : public ::libvpx_test::DecoderTest,
     const std::string filename = input.filename;
 
     // Open compressed video file.
-    testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+    std::unique_ptr<libvpx_test::CompressedVideoSource> video;
     if (filename.substr(filename.length() - 3, 3) == "ivf") {
       video.reset(new libvpx_test::IVFVideoSource(filename));
     } else if (filename.substr(filename.length() - 4, 4) == "webm") {
@@ -101,7 +101,7 @@ class InvalidFileTest : public ::libvpx_test::DecoderTest,
       return;
 #endif
     }
-    ASSERT_TRUE(video.get() != NULL);
+    ASSERT_NE(video.get(), nullptr);
     video->Init();
 
     // Construct result file name. The file holds a list of expected integer
@@ -123,10 +123,13 @@ TEST_P(InvalidFileTest, ReturnCode) { RunTest(); }
 #if CONFIG_VP8_DECODER
 const DecodeParam kVP8InvalidFileTests[] = {
   { 1, "invalid-bug-1443.ivf" },
+  { 1, "invalid-bug-148271109.ivf" },
+  { 1, "invalid-token-partition.ivf" },
+  { 1, "invalid-vp80-00-comprehensive-s17661_r01-05_b6-.ivf" },
 };
 
-VP8_INSTANTIATE_TEST_CASE(InvalidFileTest,
-                          ::testing::ValuesIn(kVP8InvalidFileTests));
+VP8_INSTANTIATE_TEST_SUITE(InvalidFileTest,
+                           ::testing::ValuesIn(kVP8InvalidFileTests));
 #endif  // CONFIG_VP8_DECODER
 
 #if CONFIG_VP9_DECODER
@@ -144,7 +147,7 @@ const DecodeParam kVP9InvalidFileTests[] = {
 // This file will cause a large allocation which is expected to fail in 32-bit
 // environments. Test x86 for coverage purposes as the allocation failure will
 // be in platform agnostic code.
-#if ARCH_X86
+#if VPX_ARCH_X86
   { 1, "invalid-vp90-2-00-quantizer-63.ivf.kf_65527x61446.ivf" },
 #endif
   { 1, "invalid-vp90-2-12-droppable_1.ivf.s3676_r01-05_b6-.ivf" },
@@ -159,8 +162,8 @@ const DecodeParam kVP9InvalidFileTests[] = {
   { 1, "invalid-crbug-667044.webm" },
 };
 
-VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
-                          ::testing::ValuesIn(kVP9InvalidFileTests));
+VP9_INSTANTIATE_TEST_SUITE(InvalidFileTest,
+                           ::testing::ValuesIn(kVP9InvalidFileTests));
 #endif  // CONFIG_VP9_DECODER
 
 // This class will include test vectors that are expected to fail
@@ -168,9 +171,9 @@ VP9_INSTANTIATE_TEST_CASE(InvalidFileTest,
 class InvalidFileInvalidPeekTest : public InvalidFileTest {
  protected:
   InvalidFileInvalidPeekTest() : InvalidFileTest() {}
-  virtual void HandlePeekResult(libvpx_test::Decoder *const /*decoder*/,
-                                libvpx_test::CompressedVideoSource * /*video*/,
-                                const vpx_codec_err_t /*res_peek*/) {}
+  void HandlePeekResult(libvpx_test::Decoder *const /*decoder*/,
+                        libvpx_test::CompressedVideoSource * /*video*/,
+                        const vpx_codec_err_t /*res_peek*/) override {}
 };
 
 TEST_P(InvalidFileInvalidPeekTest, ReturnCode) { RunTest(); }
@@ -180,8 +183,8 @@ const DecodeParam kVP8InvalidPeekTests[] = {
   { 1, "invalid-vp80-00-comprehensive-018.ivf.2kf_0x6.ivf" },
 };
 
-VP8_INSTANTIATE_TEST_CASE(InvalidFileInvalidPeekTest,
-                          ::testing::ValuesIn(kVP8InvalidPeekTests));
+VP8_INSTANTIATE_TEST_SUITE(InvalidFileInvalidPeekTest,
+                           ::testing::ValuesIn(kVP8InvalidPeekTests));
 #endif  // CONFIG_VP8_DECODER
 
 #if CONFIG_VP9_DECODER
@@ -189,8 +192,9 @@ const DecodeParam kVP9InvalidFileInvalidPeekTests[] = {
   { 1, "invalid-vp90-01-v3.webm" },
 };
 
-VP9_INSTANTIATE_TEST_CASE(InvalidFileInvalidPeekTest,
-                          ::testing::ValuesIn(kVP9InvalidFileInvalidPeekTests));
+VP9_INSTANTIATE_TEST_SUITE(
+    InvalidFileInvalidPeekTest,
+    ::testing::ValuesIn(kVP9InvalidFileInvalidPeekTests));
 
 const DecodeParam kMultiThreadedVP9InvalidFileTests[] = {
   { 4, "invalid-vp90-2-08-tile_1x4_frame_parallel_all_key.webm" },
@@ -202,9 +206,11 @@ const DecodeParam kMultiThreadedVP9InvalidFileTests[] = {
   { 2, "invalid-vp90-2-09-aq2.webm.ivf.s3984_r01-05_b6-.v2.ivf" },
   { 4, "invalid-vp90-2-09-subpixel-00.ivf.s19552_r01-05_b6-.v2.ivf" },
   { 2, "invalid-crbug-629481.webm" },
+  { 3, "invalid-crbug-1558.ivf" },
+  { 4, "invalid-crbug-1562.ivf" },
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     VP9MultiThreaded, InvalidFileTest,
     ::testing::Combine(
         ::testing::Values(

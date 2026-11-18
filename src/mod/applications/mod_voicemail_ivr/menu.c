@@ -168,7 +168,7 @@ void vmivr_menu_navigator(switch_core_session_t *session, vmivr_profile_t *profi
 	size_t msg_count = 0;
 	size_t current_msg = 1;
 	size_t next_msg = current_msg;
-	size_t previous_msg = current_msg;
+	size_t previous_msg;
 	char *cmd = NULL;
 	int retry;
 
@@ -730,13 +730,15 @@ char *vmivr_menu_get_input_set(switch_core_session_t *session, vmivr_profile_t *
 
 	for (retry = menu->ivr_maximum_attempts; switch_channel_ready(channel) && retry > 0; retry--) {
 		int i;
+		int dtmfa_array_length = 0;
 
 		menu_instance_init(menu);
 
 		switch_event_add_header(menu->phrase_params, SWITCH_STACK_BOTTOM, "IVR-Retry-Left", "%d", retry);
 
 		/* Find the last entry and append this one to it */
-		for (i=0; i < 16 && menu->dtmfa[i]; i++){
+		dtmfa_array_length = sizeof(menu->dtmfa) / sizeof(menu->dtmfa[0]);
+		for (i = 0; i < (dtmfa_array_length - 1) && menu->dtmfa[i]; i++){
 		}
 		menu->dtmfa[i] = (char *) input_mask;
 

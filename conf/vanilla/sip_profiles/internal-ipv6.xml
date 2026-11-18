@@ -36,6 +36,8 @@
     <!-- <param name="bitpacking" value="aal2"/> -->
     <!--max number of open dialogs in proceeding -->
     <!--<param name="max-proceeding" value="1000"/>-->
+    <!--max number of receiving requests per second (Default: 1000, 0 - unlimited) -->
+    <!--<param name="max-recv-requests-per-second" value="0"/>-->
     <!--session timers for all call to expire after the specified seconds -->
     <!--<param name="session-timeout" value="1800"/>-->
     <!--<param name="multiple-registrations" value="true"/>-->
@@ -71,9 +73,6 @@
     <!-- Let calls hit the dialplan before selecting codec for the a-leg -->
     <param name="inbound-late-negotiation" value="true"/>
 
-    <!-- Allow ZRTP clients to negotiate end-to-end security associations (also enables late negotiation) -->
-    <param name="inbound-zrtp-passthru" value="true"/>
-
     <!-- this lets anything register -->
     <!--  comment the next line and uncomment one or both of the other 2 lines for call authentication -->
     <!-- <param name="accept-blind-reg" value="true"/> -->
@@ -94,6 +93,8 @@
     <!-- add a ;received="<ip>:<port>" to the contact when replying to register for nat handling -->
     <!--<param name="NDLB-received-in-nat-reg-contact" value="true"/>-->
     <param name="auth-calls" value="$${internal_auth_calls}"/>
+    <!-- lets an inbound MESSAGE to api+<command> run FreeSWITCH API commands, so enable only for trusted peers -->
+    <!-- <param name="enable-chat-api-proto" value="true"/> -->
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
     <!-- Shouldn't set these on IPv6 -->

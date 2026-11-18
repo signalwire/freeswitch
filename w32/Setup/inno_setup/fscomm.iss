@@ -66,7 +66,6 @@ Source: {#FreeSWITCH_32bit}\mod\mod_event_socket.dll; DestDir: {app}\mod; Flags:
 Source: {#FreeSWITCH_32bit}\mod\mod_ilbc.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\mod\mod_local_stream.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\mod\mod_loopback.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
-Source: {#FreeSWITCH_32bit}\mod\mod_PortAudio.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\mod\mod_siren.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\mod\mod_sndfile.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode
 Source: {#FreeSWITCH_32bit}\mod\mod_sofia.dll; DestDir: {app}\mod; Flags: 32bit ignoreversion  onlyifdoesntexist; Check: not Is64BitInstallMode

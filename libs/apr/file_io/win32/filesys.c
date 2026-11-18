@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
+#include "fspr.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
 
 /* Win32 Exceptions:
  *
@@ -38,7 +38,7 @@
  * Oddly, \x7f _is_ acceptable ;)
  */
 
-/* apr_c_is_fnchar[] maps Win32's file name and shell escape symbols
+/* fspr_c_is_fnchar[] maps Win32's file name and shell escape symbols
  *
  *   element & 1 == valid file name character [excluding delimiters]
  *   element & 2 == character should be shell (caret) escaped from cmd.exe
@@ -46,7 +46,7 @@
  * this must be in-sync with Apache httpd's gen_test_char.c for cgi escaping.
  */
 
-const char apr_c_is_fnchar[256] =
+const char fspr_c_is_fnchar[256] =
 {/* Reject all ctrl codes... Escape \n and \r (ascii 10 and 13)      */
     0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  /*   ! " # $ % & ' ( ) * + , - . /  0 1 2 3 4 5 6 7 8 9 : ; < = > ? */
@@ -63,15 +63,15 @@ const char apr_c_is_fnchar[256] =
 };
 
 
-apr_status_t filepath_root_test(char *path, apr_pool_t *p)
+fspr_status_t filepath_root_test(char *path, fspr_pool_t *p)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
 #if APR_HAS_UNICODE_FS
-    if (apr_os_level >= APR_WIN_NT)
+    if (fspr_os_level >= APR_WIN_NT)
     {
-        apr_wchar_t wpath[APR_PATH_MAX];
+        fspr_wchar_t wpath[APR_PATH_MAX];
         if (rv = utf8_to_unicode_path(wpath, sizeof(wpath) 
-                                           / sizeof(apr_wchar_t), path))
+                                           / sizeof(fspr_wchar_t), path))
             return rv;
         rv = GetDriveTypeW(wpath);
     }
@@ -85,24 +85,24 @@ apr_status_t filepath_root_test(char *path, apr_pool_t *p)
 }
 
 
-apr_status_t filepath_drive_get(char **rootpath, char drive, 
-                                apr_int32_t flags, apr_pool_t *p)
+fspr_status_t filepath_drive_get(char **rootpath, char drive, 
+                                fspr_int32_t flags, fspr_pool_t *p)
 {
     char path[APR_PATH_MAX];
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t *ignored;
-        apr_wchar_t wdrive[8];
-        apr_wchar_t wpath[APR_PATH_MAX];
-        apr_status_t rv;
+        fspr_wchar_t *ignored;
+        fspr_wchar_t wdrive[8];
+        fspr_wchar_t wpath[APR_PATH_MAX];
+        fspr_status_t rv;
         /* ???: This needs review, apparently "\\?\d:." returns "\\?\d:" 
          * as if that is useful for anything.
          */
         wcscpy(wdrive, L"D:.");
-        wdrive[0] = (apr_wchar_t)(unsigned char)drive;
-        if (!GetFullPathNameW(wdrive, sizeof(wpath) / sizeof(apr_wchar_t), wpath, &ignored))
-            return apr_get_os_error();
+        wdrive[0] = (fspr_wchar_t)(unsigned char)drive;
+        if (!GetFullPathNameW(wdrive, sizeof(wpath) / sizeof(fspr_wchar_t), wpath, &ignored))
+            return fspr_get_os_error();
         if ((rv = unicode_to_utf8_path(path, sizeof(path), wpath)))
             return rv;
     }
@@ -117,7 +117,7 @@ apr_status_t filepath_drive_get(char **rootpath, char drive,
         drivestr[2] = '.';;
         drivestr[3] = '\0';
         if (!GetFullPathName(drivestr, sizeof(path), path, &ignored))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
     if (!(flags & APR_FILEPATH_NATIVE)) {
@@ -126,34 +126,34 @@ apr_status_t filepath_drive_get(char **rootpath, char drive,
                 **rootpath = '/';
         }
     }
-    *rootpath = apr_pstrdup(p, path);
+    *rootpath = fspr_pstrdup(p, path);
     return APR_SUCCESS;
 }
 
 
-apr_status_t filepath_root_case(char **rootpath, char *root, apr_pool_t *p)
+fspr_status_t filepath_root_case(char **rootpath, char *root, fspr_pool_t *p)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t *ignored;
-        apr_wchar_t wpath[APR_PATH_MAX];
-        apr_status_t rv;
-        apr_wchar_t wroot[APR_PATH_MAX];
+        fspr_wchar_t *ignored;
+        fspr_wchar_t wpath[APR_PATH_MAX];
+        fspr_status_t rv;
+        fspr_wchar_t wroot[APR_PATH_MAX];
         /* ???: This needs review, apparently "\\?\d:." returns "\\?\d:" 
          * as if that is useful for anything.
          */
         if (rv = utf8_to_unicode_path(wroot, sizeof(wroot) 
-                                           / sizeof(apr_wchar_t), root))
+                                           / sizeof(fspr_wchar_t), root))
             return rv;
-        if (!GetFullPathNameW(wroot, sizeof(wpath) / sizeof(apr_wchar_t), wpath, &ignored))
-            return apr_get_os_error();
+        if (!GetFullPathNameW(wroot, sizeof(wpath) / sizeof(fspr_wchar_t), wpath, &ignored))
+            return fspr_get_os_error();
 
         /* Borrow wroot as a char buffer (twice as big as necessary) 
          */
         if ((rv = unicode_to_utf8_path((char*)wroot, sizeof(wroot), wpath)))
             return rv;
-        *rootpath = apr_pstrdup(p, (char*)wroot);
+        *rootpath = fspr_pstrdup(p, (char*)wroot);
     }
 #endif
 #if APR_HAS_ANSI_FS
@@ -162,25 +162,25 @@ apr_status_t filepath_root_case(char **rootpath, char *root, apr_pool_t *p)
         char path[APR_PATH_MAX];
         char *ignored;
         if (!GetFullPathName(root, sizeof(path), path, &ignored))
-            return apr_get_os_error();
-        *rootpath = apr_pstrdup(p, path);
+            return fspr_get_os_error();
+        *rootpath = fspr_pstrdup(p, path);
     }
 #endif
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_filepath_get(char **rootpath, apr_int32_t flags,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_get(char **rootpath, fspr_int32_t flags,
+                                           fspr_pool_t *p)
 {
     char path[APR_PATH_MAX];
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wpath[APR_PATH_MAX];
-        apr_status_t rv;
-        if (!GetCurrentDirectoryW(sizeof(wpath) / sizeof(apr_wchar_t), wpath))
-            return apr_get_os_error();
+        fspr_wchar_t wpath[APR_PATH_MAX];
+        fspr_status_t rv;
+        if (!GetCurrentDirectoryW(sizeof(wpath) / sizeof(fspr_wchar_t), wpath))
+            return fspr_get_os_error();
         if ((rv = unicode_to_utf8_path(path, sizeof(path), wpath)))
             return rv;
     }
@@ -189,7 +189,7 @@ APR_DECLARE(apr_status_t) apr_filepath_get(char **rootpath, apr_int32_t flags,
     ELSE_WIN_OS_IS_ANSI
     {
         if (!GetCurrentDirectory(sizeof(path), path))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
     if (!(flags & APR_FILEPATH_NATIVE)) {
@@ -198,31 +198,31 @@ APR_DECLARE(apr_status_t) apr_filepath_get(char **rootpath, apr_int32_t flags,
                 **rootpath = '/';
         }
     }
-    *rootpath = apr_pstrdup(p, path);
+    *rootpath = fspr_pstrdup(p, path);
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_filepath_set(const char *rootpath,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_filepath_set(const char *rootpath,
+                                           fspr_pool_t *p)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wpath[APR_PATH_MAX];
-        apr_status_t rv;
+        fspr_wchar_t wpath[APR_PATH_MAX];
+        fspr_status_t rv;
         if (rv = utf8_to_unicode_path(wpath, sizeof(wpath) 
-                                           / sizeof(apr_wchar_t), rootpath))
+                                           / sizeof(fspr_wchar_t), rootpath))
             return rv;
         if (!SetCurrentDirectoryW(wpath))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
 #if APR_HAS_ANSI_FS
     ELSE_WIN_OS_IS_ANSI
     {
         if (!SetCurrentDirectory(rootpath))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 #endif
     return APR_SUCCESS;

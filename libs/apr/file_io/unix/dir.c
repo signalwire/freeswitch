@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 #if APR_HAVE_SYS_SYSLIMITS_H
 #include <sys/syslimits.h>
 #endif
@@ -24,9 +24,9 @@
 #include <limits.h>
 #endif
 
-static apr_status_t dir_cleanup(void *thedir)
+static fspr_status_t dir_cleanup(void *thedir)
 {
-    apr_dir_t *dir = thedir;
+    fspr_dir_t *dir = thedir;
     if (closedir(dir->dirstruct) == 0) {
         return APR_SUCCESS;
     }
@@ -38,24 +38,24 @@ static apr_status_t dir_cleanup(void *thedir)
 #define PATH_SEPARATOR '/'
 
 /* Remove trailing separators that don't affect the meaning of PATH. */
-static const char *path_canonicalize (const char *path, apr_pool_t *pool)
+static const char *path_canonicalize (const char *path, fspr_pool_t *pool)
 {
     /* At some point this could eliminate redundant components.  For
      * now, it just makes sure there is no trailing slash. */
-    apr_size_t len = strlen (path);
-    apr_size_t orig_len = len;
+    fspr_size_t len = strlen (path);
+    fspr_size_t orig_len = len;
     
     while ((len > 0) && (path[len - 1] == PATH_SEPARATOR))
         len--;
     
     if (len != orig_len)
-        return apr_pstrndup (pool, path, len);
+        return fspr_pstrndup (pool, path, len);
     else
         return path;
 }
 
 /* Remove one component off the end of PATH. */
-static char *path_remove_last_component (const char *path, apr_pool_t *pool)
+static char *path_remove_last_component (const char *path, fspr_pool_t *pool)
 {
     const char *newpath = path_canonicalize (path, pool);
     int i;
@@ -65,18 +65,18 @@ static char *path_remove_last_component (const char *path, apr_pool_t *pool)
             break;
     }
 
-    return apr_pstrndup (pool, path, (i < 0) ? 0 : i);
+    return fspr_pstrndup (pool, path, (i < 0) ? 0 : i);
 }
 
-apr_status_t apr_dir_open(apr_dir_t **new, const char *dirname, 
-                          apr_pool_t *pool)
+fspr_status_t fspr_dir_open(fspr_dir_t **new, const char *dirname, 
+                          fspr_pool_t *pool)
 {
     /* On some platforms (e.g., Linux+GNU libc), d_name[] in struct 
      * dirent is declared with enough storage for the name.  On other
      * platforms (e.g., Solaris 8 for Intel), d_name is declared as a
      * one-byte array.  Note: gcc evaluates this at compile time.
      */
-    apr_size_t dirent_size = 
+    fspr_size_t dirent_size = 
         (sizeof((*new)->entry->d_name) > 1 ? 
          sizeof(struct dirent) : sizeof (struct dirent) + 255);
     DIR *dir = opendir(dirname);
@@ -85,25 +85,25 @@ apr_status_t apr_dir_open(apr_dir_t **new, const char *dirname,
         return errno;
     }
 
-    (*new) = (apr_dir_t *)apr_palloc(pool, sizeof(apr_dir_t));
+    (*new) = (fspr_dir_t *)fspr_palloc(pool, sizeof(fspr_dir_t));
 
     (*new)->pool = pool;
-    (*new)->dirname = apr_pstrdup(pool, dirname);
+    (*new)->dirname = fspr_pstrdup(pool, dirname);
     (*new)->dirstruct = dir;
-    (*new)->entry = apr_pcalloc(pool, dirent_size);
+    (*new)->entry = fspr_pcalloc(pool, dirent_size);
 
-    apr_pool_cleanup_register((*new)->pool, *new, dir_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*new)->pool, *new, dir_cleanup,
+                              fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-apr_status_t apr_dir_close(apr_dir_t *thedir)
+fspr_status_t fspr_dir_close(fspr_dir_t *thedir)
 {
-    return apr_pool_cleanup_run(thedir->pool, thedir, dir_cleanup);
+    return fspr_pool_cleanup_run(thedir->pool, thedir, dir_cleanup);
 }
 
 #ifdef DIRENT_TYPE
-static apr_filetype_e filetype_from_dirent_type(int type)
+static fspr_filetype_e filetype_from_dirent_type(int type)
 {
     switch (type) {
     case DT_REG:
@@ -130,12 +130,12 @@ static apr_filetype_e filetype_from_dirent_type(int type)
 }
 #endif
 
-apr_status_t apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
-                          apr_dir_t *thedir)
+fspr_status_t fspr_dir_read(fspr_finfo_t *finfo, fspr_int32_t wanted,
+                          fspr_dir_t *thedir)
 {
-    apr_status_t ret = 0;
+    fspr_status_t ret = 0;
 #ifdef DIRENT_TYPE
-    apr_filetype_e type;
+    fspr_filetype_e type;
 #endif
 #if APR_HAS_THREADS && defined(_POSIX_THREAD_SAFE_FUNCTIONS) \
                     && !defined(READDIR_IS_THREAD_SAFE)
@@ -201,12 +201,12 @@ apr_status_t apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
     {
         char fspec[APR_PATH_MAX];
         int off;
-        apr_cpystrn(fspec, thedir->dirname, sizeof(fspec));
+        fspr_cpystrn(fspec, thedir->dirname, sizeof(fspec));
         off = strlen(fspec);
         if ((fspec[off - 1] != '/') && (off + 1 < sizeof(fspec)))
             fspec[off++] = '/';
-        apr_cpystrn(fspec + off, thedir->entry->d_name, sizeof(fspec) - off);
-        ret = apr_stat(finfo, fspec, APR_FINFO_LINK | wanted, thedir->pool);
+        fspr_cpystrn(fspec + off, thedir->entry->d_name, sizeof(fspec) - off);
+        ret = fspr_stat(finfo, fspec, APR_FINFO_LINK | wanted, thedir->pool);
         /* We passed a stack name that will disappear */
         finfo->fname = NULL;
     }
@@ -234,7 +234,7 @@ apr_status_t apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
 #endif
     }
 
-    finfo->name = apr_pstrdup(thedir->pool, thedir->entry->d_name);
+    finfo->name = fspr_pstrdup(thedir->pool, thedir->entry->d_name);
     finfo->valid |= APR_FINFO_NAME;
 
     if (wanted)
@@ -243,16 +243,16 @@ apr_status_t apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
     return APR_SUCCESS;
 }
 
-apr_status_t apr_dir_rewind(apr_dir_t *thedir)
+fspr_status_t fspr_dir_rewind(fspr_dir_t *thedir)
 {
     rewinddir(thedir->dirstruct);
     return APR_SUCCESS;
 }
 
-apr_status_t apr_dir_make(const char *path, apr_fileperms_t perm, 
-                          apr_pool_t *pool)
+fspr_status_t fspr_dir_make(const char *path, fspr_fileperms_t perm, 
+                          fspr_pool_t *pool)
 {
-    mode_t mode = apr_unix_perms2mode(perm);
+    mode_t mode = fspr_unix_perms2mode(perm);
 
     if (mkdir(path, mode) == 0) {
         return APR_SUCCESS;
@@ -262,35 +262,35 @@ apr_status_t apr_dir_make(const char *path, apr_fileperms_t perm,
     }
 }
 
-apr_status_t apr_dir_make_recursive(const char *path, apr_fileperms_t perm,
-                                           apr_pool_t *pool) 
+fspr_status_t fspr_dir_make_recursive(const char *path, fspr_fileperms_t perm,
+                                           fspr_pool_t *pool) 
 {
-    apr_status_t apr_err = 0;
+    fspr_status_t fspr_err = 0;
     
-    apr_err = apr_dir_make (path, perm, pool); /* Try to make PATH right out */
+    fspr_err = fspr_dir_make (path, perm, pool); /* Try to make PATH right out */
     
-    if (apr_err == EEXIST) /* It's OK if PATH exists */
+    if (fspr_err == EEXIST) /* It's OK if PATH exists */
         return APR_SUCCESS;
     
-    if (apr_err == ENOENT) { /* Missing an intermediate dir */
+    if (fspr_err == ENOENT) { /* Missing an intermediate dir */
         char *dir;
         
         dir = path_remove_last_component(path, pool);
         /* If there is no path left, give up. */
         if (dir[0] == '\0') {
-            return apr_err;
+            return fspr_err;
         }
 
-        apr_err = apr_dir_make_recursive(dir, perm, pool);
+        fspr_err = fspr_dir_make_recursive(dir, perm, pool);
         
-        if (!apr_err) 
-            apr_err = apr_dir_make (path, perm, pool);
+        if (!fspr_err) 
+            fspr_err = fspr_dir_make (path, perm, pool);
     }
 
-    return apr_err;
+    return fspr_err;
 }
 
-apr_status_t apr_dir_remove(const char *path, apr_pool_t *pool)
+fspr_status_t fspr_dir_remove(const char *path, fspr_pool_t *pool)
 {
     if (rmdir(path) == 0) {
         return APR_SUCCESS;
@@ -300,7 +300,7 @@ apr_status_t apr_dir_remove(const char *path, apr_pool_t *pool)
     }
 }
 
-apr_status_t apr_os_dir_get(apr_os_dir_t **thedir, apr_dir_t *dir)
+fspr_status_t fspr_os_dir_get(fspr_os_dir_t **thedir, fspr_dir_t *dir)
 {
     if (dir == NULL) {
         return APR_ENODIR;
@@ -309,11 +309,11 @@ apr_status_t apr_os_dir_get(apr_os_dir_t **thedir, apr_dir_t *dir)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_os_dir_put(apr_dir_t **dir, apr_os_dir_t *thedir,
-                          apr_pool_t *pool)
+fspr_status_t fspr_os_dir_put(fspr_dir_t **dir, fspr_os_dir_t *thedir,
+                          fspr_pool_t *pool)
 {
     if ((*dir) == NULL) {
-        (*dir) = (apr_dir_t *)apr_pcalloc(pool, sizeof(apr_dir_t));
+        (*dir) = (fspr_dir_t *)fspr_pcalloc(pool, sizeof(fspr_dir_t));
         (*dir)->pool = pool;
     }
     (*dir)->dirstruct = thedir;

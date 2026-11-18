@@ -1,0 +1,36 @@
+<configuration name="verto.conf" description="HTML5 Verto Endpoint (test)">
+
+  <settings>
+    <param name="debug" value="0"/>
+  </settings>
+
+  <profiles>
+    <profile name="test-v4">
+      <!--
+        bind-local without "secure" → plain TCP. Port 33081 chosen to avoid
+        clashing with a default vanilla install on 8081.
+      -->
+      <param name="bind-local" value="127.0.0.1:33081"/>
+      <param name="force-register-domain" value="127.0.0.1"/>
+      <param name="userauth" value="true"/>
+      <param name="blind-reg" value="false"/>
+      <param name="rtp-ip" value="127.0.0.1"/>
+      <param name="timer-name" value="soft"/>
+
+      <!--
+        vhosts block is REQUIRED for http_run() to be invoked
+        (see mod_verto.c:2041,2061 — KWS_HTTP flag depends on it).
+        No auth-realm here, so requests bypass the 401 challenge and
+        reach the body-read path (which is itself pre-auth anyway).
+      -->
+      <vhosts>
+        <vhost domain="127.0.0.1">
+          <param name="alias" value="localhost"/>
+          <param name="root" value="."/>
+          <param name="index" value="index.html"/>
+        </vhost>
+      </vhosts>
+    </profile>
+  </profiles>
+
+</configuration>

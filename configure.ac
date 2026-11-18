@@ -3,10 +3,10 @@
 
 # Must change all of the below together
 # For a release, set revision for that tagged release as well and uncomment
-AC_INIT([freeswitch], [1.10.3-dev], bugs@freeswitch.org)
+AC_INIT([freeswitch], [1.11.4-dev], bugs@freeswitch.org)
 AC_SUBST(SWITCH_VERSION_MAJOR, [1])
-AC_SUBST(SWITCH_VERSION_MINOR, [10])
-AC_SUBST(SWITCH_VERSION_MICRO, [3-dev])
+AC_SUBST(SWITCH_VERSION_MINOR, [11])
+AC_SUBST(SWITCH_VERSION_MICRO, [4-dev])
 AC_SUBST(SWITCH_VERSION_REVISION, [])
 AC_SUBST(SWITCH_VERSION_REVISION_HUMAN, [])
 
@@ -248,7 +248,7 @@ m4_defun([_LT_AC_LANG_F77_CONFIG], [:])
 m4_defun([_LT_AC_LANG_GCJ_CONFIG], [:])
 m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
-AC_PROG_LIBTOOL
+LT_INIT([disable-static])
 
 #Check for compiler vendor
 AX_COMPILER_VENDOR
@@ -308,6 +308,11 @@ SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/incl
 SWITCH_AM_CPPFLAGS="-I${switch_srcdir}/src/include -I${switch_builddir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_LDFLAGS="-lm"
 
+# Cap cJSON parser recursion depth. Default upstream limit (1000) can overflow
+# small thread stacks; both vendored cJSON copies (src/ and libs/esl/) honor this.
+APR_ADDTO(SWITCH_AM_CFLAGS,   [-DCJSON_NESTING_LIMIT=64])
+APR_ADDTO(SWITCH_AM_CXXFLAGS, [-DCJSON_NESTING_LIMIT=64])
+
 #set SOLINK variable based on compiler and host
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
     SOLINK="-Bdynamic -dy -G"
@@ -323,10 +328,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
     esac
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     case "$host" in
-# older Xcode test for darwin, Xcode 4/5 use clang above
-        *darwin*)
-            SOLINK="-dynamic -bundle -force-flat-namespace"
-        ;;
         *-solaris2*)
             SOLINK="-shared -Xlinker"
         ;;
@@ -428,15 +429,6 @@ elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     fi
     if test "${enable_64}" = "yes"; then
 	case "$host" in
-             *darwin*)
-                osxvrm=`sw_vers -productVersion`          # Get version.release.modlevel
-	        osxrel=`echo $osxvrm | cut -d. -f2`       # Get release only
-                if test "$osxrel" -ge 4; then             # 10.4 and up are x64
-		   APR_ADDTO(CFLAGS, -arch x86_64)
-		   APR_ADDTO(LDFLAGS, -arch x86_64)
-		   APR_ADDTO(CXXFLAGS, -arch x86_64)
-                fi
-		;;
              *-solaris2*)
 		APR_ADDTO(CFLAGS, -m64)
 		APR_ADDTO(LDFLAGS, -m64)
@@ -557,6 +549,28 @@ AC_ARG_ENABLE(libyuv,
 
 AM_CONDITIONAL([ENABLE_LIBYUV],[test "${enable_libyuv}" = "yes"])
 
+# libyuv's AArch64 SIMD kernels (dot-product, i8mm, SVE, SME) use instructions
+# outside the baseline armv8-a target, so they must be compiled with per-file
+# -march flags (see Makefile.am). These conditionals mirror the logic in
+# libs/libyuv/CMakeLists.txt.
+AM_CONDITIONAL([LIBYUV_AARCH64],
+  [test "x$host_cpu" = "xaarch64" || test "x$host_cpu" = "xarm64"])
+
+libyuv_have_sme=no
+AS_IF([test "x$host_cpu" = "xaarch64" || test "x$host_cpu" = "xarm64"], [
+  AC_LANG_PUSH([C])
+  libyuv_save_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -march=armv8.5-a+i8mm+sme"
+  AC_MSG_CHECKING([whether $CC supports AArch64 SME kernels])
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[__arm_locally_streaming void func(void) { }
+int main(void) { return 0; }]])],
+    [libyuv_have_sme=yes])
+  AC_MSG_RESULT([$libyuv_have_sme])
+  CFLAGS="$libyuv_save_CFLAGS"
+  AC_LANG_POP([C])
+])
+AM_CONDITIONAL([LIBYUV_AARCH64_SME], [test "x$libyuv_have_sme" = "xyes"])
+
 AC_ARG_ENABLE(libvpx,
 [AC_HELP_STRING([--disable-libvpx],[build without libvpx])],[enable_libvpx="$enableval"],[enable_libvpx="yes"])
 
@@ -582,7 +596,7 @@ AC_SUBST(SYS_XMLRPC_CFLAGS)
 AC_SUBST(SYS_XMLRPC_LDFLAGS)
 AM_CONDITIONAL([SYSTEM_XMLRPCC],[test "${enable_xmlrpcc}" = "yes"])
 
-for luaversion in luajit lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
+for luaversion in luajit lua5.3 lua-5.3 lua53 lua5.2 lua-5.2 lua52 lua5.1 lua-5.1 lua; do
   PKG_CHECK_MODULES([LUA],[${luaversion}],[have_lua=yes],[have_lua=no])
   if test ${have_lua} = yes; then
     break
@@ -598,15 +612,8 @@ AC_ARG_ENABLE(srtp,
 AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
 
 have_openal=no
-AC_CHECK_LIB(openal, alMidiGainSOFT, [have_openal="yes"])
+AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
-
-AC_ARG_ENABLE(zrtp,
-	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
-if test "x$enable_zrtp" = "xyes" ; then
-   LIBS="-lpthread $LIBS"
-   APR_ADDTO(SWITCH_AM_CFLAGS, -DENABLE_ZRTP)
-fi
 
 PA_LIBS=
 
@@ -621,8 +628,6 @@ PA_LIBS+=-lasound
 fi
 
 AC_SUBST(PA_LIBS)
-
-AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
@@ -662,15 +667,18 @@ path_push_unique () {
 AC_PATH_PROG([PG_CONFIG], [pg_config], [no])
 AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
 
+# These 2 x86 libraries are not required on macOS 15 Sequoia on x86 as of June 2025. Not needed on aarch64 systems.
+# They are left here since they are likely required on older macOS systems.
 case $host in
-     *-darwin*)
+     x86_64-apple-darwin*)
 	path_push_unique PKG_CONFIG_PATH /usr/local/opt/libpq/lib/pkgconfig
+	path_push_unique PKG_CONFIG_PATH /usr/local/opt/openssl/lib/pkgconfig
      ;;
 esac
 
 if test "$PKG_CONFIG" = "no" \
 	|| test x"$enable_core_pgsql_pkgconfig" = x"no" \
-	|| ! pkg-config libpq; then
+	|| ! pkg-config --modversion libpq > /dev/null; then
 	if test "$PG_CONFIG" != "no"; then
 		AC_MSG_CHECKING([for PostgreSQL libraries via pg_config])
 		POSTGRESQL_CFLAGS="-I`$PG_CONFIG --includedir`"
@@ -682,7 +690,6 @@ if test "$PKG_CONFIG" = "no" \
 		POSTGRESQL_PATCH_VERSION=`$PG_CONFIG --version | awk '{ print $NF }' | awk -F. '{ print $3 }'`
 	fi
 else
-
 	AC_MSG_CHECKING([for PostgreSQL libraries via pkg_config])
 	POSTGRESQL_CFLAGS="`$PKG_CONFIG --cflags libpq`"
 	POSTGRESQL_LIBDIR="`$PKG_CONFIG libpq --libs-only-L`"
@@ -699,7 +706,13 @@ AC_DEFINE_UNQUOTED([POSTGRESQL_MAJOR_VERSION], ${POSTGRESQL_MAJOR_VERSION}, [Spe
 AC_DEFINE_UNQUOTED([POSTGRESQL_MINOR_VERSION], ${POSTGRESQL_MINOR_VERSION}, [Specifies the version of PostgreSQL we are linking against])
 AC_DEFINE_UNQUOTED([POSTGRESQL_PATCH_VERSION], ${POSTGRESQL_PATCH_VERSION}, [Specifies the version of PostgreSQL we are linking against])
 have_libpq=no
+save_LIBS="${LIBS}"
+save_CPPFLAGS="${CPPFLAGS}"
+LIBS="${POSTGRESQL_LDFLAGS}"
+CPPFLAGS="${POSTGRESQL_CFLAGS}"
 AC_CHECK_LIB([pq], [PQgetvalue], [have_libpq="yes"])
+LIBS="${save_LIBS}"
+CPPFLAGS="${save_CPPFLAGS}"
 AM_CONDITIONAL([HAVE_PGSQL],[test "${have_libpq}" = "yes"])
 AC_SUBST([POSTGRESQL_CFLAGS], [$POSTGRESQL_CFLAGS])
 AC_SUBST([POSTGRESQL_LDFLAGS], [$POSTGRESQL_LDFLAGS])
@@ -708,7 +721,21 @@ AC_SUBST([POSTGRESQL_LIBDIR], [$POSTGRESQL_LIBDIR])
 
 PKG_CHECK_MODULES([MARIADB], [libmariadb >= 3.0.9],[
   AM_CONDITIONAL([HAVE_MARIADB],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])])
+  PKG_CHECK_MODULES([MARIADB], [mariadb >= 3.0.9],[
+    AM_CONDITIONAL([HAVE_MARIADB],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MARIADB],[false])
+  ])
+])
+
+PKG_CHECK_MODULES([SPANDSP], [spandsp >= 3.1.1],[
+  AM_CONDITIONAL([HAVE_SPANDSP],[true])],[
+    AC_MSG_ERROR([no usable spandsp; please install spandsp4 devel package or equivalent])
+])
+
+PKG_CHECK_MODULES([SOFIA_SIP], [sofia-sip-ua >= 1.13.19],[
+  AM_CONDITIONAL([HAVE_SOFIA_SIP],[true])],[
+    AC_MSG_ERROR([no usable sofia-sip; please install sofia-sip-ua devel package or equivalent])
+])
 
 AC_ARG_ENABLE(deprecated-core-db-events,
 	[AS_HELP_STRING([--enable-deprecated-core-db-events], [Keep deprecated core db events])],,[enable_deprecated_core_db_events="no"])
@@ -724,31 +751,33 @@ PLATFORM_CORE_LIBS=
 # tweak platform specific flags
 case "$host" in
     *darwin*)
-        # Common Apple Darwin settings
+        case "$host" in
+          aarch64-apple-darwin*)
+          # Homebrew package required libraries on Apple Silicon
+            APR_ADDTO(CPPFLAGS, -I/opt/homebrew/include)
+            APR_ADDTO(LDFLAGS, -L/opt/homebrew/lib)
+          ;;
+          *)
+          # Default package libraries on Apple x86_64
+          # The following 4 x86_64 libraries are not required on macOS 15 Sequoia as of June 2025.
+          # They are left here since they are likely required on older macOS systems.
+            APR_ADDTO(CPPFLAGS, -I/usr/local/include)  # Xcode 6 drops std lib search, add it to clang
+            APR_ADDTO(LDFLAGS,  -L/usr/local/lib)      # Xcode 6 drops std lib search, add it to clang
+            APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
+            APR_ADDTO(LDFLAGS,  -L/usr/local/opt/openssl/lib)
+          ;;
+        esac
+       # Common Apple Clang flags
+        APR_ADDTO(CFLAGS, -pipe)
+        APR_ADDTO(LDFLAGS, -pipe)
+        APR_ADDTO(CXXFLAGS, -pipe)
+       # Common Apple Darwin settings
         APR_ADDTO(SWITCH_AM_CFLAGS, -DMACOSX)
         APR_REMOVEFROM(SWITCH_AM_CFLAGS, -fPIC)
-        APR_ADDTO(CPPFLAGS, -I/usr/local/opt/openssl/include)
-        APR_ADDTO(LDFLAGS, -L/usr/local/opt/openssl/lib)
         if test "x$enable_core_odbc_support" != "xno"; then
 	   APR_ADDTO([PLATFORM_CORE_LDFLAGS], [--framework CoreFoundation])
 	fi
 	APR_ADDTO([PLATFORM_CORE_LIBS], [-ldl])
-    # Get OSX and clang version
-        osxvrm=`sw_vers -productVersion`          # Get version.release.modlevel
-	osxrel=`echo $osxvrm | cut -d. -f2`       # Get release only
-        clangvers="`clang -v 2>&1  >/dev/null | grep version | sed -e 's/.*version \([[0-9]]*\).*$/\1/'`"
-        if test "$clangvers" -ge 6; then          # Xcode 6 drops std lib search, add it to clang
-           APR_ADDTO(LDFLAGS, -L/usr/local/lib)
-           APR_ADDTO(CPPFLAGS, -I/usr/local/include)
-        fi
-        if test "$clangvers" -ge 4; then          # Xcode 4 / 10.7 and up
-           APR_ADDTO(CFLAGS, -Wno-deprecated-declarations)
-        fi
-        if test "$osxrel" -ge 6; then             # 10.6 and up
-           APR_ADDTO(CFLAGS, -pipe -no-cpp-precomp)
-           APR_ADDTO(LDFLAGS, -pipe -bind_at_load)
-           APR_ADDTO(CXXFLAGS, -pipe)
-        fi
     ;;
     *-solaris2*)
 	if test "${enable_64}" = "yes"; then
@@ -818,13 +847,17 @@ PKG_CHECK_MODULES([AMRWB], [opencore-amrwb >= 0.1.0 vo-amrwbenc >= 0.1.0],[
 		AM_CONDITIONAL([HAVE_AMRWB],[true])],[
 		AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMRWB],[false])])
 
+PKG_CHECK_MODULES([STIRSHAKEN], [stirshaken],[
+		AM_CONDITIONAL([HAVE_STIRSHAKEN],[true])],[
+		AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_STIRSHAKEN],[false])])
+
 AC_CHECK_LIB(apr-1, apr_pool_mutex_set, use_system_apr=yes, use_system_apr=no)
 AM_CONDITIONAL([SYSTEM_APR],[test "${use_system_apr}" = "yes"])
-AC_CHECK_LIB(aprutil-1, apr_queue_pop_timeout, use_system_aprutil=yes, use_system_aprutil=no)
-AM_CONDITIONAL([SYSTEM_APRUTIL],[test "${use_system_aprutil}" = "yes"])
 
 save_LIBS="$LIBS"
 LIBS=
+
+AC_CHECK_HEADERS([jpeglib.h])
 AC_CHECK_LIB(jpeg, jpeg_std_error,, AC_MSG_ERROR([no usable libjpeg; please install libjpeg devel package or equivalent]))
 
 AC_CHECK_LIB(jbig, jbg_enc_out, have_libjbig=yes, have_libjbig=no)
@@ -859,7 +892,7 @@ AC_SUBST(LIBTOOL_LIB_EXTEN)
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h execinfo.h sys/time.h])
+AC_CHECK_HEADERS([sys/types.h sys/resource.h sched.h wchar.h sys/filio.h sys/ioctl.h sys/prctl.h sys/select.h netdb.h sys/time.h])
 
 # Solaris 11 privilege management
 AS_CASE([$host],
@@ -1066,8 +1099,8 @@ if test "x${ax_cv_c_compiler_vendor}" = "xclang" ; then
 fi
 
 # Tested and fixed lot of modules, but some are untested.  Will be added back when the core team decide it ready
-# Untested modules : mod_osp mod_soundtouch mod_sangoma_codec mod_dingaling mod_opal mod_h323 mod_khomp 
-#                    mod_unimrcp mod_cepstral mod_erlang_event mod_snmp mod_perl mod_java mod_managed
+# Untested modules : mod_osp mod_opal mod_h323
+#                    mod_erlang_event mod_snmp mod_perl mod_java mod_managed
 #
 #saved_CFLAGS="$CFLAGS"
 #AC_CACHE_CHECK([whether compiler supports -Wunused-but-set-variable], [ac_cv_gcc_unused_but_set_variable], [
@@ -1238,17 +1271,18 @@ AC_PATH_PROGS(WGET, wget)
 AC_PATH_PROGS(CURL, curl)
 GETLIB="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getlib.sh"
 AC_SUBST(GETLIB)
-GETG729="cd $switch_srcdir/libs && ${SHELL} $switch_builddir/build/getg729.sh"
-AC_SUBST(GETG729)
 GETSOUNDS="${SHELL} $switch_builddir/build/getsounds.sh"
 AC_SUBST(GETSOUNDS)
 
 case $host in
+   aarch64-apple-darwin*)
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/opt/pkgconf/
+        path_push_unique PKG_CONFIG_PATH /opt/homebrew/opt/sqlite/lib/pkgconfig/
+       ;;
    *-darwin*)
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/curl/lib/pkgconfig
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/sqlite/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ldns/lib/pkgconfig/
-        path_push_unique PKG_CONFIG_PATH /usr/local/opt/portaudio/lib/pkgconfig/
         path_push_unique PKG_CONFIG_PATH /usr/local/opt/ffmpeg/lib/pkgconfig/
        ;;
 esac
@@ -1263,7 +1297,7 @@ if test "$cross_compiling" != "yes" && test -f /usr/lib/pkg-config/libldns.pc; t
 fi
 
 module_enabled() {
-  grep -v -e "\#" -e "^\$" modules.conf | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
+  grep -v -e "\#" -e "^\$" modules.conf | sed 's/|.*//' | sed -e "s|^.*/||" | grep "^${1}\$" >/dev/null
 }
 
 AC_ARG_WITH(png,
@@ -1310,14 +1344,14 @@ PKG_CHECK_MODULES([TPL], [libtpl >= 1.5],[
 
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.6.20])
 PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
-PKG_CHECK_MODULES([PCRE], [libpcre >= 7.8])
+PKG_CHECK_MODULES([PCRE2], [libpcre2-8 >=  10.00])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
-PKG_CHECK_MODULES([YAML], [yaml-0.1 >= 0.1.4],[
-  AM_CONDITIONAL([HAVE_YAML],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_YAML],[false])])
-PKG_CHECK_MODULES([PORTAUDIO], [portaudio-2.0 >= 19],[
-  AM_CONDITIONAL([HAVE_PORTAUDIO],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_PORTAUDIO],[false])])
+PKG_CHECK_MODULES([MINIUPNPC], [miniupnpc >= 2.1])
+
+AC_CHECK_HEADER([natpmp.h], [], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
+AC_CHECK_LIB([natpmp], [initnatpmp], [NATPMP_LIBS=-lnatpmp], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
+AC_SUBST([NATPMP_LIBS])
+
 PKG_CHECK_MODULES([LDNS], [libldns-fs >= 1.6.6],[
   AM_CONDITIONAL([HAVE_LDNS],[true])],[
 PKG_CHECK_MODULES([LDNS], [libldns >= 1.6.6],[
@@ -1339,7 +1373,21 @@ PKG_CHECK_MODULES([MPG123], [libmpg123 >= 1.16.0],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_MPG123],[false])])
 
 PKG_CHECK_MODULES([SHOUT], [shout >= 2.2.2],[
-  AM_CONDITIONAL([HAVE_SHOUT],[true])],[
+  AM_CONDITIONAL([HAVE_SHOUT],[true])
+  SHOUT_VERSION="`$PKG_CONFIG --modversion shout`"
+  SHOUT_MAJOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f1`"
+  SHOUT_MINOR_VERSION="`echo $SHOUT_VERSION | cut -d. -f2`"
+  SHOUT_PATCH_VERSION="`echo $SHOUT_VERSION | cut -d. -f3`"
+  test -n "$SHOUT_PATCH_VERSION" || SHOUT_PATCH_VERSION=0
+  AC_MSG_NOTICE([SHOUT version: $SHOUT_VERSION])
+  AC_MSG_NOTICE([SHOUT major version: $SHOUT_MAJOR_VERSION])
+  AC_MSG_NOTICE([SHOUT minor version: $SHOUT_MINOR_VERSION])
+  AC_MSG_NOTICE([SHOUT patch version: $SHOUT_PATCH_VERSION])
+  AC_SUBST([SHOUT_VERSION])
+  AC_SUBST([SHOUT_MAJOR_VERSION])
+  AC_SUBST([SHOUT_MINOR_VERSION])
+  AC_SUBST([SHOUT_PATCH_VERSION])
+  ],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SHOUT],[false])])
 
 mp3lame=false
@@ -1384,7 +1432,9 @@ PKG_CHECK_MODULES([VLC], [libvlc >= 2.1.0],[
 
 PKG_CHECK_MODULES([OPENCV], [opencv >= 2.4.5],[
   AM_CONDITIONAL([HAVE_OPENCV],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])
+  PKG_CHECK_MODULES([OPENCV], [opencv4 >= 2.4.5],[
+    AM_CONDITIONAL([HAVE_OPENCV],[true])],[
+    AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPENCV],[false])])])
 
 PKG_CHECK_MODULES([OPUSFILE_DECODE], [opusfile >= 0.5],[
    AM_CONDITIONAL([HAVE_OPUSFILE_DECODE],[true])],[
@@ -1444,10 +1494,6 @@ PKG_CHECK_MODULES([OPUS], [opus >= 1.1],[
   AM_CONDITIONAL([HAVE_OPUS],[true])],[
   AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_OPUS],[false])])
 
-PKG_CHECK_MODULES([SOUNDTOUCH], [soundtouch >= 1.7.0],[
-  AM_CONDITIONAL([HAVE_SOUNDTOUCH],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SOUNDTOUCH],[false])])
-
 flite="true"
 PKG_CHECK_MODULES([FLITE], [flite >= 2],[],[
   AC_CHECK_LIB([flite], [flite_init],[
@@ -1487,33 +1533,125 @@ PKG_CHECK_MODULES([MEMCACHED], [libmemcached >= 0.31],[
   AM_CONDITIONAL([HAVE_MEMCACHED],[false])
 ])
 
-PKG_CHECK_MODULES([V8FS_STATIC], [v8-6.1_static >= 6.1.298],[
-  AM_CONDITIONAL([HAVE_V8FS],[true])],[
-  PKG_CHECK_MODULES([V8FS_STATIC], [v8fs_static >= 6.1.298],[
-    AM_CONDITIONAL([HAVE_V8FS],[true])],[
-    PKG_CHECK_MODULES([V8FS_STATIC], [v8 >= 6.1.298],[
-      AM_CONDITIONAL([HAVE_V8FS],[true])],[
-      if module_enabled mod_v8; then
-        AC_MSG_ERROR([You need to either install libv8-6.1-dev (>= 6.1.298), libv8fs-dev (>= 6.1.298) or disable mod_v8 in modules.conf])
+# mod_v8 needs the V8 JavaScript engine, provided by libnode-dev. It ships no
+# pkg-config file, so probe the well known header and library locations.
+AC_ARG_WITH([v8],
+  [AS_HELP_STRING([--with-v8=DIR],
+    [look for the libnode/V8 headers (the directory containing v8.h) in DIR])],
+  [v8_incdir="$withval"], [v8_incdir=""])
+
+have_v8="no"
+
+AC_MSG_CHECKING([for libnode bundled V8 headers])
+V8_INCDIR=""
+for d in "$v8_incdir" /usr/include/nodejs/deps/v8/include /usr/include/node /usr/local/include/node /usr/include/v8 ; do
+  if test -n "$d" && test -f "$d/v8.h" && test -f "$d/libplatform/libplatform.h" ; then
+    V8_INCDIR="$d"; break
+  fi
+done
+if test -n "$V8_INCDIR"; then
+  AC_MSG_RESULT([$V8_INCDIR])
+  AC_LANG_PUSH([C++])
+  v8_save_LIBS="$LIBS"
+  # Prefer the standalone split V8 libraries shipped by libnode-dev; fall
+  # back to the all-in-one libnode if they are not present.
+  AC_MSG_CHECKING([for standalone V8 libraries (-lv8 -lv8_libplatform)])
+  LIBS="-lv8 -lv8_libplatform -lv8_libbase $v8_save_LIBS"
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[]])],
+    [AC_MSG_RESULT([yes]); V8_LIBS="-lv8 -lv8_libplatform -lv8_libbase"],
+    [AC_MSG_RESULT([no])
+     AC_MSG_CHECKING([for all-in-one libnode (-lnode)])
+     LIBS="-lnode $v8_save_LIBS"
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[]])],
+       [AC_MSG_RESULT([yes]); V8_LIBS="-lnode"],
+       [AC_MSG_RESULT([no])])])
+  LIBS="$v8_save_LIBS"
+  AC_LANG_POP([C++])
+  if test -n "$V8_LIBS"; then
+    V8_CFLAGS="-I$V8_INCDIR"
+    have_v8="yes"
+  fi
+else
+  AC_MSG_RESULT([no])
+fi
+
+AC_SUBST([V8_CFLAGS])
+AC_SUBST([V8_LIBS])
+
+if test "x$have_v8" = "xyes"; then
+  AM_CONDITIONAL([HAVE_V8],[true])
+else
+  if module_enabled mod_v8; then
+    AC_MSG_ERROR([mod_v8 is enabled but libnode was not found. Install libnode-dev (Debian/Ubuntu: apt-get install libnode-dev) or disable mod_v8 in modules.conf])
+  else
+    AM_CONDITIONAL([HAVE_V8],[false])
+  fi
+fi
+
+PKG_CHECK_MODULES([KS], [libks2 >= 2.0.11],[
+  AM_CONDITIONAL([HAVE_KS],[true])],[
+  PKG_CHECK_MODULES([KS], [libks >= 1.8.2],[
+    AM_CONDITIONAL([HAVE_KS],[true])],[
+      if module_enabled mod_verto; then
+        AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_verto in modules.conf])
       else
-        AC_MSG_RESULT([no])
-        AM_CONDITIONAL([HAVE_V8FS],[false])
+        if module_enabled mod_signalwire; then
+          AC_MSG_ERROR([You need to either install libks2 or libks or disable mod_signalwire in modules.conf])
+        else
+          AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])
+        fi
       fi
-    ])
   ])
 ])
 
-PKG_CHECK_MODULES([KS], [libks >= 1.1.0],[
-  AM_CONDITIONAL([HAVE_KS],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_KS],[false])])
-
-PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client2 >= 2.0.0],[
   AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])])
+  PKG_CHECK_MODULES([SIGNALWIRE_CLIENT], [signalwire_client >= 1.0.0],[
+    AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[true])],[
+      if module_enabled mod_signalwire; then
+        AC_MSG_ERROR([You need to either install signalwire-client-c2 or signalwire-client-c or disable mod_signalwire in modules.conf])
+      else
+        AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SIGNALWIRE_CLIENT],[false])
+      fi
+  ])
+])
 
-PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2],[
-  AM_CONDITIONAL([HAVE_AMQP],[true])],[
-  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_AMQP],[false])])
+PKG_CHECK_MODULES([AMQP], [librabbitmq >= 0.5.2], [
+       AM_CONDITIONAL([HAVE_AMQP], [true])
+       # Extract the version of librabbitmq
+       AMQP_VERSION=`$PKG_CONFIG --modversion librabbitmq`
+       AC_DEFINE_UNQUOTED([AMQP_VERSION], ["$AMQP_VERSION"], [Version of librabbitmq])
+       # Parse major and minor version numbers
+       AMQP_MAJOR_VERSION=`echo $AMQP_VERSION | cut -d. -f1`
+       AMQP_MINOR_VERSION=`echo $AMQP_VERSION | cut -d. -f2`
+       AC_DEFINE_UNQUOTED([AMQP_MAJOR_VERSION], [$AMQP_MAJOR_VERSION], [Major version of librabbitmq])
+       AC_DEFINE_UNQUOTED([AMQP_MINOR_VERSION], [$AMQP_MINOR_VERSION], [Minor version of librabbitmq])
+       AC_SUBST(AMQP_MAJOR_VERSION)
+       AC_SUBST(AMQP_MINOR_VERSION)
+   ], [
+       AC_MSG_RESULT([no])
+       AM_CONDITIONAL([HAVE_AMQP], [false])
+   ])
+
+PKG_CHECK_MODULES([SPHINXBASE], [sphinxbase >= 5],[
+  AM_CONDITIONAL([HAVE_SPHINXBASE],[true])],[
+  AC_MSG_RESULT([no]); AM_CONDITIONAL([HAVE_SPHINXBASE],[false])])
+
+PKG_CHECK_MODULES([POCKETSPHINX], [pocketsphinx >= 5],[
+       AM_CONDITIONAL([HAVE_POCKETSPHINX],[true])
+       # Extract the version of pocketsphinx
+       POCKETSPHINX_VERSION=`$PKG_CONFIG --modversion pocketsphinx`
+       AC_DEFINE_UNQUOTED([POCKETSPHINX_VERSION], ["$POCKETSPHINX_VERSION"], [Version of pocketsphinx])
+       AC_MSG_NOTICE([POCKETSPHINX_VERSION is $POCKETSPHINX_VERSION])
+       # Parse major version but take only first digit for now
+       POCKETSPHINX_MAJOR_VERSION=`echo $POCKETSPHINX_VERSION | cut -c1`
+       AC_MSG_NOTICE([POCKETSPHINX_MAJOR_VERSION is $POCKETSPHINX_MAJOR_VERSION])
+       AC_DEFINE_UNQUOTED([POCKETSPHINX_MAJOR_VERSION], [$POCKETSPHINX_MAJOR_VERSION], [Major version of pocketsphinx])
+       AC_SUBST(POCKETSPHINX_MAJOR_VERSION)
+   ], [
+      AC_MSG_RESULT([no])
+      AM_CONDITIONAL([HAVE_POCKETSPHINX],[false])
+   ])
 
 PKG_CHECK_MODULES([H2O], [libh2o-evloop >= 0.11.0],[
   AM_CONDITIONAL([HAVE_H2O],[true])],[
@@ -1551,6 +1689,17 @@ AS_IF([test "x$enable_core_libedit_support" != "xno"],[
     AS_IF([test "x$LIBEDIT_LIBS" = "x"], [
       AC_MSG_ERROR([You need to either install libedit-dev (>= 2.11) or configure with --disable-core-libedit-support])
       ])])])
+
+AC_ARG_ENABLE(systemd,
+  [AS_HELP_STRING([--enable-systemd], [Compile with systemd notify support])])
+
+AS_IF([test "x$enable_systemd" = "xyes"],[
+  PKG_CHECK_MODULES([SYSTEMD], [libsystemd >= 219], [
+    AC_DEFINE([HAVE_SYSTEMD], [1], [Define to 1 if systemd is available])])
+])
+
+AC_SUBST(SYSTEMD_LIBS)
+
 
 dnl ---------------------------------------------------------------------------
 dnl - OpenLDAP SDK
@@ -1603,7 +1752,11 @@ if test x$HAVE_OPENSSL = x1; then
 	openssl_CFLAGS="$openssl_CFLAGS -DHAVE_OPENSSL";
 	APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_OPENSSL)
 	AC_CHECK_LIB(ssl, SSL_CTX_set_tlsext_use_srtp, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS_SRTP, 1, HAVE_OPENSSL_DTLS_SRTP), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required]))
-	AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS), AC_MSG_ERROR([OpenSSL >= 1.0.1e and associaed developement headers required]))
+	dnl DTLS_method is what the code calls from OpenSSL 1.1.0 on; DTLSv1_method is
+	dnl the pre 1.1.0 spelling, deprecated since and gone from OpenSSL 4.
+	AC_CHECK_LIB(ssl, DTLS_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS),
+		[AC_CHECK_LIB(ssl, DTLSv1_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLS, 1, HAVE_OPENSSL_DTLS),
+			AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated development headers required]))])
 	AC_CHECK_LIB(ssl, DTLSv1_2_method, AC_DEFINE_UNQUOTED(HAVE_OPENSSL_DTLSv1_2_method, 1, [DTLS version 1.2 is available]))
 else
 	AC_MSG_ERROR([OpenSSL >= 1.0.1e and associated developement headers required])
@@ -1678,125 +1831,141 @@ if test "x$ac_cv_have_php" != "xno" -a "x$ac_cv_have_php_config" != "xno"; then
 fi
 
 #
-# Python checks for mod_python
+# Python3 checks for mod_python3
 #
 AC_ARG_WITH(
-	[python],
-	[AS_HELP_STRING([--with-python], [Use system provided version of python (default: try)])],
-	[with_python="$withval"],
-	[with_python="try"]
+	[python3],
+	[AS_HELP_STRING([--with-python3], [Use system provided version of python3 (default: try)])],
+	[with_python3="$withval"],
+	[with_python3="try"]
 )
 
-if test "$with_python" != "no"
+if test "$with_python3" != "no"
 then
 	save_CFLAGS="$CFLAGS"
 	save_LIBS="$LIBS"
 
-	if test "$with_python" != "yes" -a "$with_python" != "try" ; then
-		AC_MSG_CHECKING([for python])
-		if test ! -x "$with_python" ; then
-			AC_MSG_ERROR([Specified python does not exist or is not executable: $with_python])
+	if test "$with_python3" != "yes" -a "$with_python3" != "try" ; then
+		AC_MSG_CHECKING([for python3])
+		if test ! -x "$with_python3" ; then
+			AC_MSG_ERROR([Specified python3 does not exist or is not executable: $with_python3])
 		fi
-		AC_MSG_RESULT([$with_python])
-		AC_SUBST([PYTHON], ["$with_python"])
+		AC_MSG_RESULT([$with_python3])
+		AC_SUBST([PYTHON3], ["$with_python3"])
 	else
-		AC_PATH_PROG([PYTHON], ["python"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
+		AC_PATH_PROG([PYTHON3], ["python3"], ["no"], ["$PATH:/usr/bin:/usr/local/bin"])
 	fi
 
-	if test "$PYTHON" != "no" ; then
-		AC_MSG_CHECKING([python version])
-		PYTHON_VER="`$PYTHON -V 2>&1 | cut -d' ' -f2`"
+	if test "$PYTHON3" != "no" ; then
+		AC_MSG_CHECKING([python3 version])
+		PYTHON3_VER="`$PYTHON3 -V 2>&1 | cut -d' ' -f2`"
 
-		if test -z "$PYTHON_VER" ; then
-			AC_MSG_ERROR([Unable to detect python version])
+		if test -z "$PYTHON3_VER" ; then
+			AC_MSG_ERROR([Unable to detect python3 version])
 		fi
-		AC_MSG_RESULT([$PYTHON_VER])
+		AC_MSG_RESULT([$PYTHON3_VER])
 
-		AC_MSG_CHECKING([for python distutils])
-		python_result="`$PYTHON -c 'import distutils;' 2>&1`"
-		if test -z "$python_result" ; then
-			python_has_distutils="yes"
+		AC_MSG_CHECKING([for python3 distutils])
+		python3_result="`$PYTHON3 -c 'import distutils;' 2>&1`"
+		if test -z "$python3_result" ; then
+			python3_has_distutils="yes"
 		else
-			python_has_distutils="no"
+			python3_has_distutils="no"
 		fi
-		AC_MSG_RESULT([$python_has_distutils])
+		AC_MSG_RESULT([$python3_has_distutils])
 
-		if test "$python_has_distutils" != "no" ; then
-			AC_MSG_CHECKING([location of site-packages])
+		if test "$python3_has_distutils" != "no" ; then
+			AC_MSG_CHECKING([location of python3 site-packages])
 
-			PYTHON_SITE_DIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
+			PYTHON3_SITE_DIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_python_lib(0));'`"
 
-			if test -z "$PYTHON_SITE_DIR" ; then
-				AC_MSG_ERROR([Unable to detect python site-packages path])
-			elif test ! -d "$PYTHON_SITE_DIR" ; then
-				AC_MSG_ERROR([Path $PYTHON_SITE_DIR returned by python does not exist!])
+			if test -z "$PYTHON3_SITE_DIR" ; then
+				AC_MSG_ERROR([Unable to detect python3 site-packages path])
+			elif test ! -d "$PYTHON3_SITE_DIR" ; then
+				AC_MSG_ERROR([Path $PYTHON3_SITE_DIR returned by python3 does not exist!])
 			fi
-			AC_MSG_RESULT([$PYTHON_SITE_DIR])
-			AC_SUBST([PYTHON_SITE_DIR], [$PYTHON_SITE_DIR])
+			AC_MSG_RESULT([$PYTHON3_SITE_DIR])
+			AC_SUBST([PYTHON3_SITE_DIR], [$PYTHON3_SITE_DIR])
 
 			#
-			# python distutils found, get settings from python directly
+			# python3 distutils found, get settings from python3 directly
 			#
-			PYTHON_CFLAGS="`$PYTHON -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
-			PYTHON_LDFLAGS="`$PYTHON -c 'from distutils import sysconfig; libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\"+sysconfig.get_config_var(\"VERSION\")); print(\" \".join(libs));'`"
-			PYTHON_LIB="`$PYTHON -c 'from distutils import sysconfig; print(\"python\" + sysconfig.get_config_var(\"VERSION\"));'`"
-			PYTHON_LIBDIR="`$PYTHON -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
+			PYTHON3_CFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; flags = [[\"-I\" + sysconfig.get_python_inc(0), \"-I\" + sysconfig.get_python_inc(1), \" \".join(sysconfig.get_config_var(\"CFLAGS\").split())]]; print(\" \".join(flags));' | sed -e 's/-arch i386//g;s/-arch x86_64//g'`"
+			PYTHON3_LDFLAGS="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); libs = sysconfig.get_config_var(\"LIBS\").split() + sysconfig.get_config_var(\"SYSLIBS\").split(); libs.append(\"-lpython\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]); print(\" \".join(libs));'`"
+			PYTHON3_LIB="`$PYTHON3 -c 'from distutils import sysconfig; ldver = sysconfig.get_config_var(\"LDVERSION\"); print(\"python\" + [[ldver,sysconfig.get_config_var(\"VERSION\")]][[ldver==None]]);'`"
+			PYTHON3_LIBDIR="`$PYTHON3 -c 'from distutils import sysconfig; print(sysconfig.get_config_var(\"LIBDIR\"));'`"
 
-			# handle python being installed into /usr/local
-			AC_MSG_CHECKING([python libdir])
-			if test -z "`echo $PYTHON_LIBDIR | grep "/usr/lib"`" ; then
-				PYTHON_LDFLAGS="-L$PYTHON_LIBDIR $PYTHON_LDFLAGS"
-				LIBS="-L$PYTHON_LIBDIR $LIBS"
+			# handle python3 being installed into /usr/local
+			AC_MSG_CHECKING([python3 libdir])
+			if test -z "`echo $PYTHON3_LIBDIR | grep "/usr/lib"`" ; then
+				PYTHON3_LDFLAGS="-L$PYTHON3_LIBDIR $PYTHON3_LDFLAGS"
+				LIBS="-L$PYTHON3_LIBDIR $LIBS"
 			fi
-			AC_MSG_RESULT([$PYTHON_LIBDIR])
+			AC_MSG_RESULT([$PYTHON3_LIBDIR])
 
-			# check libpython
-			AC_CHECK_LIB([$PYTHON_LIB], [main], [has_libpython="yes"], [has_libpython="no"])
+			# check libpython3
+			AC_CHECK_LIB([$PYTHON3_LIB], [main], [has_libpython3="yes"], [has_libpython3="no"])
 
-			if test "$has_libpython" = "no" ; then
-				AS_IF([test "$with_python" = "try"],
-				 	[AC_MSG_WARN([$PYTHON_LIB is unusable])],
-					[AC_MSG_ERROR([$PYTHON_LIB is unusable])]
+			if test "$has_libpython3" = "no" ; then
+				AS_IF([test "$with_python3" = "try"],
+				 	[AC_MSG_WARN([$PYTHON3_LIB is unusable])],
+					[AC_MSG_ERROR([$PYTHON3_LIB is unusable])]
 				)
 			fi
 
-			# check whether system libpython is usable and has threads support
-			CFLAGS="$PYTHON_CFLAGS"
-			LIBS="$PYTHON_LDFLAGS"
-			AC_CHECK_FUNC([PyThread_init_thread], [python_has_threads="yes"], [python_has_threads="no"])
+			# check whether system libpython3 is usable and has threads support
+			CFLAGS="$PYTHON3_CFLAGS"
+			LIBS="$PYTHON3_LDFLAGS"
+			AC_CHECK_FUNC([PyThread_init_thread], [python3_has_threads="yes"], [python3_has_threads="no"])
 
-			if test "$python_has_threads" = "no"; then
-				AS_IF([test "$with_python" = "try"],
-					[AC_MSG_WARN([Your python lacks threads support, can not build mod_python])],
-					[AC_MSG_ERROR([Your python lacks threads support, can not build mod_python])]
+			if test "$python3_has_threads" = "no"; then
+				AS_IF([test "$with_python3" = "try"],
+					[AC_MSG_WARN([Your python3 lacks threads support, can not build mod_python3])],
+					[AC_MSG_ERROR([Your python3 lacks threads support, can not build mod_python3])]
 				)
 			else
-				AC_MSG_NOTICE([Your python seems OK, do not forget to enable mod_python in modules.conf])
-				AC_SUBST([PYTHON_CFLAGS],  [$PYTHON_CFLAGS])
-				AC_SUBST([PYTHON_LDFLAGS], [$PYTHON_LDFLAGS])
+				AC_MSG_NOTICE([Your python3 seems OK, do not forget to enable mod_python3 in modules.conf])
+				AC_SUBST([PYTHON3_CFLAGS],  [$PYTHON3_CFLAGS])
+				AC_SUBST([PYTHON3_LDFLAGS], [$PYTHON3_LDFLAGS])
 			fi
 		else
-			AS_IF([test "$with_python" = "try"],
-				[AC_MSG_WARN([Could not find or use python distutils module: $python_result])],
-				[AC_MSG_ERROR([Could not find or use python distutils module: $python_result])]
+			AS_IF([test "$with_python3" = "try"],
+				[AC_MSG_WARN([Could not find or use python3 distutils module: $python3_result])],
+				[AC_MSG_ERROR([Could not find or use python3 distutils module: $python3_result])]
 			)
 		fi
 
 		LIBS="$save_LIBS"
 		CFLAGS="$save_CFLAGS"
 
-		unset python_has_threads
-		unset python_has_distutils
-		unset python_result
+		unset python3_has_threads
+		unset python3_has_distutils
+		unset python3_result
 	else
-		AS_IF([test "$with_python" = "try"],
-			[AC_MSG_WARN([Could not find python, mod_python will not build, use --with-python to specify the location])],
-			[AC_MSG_ERROR([Could not find python, use --with-python to specify the location])]
+		AS_IF([test "$with_python3" = "try"],
+			[AC_MSG_WARN([Could not find python3, mod_python3 will not build, use --with-python3 to specify the location])],
+			[AC_MSG_ERROR([Could not find python3, use --with-python3 to specify the location])]
 		)
 	fi
 else
-	AC_MSG_WARN([python support disabled, building mod_python will fail!])
+	AC_MSG_WARN([python3 support disabled, building mod_python3 will fail!])
 fi
+
+# pcap lib for unit-testing
+AC_MSG_CHECKING(libpcap)
+AC_CHECK_PROG(HAVE_PCAP_CONFIG,pcap-config,[true],[false])
+if test x"$HAVE_PCAP_CONFIG" = x"true"; then
+   AC_MSG_RESULT(yes)
+   PCAP_CONFIG=pcap-config
+   PCAP_LIBS="`$PCAP_CONFIG --libs`"
+   PCAP_CFLAGS="`$PCAP_CONFIG --cflags`"
+   AM_CONDITIONAL([HAVE_PCAP], [true])
+else
+   AC_MSG_RESULT(no)
+   AM_CONDITIONAL([HAVE_PCAP], [false])
+fi
+AC_SUBST([PCAP_CFLAGS])
+AC_SUBST([PCAP_LIBS])
 
 #
 # SNMP checks for mod_snmp
@@ -1828,6 +1997,55 @@ if test "${enable_address_sanitizer}" = "yes"; then
   APR_ADDTO(LDFLAGS, -fsanitize=address)
 fi
 
+#  Enable HEAP profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(heap_profiler,
+  [AC_HELP_STRING([--enable-heap-profiler],[build with google heap profiler])],
+  [enable_heap_profiler="$enable_heap_profiler"],
+  [enable_heap_profiler="no"])
+
+#  Enable CPU profiler (requires libgoogle-perftools-dev package)
+AC_ARG_ENABLE(cpu_profiler,
+  [AC_HELP_STRING([--enable-cpu-profiler],[build with google cpu profiler])],
+  [enable_cpu_profiler="$enable_cpu_profiler"],
+  [enable_cpu_profiler="no"])
+
+PKG_CHECK_MODULES([TCMALLOC], [libtcmalloc], [have_tcmalloc=yes], [have_tcmalloc=no])
+
+if test "${enable_heap_profiler}" = "yes" || test "${enable_cpu_profiler}" = "yes"; then
+  if test "x$have_tcmalloc" != "xyes" ; then
+    AC_MSG_ERROR([You must install libgoogle-perftools-dev in order to use heap or cpu profiler])
+  fi
+fi
+
+# WARNING: When both enabled you can NOT link them statically and MUST use the special library
+if test "${enable_heap_profiler}" = "yes" && test "${enable_cpu_profiler}" = "yes"; then
+  APR_ADDTO(CFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(CXXFLAGS, -ltcmalloc_and_profiler)
+  APR_ADDTO(LDFLAGS, -ltcmalloc_and_profiler)
+else
+  if test "${enable_heap_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -ltcmalloc)
+    APR_ADDTO(CXXFLAGS, -ltcmalloc)
+    APR_ADDTO(LDFLAGS, -ltcmalloc)
+  fi
+
+  if test "${enable_cpu_profiler}" = "yes"; then
+    APR_ADDTO(CFLAGS, -lprofiler)
+    APR_ADDTO(CXXFLAGS, -lprofiler)
+    APR_ADDTO(LDFLAGS, -lprofiler)
+  fi
+fi
+
+#  Enable fake dlclose
+AC_ARG_ENABLE(fake_dlclose,
+  [AC_HELP_STRING([--enable-fake-dlclose],[Do not unload dynamic libraries])],
+  [enable_fake_dlclose="$enable_fake_dlclose"],
+  [enable_fake_dlclose="no"])
+
+if test "${enable_fake_dlclose}" = "yes"; then
+  APR_ADDTO(SWITCH_AM_CFLAGS, -DHAVE_FAKE_DLCLOSE)
+fi
+
 AC_ARG_ENABLE(,
   [AC_HELP_STRING([--enable-pool-sanitizer],[build with sanitizer friendly pool behavior])],
   [enable_pool_sanitizer="$enable_pool_sanitizer"],
@@ -1846,7 +2064,6 @@ AC_CONFIG_FILES([Makefile
 		tests/unit/Makefile
 		src/Makefile
 		src/mod/Makefile
-		src/mod/applications/mod_abstraction/Makefile
 		src/mod/applications/mod_avmd/Makefile
 		src/mod/applications/mod_bert/Makefile
 		src/mod/applications/mod_blacklist/Makefile
@@ -1873,66 +2090,43 @@ AC_CONFIG_FILES([Makefile
 		src/mod/applications/mod_hiredis/Makefile
 		src/mod/applications/mod_httapi/Makefile
 		src/mod/applications/mod_http_cache/Makefile
-		src/mod/applications/mod_http_cache/test/Makefile
-		src/mod/applications/mod_ladspa/Makefile
 		src/mod/applications/mod_lcr/Makefile
 		src/mod/applications/mod_limit/Makefile
 		src/mod/applications/mod_memcache/Makefile
 		src/mod/applications/mod_mongo/Makefile
-		src/mod/applications/mod_mp4/Makefile
-		src/mod/applications/mod_mp4v2/Makefile
 		src/mod/applications/mod_nibblebill/Makefile
-		src/mod/applications/mod_oreka/Makefile
 		src/mod/applications/mod_osp/Makefile
 		src/mod/applications/mod_prefix/Makefile
-		src/mod/applications/mod_rad_auth/Makefile
 		src/mod/applications/mod_random/Makefile
 		src/mod/applications/mod_redis/Makefile
-		src/mod/applications/mod_rss/Makefile
 		src/mod/applications/mod_skel/Makefile
 		src/mod/applications/mod_signalwire/Makefile
 		src/mod/applications/mod_sms/Makefile
-		src/mod/applications/mod_sms_flowroute/Makefile
 		src/mod/applications/mod_snapshot/Makefile
-		src/mod/applications/mod_snom/Makefile
-		src/mod/applications/mod_sonar/Makefile
-		src/mod/applications/mod_soundtouch/Makefile
 		src/mod/applications/mod_spandsp/Makefile
 		src/mod/applications/mod_spy/Makefile
-		src/mod/applications/mod_stress/Makefile
 		src/mod/applications/mod_test/Makefile
-		src/mod/applications/mod_test/test/Makefile
 		src/mod/applications/mod_translate/Makefile
 		src/mod/applications/mod_valet_parking/Makefile
 		src/mod/applications/mod_vmd/Makefile
 		src/mod/applications/mod_voicemail/Makefile
 		src/mod/applications/mod_voicemail_ivr/Makefile
-		src/mod/asr_tts/mod_cepstral/Makefile
 		src/mod/asr_tts/mod_flite/Makefile
 		src/mod/asr_tts/mod_pocketsphinx/Makefile
 		src/mod/asr_tts/mod_tts_commandline/Makefile
-		src/mod/asr_tts/mod_unimrcp/Makefile
 		src/mod/codecs/mod_amr/Makefile
 		src/mod/codecs/mod_amrwb/Makefile
 		src/mod/codecs/mod_b64/Makefile
 		src/mod/codecs/mod_bv/Makefile
-		src/mod/codecs/mod_clearmode/Makefile
 		src/mod/codecs/mod_codec2/Makefile
-		src/mod/codecs/mod_com_g729/Makefile
-		src/mod/codecs/mod_dahdi_codec/Makefile
 		src/mod/codecs/mod_g723_1/Makefile
 		src/mod/codecs/mod_g729/Makefile
-		src/mod/codecs/mod_h26x/Makefile
 		src/mod/codecs/mod_ilbc/Makefile
-		src/mod/codecs/mod_isac/Makefile
-		src/mod/codecs/mod_mp4v/Makefile
 		src/mod/codecs/mod_opus/Makefile
 		src/mod/codecs/mod_openh264/Makefile
-		src/mod/codecs/mod_sangoma_codec/Makefile
 		src/mod/codecs/mod_silk/Makefile
 		src/mod/codecs/mod_siren/Makefile
 		src/mod/codecs/mod_skel_codec/Makefile
-		src/mod/codecs/mod_theora/Makefile
 		src/mod/databases/mod_mariadb/Makefile
 		src/mod/databases/mod_pgsql/Makefile
 		src/mod/dialplans/mod_dialplan_asterisk/Makefile
@@ -1940,23 +2134,17 @@ AC_CONFIG_FILES([Makefile
 		src/mod/dialplans/mod_dialplan_xml/Makefile
 		src/mod/directories/mod_ldap/Makefile
 		src/mod/endpoints/mod_alsa/Makefile
-		src/mod/endpoints/mod_dingaling/Makefile
-		src/mod/endpoints/mod_gsmopen/Makefile
 		src/mod/endpoints/mod_h323/Makefile
-		src/mod/endpoints/mod_khomp/Makefile
 		src/mod/endpoints/mod_loopback/Makefile
 		src/mod/endpoints/mod_opal/Makefile
-		src/mod/endpoints/mod_portaudio/Makefile
 		src/mod/endpoints/mod_reference/Makefile
 		src/mod/endpoints/mod_rtmp/Makefile
 		src/mod/endpoints/mod_skinny/Makefile
 		src/mod/endpoints/mod_sofia/Makefile
-		src/mod/endpoints/mod_unicall/Makefile
 		src/mod/endpoints/mod_rtc/Makefile
 		src/mod/endpoints/mod_verto/Makefile
 		src/mod/event_handlers/mod_amqp/Makefile
 		src/mod/event_handlers/mod_cdr_csv/Makefile
-		src/mod/event_handlers/mod_cdr_mongodb/Makefile
 		src/mod/event_handlers/mod_cdr_pg_csv/Makefile
 		src/mod/event_handlers/mod_cdr_sqlite/Makefile
 		src/mod/event_handlers/mod_erlang_event/Makefile
@@ -1966,39 +2154,30 @@ AC_CONFIG_FILES([Makefile
 		src/mod/event_handlers/mod_fail2ban/Makefile
 		src/mod/event_handlers/mod_format_cdr/Makefile
 		src/mod/event_handlers/mod_json_cdr/Makefile
-		src/mod/event_handlers/mod_kazoo/Makefile
-		src/mod/event_handlers/mod_radius_cdr/Makefile
 		src/mod/event_handlers/mod_odbc_cdr/Makefile
-		src/mod/event_handlers/mod_rayo/Makefile
-		src/mod/event_handlers/mod_rayo/test/Makefile
 		src/mod/event_handlers/mod_smpp/Makefile
 		src/mod/event_handlers/mod_snmp/Makefile
-		src/mod/event_handlers/mod_event_zmq/Makefile
 		src/mod/formats/mod_imagick/Makefile
 		src/mod/formats/mod_local_stream/Makefile
 		src/mod/formats/mod_native_file/Makefile
 		src/mod/formats/mod_opusfile/Makefile
+		src/mod/formats/mod_png/Makefile
 		src/mod/formats/mod_shell_stream/Makefile
 		src/mod/formats/mod_shout/Makefile
 		src/mod/formats/mod_sndfile/Makefile
-		src/mod/formats/mod_ssml/Makefile
 		src/mod/formats/mod_tone_stream/Makefile
 		src/mod/formats/mod_vlc/Makefile
-		src/mod/formats/mod_portaudio_stream/Makefile
 		src/mod/languages/mod_java/Makefile
 		src/mod/languages/mod_lua/Makefile
-		src/mod/languages/mod_lua/test/Makefile
 		src/mod/languages/mod_managed/Makefile
 		src/mod/languages/mod_perl/Makefile
-		src/mod/languages/mod_python/Makefile
+		src/mod/languages/mod_python3/Makefile
 		src/mod/languages/mod_v8/Makefile
-		src/mod/languages/mod_yaml/Makefile
 		src/mod/languages/mod_basic/Makefile
 		src/mod/loggers/mod_console/Makefile
 		src/mod/loggers/mod_graylog2/Makefile
 		src/mod/loggers/mod_logfile/Makefile
 		src/mod/loggers/mod_syslog/Makefile
-		src/mod/loggers/mod_raven/Makefile
 		src/mod/say/mod_say_de/Makefile
 		src/mod/say/mod_say_en/Makefile
 		src/mod/say/mod_say_es/Makefile
@@ -2022,7 +2201,6 @@ AC_CONFIG_FILES([Makefile
 		src/mod/xml_int/mod_xml_cdr/Makefile
 		src/mod/xml_int/mod_xml_curl/Makefile
 		src/mod/xml_int/mod_xml_ldap/Makefile
-		src/mod/xml_int/mod_xml_radius/Makefile
 		src/mod/xml_int/mod_xml_rpc/Makefile
 		src/mod/xml_int/mod_xml_scgi/Makefile
 		src/mod/applications/mod_av/Makefile
@@ -2030,10 +2208,11 @@ AC_CONFIG_FILES([Makefile
 		src/include/switch_am_config.h
 		build/getsounds.sh
 		build/getlib.sh
-		build/getg729.sh
 		build/freeswitch.pc
+		build/standalone_module/freeswitch.pc
 		build/modmake.rules
                 libs/esl/Makefile
+                libs/esl/tests/Makefile
                 libs/esl/perl/Makefile
                 libs/esl/php/Makefile
 		libs/xmlrpc-c/include/xmlrpc-c/config.h
@@ -2055,12 +2234,14 @@ AM_CONDITIONAL(HAVE_G729, [ test -d ${switch_srcdir}/libs/libg729 ])
 #LIBS+=> core.log || error="yes";if test -n "$(VERBOSE)" -o "$$error" = "yes";then cat core.log;fi;if test "$$error" = "yes";then exit 1;fi
 LIBTOOL='$(SHELL) $(switch_builddir)/libtool'
 TOUCH_TARGET='if test -f "$@";then touch "$@";fi;'
-CONF_MODULES='$$(grep -v "\#" $(switch_builddir)/modules.conf | sed -e "s|^.*/||" | sort | uniq )'
-CONF_DISABLED_MODULES='$$(grep "\#" $(switch_builddir)/modules.conf | grep -v "\#\#" | sed -e "s|^.*/||" | sort | uniq )'
+CONF_MODULES='$$(grep -v "\#" $(switch_builddir)/modules.conf | sed "s/|.*//" | sed -e "s|^.*/||" | sort | uniq )'
+CONF_DISABLED_MODULES='$$(grep "\#" $(switch_builddir)/modules.conf | grep -v "\#\#" | sed "s/|.*//" | sed "s/\#/\#\//"| sed -e "s|^.*/||" | sort | uniq )'
 OUR_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-all ; done )"; echo $$mods )'
 OUR_CLEAN_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-clean ; done )"; echo $$mods )'
 OUR_INSTALL_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-install ; done)"; echo $$mods )'
 OUR_UNINSTALL_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-uninstall ; done)"; echo $$mods )'
+OUR_TEST_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-print_tests ; done )"; echo $$mods )'
+OUR_CHECK_MODS='$$(if test -z "$(MODULES)" ; then tmp_mods="$(CONF_MODULES)"; else tmp_mods="$(MODULES)" ; fi ; mods="$$(for i in $$tmp_mods ; do echo $$i-check ; done )"; echo $$mods )'
 OUR_DISABLED_MODS='$$(tmp_mods="$(CONF_DISABLED_MODULES)"; mods="$$(for i in $$tmp_mods ; do echo $$i-all ; done )"; echo $$mods )'
 OUR_DISABLED_CLEAN_MODS='$$(tmp_mods="$(CONF_DISABLED_MODULES)";  mods="$$(for i in $$tmp_mods ; do echo $$i-clean ; done )"; echo $$mods )'
 OUR_DISABLED_INSTALL_MODS='$$(tmp_mods="$(CONF_DISABLED_MODULES)"; mods="$$(for i in $$tmp_mods ; do echo $$i-install ; done)"; echo $$mods )'
@@ -2075,6 +2256,8 @@ AC_SUBST(CONF_MODULES)
 
 AC_SUBST(OUR_MODS)
 AC_SUBST(OUR_CLEAN_MODS)
+AC_SUBST(OUR_TEST_MODS)
+AC_SUBST(OUR_CHECK_MODS)
 AC_SUBST(OUR_INSTALL_MODS)
 AC_SUBST(OUR_UNINSTALL_MODS)
 AC_SUBST(OUR_DISABLED_MODS)
@@ -2092,18 +2275,6 @@ ac_configure_args="$ac_configure_args --with-modinstdir=${modulesdir} CONFIGURE_
 AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
-fi
-if test "$use_system_aprutil" != "yes"; then
-   AC_CONFIG_SUBDIRS([libs/apr-util])
-fi
-AC_CONFIG_SUBDIRS([libs/iksemel])
-AC_CONFIG_SUBDIRS([libs/libdingaling])
-AC_CONFIG_SUBDIRS([libs/sofia-sip])
-AC_CONFIG_SUBDIRS([libs/freetdm])
-AC_CONFIG_SUBDIRS([libs/unimrcp])
-AC_CONFIG_SUBDIRS([libs/spandsp])
-if test "x${enable_zrtp}" = "xyes"; then
-   AC_CONFIG_SUBDIRS([libs/libzrtp])
 fi
 
 case $host in

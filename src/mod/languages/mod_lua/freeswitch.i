@@ -1,6 +1,13 @@
 %module freeswitch
+
+/* Isolate this module's type table from other swig-lua modules (e.g. ESL). */
+%begin %{
+#define SWIG_TYPE_TABLE mod_lua
+%}
+
 %include ../../../../swig_common.i
 //%include "cstring.i"
+%include std_string.i
 
 /** 
  * tell swig to treat these variables as mutable so they
@@ -44,7 +51,6 @@
   $1 = default_swiglua_fn;
 }
 
-
 %ignore SwitchToMempool;   
 %newobject EventConsumer::pop;
 %newobject Session;
@@ -56,13 +62,22 @@
 %newobject API::executeString;
 %newobject CoreSession::playAndDetectSpeech;
 %newobject JSON;
-%newobject JSON::encode;
 %newobject JSON::decode;
-%newobject JSON::execute;
-%newobject JSON::execute2;
 
 %include "typemaps.i"
 %apply int *OUTPUT { int *len };
+
+%typemap(out) DbhQueryRowsReturn {
+    SWIG_arg += result;
+}
+
+
+/* Stream::read returns binary data; preserve length and embedded NULs. */
+%typemap(out) const char *Stream::read %{ lua_pushlstring(L,(const char*)$1, (*arg2)); SWIG_arg++;%}
+
+/* Guard the self pointer in every Dbh/JSON method wrapper. */
+%typemap(check) LUA::Dbh *  %{ switch_assert($1);%}
+%typemap(check) LUA::JSON * %{ switch_assert($1);%}
 
 /**
  * tell swig to grok everything defined in these header files and
@@ -72,6 +87,13 @@
 
 
 namespace LUA {
+
+/* Bind Lua state into returned Session (needed by hangup/input callbacks). */
+%typemap(out) LUA::Session * {
+  SWIG_NewPointerObj(L, $1, $1_descriptor, $owner); SWIG_arg++;
+  if ($1) ($1)->setLUA(L);
+}
+
 class Session : public CoreSession {
  private:
 	virtual void do_hangup_hook();
@@ -118,6 +140,7 @@ class Dbh {
     bool connected();
     bool test_reactive(char *test_sql, char *drop_sql = NULL, char *reactive_sql = NULL);
     bool query(char *sql, SWIGLUA_FN lua_fun);
+    DbhQueryRowsReturn query_rows(lua_State* L, char *sql);
     int affected_rows();
     char *last_error();
     void clear_error();
@@ -130,11 +153,11 @@ class JSON {
     JSON();
     ~JSON();
     cJSON *decode(const char *str);
-    char *encode(SWIGLUA_TABLE lua_table);
+    std::string encode(SWIGLUA_TABLE lua_table);
     cJSON *execute(const char *);
     cJSON *execute(SWIGLUA_TABLE table);
-    char *execute2(const char *);
-    char *execute2(SWIGLUA_TABLE table);
+    std::string execute2(const char *);
+    std::string execute2(SWIGLUA_TABLE table);
     void encode_empty_table_as_object(bool flag);
     void return_unformatted_json(bool flag);
 };

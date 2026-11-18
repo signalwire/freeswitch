@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
 #include "test/codec_factory.h"
@@ -24,17 +25,16 @@ class DecodeSvcTest : public ::libvpx_test::DecoderTest,
                       public ::libvpx_test::CodecTestWithParam<const char *> {
  protected:
   DecodeSvcTest() : DecoderTest(GET_PARAM(::libvpx_test::kCodecFactoryParam)) {}
-  virtual ~DecodeSvcTest() {}
+  ~DecodeSvcTest() override = default;
 
-  virtual void PreDecodeFrameHook(
-      const libvpx_test::CompressedVideoSource &video,
-      libvpx_test::Decoder *decoder) {
+  void PreDecodeFrameHook(const libvpx_test::CompressedVideoSource &video,
+                          libvpx_test::Decoder *decoder) override {
     if (video.frame_number() == 0)
       decoder->Control(VP9_DECODE_SVC_SPATIAL_LAYER, spatial_layer_);
   }
 
-  virtual void DecompressedFrameHook(const vpx_image_t &img,
-                                     const unsigned int frame_number) {
+  void DecompressedFrameHook(const vpx_image_t &img,
+                             const unsigned int frame_number) override {
     ASSERT_EQ(img.d_w, width_);
     ASSERT_EQ(img.d_h, height_);
     total_frames_ = frame_number;
@@ -53,9 +53,9 @@ class DecodeSvcTest : public ::libvpx_test::DecoderTest,
 // number of frames decoded. This results in 1/4x1/4 resolution (320x180).
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer0) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
-  ASSERT_TRUE(video.get() != NULL);
+  ASSERT_NE(video.get(), nullptr);
   video->Init();
   total_frames_ = 0;
   spatial_layer_ = 0;
@@ -70,9 +70,9 @@ TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer0) {
 // number of frames decoded. This results in 1/2x1/2 resolution (640x360).
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer1) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
-  ASSERT_TRUE(video.get() != NULL);
+  ASSERT_NE(video.get(), nullptr);
   video->Init();
   total_frames_ = 0;
   spatial_layer_ = 1;
@@ -87,9 +87,9 @@ TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer1) {
 // number of frames decoded. This results in the full resolution (1280x720).
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer2) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
-  ASSERT_TRUE(video.get() != NULL);
+  ASSERT_NE(video.get(), nullptr);
   video->Init();
   total_frames_ = 0;
   spatial_layer_ = 2;
@@ -105,9 +105,9 @@ TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer2) {
 // the decoding should result in the full resolution (1280x720).
 TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer10) {
   const std::string filename = GET_PARAM(1);
-  testing::internal::scoped_ptr<libvpx_test::CompressedVideoSource> video;
+  std::unique_ptr<libvpx_test::CompressedVideoSource> video;
   video.reset(new libvpx_test::IVFVideoSource(filename));
-  ASSERT_TRUE(video.get() != NULL);
+  ASSERT_NE(video.get(), nullptr);
   video->Init();
   total_frames_ = 0;
   spatial_layer_ = 10;
@@ -117,7 +117,7 @@ TEST_P(DecodeSvcTest, DecodeSvcTestUpToSpatialLayer10) {
   ASSERT_EQ(total_frames_, kNumFrames);
 }
 
-VP9_INSTANTIATE_TEST_CASE(
+VP9_INSTANTIATE_TEST_SUITE(
     DecodeSvcTest, ::testing::ValuesIn(libvpx_test::kVP9TestVectorsSvc,
                                        libvpx_test::kVP9TestVectorsSvc +
                                            libvpx_test::kNumVP9TestVectorsSvc));

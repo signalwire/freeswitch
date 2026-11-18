@@ -15,25 +15,25 @@
  */
 
 
-#include "apr_strings.h"
-#include "apr_pools.h"
-#include "apr_general.h"
-#include "apr_hash.h"
-#include "apr_lib.h"
-#include "apr_time.h"
+#include "fspr_strings.h"
+#include "fspr_pools.h"
+#include "fspr_general.h"
+#include "fspr_hash.h"
+#include "fspr_lib.h"
+#include "fspr_time.h"
 #include <regex.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 int main( int argc, char** argv) {
-    apr_pool_t *context;
+    fspr_pool_t *context;
     regex_t regex;
     int rc;
     int i;
     int iters;
-    apr_time_t now;
-    apr_time_t end;
-    apr_hash_t *h;
+    fspr_time_t now;
+    fspr_time_t end;
+    fspr_hash_t *h;
     
 
     if (argc !=4 ) {
@@ -42,9 +42,9 @@ int main( int argc, char** argv) {
     }
     iters = atoi( argv[3]);
     
-    apr_initialize() ;
-    atexit(apr_terminate);
-    if (apr_pool_create(&context, NULL) != APR_SUCCESS) {
+    fspr_initialize() ;
+    atexit(fspr_terminate);
+    if (fspr_pool_create(&context, NULL) != APR_SUCCESS) {
         fprintf(stderr, "Something went wrong\n");
         exit(-1);
     }
@@ -63,29 +63,29 @@ int main( int argc, char** argv) {
     else {
         fprintf(stderr,"No Match\n");
     }
-    now = apr_time_now();
+    now = fspr_time_now();
     for (i=0;i<iters;i++) {
         regexec( &regex, argv[2], 0, NULL,0) ;
     }
-    end=apr_time_now();
-    puts(apr_psprintf( context, "Time to run %d regex's          %8lld\n",iters,end-now));
-    h = apr_hash_make( context);
+    end=fspr_time_now();
+    puts(fspr_psprintf( context, "Time to run %d regex's          %8lld\n",iters,end-now));
+    h = fspr_hash_make( context);
     for (i=0;i<70;i++) {
-            apr_hash_set(h,apr_psprintf(context, "%dkey",i),APR_HASH_KEY_STRING,"1");
+            fspr_hash_set(h,fspr_psprintf(context, "%dkey",i),APR_HASH_KEY_STRING,"1");
     }
-    now = apr_time_now();
+    now = fspr_time_now();
     for (i=0;i<iters;i++) {
-        apr_hash_get( h, argv[2], APR_HASH_KEY_STRING);
+        fspr_hash_get( h, argv[2], APR_HASH_KEY_STRING);
     }
-    end=apr_time_now();
-    puts(apr_psprintf( context, "Time to run %d hash (no find)'s %8lld\n",iters,end-now));
-    apr_hash_set(h, argv[2],APR_HASH_KEY_STRING,"1");
-    now = apr_time_now();
+    end=fspr_time_now();
+    puts(fspr_psprintf( context, "Time to run %d hash (no find)'s %8lld\n",iters,end-now));
+    fspr_hash_set(h, argv[2],APR_HASH_KEY_STRING,"1");
+    now = fspr_time_now();
     for (i=0;i<iters;i++) {
-        apr_hash_get( h, argv[2], APR_HASH_KEY_STRING);
+        fspr_hash_get( h, argv[2], APR_HASH_KEY_STRING);
     }
-    end=apr_time_now();
-    puts(apr_psprintf( context, "Time to run %d hash (find)'s    %8lld\n",iters,end-now));
+    end=fspr_time_now();
+    puts(fspr_psprintf( context, "Time to run %d hash (find)'s    %8lld\n",iters,end-now));
  
     return 0;
 }

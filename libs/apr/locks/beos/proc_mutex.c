@@ -18,13 +18,13 @@
  * Stephen Beaulieu <hippo@be.com>
  */
  
-#include "apr_arch_proc_mutex.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_proc_mutex.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
-static apr_status_t _proc_mutex_cleanup(void * data)
+static fspr_status_t _proc_mutex_cleanup(void * data)
 {
-    apr_proc_mutex_t *lock = (apr_proc_mutex_t*)data;
+    fspr_proc_mutex_t *lock = (fspr_proc_mutex_t*)data;
     if (lock->LockCount != 0) {
         /* we're still locked... */
     	while (atomic_add(&lock->LockCount , -1) > 1){
@@ -39,19 +39,19 @@ static apr_status_t _proc_mutex_cleanup(void * data)
     return APR_SUCCESS;
 }    
 
-APR_DECLARE(apr_status_t) apr_proc_mutex_create(apr_proc_mutex_t **mutex,
+APR_DECLARE(fspr_status_t) fspr_proc_mutex_create(fspr_proc_mutex_t **mutex,
                                                 const char *fname,
-                                                apr_lockmech_e mech,
-                                                apr_pool_t *pool)
+                                                fspr_lockmech_e mech,
+                                                fspr_pool_t *pool)
 {
-    apr_proc_mutex_t *new;
-    apr_status_t stat = APR_SUCCESS;
+    fspr_proc_mutex_t *new;
+    fspr_status_t stat = APR_SUCCESS;
   
     if (mech != APR_LOCK_DEFAULT) {
         return APR_ENOTIMPL;
     }
 
-    new = (apr_proc_mutex_t *)apr_pcalloc(pool, sizeof(apr_proc_mutex_t));
+    new = (fspr_proc_mutex_t *)fspr_pcalloc(pool, sizeof(fspr_proc_mutex_t));
     if (new == NULL){
         return APR_ENOMEM;
     }
@@ -64,21 +64,21 @@ APR_DECLARE(apr_status_t) apr_proc_mutex_create(apr_proc_mutex_t **mutex,
     new->Lock = stat;  
     new->pool  = pool;
 
-    apr_pool_cleanup_register(new->pool, (void *)new, _proc_mutex_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(new->pool, (void *)new, _proc_mutex_cleanup,
+                              fspr_pool_cleanup_null);
 
     (*mutex) = new;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_mutex_child_init(apr_proc_mutex_t **mutex,
+APR_DECLARE(fspr_status_t) fspr_proc_mutex_child_init(fspr_proc_mutex_t **mutex,
                                                     const char *fname,
-                                                    apr_pool_t *pool)
+                                                    fspr_pool_t *pool)
 {
     return APR_SUCCESS;
 }
     
-APR_DECLARE(apr_status_t) apr_proc_mutex_lock(apr_proc_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_proc_mutex_lock(fspr_proc_mutex_t *mutex)
 {
     int32 stat;
     
@@ -91,12 +91,12 @@ APR_DECLARE(apr_status_t) apr_proc_mutex_lock(apr_proc_mutex_t *mutex)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_mutex_trylock(apr_proc_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_proc_mutex_trylock(fspr_proc_mutex_t *mutex)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_mutex_unlock(apr_proc_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_proc_mutex_unlock(fspr_proc_mutex_t *mutex)
 {
     int32 stat;
     
@@ -109,58 +109,58 @@ APR_DECLARE(apr_status_t) apr_proc_mutex_unlock(apr_proc_mutex_t *mutex)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_mutex_destroy(apr_proc_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_proc_mutex_destroy(fspr_proc_mutex_t *mutex)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     if ((stat = _proc_mutex_cleanup(mutex)) == APR_SUCCESS) {
-        apr_pool_cleanup_kill(mutex->pool, mutex, _proc_mutex_cleanup);
+        fspr_pool_cleanup_kill(mutex->pool, mutex, _proc_mutex_cleanup);
         return APR_SUCCESS;
     }
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_proc_mutex_cleanup(void *mutex)
+APR_DECLARE(fspr_status_t) fspr_proc_mutex_cleanup(void *mutex)
 {
     return _proc_mutex_cleanup(mutex);
 }
 
 
-APR_DECLARE(const char *) apr_proc_mutex_lockfile(apr_proc_mutex_t *mutex)
+APR_DECLARE(const char *) fspr_proc_mutex_lockfile(fspr_proc_mutex_t *mutex)
 {
     return NULL;
 }
 
-APR_DECLARE(const char *) apr_proc_mutex_name(apr_proc_mutex_t *mutex)
+APR_DECLARE(const char *) fspr_proc_mutex_name(fspr_proc_mutex_t *mutex)
 {
     return "beossem";
 }
 
-APR_DECLARE(const char *) apr_proc_mutex_defname(void)
+APR_DECLARE(const char *) fspr_proc_mutex_defname(void)
 {
     return "beossem";
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(proc_mutex)
 
-/* Implement OS-specific accessors defined in apr_portable.h */
+/* Implement OS-specific accessors defined in fspr_portable.h */
 
-APR_DECLARE(apr_status_t) apr_os_proc_mutex_get(apr_os_proc_mutex_t *ospmutex,
-                                                apr_proc_mutex_t *pmutex)
+APR_DECLARE(fspr_status_t) fspr_os_proc_mutex_get(fspr_os_proc_mutex_t *ospmutex,
+                                                fspr_proc_mutex_t *pmutex)
 {
     ospmutex->sem = pmutex->Lock;
     ospmutex->ben = pmutex->LockCount;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_proc_mutex_put(apr_proc_mutex_t **pmutex,
-                                                apr_os_proc_mutex_t *ospmutex,
-                                                apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_proc_mutex_put(fspr_proc_mutex_t **pmutex,
+                                                fspr_os_proc_mutex_t *ospmutex,
+                                                fspr_pool_t *pool)
 {
     if (pool == NULL) {
         return APR_ENOPOOL;
     }
     if ((*pmutex) == NULL) {
-        (*pmutex) = (apr_proc_mutex_t *)apr_pcalloc(pool, sizeof(apr_proc_mutex_t));
+        (*pmutex) = (fspr_proc_mutex_t *)fspr_pcalloc(pool, sizeof(fspr_proc_mutex_t));
         (*pmutex)->pool = pool;
     }
     (*pmutex)->Lock = ospmutex->sem;

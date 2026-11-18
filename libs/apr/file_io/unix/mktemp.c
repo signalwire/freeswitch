@@ -46,11 +46,11 @@
  * SUCH DAMAGE.
  */
 
-#include "apr_private.h"
-#include "apr_file_io.h" /* prototype of apr_mkstemp() */
-#include "apr_strings.h" /* prototype of apr_mkstemp() */
-#include "apr_arch_file_io.h" /* prototype of apr_mkstemp() */
-#include "apr_portable.h" /* for apr_os_file_put() */
+#include "fspr_private.h"
+#include "fspr_file_io.h" /* prototype of fspr_mkstemp() */
+#include "fspr_strings.h" /* prototype of fspr_mkstemp() */
+#include "fspr_arch_file_io.h" /* prototype of fspr_mkstemp() */
+#include "fspr_portable.h" /* for fspr_os_file_put() */
 
 #ifndef HAVE_MKSTEMP
 
@@ -89,18 +89,18 @@
 
 static const unsigned char padchar[] =
 "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-static apr_uint32_t randseed=0;
+static fspr_uint32_t randseed=0;
 
-static int gettemp(char *path, apr_file_t **doopen, apr_int32_t flags, apr_pool_t *p)
+static int gettemp(char *path, fspr_file_t **doopen, fspr_int32_t flags, fspr_pool_t *p)
 {
     register char *start, *trv, *suffp;
     char *pad;
-    apr_finfo_t sbuf;
-    apr_status_t rv;
-    apr_uint32_t randnum;
+    fspr_finfo_t sbuf;
+    fspr_status_t rv;
+    fspr_uint32_t randnum;
 
     if (randseed==0) {
-        randseed = (int)apr_time_now();
+        randseed = (int)fspr_time_now();
         seedrandom(randseed);
     }
 
@@ -127,7 +127,7 @@ static int gettemp(char *path, apr_file_t **doopen, apr_int32_t flags, apr_pool_
             break;
         if (*trv == '/') {
             *trv = '\0';
-            rv = apr_stat(&sbuf, path, APR_FINFO_TYPE, p);
+            rv = fspr_stat(&sbuf, path, APR_FINFO_TYPE, p);
             *trv = '/';
             if (rv != APR_SUCCESS)
                 return rv;
@@ -139,7 +139,7 @@ static int gettemp(char *path, apr_file_t **doopen, apr_int32_t flags, apr_pool_
     }
 
     for (;;) {
-        if ((rv = apr_file_open(doopen, path, flags,
+        if ((rv = fspr_file_open(doopen, path, flags,
                                 APR_UREAD | APR_UWRITE, p)) == APR_SUCCESS)
             return APR_SUCCESS;
         if (!APR_STATUS_IS_EEXIST(rv))
@@ -172,7 +172,7 @@ static int gettemp(char *path, apr_file_t **doopen, apr_int32_t flags, apr_pool_
 #endif
 #endif /* !defined(HAVE_MKSTEMP) */
 
-APR_DECLARE(apr_status_t) apr_file_mktemp(apr_file_t **fp, char *template, apr_int32_t flags, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_mktemp(fspr_file_t **fp, char *template, fspr_int32_t flags, fspr_pool_t *p)
 {
 #ifdef HAVE_MKSTEMP
     int fd;
@@ -197,13 +197,13 @@ APR_DECLARE(apr_status_t) apr_file_mktemp(apr_file_t **fp, char *template, apr_i
      *
      * We either have to unset the flags, or fix up the fd and other
      * xthread and inherit bits appropriately.  Since gettemp() above
-     * calls apr_file_open, our flags are respected in that code path.
+     * calls fspr_file_open, our flags are respected in that code path.
      */
-    apr_os_file_put(fp, &fd, flags, p);
-    (*fp)->fname = apr_pstrdup(p, template);
+    fspr_os_file_put(fp, &fd, flags, p);
+    (*fp)->fname = fspr_pstrdup(p, template);
 
-    apr_pool_cleanup_register((*fp)->pool, (void *)(*fp),
-                              apr_unix_file_cleanup, apr_unix_file_cleanup);
+    fspr_pool_cleanup_register((*fp)->pool, (void *)(*fp),
+                              fspr_unix_file_cleanup, fspr_unix_file_cleanup);
 #endif
     return APR_SUCCESS;
 }

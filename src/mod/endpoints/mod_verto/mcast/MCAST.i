@@ -1,3 +1,13 @@
+%begin %{
+#ifdef __clang_analyzer__
+#include <string.h>
+static int mystrcmp (const char *a, const char *b) {
+    return a == b ? 0 : !a ? -1 : !b ? 1 : strcmp(a, b);
+}
+#define strcmp mystrcmp
+#endif
+%}
+
 %{
 #include "mcast.h"
 #include "mcast_cpp.h"

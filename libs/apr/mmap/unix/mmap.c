@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_mmap.h"
-#include "apr_errno.h"
-#include "apr_arch_file_io.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_mmap.h"
+#include "fspr_errno.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_portable.h"
 
 /* System headers required for the mmap library */
 #ifdef BEOS
@@ -42,10 +42,10 @@
 
 #if APR_HAS_MMAP || defined(BEOS)
 
-static apr_status_t mmap_cleanup(void *themmap)
+static fspr_status_t mmap_cleanup(void *themmap)
 {
-    apr_mmap_t *mm = themmap;
-    apr_mmap_t *next = APR_RING_NEXT(mm,link);
+    fspr_mmap_t *mm = themmap;
+    fspr_mmap_t *next = APR_RING_NEXT(mm,link);
     int rv = 0;
 
     /* we no longer refer to the mmaped region */
@@ -71,24 +71,24 @@ static apr_status_t mmap_cleanup(void *themmap)
     return errno;
 }
 
-APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new, 
-                                          apr_file_t *file, apr_off_t offset, 
-                                          apr_size_t size, apr_int32_t flag, 
-                                          apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_mmap_create(fspr_mmap_t **new, 
+                                          fspr_file_t *file, fspr_off_t offset, 
+                                          fspr_size_t size, fspr_int32_t flag, 
+                                          fspr_pool_t *cont)
 {
     void *mm;
 #ifdef BEOS
     area_id aid = -1;
     uint32 pages = 0;
 #else
-    apr_int32_t native_flags = 0;
+    fspr_int32_t native_flags = 0;
 #endif
 
 #if APR_HAS_LARGE_FILES && defined(HAVE_MMAP64)
 #define mmap mmap64
 #elif APR_HAS_LARGE_FILES && SIZEOF_OFF_T == 4
     /* LFS but no mmap64: check for overflow */
-    if ((apr_int64_t)offset + size > INT_MAX)
+    if ((fspr_int64_t)offset + size > INT_MAX)
         return APR_EINVAL;
 #endif
 
@@ -97,18 +97,18 @@ APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new,
     
     if (file == NULL || file->filedes == -1 || file->buffered)
         return APR_EBADF;
-    (*new) = (apr_mmap_t *)apr_pcalloc(cont, sizeof(apr_mmap_t));
+    (*new) = (fspr_mmap_t *)fspr_pcalloc(cont, sizeof(fspr_mmap_t));
     
 #ifdef BEOS
     /* XXX: mmap shouldn't really change the seek offset */
-    apr_file_seek(file, APR_SET, &offset);
+    fspr_file_seek(file, APR_SET, &offset);
 
     /* There seems to be some strange interactions that mean our area must
      * be set as READ & WRITE or writev will fail!  Go figure...
      * So we ignore the value in flags and always ask for both READ and WRITE
      */
     pages = (size + B_PAGE_SIZE -1) / B_PAGE_SIZE;
-    aid = create_area("apr_mmap", &mm , B_ANY_ADDRESS, pages * B_PAGE_SIZE,
+    aid = create_area("fspr_mmap", &mm , B_ANY_ADDRESS, pages * B_PAGE_SIZE,
         B_NO_LOCK, B_WRITE_AREA|B_READ_AREA);
 
     if (aid < B_NO_ERROR) {
@@ -145,28 +145,28 @@ APR_DECLARE(apr_status_t) apr_mmap_create(apr_mmap_t **new,
     APR_RING_ELEM_INIT(*new, link);
 
     /* register the cleanup... */
-    apr_pool_cleanup_register((*new)->cntxt, (void*)(*new), mmap_cleanup,
-             apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*new)->cntxt, (void*)(*new), mmap_cleanup,
+             fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_mmap_dup(apr_mmap_t **new_mmap,
-                                       apr_mmap_t *old_mmap,
-                                       apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_mmap_dup(fspr_mmap_t **new_mmap,
+                                       fspr_mmap_t *old_mmap,
+                                       fspr_pool_t *p)
 {
-    *new_mmap = (apr_mmap_t *)apr_pmemdup(p, old_mmap, sizeof(apr_mmap_t));
+    *new_mmap = (fspr_mmap_t *)fspr_pmemdup(p, old_mmap, sizeof(fspr_mmap_t));
     (*new_mmap)->cntxt = p;
 
     APR_RING_INSERT_AFTER(old_mmap, *new_mmap, link);
 
-    apr_pool_cleanup_register(p, *new_mmap, mmap_cleanup,
-                              apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(p, *new_mmap, mmap_cleanup,
+                              fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_mmap_delete(apr_mmap_t *mm)
+APR_DECLARE(fspr_status_t) fspr_mmap_delete(fspr_mmap_t *mm)
 {
-    return apr_pool_cleanup_run(mm->cntxt, mm, mmap_cleanup);
+    return fspr_pool_cleanup_run(mm->cntxt, mm, mmap_cleanup);
 }
 
 #endif

@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2015, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -41,7 +41,7 @@
 
 #include <switch.h>
 #include <switch_json.h>
-#include <switch_vpx.h>
+#include <switch_image.h>
 
 SWITCH_BEGIN_EXTERN_C
 #define SWITCH_ENT_ORIGINATE_DELIM ":_:"
@@ -189,7 +189,6 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME "__cache_speech_handles_obj__"
 #define SWITCH_BYPASS_MEDIA_VARIABLE "bypass_media"
 #define SWITCH_PROXY_MEDIA_VARIABLE "proxy_media"
-#define SWITCH_ZRTP_PASSTHRU_VARIABLE "zrtp_passthru"
 #define SWITCH_ENDPOINT_DISPOSITION_VARIABLE "endpoint_disposition"
 #define SWITCH_HOLD_MUSIC_VARIABLE "hold_music"
 #define SWITCH_TEMP_HOLD_MUSIC_VARIABLE "temp_hold_music"
@@ -255,6 +254,10 @@ SWITCH_BEGIN_EXTERN_C
 #define LOST_BURST_CAPTURE 1024
 
 typedef uint8_t switch_byte_t;
+
+typedef struct {
+	unsigned int value : 31;
+} switch_uint31_t;
 
 typedef enum {
 	SWITCH_PVT_PRIMARY = 0,
@@ -353,7 +356,8 @@ typedef enum {
 	ED_BRIDGE_READ = (1 << 4),
 	ED_BRIDGE_WRITE = (1 << 5),
 	ED_TAP_READ = (1 << 6),
-	ED_TAP_WRITE = (1 << 7)
+	ED_TAP_WRITE = (1 << 7),
+	ED_STEREO = (1 << 8)
 } switch_eavesdrop_flag_enum_t;
 typedef uint32_t switch_eavesdrop_flag_t;
 
@@ -389,7 +393,8 @@ typedef enum {
 	SCF_CPF_SOFT_LOOKUP = (1 << 26),
 	SCF_EVENT_CHANNEL_ENABLE_HIERARCHY_DELIVERY = (1 << 27),
 	SCF_EVENT_CHANNEL_HIERARCHY_DELIVERY_ONCE = (1 << 28),
-	SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29)
+	SCF_EVENT_CHANNEL_LOG_UNDELIVERABLE_JSON = (1 << 29),
+	SCF_LOG_DISABLE = (1 << 30)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 
@@ -593,6 +598,13 @@ SWITCH_DECLARE_DATA extern switch_filenames SWITCH_GLOBAL_filenames;
 #define SWITCH_MAX_MANAGEMENT_BUFFER_LEN 1024 * 8
 
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
+
+/* Check if RAND_MAX is a power of 2 minus 1 or in other words all bits set */
+#if ((RAND_MAX) & ((RAND_MAX) + 1)) == 0 && (RAND_MAX) != 0
+#define SWITCH_RAND_MAX RAND_MAX
+#else
+#define SWITCH_RAND_MAX 0x7fff
+#endif
 
 typedef enum {
 	SWITCH_RW_READ,
@@ -815,10 +827,6 @@ typedef enum {
 	SWITCH_RTP_FLAG_FLUSH,
 	SWITCH_RTP_FLAG_AUTOFLUSH,
 	SWITCH_RTP_FLAG_STICKY_FLUSH,
-	SWITCH_ZRTP_FLAG_SECURE_SEND,
-	SWITCH_ZRTP_FLAG_SECURE_RECV,
-	SWITCH_ZRTP_FLAG_SECURE_MITM_SEND,
-	SWITCH_ZRTP_FLAG_SECURE_MITM_RECV,
 	SWITCH_RTP_FLAG_DEBUG_RTP_READ,
 	SWITCH_RTP_FLAG_DEBUG_RTP_WRITE,
 	SWITCH_RTP_FLAG_ESTIMATORS,
@@ -841,6 +849,9 @@ typedef enum {
 	SWITCH_RTP_FLAG_PASSTHRU,
 	SWITCH_RTP_FLAG_SECURE_SEND_MKI,
 	SWITCH_RTP_FLAG_SECURE_RECV_MKI,
+	SWITCH_RTP_FLAG_SRTP_HANGUP_ON_ERROR,
+	SWITCH_RTP_FLAG_AUDIO_FIRE_SEND_RTCP_EVENT,
+	SWITCH_RTP_FLAG_VIDEO_FIRE_SEND_RTCP_EVENT,
 	SWITCH_RTP_FLAG_INVALID
 } switch_rtp_flag_t;
 
@@ -1133,6 +1144,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_DEFLECT,
 	SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ,
 	SWITCH_MESSAGE_INDICATE_DISPLAY,
+	SWITCH_MESSAGE_INDICATE_MEDIA_PARAMS,
 	SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY,
 	SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
 	SWITCH_MESSAGE_INDICATE_VIDEO_SYNC,
@@ -1169,6 +1181,7 @@ typedef enum {
 	SWITCH_MESSAGE_RESAMPLE_EVENT,
 	SWITCH_MESSAGE_HEARTBEAT_EVENT,
 	SWITCH_MESSAGE_INDICATE_SESSION_ID,
+	SWITCH_MESSAGE_INDICATE_PROMPT,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -1201,9 +1214,8 @@ SWITCH_STACK_TOP	- Stack on the top
 typedef enum {
 	SWITCH_STACK_BOTTOM = (1 << 0),
 	SWITCH_STACK_TOP = (1 << 1),
-	SWITCH_STACK_NODUP = (1 << 2),
-	SWITCH_STACK_UNSHIFT = (1 << 3),
-	SWITCH_STACK_PUSH = (1 << 4),
+	SWITCH_STACK_UNSHIFT = (1 << 2),
+	SWITCH_STACK_PUSH = (1 << 3)
 } switch_stack_t;
 
 /*!
@@ -1293,8 +1305,9 @@ typedef enum {
 	SWITCH_LOG_CRIT = 2,
 	SWITCH_LOG_ALERT = 1,
 	SWITCH_LOG_CONSOLE = 0,
+	SWITCH_LOG_DISABLE = -1,
 	SWITCH_LOG_INVALID = 64,
-	SWITCH_LOG_UNINIT = 1000,
+	SWITCH_LOG_UNINIT = 1000
 } switch_log_level_t;
 
 
@@ -1321,13 +1334,17 @@ typedef enum {
 } switch_core_session_message_flag_enum_t;
 typedef uint32_t switch_core_session_message_flag_t;
 
+typedef struct switch_core_session switch_core_session_t;
+static inline switch_core_session_t *switch_core_session_type_check(switch_core_session_t *session) { return session; }
+static inline const char *switch_const_char_type_check(const char *str) { return str; }
+
 #define SWITCH_CHANNEL_LOG SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
 #define SWITCH_CHANNEL_LOG_CLEAN SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
 #define SWITCH_CHANNEL_SESSION_LOG_CLEAN(x) SWITCH_CHANNEL_ID_LOG_CLEAN, __FILE__, __SWITCH_FUNC__, __LINE__, switch_core_session_get_uuid((x))
 #define SWITCH_CHANNEL_EVENT SWITCH_CHANNEL_ID_EVENT, __FILE__, __SWITCH_FUNC__, __LINE__, NULL
-#define SWITCH_CHANNEL_SESSION_LOG(x) SWITCH_CHANNEL_ID_SESSION, __FILE__, __SWITCH_FUNC__, __LINE__, (const char*)(x)
+#define SWITCH_CHANNEL_SESSION_LOG(x) SWITCH_CHANNEL_ID_SESSION, __FILE__, __SWITCH_FUNC__, __LINE__, (const char*)switch_core_session_type_check(x)
 #define SWITCH_CHANNEL_CHANNEL_LOG(x) SWITCH_CHANNEL_ID_SESSION, __FILE__, __SWITCH_FUNC__, __LINE__, (const char*)switch_channel_get_session(x)
-#define SWITCH_CHANNEL_UUID_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, (x)
+#define SWITCH_CHANNEL_UUID_LOG(x) SWITCH_CHANNEL_ID_LOG, __FILE__, __SWITCH_FUNC__, __LINE__, switch_const_char_type_check(x)
 
 typedef enum {
 	CCS_DOWN,
@@ -1413,6 +1430,7 @@ CF_HOLD_BLEG        - B leg is on hold
 CF_SERVICE			- Channel has a service thread
 CF_TAGGED			- Channel is tagged
 CF_WINNER			- Channel is the winner
+CF_REUSE_CALLER_PROFILE - Channel reuse caller profile 
 CF_CONTROLLED		- Channel is under control
 CF_PROXY_MODE		- Channel has no media
 CF_SUSPEND			- Suspend i/o
@@ -1446,6 +1464,7 @@ typedef enum {
 	CC_IO_OVERRIDE,
 	CC_RTP_RTT,
 	CC_MSRP,
+	CC_MUTE_VIA_MEDIA_STREAM,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CC_FLAG_MAX
 } switch_channel_cap_t;
@@ -1465,6 +1484,7 @@ typedef enum {
 	CF_SERVICE,
 	CF_TAGGED,
 	CF_WINNER,
+	CF_REUSE_CALLER_PROFILE,
 	CF_CONTROLLED,
 	CF_PROXY_MODE,
 	CF_PROXY_OFF,
@@ -1524,11 +1544,9 @@ typedef enum {
 	CF_INTERCEPTED,
 	CF_VIDEO_REFRESH_REQ,
 	CF_MANUAL_VID_REFRESH,
+	CF_MANUAL_MEDIA_PARAMS,
 	CF_SERVICE_AUDIO,
 	CF_SERVICE_VIDEO,
-	CF_ZRTP_PASSTHRU_REQ,
-	CF_ZRTP_PASSTHRU,
-	CF_ZRTP_HASH,
 	CF_CHANNEL_SWAP,
 	CF_DEVICE_LEG,
 	CF_FINAL_DEVICE_LEG,
@@ -1557,6 +1575,7 @@ typedef enum {
 	CF_T38_PASSTHRU,
 	CF_DROP_DTMF,
 	CF_REINVITE,
+	CF_NOSDP_REINVITE,
 	CF_AUTOFLUSH_DURING_BRIDGE,
 	CF_RTP_NOTIMER_DURING_BRIDGE,
 	CF_AVPF,
@@ -1584,7 +1603,7 @@ typedef enum {
 	CF_VIDEO_DECODED_READ,
 	CF_VIDEO_DEBUG_READ,
 	CF_VIDEO_DEBUG_WRITE,
-	CF_VIDEO_ONLY,
+	CF_NO_RECOVER,
 	CF_VIDEO_READY,
 	CF_VIDEO_MIRROR_INPUT,
 	CF_VIDEO_READ_FILE_ATTACHED,
@@ -1618,6 +1637,10 @@ typedef enum {
 	CF_STATE_REPEAT,
 	CF_WANT_DTLSv1_2,
 	CF_RFC7329_COMPAT,
+	CF_REATTACHED,
+	CF_VIDEO_READ_TAPPED,
+	CF_VIDEO_WRITE_TAPPED,
+	CF_DEVICES_CHANGED,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	/* IF YOU ADD NEW ONES CHECK IF THEY SHOULD PERSIST OR ZERO THEM IN switch_core_session.c switch_core_session_request_xml() */
 	CF_FLAG_MAX
@@ -1672,20 +1695,19 @@ typedef enum {
 	SFF_RFC2833 = (1 << 4),
 	SFF_PROXY_PACKET = (1 << 5),
 	SFF_DYNAMIC = (1 << 6),
-	SFF_ZRTP = (1 << 7),
-	SFF_UDPTL_PACKET = (1 << 8),
-	SFF_NOT_AUDIO = (1 << 9),
-	SFF_RTCP = (1 << 10),
-	SFF_MARKER = (1 << 11),
-	SFF_WAIT_KEY_FRAME = (1 << 12),
-	SFF_RAW_RTP_PARSE_FRAME = (1 << 13),
-	SFF_PICTURE_RESET = (1 << 14),
-	SFF_SAME_IMAGE = (1 << 15),
-	SFF_USE_VIDEO_TIMESTAMP = (1 << 16),
-	SFF_ENCODED = (1 << 17),
-	SFF_TEXT_LINE_BREAK = (1 << 18),
-	SFF_IS_KEYFRAME = (1 << 19),
-	SFF_EXTERNAL = (1 << 20)
+	SFF_UDPTL_PACKET = (1 << 7),
+	SFF_NOT_AUDIO = (1 << 8),
+	SFF_RTCP = (1 << 9),
+	SFF_MARKER = (1 << 10),
+	SFF_WAIT_KEY_FRAME = (1 << 11),
+	SFF_RAW_RTP_PARSE_FRAME = (1 << 12),
+	SFF_PICTURE_RESET = (1 << 13),
+	SFF_SAME_IMAGE = (1 << 14),
+	SFF_USE_VIDEO_TIMESTAMP = (1 << 15),
+	SFF_ENCODED = (1 << 16),
+	SFF_TEXT_LINE_BREAK = (1 << 17),
+	SFF_IS_KEYFRAME = (1 << 18),
+	SFF_EXTERNAL = (1 << 19)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 
@@ -1773,7 +1795,8 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
 	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4),
 	SWITCH_SPEECH_FLAG_OPEN = (1 << 5),
-	SWITCH_SPEECH_FLAG_DONE = (1 << 6)
+	SWITCH_SPEECH_FLAG_DONE = (1 << 6),
+	SWITCH_SPEECH_FLAG_MULTI = (1 << 7)
 } switch_speech_flag_enum_t;
 typedef uint32_t switch_speech_flag_t;
 
@@ -1895,7 +1918,8 @@ typedef enum {
 	SMBF_SPY_VIDEO_STREAM_BLEG = (1 << 23),
 	SMBF_READ_VIDEO_PATCH = (1 << 24),
 	SMBF_READ_TEXT_STREAM = (1 << 25),
-	SMBF_FIRST = (1 << 26)
+	SMBF_FIRST = (1 << 26),
+	SMBF_PAUSE = (1 << 27)
 } switch_media_bug_flag_enum_t;
 typedef uint32_t switch_media_bug_flag_t;
 
@@ -2032,6 +2056,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_SEND_INFO
     SWITCH_EVENT_RECV_INFO
     SWITCH_EVENT_RECV_RTCP_MESSAGE
+    SWITCH_EVENT_SEND_RTCP_MESSAGE
     SWITCH_EVENT_CALL_SECURE
     SWITCH_EVENT_NAT            	- NAT Management (new/del/status)
     SWITCH_EVENT_RECORD_START
@@ -2050,6 +2075,7 @@ typedef uint32_t switch_io_flag_t;
     SWITCH_EVENT_CALL_DETAIL
     SWITCH_EVENT_DEVICE_STATE
     SWITCH_EVENT_SHUTDOWN_REQUESTED		- Shutdown of the system has been requested
+    SWITCH_EVENT_CERT_RELOAD			- SSL/TLS certificates reload has been requested
     SWITCH_EVENT_ALL				- All events at once
 </pre>
 
@@ -2127,6 +2153,7 @@ typedef enum {
 	SWITCH_EVENT_SEND_INFO,
 	SWITCH_EVENT_RECV_INFO,
 	SWITCH_EVENT_RECV_RTCP_MESSAGE,
+	SWITCH_EVENT_SEND_RTCP_MESSAGE,
 	SWITCH_EVENT_CALL_SECURE,
 	SWITCH_EVENT_NAT,
 	SWITCH_EVENT_RECORD_START,
@@ -2146,6 +2173,7 @@ typedef enum {
 	SWITCH_EVENT_DEVICE_STATE,
 	SWITCH_EVENT_TEXT,
 	SWITCH_EVENT_SHUTDOWN_REQUESTED,
+	SWITCH_EVENT_CERT_RELOAD,
 	SWITCH_EVENT_ALL
 } switch_event_types_t;
 
@@ -2207,30 +2235,36 @@ typedef enum {
 	SWITCH_CAUSE_INTERWORKING = 127,
 	SWITCH_CAUSE_SUCCESS = 142,
 	SWITCH_CAUSE_ORIGINATOR_CANCEL = 487,
-	SWITCH_CAUSE_CRASH = 500,
-	SWITCH_CAUSE_SYSTEM_SHUTDOWN = 501,
-	SWITCH_CAUSE_LOSE_RACE = 502,
-	SWITCH_CAUSE_MANAGER_REQUEST = 503,
-	SWITCH_CAUSE_BLIND_TRANSFER = 600,
-	SWITCH_CAUSE_ATTENDED_TRANSFER = 601,
-	SWITCH_CAUSE_ALLOTTED_TIMEOUT = 602,
-	SWITCH_CAUSE_USER_CHALLENGE = 603,
-	SWITCH_CAUSE_MEDIA_TIMEOUT = 604,
-	SWITCH_CAUSE_PICKED_OFF = 605,
-	SWITCH_CAUSE_USER_NOT_REGISTERED = 606,
-	SWITCH_CAUSE_PROGRESS_TIMEOUT = 607,
-	SWITCH_CAUSE_INVALID_GATEWAY = 608,
-	SWITCH_CAUSE_GATEWAY_DOWN = 609,
-	SWITCH_CAUSE_INVALID_URL = 610,
-	SWITCH_CAUSE_INVALID_PROFILE = 611,
-	SWITCH_CAUSE_NO_PICKUP = 612,
-	SWITCH_CAUSE_SRTP_READ_ERROR = 613,
-	SWITCH_CAUSE_BOWOUT = 614,
-	SWITCH_CAUSE_BUSY_EVERYWHERE = 615,
-	SWITCH_CAUSE_DECLINE = 616,
-	SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 617,
-	SWITCH_CAUSE_NOT_ACCEPTABLE = 618,
-	SWITCH_CAUSE_UNWANTED = 619
+	SWITCH_CAUSE_CRASH = 700,
+	SWITCH_CAUSE_SYSTEM_SHUTDOWN = 701,
+	SWITCH_CAUSE_LOSE_RACE = 702,
+	SWITCH_CAUSE_MANAGER_REQUEST = 703,
+	SWITCH_CAUSE_BLIND_TRANSFER = 800,
+	SWITCH_CAUSE_ATTENDED_TRANSFER = 801,
+	SWITCH_CAUSE_ALLOTTED_TIMEOUT = 802,
+	SWITCH_CAUSE_USER_CHALLENGE = 803,
+	SWITCH_CAUSE_MEDIA_TIMEOUT = 804,
+	SWITCH_CAUSE_PICKED_OFF = 805,
+	SWITCH_CAUSE_USER_NOT_REGISTERED = 806,
+	SWITCH_CAUSE_PROGRESS_TIMEOUT = 807,
+	SWITCH_CAUSE_INVALID_GATEWAY = 808,
+	SWITCH_CAUSE_GATEWAY_DOWN = 809,
+	SWITCH_CAUSE_INVALID_URL = 810,
+	SWITCH_CAUSE_INVALID_PROFILE = 811,
+	SWITCH_CAUSE_NO_PICKUP = 812,
+	SWITCH_CAUSE_SRTP_READ_ERROR = 813,
+	SWITCH_CAUSE_BOWOUT = 814,
+	SWITCH_CAUSE_BUSY_EVERYWHERE = 815,
+	SWITCH_CAUSE_DECLINE = 816,
+	SWITCH_CAUSE_DOES_NOT_EXIST_ANYWHERE = 817,
+	SWITCH_CAUSE_NOT_ACCEPTABLE = 818,
+	SWITCH_CAUSE_UNWANTED = 819,
+	SWITCH_CAUSE_NO_IDENTITY = 820,
+	SWITCH_CAUSE_BAD_IDENTITY_INFO = 821,
+	SWITCH_CAUSE_UNSUPPORTED_CERTIFICATE = 822,
+	SWITCH_CAUSE_INVALID_IDENTITY = 823,
+	SWITCH_CAUSE_STALE_DATE = 824,
+	SWITCH_CAUSE_REJECT_ALL = 825
 } switch_call_cause_t;
 
 typedef enum {
@@ -2276,7 +2310,10 @@ typedef enum {
 	SCSC_SPS_PEAK,
 	SCSC_SPS_PEAK_FIVEMIN,
 	SCSC_SESSIONS_PEAK,
-	SCSC_SESSIONS_PEAK_FIVEMIN
+	SCSC_SESSIONS_PEAK_FIVEMIN,
+	SCSC_MDNS_RESOLVE,
+	SCSC_SHUTDOWN_CAUSE,
+	SCSC_UUID_VERSION
 } switch_session_ctl_t;
 
 typedef enum {
@@ -2292,7 +2329,8 @@ typedef int switch_os_socket_t;
 #define SWITCH_SOCK_INVALID -1
 #endif
 
-typedef struct apr_pool_t switch_memory_pool_t;
+typedef struct fspr_pool_t switch_memory_pool_t;
+typedef void* switch_plc_state_t;
 typedef uint16_t switch_port_t;
 typedef uint8_t switch_payload_t;
 typedef struct switch_app_log switch_app_log_t;
@@ -2309,7 +2347,6 @@ typedef struct switch_rtcp_frame switch_rtcp_frame_t;
 typedef struct switch_channel switch_channel_t;
 typedef struct switch_sql_queue_manager switch_sql_queue_manager_t;
 typedef struct switch_file_handle switch_file_handle_t;
-typedef struct switch_core_session switch_core_session_t;
 typedef struct switch_caller_profile switch_caller_profile_t;
 typedef struct switch_caller_extension switch_caller_extension_t;
 typedef struct switch_caller_application switch_caller_application_t;
@@ -2403,6 +2440,7 @@ typedef enum {
 	SCC_VIDEO_RESET,
 	SCC_AUDIO_PACKET_LOSS,
 	SCC_AUDIO_ADJUST_BITRATE,
+	SCC_AUDIO_VAD,
 	SCC_DEBUG,
 	SCC_CODEC_SPECIFIC
 } switch_codec_control_command_t;
@@ -2633,14 +2671,18 @@ struct switch_live_array_s;
 typedef struct switch_live_array_s switch_live_array_t;
 
 typedef enum {
-	SDP_TYPE_REQUEST,
-	SDP_TYPE_RESPONSE
+	SDP_OFFER,
+	SDP_ANSWER
 } switch_sdp_type_t;
 
+#define SDP_TYPE_REQUEST SDP_OFFER
+#define SDP_TYPE_RESPONSE SDP_ANSWER
 
 typedef enum {
 	AEAD_AES_256_GCM_8,
+	AEAD_AES_256_GCM,
 	AEAD_AES_128_GCM_8,
+	AEAD_AES_128_GCM,
 	AES_CM_256_HMAC_SHA1_80,
 	AES_CM_192_HMAC_SHA1_80,
 	AES_CM_128_HMAC_SHA1_80,
@@ -2790,6 +2832,7 @@ typedef struct switch_mm_s {
 	int cbr;
 	float fps;
 	float source_fps;
+	int source_kps;
 	int vbuf;
 	switch_video_profile_t vprofile;
 	switch_video_encode_speed_t vencspd;
@@ -2861,6 +2904,8 @@ typedef struct switch_dial_leg_s switch_dial_leg_t;
 struct switch_dial_leg_list_s;
 typedef struct switch_dial_leg_list_s switch_dial_leg_list_t;
 
+struct switch_dial_handle_list_s;
+typedef struct switch_dial_handle_list_s switch_dial_handle_list_t;
 
 SWITCH_END_EXTERN_C
 #endif

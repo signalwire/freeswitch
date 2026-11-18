@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
+#include "fspr_arch_file_io.h"
 #include "fsio.h"
 #include "nks/dirio.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_errno.h"
-#include "apr_hash.h"
-#include "apr_thread_rwlock.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_errno.h"
+#include "fspr_hash.h"
+#include "fspr_thread_rwlock.h"
 
 #ifdef HAVE_UTIME_H
 #include <utime.h>
@@ -30,9 +30,9 @@
 
 #define APR_HAS_PSA
 
-static apr_filetype_e filetype_from_mode(mode_t mode)
+static fspr_filetype_e filetype_from_mode(mode_t mode)
 {
-    apr_filetype_e type = APR_NOFILE;
+    fspr_filetype_e type = APR_NOFILE;
 
     if (S_ISREG(mode))
         type = APR_REG;
@@ -53,12 +53,12 @@ static apr_filetype_e filetype_from_mode(mode_t mode)
     return type;
 }
 
-static void fill_out_finfo(apr_finfo_t *finfo, struct stat *info,
-                           apr_int32_t wanted)
+static void fill_out_finfo(fspr_finfo_t *finfo, struct stat *info,
+                           fspr_int32_t wanted)
 { 
     finfo->valid = APR_FINFO_MIN | APR_FINFO_IDENT | APR_FINFO_NLINK 
                     | APR_FINFO_OWNER | APR_FINFO_PROT;
-    finfo->protection = apr_unix_mode2perms(info->st_mode);
+    finfo->protection = fspr_unix_mode2perms(info->st_mode);
     finfo->filetype = filetype_from_mode(info->st_mode);
     finfo->user = info->st_uid;
     finfo->group = info->st_gid;
@@ -66,9 +66,9 @@ static void fill_out_finfo(apr_finfo_t *finfo, struct stat *info,
     finfo->inode = info->st_ino;
     finfo->device = info->st_dev;
     finfo->nlink = info->st_nlink;
-    apr_time_ansi_put(&finfo->atime, info->st_atime.tv_sec);
-    apr_time_ansi_put(&finfo->mtime, info->st_mtime.tv_sec);
-    apr_time_ansi_put(&finfo->ctime, info->st_ctime.tv_sec);
+    fspr_time_ansi_put(&finfo->atime, info->st_atime.tv_sec);
+    fspr_time_ansi_put(&finfo->mtime, info->st_mtime.tv_sec);
+    fspr_time_ansi_put(&finfo->ctime, info->st_ctime.tv_sec);
     /* ### needs to be revisited  
      * if (wanted & APR_FINFO_CSIZE) {
      *   finfo->csize = info->st_blocks * 512;
@@ -77,14 +77,14 @@ static void fill_out_finfo(apr_finfo_t *finfo, struct stat *info,
      */
 }
 
-APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo, 
-                                            apr_int32_t wanted,
-                                            apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_info_get(fspr_finfo_t *finfo, 
+                                            fspr_int32_t wanted,
+                                            fspr_file_t *thefile)
 {
     struct stat info;
 
     if (thefile->buffered) {
-        apr_status_t rv = apr_file_flush(thefile);
+        fspr_status_t rv = fspr_file_flush(thefile);
         if (rv != APR_SUCCESS)
             return rv;
     }
@@ -100,30 +100,30 @@ APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo,
     }
 }
 
-APR_DECLARE(apr_status_t) apr_file_perms_set(const char *fname, 
-                                             apr_fileperms_t perms)
+APR_DECLARE(fspr_status_t) fspr_file_perms_set(const char *fname, 
+                                             fspr_fileperms_t perms)
 {
-    mode_t mode = apr_unix_perms2mode(perms);
+    mode_t mode = fspr_unix_perms2mode(perms);
 
     if (chmod(fname, mode) == -1)
         return errno;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
-                                             apr_fileattrs_t attributes,
-                                             apr_fileattrs_t attr_mask,
-                                             apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_attrs_set(const char *fname,
+                                             fspr_fileattrs_t attributes,
+                                             fspr_fileattrs_t attr_mask,
+                                             fspr_pool_t *pool)
 {
-    apr_status_t status;
-    apr_finfo_t finfo;
+    fspr_status_t status;
+    fspr_finfo_t finfo;
 
     /* Don't do anything if we can't handle the requested attributes */
     if (!(attr_mask & (APR_FILE_ATTR_READONLY
                        | APR_FILE_ATTR_EXECUTABLE)))
         return APR_SUCCESS;
 
-    status = apr_stat(&finfo, fname, APR_FINFO_PROT, pool);
+    status = fspr_stat(&finfo, fname, APR_FINFO_PROT, pool);
     if (status)
         return status;
 
@@ -162,21 +162,21 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
         }
     }
 
-    return apr_file_perms_set(fname, finfo.protection);
+    return fspr_file_perms_set(fname, finfo.protection);
 }
 
 #ifndef APR_HAS_PSA
-static apr_status_t stat_cache_cleanup(void *data)
+static fspr_status_t stat_cache_cleanup(void *data)
 {
-    apr_pool_t *p = (apr_pool_t *)getGlobalPool();
-    apr_hash_index_t *hi;
-    apr_hash_t *statCache = (apr_hash_t*)data;
+    fspr_pool_t *p = (fspr_pool_t *)getGlobalPool();
+    fspr_hash_index_t *hi;
+    fspr_hash_t *statCache = (fspr_hash_t*)data;
 	char *key;
-    apr_ssize_t keylen;
+    fspr_ssize_t keylen;
     NXPathCtx_t pathctx;
 
-    for (hi = apr_hash_first(p, statCache); hi; hi = apr_hash_next(hi)) {
-        apr_hash_this(hi, (const void**)&key, &keylen, (void**)&pathctx);
+    for (hi = fspr_hash_first(p, statCache); hi; hi = fspr_hash_next(hi)) {
+        fspr_hash_this(hi, (const void**)&key, &keylen, (void**)&pathctx);
 
         if (pathctx) {
             NXFreePathContext(pathctx);
@@ -186,11 +186,11 @@ static apr_status_t stat_cache_cleanup(void *data)
     return APR_SUCCESS;
 }
 
-int cstat (NXPathCtx_t ctx, char *path, struct stat *buf, unsigned long requestmap, apr_pool_t *p)
+int cstat (NXPathCtx_t ctx, char *path, struct stat *buf, unsigned long requestmap, fspr_pool_t *p)
 {
-    apr_pool_t *gPool = (apr_pool_t *)getGlobalPool();
-    apr_hash_t *statCache = NULL;
-    apr_thread_rwlock_t *rwlock = NULL;
+    fspr_pool_t *gPool = (fspr_pool_t *)getGlobalPool();
+    fspr_hash_t *statCache = NULL;
+    fspr_thread_rwlock_t *rwlock = NULL;
 
     NXPathCtx_t pathctx = 0;
     char *ptr = NULL, *tr;
@@ -205,22 +205,22 @@ int cstat (NXPathCtx_t ctx, char *path, struct stat *buf, unsigned long requestm
         if (!gPool) {
             char poolname[50];
     
-            if (apr_pool_create(&gPool, NULL) != APR_SUCCESS) {
+            if (fspr_pool_create(&gPool, NULL) != APR_SUCCESS) {
                 return getstat(ctx, path, buf, requestmap);
             }
     
             setGlobalPool(gPool);
-            apr_pool_tag(gPool, apr_pstrdup(gPool, "cstat_mem_pool"));
+            fspr_pool_tag(gPool, fspr_pstrdup(gPool, "cstat_mem_pool"));
     
-            statCache = apr_hash_make(gPool);
-            apr_pool_userdata_set ((void*)statCache, "STAT_CACHE", stat_cache_cleanup, gPool);
+            statCache = fspr_hash_make(gPool);
+            fspr_pool_userdata_set ((void*)statCache, "STAT_CACHE", stat_cache_cleanup, gPool);
 
-            apr_thread_rwlock_create(&rwlock, gPool);
-            apr_pool_userdata_set ((void*)rwlock, "STAT_CACHE_LOCK", apr_pool_cleanup_null, gPool);
+            fspr_thread_rwlock_create(&rwlock, gPool);
+            fspr_pool_userdata_set ((void*)rwlock, "STAT_CACHE_LOCK", fspr_pool_cleanup_null, gPool);
         }
         else {
-            apr_pool_userdata_get((void**)&statCache, "STAT_CACHE", gPool);
-            apr_pool_userdata_get((void**)&rwlock, "STAT_CACHE_LOCK", gPool);
+            fspr_pool_userdata_get((void**)&statCache, "STAT_CACHE", gPool);
+            fspr_pool_userdata_get((void**)&rwlock, "STAT_CACHE_LOCK", gPool);
         }
 
         if (!gPool || !statCache || !rwlock) {
@@ -239,7 +239,7 @@ int cstat (NXPathCtx_t ctx, char *path, struct stat *buf, unsigned long requestm
         }
     
         if (ptr) {
-            ppath = apr_pstrndup (p, path, len);
+            ppath = fspr_pstrndup (p, path, len);
             strlwr(ppath);
             if (ptr[1] != '\0') {
                 ptr++;
@@ -249,19 +249,19 @@ int cstat (NXPathCtx_t ctx, char *path, struct stat *buf, unsigned long requestm
                slash, we need to make sure we stat the current directory
                with a dot */
             if (((*ptr == '/') || (*ptr == '\\')) && (*(ptr+1) == '\0')) {
-                pinfo = apr_pstrdup (p, ".");
+                pinfo = fspr_pstrdup (p, ".");
             }
             else {
-                pinfo = apr_pstrdup (p, ptr);
+                pinfo = fspr_pstrdup (p, ptr);
             }
         }
     
         /* If we have a statCache then try to pull the information
            from the cache.  Otherwise just stat the file and return.*/
         if (statCache) {
-            apr_thread_rwlock_rdlock(rwlock);
-            pathctx = (NXPathCtx_t) apr_hash_get(statCache, ppath, APR_HASH_KEY_STRING);
-            apr_thread_rwlock_unlock(rwlock);
+            fspr_thread_rwlock_rdlock(rwlock);
+            pathctx = (NXPathCtx_t) fspr_hash_get(statCache, ppath, APR_HASH_KEY_STRING);
+            fspr_thread_rwlock_unlock(rwlock);
             if (pathctx) {
                 return getstat(pathctx, pinfo, buf, requestmap);
             }
@@ -270,9 +270,9 @@ int cstat (NXPathCtx_t ctx, char *path, struct stat *buf, unsigned long requestm
 
                 err = NXCreatePathContext(0, ppath, 0, NULL, &pathctx);
                 if (!err) {
-                    apr_thread_rwlock_wrlock(rwlock);
-                    apr_hash_set(statCache, apr_pstrdup(gPool,ppath) , APR_HASH_KEY_STRING, (void*)pathctx);
-                    apr_thread_rwlock_unlock(rwlock);
+                    fspr_thread_rwlock_wrlock(rwlock);
+                    fspr_hash_set(statCache, fspr_pstrdup(gPool,ppath) , APR_HASH_KEY_STRING, (void*)pathctx);
+                    fspr_thread_rwlock_unlock(rwlock);
                     return getstat(pathctx, pinfo, buf, requestmap);
                 }
             }
@@ -282,9 +282,9 @@ int cstat (NXPathCtx_t ctx, char *path, struct stat *buf, unsigned long requestm
 }
 #endif
 
-APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, 
+APR_DECLARE(fspr_status_t) fspr_stat(fspr_finfo_t *finfo, 
                                    const char *fname, 
-                                   apr_int32_t wanted, apr_pool_t *pool)
+                                   fspr_int32_t wanted, fspr_pool_t *pool)
 {
     struct stat info;
     int srv;
@@ -305,7 +305,7 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo,
         if (wanted & APR_FINFO_LINK)
             wanted &= ~APR_FINFO_LINK;
         if (wanted & APR_FINFO_NAME) {
-            finfo->name = apr_pstrdup(pool, info.st_name);
+            finfo->name = fspr_pstrdup(pool, info.st_name);
             finfo->valid |= APR_FINFO_NAME;
         }
         return (wanted & ~finfo->valid) ? APR_INCOMPLETE : APR_SUCCESS;
@@ -345,14 +345,14 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo,
     }
 }
 
-APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
-                                              apr_time_t mtime,
-                                              apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_mtime_set(const char *fname,
+                                              fspr_time_t mtime,
+                                              fspr_pool_t *pool)
 {
-    apr_status_t status;
-    apr_finfo_t finfo;
+    fspr_status_t status;
+    fspr_finfo_t finfo;
 
-    status = apr_stat(&finfo, fname, APR_FINFO_ATIME, pool);
+    status = fspr_stat(&finfo, fname, APR_FINFO_ATIME, pool);
     if (status) {
         return status;
     }
@@ -361,10 +361,10 @@ APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
     {
       struct timeval tvp[2];
     
-      tvp[0].tv_sec = apr_time_sec(finfo.atime);
-      tvp[0].tv_usec = apr_time_usec(finfo.atime);
-      tvp[1].tv_sec = apr_time_sec(mtime);
-      tvp[1].tv_usec = apr_time_usec(mtime);
+      tvp[0].tv_sec = fspr_time_sec(finfo.atime);
+      tvp[0].tv_usec = fspr_time_usec(finfo.atime);
+      tvp[1].tv_sec = fspr_time_sec(mtime);
+      tvp[1].tv_usec = fspr_time_usec(mtime);
       
       if (utimes(fname, tvp) == -1) {
         return errno;

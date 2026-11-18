@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP8_ENCODER_TREEWRITER_H_
-#define VP8_ENCODER_TREEWRITER_H_
+#ifndef VPX_VP8_ENCODER_TREEWRITER_H_
+#define VPX_VP8_ENCODER_TREEWRITER_H_
 
 /* Trees map alphabets into huffman-like codes suitable for an arithmetic
    bit coder.  Timothy S Murphy  11 October 2004 */
+
+#include <stdint.h>
 
 #include "./vpx_config.h"
 #include "vp8/common/treecoder.h"
@@ -48,7 +50,9 @@ static INLINE unsigned int vp8_cost_branch(const unsigned int ct[2],
                                            vp8_prob p) {
   /* Imitate existing calculation */
 
-  return ((ct[0] * vp8_cost_zero(p)) + (ct[1] * vp8_cost_one(p))) >> 8;
+  return (unsigned int)(((((uint64_t)ct[0]) * vp8_cost_zero(p)) +
+                         (((uint64_t)ct[1]) * vp8_cost_one(p))) >>
+                        8);
 }
 
 /* Small functions to write explicit values and tokens, as well as
@@ -56,8 +60,7 @@ static INLINE unsigned int vp8_cost_branch(const unsigned int ct[2],
 
 static void vp8_treed_write(vp8_writer *const w, vp8_tree t,
                             const vp8_prob *const p, int v,
-                            int n /* number of bits in v, assumed nonzero */
-                            ) {
+                            int n) { /* number of bits in v, assumed nonzero */
   vp8_tree_index i = 0;
 
   do {
@@ -73,8 +76,7 @@ static INLINE void vp8_write_token(vp8_writer *const w, vp8_tree t,
 }
 
 static int vp8_treed_cost(vp8_tree t, const vp8_prob *const p, int v,
-                          int n /* number of bits in v, assumed nonzero */
-                          ) {
+                          int n) { /* number of bits in v, assumed nonzero */
   int c = 0;
   vp8_tree_index i = 0;
 
@@ -93,12 +95,12 @@ static INLINE int vp8_cost_token(vp8_tree t, const vp8_prob *const p,
 
 /* Fill array of costs for all possible token values. */
 
-void vp8_cost_tokens(int *Costs, const vp8_prob *, vp8_tree);
+void vp8_cost_tokens(int *c, const vp8_prob *, vp8_tree);
 
-void vp8_cost_tokens2(int *Costs, const vp8_prob *, vp8_tree, int);
+void vp8_cost_tokens2(int *c, const vp8_prob *, vp8_tree, int);
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // VP8_ENCODER_TREEWRITER_H_
+#endif  // VPX_VP8_ENCODER_TREEWRITER_H_

@@ -35,7 +35,7 @@
 
   <Target Name="opensslbinariesTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/openssl-v$(OpenSSLVersion)_$(OpenSSLBuildNumber)/openssl-$(OpenSSLVersion)_$(OpenSSLBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
            expectfileordirectory="$(OpenSSLLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\openssl.exe"
            outputfolder=""
            outputfilename="" 
@@ -45,7 +45,7 @@
 
   <Target Name="opensslheadersTarget" BeforeTargets="CustomBuild" DependsOnTargets="opensslbinariesTarget">  
       <DownloadPackageTask 
-           package="http://files.freeswitch.org/windows/packages/openssl/$(OpenSSLVersion)/openssl-$(OpenSSLVersion)-headers.zip"
+           package="https://github.com/freeswitch/windows-deps/releases/download/openssl-v$(OpenSSLVersion)_$(OpenSSLBuildNumber)/openssl-$(OpenSSLVersion)_$(OpenSSLBuildNumber)-headers.zip"
            expectfileordirectory="$(OpenSSLLibDir)\include\openssl\ssl.h" 
            outputfolder=""
            outputfilename="" 
@@ -68,12 +68,11 @@
       <AdditionalIncludeDirectories>$(OpenSSLLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='Win32'">$(OpenSSLLibDir)\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(OpenSSLLibDir)\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>OPENSSL;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_LIBCRYPTO;OPENSSL;HAVE_OPENSSL;HAVE_OPENSSL_DTLS_SRTP;HAVE_OPENSSL_DTLS;HAVE_OPENSSL_DTLSv1_2_method;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(OpenSSLLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies Condition="'$(Platform)'=='Win32'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="'$(Platform)'=='x64'">ws2_32.lib;libeay32.lib;ssleay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;libcrypto.lib;libssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 </Project>

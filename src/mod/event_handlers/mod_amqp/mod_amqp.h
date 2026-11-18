@@ -40,9 +40,18 @@
 #define MOD_AMQP_H
 
 #include <switch.h>
+#define AMQP_VERSION_INT(a, b) ((a)<<8 | (b))
+#if AMQP_VERSION_INT(AMQP_MAJOR_VERSION, AMQP_MINOR_VERSION) >= AMQP_VERSION_INT(0, 12)
+#include <rabbitmq-c/amqp.h>
+#include <rabbitmq-c/framing.h>
+#include <rabbitmq-c/tcp_socket.h>
+#include <rabbitmq-c/ssl_socket.h>
+#else
 #include <amqp.h>
 #include <amqp_framing.h>
 #include <amqp_tcp_socket.h>
+#include <amqp_ssl_socket.h>
+#endif
 
 #ifndef _MSC_VER
 #include <strings.h>
@@ -74,6 +83,8 @@ typedef struct mod_amqp_connection_s {
   char *password;
   unsigned int port;
   unsigned int heartbeat; /* in seconds */
+  amqp_boolean_t ssl_on;
+  amqp_boolean_t ssl_verify_peer;
   amqp_connection_state_t state;
 
   struct mod_amqp_connection_s *next;
@@ -83,6 +94,11 @@ typedef struct mod_amqp_keypart_s {
   char *name[MAX_ROUTING_KEY_FORMAT_FALLBACK_FIELDS];
   int size;
 } mod_amqp_keypart_t;
+
+typedef struct {
+  switch_event_types_t id;
+  char* subclass;
+} mod_amqp_events_t;
 
 typedef struct {
   char *name;
@@ -100,7 +116,7 @@ typedef struct {
   /* Array to store the possible event subscriptions */
   int event_subscriptions;
   switch_event_node_t *event_nodes[SWITCH_EVENT_ALL];
-  switch_event_types_t event_ids[SWITCH_EVENT_ALL];
+  mod_amqp_events_t events[SWITCH_EVENT_ALL];
   switch_event_node_t *eventNode;
 
 

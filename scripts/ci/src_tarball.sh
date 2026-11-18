@@ -1,6 +1,17 @@
 #!/bin/sh
 ##### -*- mode:shell-script; indent-tabs-mode:nil; sh-basic-offset:2 -*-
 
+. $(dirname $0)/build-requirements.sh
+
+# run build checks
+check_make
+check_awk
+check_ac_ver
+check_am_ver
+check_acl_ver
+check_lt_ver
+check_libtoolize
+
 sdir="."
 [ -n "${0%/*}" ] && sdir="${0%/*}"
 . $sdir/common.sh
@@ -47,7 +58,6 @@ mkdir -p ${src_repo}/../src_dist
 mv -f ${dst_name}.tar.* ${src_repo}/../src_dist
 mv -f $dst_name.zip ${src_repo}/../src_dist
 cp -f ${dst_dir}/freeswitch.spec ${src_repo}/../src_dist
-cp -f ${dst_dir}/freeswitch-config-rayo.spec ${src_repo}/../src_dist
 
 rm -rf ${dst_name}.tar $dst_dir
 

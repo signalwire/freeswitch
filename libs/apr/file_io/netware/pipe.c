@@ -18,12 +18,12 @@
 #include <nks/fsio.h>
 #include <nks/errno.h>
 
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_arch_inherit.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_arch_inherit.h"
 
-static apr_status_t pipeblock(apr_file_t *thepipe)
+static fspr_status_t pipeblock(fspr_file_t *thepipe)
 {
 #ifdef USE_FLAGS
     int				err;
@@ -46,7 +46,7 @@ static apr_status_t pipeblock(apr_file_t *thepipe)
     return APR_SUCCESS;
 }
 
-static apr_status_t pipenonblock(apr_file_t *thepipe)
+static fspr_status_t pipenonblock(fspr_file_t *thepipe)
 {
 #ifdef USE_FLAGS
 	int				err;
@@ -70,7 +70,7 @@ static apr_status_t pipenonblock(apr_file_t *thepipe)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_timeout_set(fspr_file_t *thepipe, fspr_interval_time_t timeout)
 {
     if (thepipe->is_pipe == 1) {
         thepipe->timeout = timeout;
@@ -89,7 +89,7 @@ APR_DECLARE(apr_status_t) apr_file_pipe_timeout_set(apr_file_t *thepipe, apr_int
     return APR_EINVAL;
 }
 
-APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get(apr_file_t *thepipe, apr_interval_time_t *timeout)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_timeout_get(fspr_file_t *thepipe, fspr_interval_time_t *timeout)
 {
     if (thepipe->is_pipe == 1) {
         *timeout = thepipe->timeout;
@@ -98,14 +98,14 @@ APR_DECLARE(apr_status_t) apr_file_pipe_timeout_get(apr_file_t *thepipe, apr_int
     return APR_EINVAL;
 }
 
-APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
-                                             apr_os_file_t *thefile,
+APR_DECLARE(fspr_status_t) fspr_os_pipe_put_ex(fspr_file_t **file,
+                                             fspr_os_file_t *thefile,
                                              int register_cleanup,
-                                             apr_pool_t *pool)
+                                             fspr_pool_t *pool)
 {
     int *dafile = thefile;
     
-    (*file) = apr_pcalloc(pool, sizeof(apr_file_t));
+    (*file) = fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*file)->pool = pool;
     (*file)->eof_hit = 0;
     (*file)->is_pipe = 1;
@@ -121,21 +121,21 @@ APR_DECLARE(apr_status_t) apr_os_pipe_put_ex(apr_file_t **file,
     (*file)->thlock = NULL;
 #endif
     if (register_cleanup) {
-        apr_pool_cleanup_register((*file)->pool, (void *)(*file),
-                                  apr_unix_file_cleanup,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register((*file)->pool, (void *)(*file),
+                                  fspr_unix_file_cleanup,
+                                  fspr_pool_cleanup_null);
     }
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_pipe_put(apr_file_t **file,
-                                          apr_os_file_t *thefile,
-                                          apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_pipe_put(fspr_file_t **file,
+                                          fspr_os_file_t *thefile,
+                                          fspr_pool_t *pool)
 {
-    return apr_os_pipe_put_ex(file, thefile, 0, pool);
+    return fspr_os_pipe_put_ex(file, thefile, 0, pool);
 }
 
-APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_pipe_create(fspr_file_t **in, fspr_file_t **out, fspr_pool_t *pool)
 {
 	int     	filedes[2];
 	int 		err;
@@ -144,8 +144,8 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
         return errno;
     }
 
-    (*in) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
-    (*out) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
+    (*in) = (fspr_file_t *)fspr_pcalloc(pool, sizeof(fspr_file_t));
+    (*out) = (fspr_file_t *)fspr_pcalloc(pool, sizeof(fspr_file_t));
 
     (*in)->pool     =
     (*out)->pool    = pool;
@@ -166,19 +166,19 @@ APR_DECLARE(apr_status_t) apr_file_pipe_create(apr_file_t **in, apr_file_t **out
     (*in)->ungetchar = -1;
     (*in)->thlock    =
     (*out)->thlock   = NULL;
-    (void) apr_pollset_create(&(*in)->pollset, 1, pool, 0);
-    (void) apr_pollset_create(&(*out)->pollset, 1, pool, 0);
+    (void) fspr_pollset_create(&(*in)->pollset, 1, pool, 0);
+    (void) fspr_pollset_create(&(*out)->pollset, 1, pool, 0);
 
-    apr_pool_cleanup_register((*in)->pool, (void *)(*in), apr_unix_file_cleanup,
-                         apr_pool_cleanup_null);
-    apr_pool_cleanup_register((*out)->pool, (void *)(*out), apr_unix_file_cleanup,
-                         apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*in)->pool, (void *)(*in), fspr_unix_file_cleanup,
+                         fspr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*out)->pool, (void *)(*out), fspr_unix_file_cleanup,
+                         fspr_pool_cleanup_null);
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_namedpipe_create(const char *filename, 
-                                                    apr_fileperms_t perm, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_namedpipe_create(const char *filename, 
+                                                    fspr_fileperms_t perm, fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 } 

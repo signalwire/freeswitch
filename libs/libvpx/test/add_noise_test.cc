@@ -8,11 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <math.h>
+
+#include <memory>
+#include <tuple>
+
+#include "gtest/gtest.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "test/util.h"
 #include "./vpx_dsp_rtcd.h"
 #include "vpx/vpx_integer.h"
+#include "vpx_config.h"
 #include "vpx_dsp/postproc.h"
 #include "vpx_mem/vpx_mem.h"
 
@@ -20,15 +26,17 @@ namespace {
 
 static const int kNoiseSize = 3072;
 
-// TODO(jimbankoski): make width and height integers not unsigned.
-typedef void (*AddNoiseFunc)(uint8_t *start, const int8_t *noise,
-                             int blackclamp, int whiteclamp, int width,
-                             int height, int pitch);
+using AddNoiseFunc = void (*)(uint8_t *start, const int8_t *noise,
+                              int blackclamp, int whiteclamp, int width,
+                              int height, int pitch);
 
-class AddNoiseTest : public ::testing::TestWithParam<AddNoiseFunc> {
+using AddNoiseTestFPParam = std::tuple<double, AddNoiseFunc>;
+
+class AddNoiseTest : public ::testing::Test,
+                     public ::testing::WithParamInterface<AddNoiseTestFPParam> {
  public:
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
-  virtual ~AddNoiseTest() {}
+  void TearDown() override { libvpx_test::ClearSystemState(); }
+  ~AddNoiseTest() override = default;
 };
 
 double stddev6(char a, char b, char c, char d, char e, char f) {
@@ -44,14 +52,14 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
   const int height = 64;
   const int image_size = width * height;
   int8_t noise[kNoiseSize];
-  const int clamp = vpx_setup_noise(4.4, noise, kNoiseSize);
+  const int clamp = vpx_setup_noise(GET_PARAM(0), noise, kNoiseSize);
   uint8_t *const s =
       reinterpret_cast<uint8_t *>(vpx_calloc(image_size, sizeof(*s)));
-  ASSERT_TRUE(s != NULL);
+  ASSERT_NE(s, nullptr);
   memset(s, 99, image_size * sizeof(*s));
 
   ASM_REGISTER_STATE_CHECK(
-      GetParam()(s, noise, clamp, clamp, width, height, width));
+      GET_PARAM(1)(s, noise, clamp, clamp, width, height, width));
 
   // Check to make sure we don't end up having either the same or no added
   // noise either vertically or horizontally.
@@ -70,7 +78,7 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
   memset(s, 255, image_size);
 
   ASM_REGISTER_STATE_CHECK(
-      GetParam()(s, noise, clamp, clamp, width, height, width));
+      GET_PARAM(1)(s, noise, clamp, clamp, width, height, width));
 
   // Check to make sure don't roll over.
   for (int i = 0; i < image_size; ++i) {
@@ -81,7 +89,7 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
   memset(s, 0, image_size);
 
   ASM_REGISTER_STATE_CHECK(
-      GetParam()(s, noise, clamp, clamp, width, height, width));
+      GET_PARAM(1)(s, noise, clamp, clamp, width, height, width));
 
   // Check to make sure don't roll under.
   for (int i = 0; i < image_size; ++i) {
@@ -92,45 +100,55 @@ TEST_P(AddNoiseTest, CheckNoiseAdded) {
 }
 
 TEST_P(AddNoiseTest, CheckCvsAssembly) {
-  const int width = 64;
+  static constexpr int kWidths[] = { 8, 18, 34, 64, 66 };
   const int height = 64;
-  const int image_size = width * height;
   int8_t noise[kNoiseSize];
   const int clamp = vpx_setup_noise(4.4, noise, kNoiseSize);
 
-  uint8_t *const s = reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1));
-  uint8_t *const d = reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1));
-  ASSERT_TRUE(s != NULL);
-  ASSERT_TRUE(d != NULL);
+  for (int width : kWidths) {
+    const int image_size = width * height;
+    std::unique_ptr<uint8_t[], decltype(&vpx_free)> s(
+        reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1)), vpx_free);
+    std::unique_ptr<uint8_t[], decltype(&vpx_free)> d(
+        reinterpret_cast<uint8_t *>(vpx_calloc(image_size, 1)), vpx_free);
+    ASSERT_NE(s, nullptr);
+    ASSERT_NE(d, nullptr);
 
-  memset(s, 99, image_size);
-  memset(d, 99, image_size);
+    memset(s.get(), 99, image_size);
+    memset(d.get(), 99, image_size);
 
-  srand(0);
-  ASM_REGISTER_STATE_CHECK(
-      GetParam()(s, noise, clamp, clamp, width, height, width));
-  srand(0);
-  ASM_REGISTER_STATE_CHECK(
-      vpx_plane_add_noise_c(d, noise, clamp, clamp, width, height, width));
+    srand(0);
+    ASM_REGISTER_STATE_CHECK(
+        GET_PARAM(1)(s.get(), noise, clamp, clamp, width, height, width));
+    srand(0);
+    ASM_REGISTER_STATE_CHECK(vpx_plane_add_noise_c(d.get(), noise, clamp, clamp,
+                                                   width, height, width));
 
-  for (int i = 0; i < image_size; ++i) {
-    EXPECT_EQ(static_cast<int>(s[i]), static_cast<int>(d[i])) << "i = " << i;
+    for (int i = 0; i < image_size; ++i) {
+      EXPECT_EQ(static_cast<int>(s[i]), static_cast<int>(d[i]))
+          << "width = " << width << ", idx = " << i;
+    }
   }
-
-  vpx_free(d);
-  vpx_free(s);
 }
 
-INSTANTIATE_TEST_CASE_P(C, AddNoiseTest,
-                        ::testing::Values(vpx_plane_add_noise_c));
+using std::make_tuple;
 
-#if HAVE_SSE2
-INSTANTIATE_TEST_CASE_P(SSE2, AddNoiseTest,
-                        ::testing::Values(vpx_plane_add_noise_sse2));
+INSTANTIATE_TEST_SUITE_P(
+    C, AddNoiseTest,
+    ::testing::Values(make_tuple(3.25, vpx_plane_add_noise_c),
+                      make_tuple(4.4, vpx_plane_add_noise_c)));
+
+#if HAVE_SSE2 && HAVE_X86_ASM
+INSTANTIATE_TEST_SUITE_P(
+    SSE2, AddNoiseTest,
+    ::testing::Values(make_tuple(3.25, vpx_plane_add_noise_sse2),
+                      make_tuple(4.4, vpx_plane_add_noise_sse2)));
 #endif
 
 #if HAVE_MSA
-INSTANTIATE_TEST_CASE_P(MSA, AddNoiseTest,
-                        ::testing::Values(vpx_plane_add_noise_msa));
+INSTANTIATE_TEST_SUITE_P(
+    MSA, AddNoiseTest,
+    ::testing::Values(make_tuple(3.25, vpx_plane_add_noise_msa),
+                      make_tuple(4.4, vpx_plane_add_noise_msa)));
 #endif
 }  // namespace

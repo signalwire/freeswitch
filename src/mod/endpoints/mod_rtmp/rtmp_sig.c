@@ -45,6 +45,13 @@ RTMP_INVOKE_FUNCTION(rtmp_i_connect)
 	amf0_data *object1 = amf0_object_new(), *object2 = amf0_object_new(), *params = argv[0], *d;
 	const char *s;
 
+	/* amf0_object_get() walks the node list without checking the AMF type; only
+	   an object or ECMA array stores its contents that way. Drop any other type
+	   so the lookups return nothing instead of misreading the union. */
+	if (params && params->type != AMF0_TYPE_OBJECT && params->type != AMF0_TYPE_ECMA_ARRAY) {
+		params = NULL;
+	}
+
 	if ((d = amf0_object_get(params, "app")) && (s = amf0_get_string(d))) {
 		rsession->app = switch_core_strdup(rsession->pool, s);
 	}
@@ -158,7 +165,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_noop)
 
 RTMP_INVOKE_FUNCTION(rtmp_i_receiveaudio)
 {
-		switch_bool_t enabled = argv[1] ? amf0_boolean_get_value(argv[1]) : SWITCH_FALSE;
+		switch_bool_t enabled = amf0_get_boolean(argv[1]);
 
 		if (enabled) {
 			switch_set_flag(rsession, SFLAG_AUDIO);
@@ -173,7 +180,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_receiveaudio)
 
 RTMP_INVOKE_FUNCTION(rtmp_i_receivevideo)
 {
-		switch_bool_t enabled = argv[1] ? amf0_boolean_get_value(argv[1]) : SWITCH_FALSE;
+		switch_bool_t enabled = amf0_get_boolean(argv[1]);
 
 		if (enabled) {
 			switch_set_flag(rsession, SFLAG_VIDEO);
@@ -850,9 +857,7 @@ RTMP_INVOKE_FUNCTION(rtmp_i_sendevent)
 			if (switch_core_session_queue_event(session_pvt->session, &event) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session_pvt->session), SWITCH_LOG_ERROR, "Couldn't queue event to session\n");
 				switch_event_destroy(&event);
-				status = SWITCH_STATUS_FALSE;
-			} else {
-				status = SWITCH_STATUS_SUCCESS;
+				return SWITCH_STATUS_FALSE;
 			}
 		}
 	}

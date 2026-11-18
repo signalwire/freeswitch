@@ -347,7 +347,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, char **response, const char *query, struct curl_httppost *post,
+static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, char **response, const char *query, switch_curl_mime *post,
 						  switch_curl_slist_t *headers, int timeout)
 {
 	switch_time_t start_time = switch_micro_time_now();
@@ -373,7 +373,7 @@ static long do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, cha
 		switch_curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 	if (post) {
-		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPPOST, post);
+		switch_curl_easy_setopt_mime(curl_handle, post);
 	} else {
 		switch_curl_easy_setopt(curl_handle, CURLOPT_HTTPGET, 1);
 	}
@@ -545,9 +545,6 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	cid_data_t *cidtmp = NULL;
 	switch_bool_t save_cache = SWITCH_FALSE;
 
-	cid = switch_core_alloc(pool, sizeof(cid_data_t));
-	switch_assert(cid);
-
 	number = string_digitsonly(pool, num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
@@ -555,6 +552,8 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	if (globals.odbc_dsn && globals.sql) {
 		name = do_db_lookup(pool, event, number, globals.sql);
 		if (name) {
+			cid = switch_core_alloc(pool, sizeof(cid_data_t));
+			switch_assert(cid);
 			cid->name = name;
 			cid->src = "phone_database";
 			goto done;
@@ -578,6 +577,11 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 		}
 	}
 
+	if (!cid) {
+		cid = switch_core_alloc(pool, sizeof(cid_data_t));
+		switch_assert(cid);
+	}
+
 	if (!skipurl && globals.url) {
 		url_query = switch_event_expand_headers(event, globals.url);
 		do_lookup_url(pool, event, &name, url_query, NULL, NULL, 0);
@@ -593,10 +597,6 @@ static cid_data_t *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, 
 	}
 
   done:
-	if (!cid) {
-		cid = switch_core_alloc(pool, sizeof(cid_data_t));
-		switch_assert(cid);
-	}
 	/* append area if we can */
 	if (!cid->area && !skipcitystate && strlen(number) == 11 && number[0] == '1' && globals.odbc_dsn && globals.citystate_sql) {
 
@@ -845,6 +845,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
   Macro expands to: switch_status_t mod_cidlookup_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 {
+	switch_xml_config_cleanup(instructions);
 	switch_event_unbind(&reload_xml_event);
 	return SWITCH_STATUS_SUCCESS;
 }

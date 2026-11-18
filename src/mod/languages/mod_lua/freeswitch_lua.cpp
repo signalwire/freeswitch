@@ -482,6 +482,62 @@ bool Dbh::query(char *sql, SWIGLUA_FN lua_fun)
   return false;
 }
 
+struct query_callback_data {
+    lua_State *L;
+    int stack_index;
+    int *row_num;
+};
+
+int query2_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
+    struct query_callback_data *data = (struct query_callback_data *) pArg;
+    lua_State *tL = data->L;
+    lua_createtable(tL, 0, argc);
+    for (int i = 0; i < argc; i++) {
+        lua_pushstring(tL, argv[i]);
+        lua_setfield(tL, -2, switch_str_nil(columnNames[i]));
+    }
+    lua_rawseti(tL, data->stack_index + 2, (*data->row_num)++);
+    return 0;
+}
+
+DbhQueryRowsReturn Dbh::query_rows(lua_State* L, char *sql)
+{
+    int stack_index = lua_gettop(L);
+    clear_error();
+    lua_pushboolean(L, 0); // result success error: stack_index + 1
+    lua_newtable(L);       // the rows: stack_index + 2
+    lua_pushnil(L);        // error message if any: stack_index + 3
+
+    if (zstr(sql)) {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing SQL query.\n");
+        lua_pushstring(L, "Missing SQL query.");
+	lua_replace(L, stack_index + 3);
+        return 3;
+    }
+
+    if (dbh) {
+        int index = 1;
+        struct query_callback_data pData = {L, stack_index, &index};
+
+        if (switch_cache_db_execute_sql_callback(dbh, sql, query2_callback, &pData, &err) == SWITCH_STATUS_SUCCESS) {
+            // no errors
+	    lua_pushboolean(L, 1);
+            lua_replace(L, stack_index + 1);
+        } else {
+            lua_pushstring(L, !zstr(err) ? err : "Failed to execute sql query");
+	    lua_replace(L, stack_index + 3);
+        }
+    } else {
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DBH NOT Connected.\n");
+        lua_pushstring(L, "DBH NOT Connected.");
+	lua_replace(L, stack_index + 3);
+    }
+
+    return 3;
+}
+
+
 int Dbh::affected_rows()
 {
   if (dbh) {
@@ -568,11 +624,11 @@ void JSON::LuaTable2cJSON(lua_State *L, int index, cJSON **json)
 
 		switch_assert(*json);
 
-		if (lua_isnumber(L, -2)) {
+		if (lua_type(L, -2) == LUA_TNUMBER) {
 			ADDITEM(*json, key, cJSON_CreateNumber(lua_tonumber(L, -2)));
-		} else if (lua_isstring(L, -2)) {
+		} else if (lua_type(L, -2) == LUA_TSTRING) {
 			ADDITEM(*json, key, cJSON_CreateString(lua_tostring(L, -2)));
-		} else if (lua_isboolean(L, -2)) {
+		} else if (lua_type(L, -2) == LUA_TBOOLEAN) {
 			ADDITEM(*json, key, cJSON_CreateBool(lua_toboolean(L, -2)));
 		} else if (lua_isnil(L, -2)) {
 			ADDITEM(*json, key, cJSON_CreateNull());
@@ -600,7 +656,7 @@ void JSON::LuaTable2cJSON(lua_State *L, int index, cJSON **json)
     // Stack is now the same as it was on entry to this function
 }
 
-char *JSON::encode(SWIGLUA_TABLE lua_table)
+std::string JSON::encode(SWIGLUA_TABLE lua_table)
 {
 	lua_State *L = lua_table.L;
 	cJSON *json = NULL;
@@ -613,8 +669,10 @@ char *JSON::encode(SWIGLUA_TABLE lua_table)
 	}
 
 	char *s = _return_unformatted_json ? cJSON_PrintUnformatted(json) : cJSON_Print(json);
+	std::string result = std::string(s);
+	free(s);
 	cJSON_Delete(json);
-	return s;
+	return result;
 }
 
 int JSON::cJSON2LuaTable(lua_State *L, cJSON *json) {
@@ -724,16 +782,22 @@ cJSON *JSON::execute(SWIGLUA_TABLE table)
 	return reply;
 }
 
-char *JSON::execute2(const char *str)
+std::string JSON::execute2(const char *str)
 {
-	cJSON *reply = execute(str);
-
-	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    cJSON *reply = execute(str);
+    char *s = _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    std::string result = std::string(s);
+    free(s);
+    cJSON_Delete(reply);
+    return result;
 }
 
-char *JSON::execute2(SWIGLUA_TABLE table)
+std::string JSON::execute2(SWIGLUA_TABLE table)
 {
-	cJSON *reply = execute(table);
-
-	return _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    cJSON *reply = execute(table);
+    char *s = _return_unformatted_json ? cJSON_PrintUnformatted(reply) : cJSON_Print(reply);
+    std::string result = std::string(s);
+    free(s);
+    cJSON_Delete(reply);
+    return result;
 }

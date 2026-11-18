@@ -8,9 +8,9 @@
 #ifndef MKVMUXER_MKVMUXERUTIL_H_
 #define MKVMUXER_MKVMUXERUTIL_H_
 
-#include "mkvmuxertypes.h"
+#include <stdint.h>
 
-#include "stdint.h"
+#include "mkvmuxertypes.h"
 
 namespace mkvmuxer {
 class Cluster;
@@ -30,6 +30,9 @@ const int64 kMaxBlockTimecode = 0x07FFFLL;
 
 // Writes out |value| in Big Endian order. Returns 0 on success.
 int32 SerializeInt(IMkvWriter* writer, int64 value, int32 size);
+
+// Writes out |f| in Big Endian order. Returns 0 on success.
+int32 SerializeFloat(IMkvWriter* writer, float f);
 
 // Returns the size in bytes of the element.
 int32 GetUIntSize(uint64 value);

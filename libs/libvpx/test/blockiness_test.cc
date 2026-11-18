@@ -11,8 +11,9 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #if CONFIG_VP9_ENCODER
@@ -25,10 +26,7 @@
 #include "test/util.h"
 
 #include "vpx_mem/vpx_mem.h"
-
-extern "C" double vp9_get_blockiness(const unsigned char *img1, int img1_pitch,
-                                     const unsigned char *img2, int img2_pitch,
-                                     int width, int height);
+#include "vp9/encoder/vp9_blockiness.h"
 
 using libvpx_test::ACMRandom;
 
@@ -37,28 +35,28 @@ class BlockinessTestBase : public ::testing::Test {
  public:
   BlockinessTestBase(int width, int height) : width_(width), height_(height) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     source_data_ = reinterpret_cast<uint8_t *>(
         vpx_memalign(kDataAlignment, kDataBufferSize));
     reference_data_ = reinterpret_cast<uint8_t *>(
         vpx_memalign(kDataAlignment, kDataBufferSize));
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     vpx_free(source_data_);
-    source_data_ = NULL;
+    source_data_ = nullptr;
     vpx_free(reference_data_);
-    reference_data_ = NULL;
+    reference_data_ = nullptr;
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   // Handle frames up to 640x480
   static const int kDataAlignment = 16;
   static const int kDataBufferSize = 640 * 480;
 
-  virtual void SetUp() {
+  void SetUp() override {
     source_stride_ = (width_ + 31) & ~31;
     reference_stride_ = width_ * 2;
     rnd_.Reset(ACMRandom::DeterministicSeed());
@@ -141,7 +139,7 @@ class BlockinessTestBase : public ::testing::Test {
 };
 
 #if CONFIG_VP9_ENCODER
-typedef std::tr1::tuple<int, int> BlockinessParam;
+using BlockinessParam = std::tuple<int, int>;
 class BlockinessVP9Test
     : public BlockinessTestBase,
       public ::testing::WithParamInterface<BlockinessParam> {
@@ -156,8 +154,8 @@ class BlockinessVP9Test
 };
 #endif  // CONFIG_VP9_ENCODER
 
-uint8_t *BlockinessTestBase::source_data_ = NULL;
-uint8_t *BlockinessTestBase::reference_data_ = NULL;
+uint8_t *BlockinessTestBase::source_data_ = nullptr;
+uint8_t *BlockinessTestBase::reference_data_ = nullptr;
 
 #if CONFIG_VP9_ENCODER
 TEST_P(BlockinessVP9Test, SourceBlockierThanReference) {
@@ -208,16 +206,17 @@ TEST_P(BlockinessVP9Test, WorstCaseBlockiness) {
 }
 #endif  // CONFIG_VP9_ENCODER
 
-using std::tr1::make_tuple;
+using std::make_tuple;
 
 //------------------------------------------------------------------------------
 // C functions
 
 #if CONFIG_VP9_ENCODER
-const BlockinessParam c_vp9_tests[] = {
-  make_tuple(320, 240), make_tuple(318, 242), make_tuple(318, 238),
-};
-INSTANTIATE_TEST_CASE_P(C, BlockinessVP9Test, ::testing::ValuesIn(c_vp9_tests));
+const BlockinessParam c_vp9_tests[] = { make_tuple(320, 240),
+                                        make_tuple(318, 242),
+                                        make_tuple(318, 238) };
+INSTANTIATE_TEST_SUITE_P(C, BlockinessVP9Test,
+                         ::testing::ValuesIn(c_vp9_tests));
 #endif
 
 }  // namespace

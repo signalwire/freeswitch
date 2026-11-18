@@ -14,44 +14,44 @@
  * limitations under the License.
  */
 
-#include "apr_general.h"
-#include "apr_shm.h"
-#include "apr_errno.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
+#include "fspr_general.h"
+#include "fspr_shm.h"
+#include "fspr_errno.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <kernel/OS.h>
-#include "apr_portable.h"
+#include "fspr_portable.h"
 
-struct apr_shm_t {
-    apr_pool_t *pool;
+struct fspr_shm_t {
+    fspr_pool_t *pool;
     void *memblock;
     void *ptr;
-    apr_size_t reqsize;
-    apr_size_t avail;
+    fspr_size_t reqsize;
+    fspr_size_t avail;
     area_id aid;
 };
 
-APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m, 
-                                         apr_size_t reqsize, 
+APR_DECLARE(fspr_status_t) fspr_shm_create(fspr_shm_t **m, 
+                                         fspr_size_t reqsize, 
                                          const char *filename, 
-                                         apr_pool_t *p)
+                                         fspr_pool_t *p)
 {
-    apr_size_t pagesize;
+    fspr_size_t pagesize;
     area_id newid;
     char *addr;
     char shname[B_OS_NAME_LENGTH];
     
-    (*m) = (apr_shm_t *)apr_pcalloc(p, sizeof(apr_shm_t));
+    (*m) = (fspr_shm_t *)fspr_pcalloc(p, sizeof(fspr_shm_t));
     /* we MUST allocate in pages, so calculate how big an area we need... */
     pagesize = ((reqsize + B_PAGE_SIZE - 1) / B_PAGE_SIZE) * B_PAGE_SIZE;
      
     if (!filename) {
         int num = 0;
-        snprintf(shname, B_OS_NAME_LENGTH, "apr_shmem_%ld", find_thread(NULL));
+        snprintf(shname, B_OS_NAME_LENGTH, "fspr_shmem_%ld", find_thread(NULL));
         while (find_area(shname) >= 0)
-            snprintf(shname, B_OS_NAME_LENGTH, "apr_shmem_%ld_%d",
+            snprintf(shname, B_OS_NAME_LENGTH, "fspr_shmem_%ld_%d",
                      find_thread(NULL), num++);
     }
     newid = create_area(filename ? filename : shname, 
@@ -71,7 +71,7 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_destroy(apr_shm_t *m)
+APR_DECLARE(fspr_status_t) fspr_shm_destroy(fspr_shm_t *m)
 {
     delete_area(m->aid);
     m->avail = 0;
@@ -79,8 +79,8 @@ APR_DECLARE(apr_status_t) apr_shm_destroy(apr_shm_t *m)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_shm_remove(const char *filename,
+                                         fspr_pool_t *pool)
 {
     area_id deleteme = find_area(filename);
     
@@ -91,19 +91,19 @@ APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
+APR_DECLARE(fspr_status_t) fspr_shm_attach(fspr_shm_t **m,
                                          const char *filename,
-                                         apr_pool_t *pool)
+                                         fspr_pool_t *pool)
 {
     area_info ai;
     thread_info ti;
-    apr_shm_t *new_m;
+    fspr_shm_t *new_m;
     area_id deleteme = find_area(filename);
 
     if (deleteme == B_NAME_NOT_FOUND)
         return APR_EINVAL;
 
-    new_m = (apr_shm_t*)apr_palloc(pool, sizeof(apr_shm_t*));
+    new_m = (fspr_shm_t*)fspr_palloc(pool, sizeof(fspr_shm_t*));
     if (new_m == NULL)
         return APR_ENOMEM;
     new_m->pool = pool;
@@ -133,33 +133,33 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_detach(apr_shm_t *m)
+APR_DECLARE(fspr_status_t) fspr_shm_detach(fspr_shm_t *m)
 {
     delete_area(m->aid);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(void *) apr_shm_baseaddr_get(const apr_shm_t *m)
+APR_DECLARE(void *) fspr_shm_baseaddr_get(const fspr_shm_t *m)
 {
     return m->memblock;
 }
 
-APR_DECLARE(apr_size_t) apr_shm_size_get(const apr_shm_t *m)
+APR_DECLARE(fspr_size_t) fspr_shm_size_get(const fspr_shm_t *m)
 {
     return m->reqsize;
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(shm)
 
-APR_DECLARE(apr_status_t) apr_os_shm_get(apr_os_shm_t *osshm,
-                                         apr_shm_t *shm)
+APR_DECLARE(fspr_status_t) fspr_os_shm_get(fspr_os_shm_t *osshm,
+                                         fspr_shm_t *shm)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_os_shm_put(apr_shm_t **m,
-                                         apr_os_shm_t *osshm,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_shm_put(fspr_shm_t **m,
+                                         fspr_os_shm_t *osshm,
+                                         fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }    

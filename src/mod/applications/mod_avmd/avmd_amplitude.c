@@ -2,7 +2,7 @@
  * Contributor(s):
  *
  * Eric des Courtis <eric.des.courtis@benbria.com>
- * Piotr Gregor     <piotrgregor@rsyncme.org>
+ * Piotr Gregor <piotrgregor@rsyncme.org>
  */
 
 
@@ -12,7 +12,7 @@
 
 
 double avmd_amplitude(circ_buffer_t *b, size_t i, double f) {
-    double result;
-    result = sqrt(PSI(b, i) / sin(f * f));
-    return result;
+	double result;
+	result = sqrt(PSI(b, i) / sin(f * f));
+	return result;
 }

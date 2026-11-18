@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VPX_VPX_ENCODER_H_
-#define VPX_VPX_ENCODER_H_
+#ifndef VPX_VPX_VPX_ENCODER_H_
+#define VPX_VPX_VPX_ENCODER_H_
 
 /*!\defgroup encoder Encoder Algorithm Interface
  * \ingroup codec
@@ -29,7 +29,8 @@
 extern "C" {
 #endif
 
-#include "./vpx_codec.h"
+#include "./vpx_codec.h"  // IWYU pragma: export
+#include "./vpx_ext_ratectrl.h"
 
 /*! Temporal Scalability: Maximum length of the sequence defining frame
  * layer membership
@@ -39,14 +40,8 @@ extern "C" {
 /*! Temporal Scalability: Maximum number of coding layers */
 #define VPX_TS_MAX_LAYERS 5
 
-/*!\deprecated Use #VPX_TS_MAX_PERIODICITY instead. */
-#define MAX_PERIODICITY VPX_TS_MAX_PERIODICITY
-
 /*! Temporal+Spatial Scalability: Maximum number of coding layers */
 #define VPX_MAX_LAYERS 12  // 3 temporal + 4 spatial layers are allowed.
-
-/*!\deprecated Use #VPX_MAX_LAYERS instead. */
-#define MAX_LAYERS VPX_MAX_LAYERS  // 3 temporal + 4 spatial layers allowed.
 
 /*! Spatial Scalability: Maximum number of coding layers */
 #define VPX_SS_MAX_LAYERS 5
@@ -61,9 +56,15 @@ extern "C" {
  * must be bumped.  Examples include, but are not limited to, changing
  * types, removing or reassigning enums, adding/removing/rearranging
  * fields to structures
+ *
+ * \note
+ * VPX_ENCODER_ABI_VERSION has a VPX_EXT_RATECTRL_ABI_VERSION component
+ * because the VP9E_SET_EXTERNAL_RATE_CONTROL codec control uses
+ * vpx_rc_funcs_t.
  */
 #define VPX_ENCODER_ABI_VERSION \
-  (6 + VPX_CODEC_ABI_VERSION) /**<\hideinitializer*/
+  (18 + VPX_CODEC_ABI_VERSION + \
+   VPX_EXT_RATECTRL_ABI_VERSION) /**<\hideinitializer*/
 
 /*! \brief Encoder capabilities bitfield
  *
@@ -119,14 +120,14 @@ typedef int64_t vpx_codec_pts_t;
  * support frame types that are codec specific (MPEG-1 D-frames for example)
  */
 typedef uint32_t vpx_codec_frame_flags_t;
-#define VPX_FRAME_IS_KEY 0x1 /**< frame is the start of a GOP */
+#define VPX_FRAME_IS_KEY 0x1u /**< frame is the start of a GOP */
 /*!\brief frame can be dropped without affecting the stream (no future frame
  * depends on this one) */
-#define VPX_FRAME_IS_DROPPABLE 0x2
+#define VPX_FRAME_IS_DROPPABLE 0x2u
 /*!\brief frame should be decoded but will not be shown */
-#define VPX_FRAME_IS_INVISIBLE 0x4
+#define VPX_FRAME_IS_INVISIBLE 0x4u
 /*!\brief this is a fragment of the encoded frame */
-#define VPX_FRAME_IS_FRAGMENT 0x8
+#define VPX_FRAME_IS_FRAGMENT 0x8u
 
 /*!\brief Error Resilient flags
  *
@@ -136,12 +137,13 @@ typedef uint32_t vpx_codec_frame_flags_t;
  */
 typedef uint32_t vpx_codec_er_flags_t;
 /*!\brief Improve resiliency against losses of whole frames */
-#define VPX_ERROR_RESILIENT_DEFAULT 0x1
+#define VPX_ERROR_RESILIENT_DEFAULT 0x1u
 /*!\brief The frame partitions are independently decodable by the bool decoder,
  * meaning that partitions can be decoded even though earlier partitions have
  * been lost. Note that intra prediction is still done over the partition
- * boundary. */
-#define VPX_ERROR_RESILIENT_PARTITIONS 0x2
+ * boundary.
+ * \note This is only supported by VP8.*/
+#define VPX_ERROR_RESILIENT_PARTITIONS 0x2u
 
 /*!\brief Encoder output packet variants
  *
@@ -150,15 +152,10 @@ typedef uint32_t vpx_codec_er_flags_t;
  * extend this list to provide additional functionality.
  */
 enum vpx_codec_cx_pkt_kind {
-  VPX_CODEC_CX_FRAME_PKT,   /**< Compressed video frame */
-  VPX_CODEC_STATS_PKT,      /**< Two-pass statistics for this frame */
-  VPX_CODEC_FPMB_STATS_PKT, /**< first pass mb statistics for this frame */
-  VPX_CODEC_PSNR_PKT,       /**< PSNR statistics for this frame */
-// Spatial SVC is still experimental and may be removed.
-#if defined(VPX_TEST_SPATIAL_SVC)
-  VPX_CODEC_SPATIAL_SVC_LAYER_SIZES, /**< Sizes for each layer in this frame*/
-  VPX_CODEC_SPATIAL_SVC_LAYER_PSNR,  /**< PSNR for each layer in this frame*/
-#endif
+  VPX_CODEC_CX_FRAME_PKT,    /**< Compressed video frame */
+  VPX_CODEC_STATS_PKT,       /**< Two-pass statistics for this frame */
+  VPX_CODEC_FPMB_STATS_PKT,  /**< first pass mb statistics for this frame */
+  VPX_CODEC_PSNR_PKT,        /**< PSNR statistics for this frame */
   VPX_CODEC_CUSTOM_PKT = 256 /**< Algorithm extensions  */
 };
 
@@ -182,6 +179,13 @@ typedef struct vpx_codec_cx_pkt {
        * Only applicable when "output partition" mode is enabled. First
        * partition has id 0.*/
       int partition_id;
+      /*!\brief Width and height of frames in this packet. VP8 will only use the
+       * first one.*/
+      unsigned int width[VPX_SS_MAX_LAYERS];  /**< frame width */
+      unsigned int height[VPX_SS_MAX_LAYERS]; /**< frame height */
+      /*!\brief Flag to indicate if spatial layer frame in this packet is
+       * encoded or dropped. VP8 will always be set to 1.*/
+      uint8_t spatial_layer_encoded[VPX_SS_MAX_LAYERS];
     } frame;                            /**< data for compressed frame packet */
     vpx_fixed_buf_t twopass_stats;      /**< data for two-pass packet */
     vpx_fixed_buf_t firstpass_mb_stats; /**< first pass mb packet */
@@ -189,13 +193,9 @@ typedef struct vpx_codec_cx_pkt {
       unsigned int samples[4]; /**< Number of samples, total/y/u/v */
       uint64_t sse[4];         /**< sum squared error, total/y/u/v */
       double psnr[4];          /**< PSNR, total/y/u/v */
+      int spatial_layer_id;    /**< Spatial layer id */
     } psnr;                    /**< data for PSNR packet */
     vpx_fixed_buf_t raw;       /**< data for arbitrary packets */
-// Spatial SVC is still experimental and may be removed.
-#if defined(VPX_TEST_SPATIAL_SVC)
-    size_t layer_sizes[VPX_SS_MAX_LAYERS];
-    struct vpx_psnr_pkt layer_psnr[VPX_SS_MAX_LAYERS];
-#endif
 
     /* This packet size is fixed to allow codecs to extend this
      * interface without having to manage storage for raw packets,
@@ -211,8 +211,6 @@ typedef struct vpx_codec_cx_pkt {
  * This callback function, when registered, returns with packets when each
  * spatial layer is encoded.
  */
-// putting the definitions here for now. (agrange: find if there
-// is a better place for this)
 typedef void (*vpx_codec_enc_output_cx_pkt_cb_fn_t)(vpx_codec_cx_pkt_t *pkt,
                                                     void *user_data);
 
@@ -232,11 +230,11 @@ typedef struct vpx_rational {
 } vpx_rational_t; /**< alias for struct vpx_rational */
 
 /*!\brief Multi-pass Encoding Pass */
-enum vpx_enc_pass {
+typedef enum vpx_enc_pass {
   VPX_RC_ONE_PASS,   /**< Single pass mode */
   VPX_RC_FIRST_PASS, /**< First pass of multi-pass mode */
   VPX_RC_LAST_PASS   /**< Final pass of multi-pass mode */
-};
+} vpx_enc_pass;
 
 /*!\brief Rate control mode */
 enum vpx_rc_mode {
@@ -269,6 +267,8 @@ enum vpx_kf_mode {
  */
 typedef long vpx_enc_frame_flags_t;
 #define VPX_EFLAG_FORCE_KF (1 << 0) /**< Force this frame to be a keyframe */
+/** Calculate PSNR on this frame, requires g_lag_in_frames to be 0 */
+#define VPX_EFLAG_CALCULATE_PSNR (1 << 1)
 
 /*!\brief Encoder configuration structure
  *
@@ -281,12 +281,9 @@ typedef struct vpx_codec_enc_cfg {
    * generic settings (g)
    */
 
-  /*!\brief Algorithm specific "usage" value
+  /*!\brief Deprecated: Algorithm specific "usage" value
    *
-   * Algorithms may define multiple values for usage, which may convey the
-   * intent of how the application intends to use the stream. If this value
-   * is non-zero, consult the documentation for the codec to determine its
-   * meaning.
+   * This value must be zero.
    */
   unsigned int g_usage;
 
@@ -334,11 +331,15 @@ typedef struct vpx_codec_enc_cfg {
    */
   vpx_bit_depth_t g_bit_depth;
 
-  /*!\brief Bit-depth of the input frames
+  /*!\brief Bit-depth of the input source
    *
-   * This value identifies the bit_depth of the input frames in bits.
-   * Note that the frames passed as input to the encoder must have
-   * this bit-depth.
+   * This value identifies the actual bit-depth of the input source in bits. It
+   * must not exceed codec bit-depth. Note that the frames passed as input to
+   * the encoder must match codec bit-depth. So, if there is a mismatch between
+   * source bit-depth and codec bit-depth, the application is required to
+   * upshift the frame to the codec bit-depth before passing it for encoding.
+   * This is only used for computing quality metrics relative to the actual
+   * input source and has no effect on the encoder's output.
    */
   unsigned int g_input_bit_depth;
 
@@ -396,9 +397,6 @@ typedef struct vpx_codec_enc_cfg {
    * the encoded video, which may appear as stuttering during playback. This
    * trade-off is often acceptable, but for many applications is not. It can
    * be disabled in these cases.
-   *
-   * Note that not all codecs support this feature. All vpx VPx codecs do.
-   * For other codecs, consult the documentation for that algorithm.
    *
    * This threshold is described as a percentage of the target data buffer.
    * When the data buffer falls below this percentage of fullness, a
@@ -472,7 +470,9 @@ typedef struct vpx_codec_enc_cfg {
 
   /*!\brief Target data rate
    *
-   * Target bandwidth to use for this stream, in kilobits per second.
+   * Target bitrate to use for this stream, in kilobits per second.
+   * Internally capped to the smaller of the uncompressed bitrate and
+   * 1000000 kilobits per second.
    */
   unsigned int rc_target_bitrate;
 
@@ -485,8 +485,7 @@ typedef struct vpx_codec_enc_cfg {
    * The quantizer is the most direct control over the quality of the
    * encoded image. The range of valid values for the quantizer is codec
    * specific. Consult the documentation for the codec to determine the
-   * values to use. To determine the range programmatically, call
-   * vpx_codec_enc_config_default() with a usage value of 0.
+   * values to use.
    */
   unsigned int rc_min_quantizer;
 
@@ -495,8 +494,7 @@ typedef struct vpx_codec_enc_cfg {
    * The quantizer is the most direct control over the quality of the
    * encoded image. The range of valid values for the quantizer is codec
    * specific. Consult the documentation for the codec to determine the
-   * values to use. To determine the range programmatically, call
-   * vpx_codec_enc_config_default() with a usage value of 0.
+   * values to use.
    */
   unsigned int rc_max_quantizer;
 
@@ -512,10 +510,10 @@ typedef struct vpx_codec_enc_cfg {
    * be subtracted from the target bitrate in order to compensate
    * for prior overshoot.
    * VP9: Expressed as a percentage of the target bitrate, a threshold
-   * undershoot level (current rate vs target) beyond which more agressive
+   * undershoot level (current rate vs target) beyond which more aggressive
    * corrective measures are taken.
    *   *
-   * Valid values in the range VP8:0-1000 VP9: 0-100.
+   * Valid values in the range VP8:0-100 VP9: 0-100.
    */
   unsigned int rc_undershoot_pct;
 
@@ -527,10 +525,10 @@ typedef struct vpx_codec_enc_cfg {
    * be added to the target bitrate in order to compensate for
    * prior undershoot.
    * VP9: Expressed as a percentage of the target bitrate, a threshold
-   * overshoot level (current rate vs target) beyond which more agressive
+   * overshoot level (current rate vs target) beyond which more aggressive
    * corrective measures are taken.
    *
-   * Valid values in the range VP8:0-1000 VP9: 0-100.
+   * Valid values in the range VP8:0-100 VP9: 0-100.
    */
   unsigned int rc_overshoot_pct;
 
@@ -596,10 +594,10 @@ typedef struct vpx_codec_enc_cfg {
   unsigned int rc_2pass_vbr_maxsection_pct;
 
   /*!\brief Two-pass corpus vbr mode complexity control
-  * Used only in VP9: A value representing the corpus midpoint complexity
-  * for corpus vbr mode. This value defaults to 0 which disables corpus vbr
-  * mode in favour of normal vbr mode.
-  */
+   * Used only in VP9: A value representing the corpus midpoint complexity
+   * for corpus vbr mode. This value defaults to 0 which disables corpus vbr
+   * mode in favour of normal vbr mode.
+   */
   unsigned int rc_2pass_vbr_corpus_complexity;
 
   /*
@@ -652,7 +650,7 @@ typedef struct vpx_codec_enc_cfg {
   /*!\brief Target bitrate for each spatial layer.
    *
    * These values specify the target coding bitrate to be used for each
-   * spatial layer.
+   * spatial layer. (in kbps)
    */
   unsigned int ss_target_bitrate[VPX_SS_MAX_LAYERS];
 
@@ -665,7 +663,7 @@ typedef struct vpx_codec_enc_cfg {
   /*!\brief Target bitrate for each temporal layer.
    *
    * These values specify the target coding bitrate to be used for each
-   * temporal layer.
+   * temporal layer. (in kbps)
    */
   unsigned int ts_target_bitrate[VPX_TS_MAX_LAYERS];
 
@@ -682,7 +680,7 @@ typedef struct vpx_codec_enc_cfg {
    * membership of frames to temporal layers. For example, if the
    * ts_periodicity = 8, then the frames are assigned to coding layers with a
    * repeated sequence of length 8.
-  */
+   */
   unsigned int ts_periodicity;
 
   /*!\brief Template defining the membership of frames to temporal layers.
@@ -691,13 +689,13 @@ typedef struct vpx_codec_enc_cfg {
    * For a 2-layer encoding that assigns even numbered frames to one temporal
    * layer (0) and odd numbered frames to a second temporal layer (1) with
    * ts_periodicity=8, then ts_layer_id = (0,1,0,1,0,1,0,1).
-  */
+   */
   unsigned int ts_layer_id[VPX_TS_MAX_PERIODICITY];
 
   /*!\brief Target bitrate for each spatial/temporal layer.
    *
    * These values specify the target coding bitrate to be used for each
-   * spatial/temporal layer.
+   * spatial/temporal layer. (in kbps)
    *
    */
   unsigned int layer_target_bitrate[VPX_MAX_LAYERS];
@@ -710,6 +708,151 @@ typedef struct vpx_codec_enc_cfg {
    *
    */
   int temporal_layering_mode;
+
+  /*!\brief A flag indicating whether to use external rate control parameters.
+   * By default is 0. If set to 1, the following parameters will be used in the
+   * rate control system.
+   */
+  int use_vizier_rc_params;
+
+  /*!\brief Active worst quality factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t active_wq_factor;
+
+  /*!\brief Error per macroblock adjustment factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t err_per_mb_factor;
+
+  /*!\brief Second reference default decay limit.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t sr_default_decay_limit;
+
+  /*!\brief Second reference difference factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t sr_diff_factor;
+
+  /*!\brief Keyframe error per macroblock adjustment factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t kf_err_per_mb_factor;
+
+  /*!\brief Keyframe minimum boost adjustment factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t kf_frame_min_boost_factor;
+
+  /*!\brief Keyframe maximum boost adjustment factor, for the first keyframe
+   * in a chunk.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t kf_frame_max_boost_first_factor;
+
+  /*!\brief Keyframe maximum boost adjustment factor, for subsequent keyframes.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t kf_frame_max_boost_subs_factor;
+
+  /*!\brief Keyframe maximum total boost adjustment factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t kf_max_total_boost_factor;
+
+  /*!\brief Golden frame maximum total boost adjustment factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t gf_max_total_boost_factor;
+
+  /*!\brief Golden frame maximum boost adjustment factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t gf_frame_max_boost_factor;
+
+  /*!\brief Zero motion power factor.
+   *
+   * Rate control parameters, set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t zm_factor;
+
+  /*!\brief Rate-distortion multiplier for inter frames.
+   * The multiplier is a crucial parameter in the calculation of rate distortion
+   * cost. It is often related to the qp (qindex) value.
+   * Rate control parameters, could be set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t rd_mult_inter_qp_fac;
+
+  /*!\brief Rate-distortion multiplier for alt-ref frames.
+   * The multiplier is a crucial parameter in the calculation of rate distortion
+   * cost. It is often related to the qp (qindex) value.
+   * Rate control parameters, could be set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t rd_mult_arf_qp_fac;
+
+  /*!\brief Rate-distortion multiplier for key frames.
+   * The multiplier is a crucial parameter in the calculation of rate distortion
+   * cost. It is often related to the qp (qindex) value.
+   * Rate control parameters, could be set from external experiment results.
+   * Only when |use_vizier_rc_params| is set to 1, the pass in value will be
+   * used. Otherwise, the default value is used.
+   *
+   */
+  vpx_rational_t rd_mult_key_qp_fac;
 } vpx_codec_enc_cfg_t; /**< alias for struct vpx_codec_enc_cfg */
 
 /*!\brief  vp9 svc extra configure parameters
@@ -724,11 +867,12 @@ typedef struct vpx_svc_parameters {
   int scaling_factor_den[VPX_MAX_LAYERS]; /**< Scaling factor-denominator */
   int speed_per_layer[VPX_MAX_LAYERS];    /**< Speed setting for each sl */
   int temporal_layering_mode;             /**< Temporal layering mode */
+  int loopfilter_ctrl[VPX_MAX_LAYERS];    /**< Loopfilter ctrl for each sl */
 } vpx_svc_extra_cfg_t;
 
 /*!\brief Initialize an encoder instance
  *
- * Initializes a encoder context using the given interface. Applications
+ * Initializes an encoder context using the given interface. Applications
  * should call the vpx_codec_enc_init convenience macro instead of this
  * function directly, to ensure that the ABI version number parameter
  * is properly initialized.
@@ -737,9 +881,13 @@ typedef struct vpx_svc_parameters {
  * is not thread safe and should be guarded with a lock if being used
  * in a multithreaded context.
  *
+ * On success, vpx_codec_destroy() must be used to free resources allocated for
+ * the encoder context. If vpx_codec_enc_init_ver() fails, it is not necessary
+ * to call vpx_codec_destroy() on the encoder context.
+ *
  * \param[in]    ctx     Pointer to this instance's context.
  * \param[in]    iface   Pointer to the algorithm interface to use.
- * \param[in]    cfg     Configuration to use, if known. May be NULL.
+ * \param[in]    cfg     Configuration to use.
  * \param[in]    flags   Bitfield of VPX_CODEC_USE_* flags
  * \param[in]    ver     ABI version number. Must be set to
  *                       VPX_ENCODER_ABI_VERSION
@@ -762,27 +910,32 @@ vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t *ctx,
 
 /*!\brief Initialize multi-encoder instance
  *
- * Initializes multi-encoder context using the given interface.
+ * Initializes multiple encoder contexts using the given interface.
  * Applications should call the vpx_codec_enc_init_multi convenience macro
  * instead of this function directly, to ensure that the ABI version number
  * parameter is properly initialized.
  *
- * \param[in]    ctx     Pointer to this instance's context.
+ * \param[in]    ctx     Pointer to an array of num_enc instances' contexts.
  * \param[in]    iface   Pointer to the algorithm interface to use.
- * \param[in]    cfg     Configuration to use, if known. May be NULL.
+ * \param[in]    cfg     An array of num_enc configurations to use.
  * \param[in]    num_enc Total number of encoders.
  * \param[in]    flags   Bitfield of VPX_CODEC_USE_* flags
- * \param[in]    dsf     Pointer to down-sampling factors.
+ * \param[in]    dsf     Pointer to an array of num_enc down-sampling factors.
  * \param[in]    ver     ABI version number. Must be set to
  *                       VPX_ENCODER_ABI_VERSION
  * \retval #VPX_CODEC_OK
- *     The decoder algorithm initialized.
+ *     The encoder algorithm has been initialized.
  * \retval #VPX_CODEC_MEM_ERROR
  *     Memory allocation failed.
+ *
+ * \note
+ * This is only supported by VP8. iface must point to the interface to the VP8
+ * encoder.
  */
 vpx_codec_err_t vpx_codec_enc_init_multi_ver(
-    vpx_codec_ctx_t *ctx, vpx_codec_iface_t *iface, vpx_codec_enc_cfg_t *cfg,
-    int num_enc, vpx_codec_flags_t flags, vpx_rational_t *dsf, int ver);
+    vpx_codec_ctx_t *ctx, vpx_codec_iface_t *iface,
+    const vpx_codec_enc_cfg_t *cfg, int num_enc, vpx_codec_flags_t flags,
+    const vpx_rational_t *dsf, int ver);
 
 /*!\brief Convenience macro for vpx_codec_enc_init_multi_ver()
  *
@@ -802,7 +955,7 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(
  *
  * \param[in]    iface     Pointer to the algorithm interface to use.
  * \param[out]   cfg       Configuration buffer to populate.
- * \param[in]    reserved  Must set to 0 for VP8 and VP9.
+ * \param[in]    usage     Must be set to 0.
  *
  * \retval #VPX_CODEC_OK
  *     The configuration was populated.
@@ -813,7 +966,7 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(
  */
 vpx_codec_err_t vpx_codec_enc_config_default(vpx_codec_iface_t *iface,
                                              vpx_codec_enc_cfg_t *cfg,
-                                             unsigned int reserved);
+                                             unsigned int usage);
 
 /*!\brief Set or change configuration
  *
@@ -836,21 +989,36 @@ vpx_codec_err_t vpx_codec_enc_config_set(vpx_codec_ctx_t *ctx,
  *
  * Retrieves a stream level global header packet, if supported by the codec.
  *
+ * \li VP8: Unsupported
+ * \li VP9: Returns a buffer of <tt>ID (1 byte)|Length (1 byte)|Length
+ * bytes</tt> values. The function should be called after encoding to retrieve
+ * the most accurate information.
+ *
  * \param[in]    ctx     Pointer to this instance's context
  *
  * \retval NULL
  *     Encoder does not support global header
  * \retval Non-NULL
- *     Pointer to buffer containing global header packet
+ *     Pointer to buffer containing global header packet. The buffer pointer
+ *     and its contents are only valid for the lifetime of \a ctx. The contents
+ *     may change in subsequent calls to the function.
+ * \sa
+ * https://www.webmproject.org/docs/container/#vp9-codec-feature-metadata-codecprivate
  */
 vpx_fixed_buf_t *vpx_codec_get_global_headers(vpx_codec_ctx_t *ctx);
 
+/*!\brief Encode Deadline
+ *
+ * This type indicates a deadline, in microseconds, to be passed to
+ * vpx_codec_encode().
+ */
+typedef unsigned long vpx_enc_deadline_t;
 /*!\brief deadline parameter analogous to VPx REALTIME mode. */
-#define VPX_DL_REALTIME (1)
+#define VPX_DL_REALTIME 1ul
 /*!\brief deadline parameter analogous to  VPx GOOD QUALITY mode. */
-#define VPX_DL_GOOD_QUALITY (1000000)
+#define VPX_DL_GOOD_QUALITY 1000000ul
 /*!\brief deadline parameter analogous to VPx BEST QUALITY mode. */
-#define VPX_DL_BEST_QUALITY (0)
+#define VPX_DL_BEST_QUALITY 0ul
 /*!\brief Encode a frame
  *
  * Encodes a video frame at the given "presentation time." The presentation
@@ -862,7 +1030,7 @@ vpx_fixed_buf_t *vpx_codec_get_global_headers(vpx_codec_ctx_t *ctx);
  * implicit that limiting the available time to encode will degrade the
  * output quality. The encoder can be given an unlimited time to produce the
  * best possible frame by specifying a deadline of '0'. This deadline
- * supercedes the VPx notion of "best quality, good quality, realtime".
+ * supersedes the VPx notion of "best quality, good quality, realtime".
  * Applications that wish to map these former settings to the new deadline
  * based system can use the symbols #VPX_DL_REALTIME, #VPX_DL_GOOD_QUALITY,
  * and #VPX_DL_BEST_QUALITY.
@@ -875,6 +1043,8 @@ vpx_fixed_buf_t *vpx_codec_get_global_headers(vpx_codec_ctx_t *ctx);
  *
  * \param[in]    ctx       Pointer to this instance's context
  * \param[in]    img       Image data to encode, NULL to flush.
+ *                         Encoding sample values outside the range
+ *                         [0..(1<<img->bit_depth)-1] is undefined behavior.
  * \param[in]    pts       Presentation time stamp, in timebase units.
  * \param[in]    duration  Duration to show frame, in timebase units.
  * \param[in]    flags     Flags to use for encoding this frame.
@@ -890,7 +1060,7 @@ vpx_fixed_buf_t *vpx_codec_get_global_headers(vpx_codec_ctx_t *ctx);
 vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
                                  vpx_codec_pts_t pts, unsigned long duration,
                                  vpx_enc_frame_flags_t flags,
-                                 unsigned long deadline);
+                                 vpx_enc_deadline_t deadline);
 
 /*!\brief Set compressed data output buffer
  *
@@ -934,6 +1104,12 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
  *     The buffer was set successfully.
  * \retval #VPX_CODEC_INVALID_PARAM
  *     A parameter was NULL, the image format is unsupported, etc.
+ *
+ * \note
+ * `duration` and `deadline` are of the unsigned long type, which can be 32
+ * or 64 bits. `duration` and `deadline` must be less than or equal to
+ * UINT32_MAX so that their ranges are independent of the size of unsigned
+ * long.
  */
 vpx_codec_err_t vpx_codec_set_cx_data_buf(vpx_codec_ctx_t *ctx,
                                           const vpx_fixed_buf_t *buf,
@@ -984,4 +1160,4 @@ const vpx_image_t *vpx_codec_get_preview_frame(vpx_codec_ctx_t *ctx);
 #ifdef __cplusplus
 }
 #endif
-#endif  // VPX_VPX_ENCODER_H_
+#endif  // VPX_VPX_VPX_ENCODER_H_

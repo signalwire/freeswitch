@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="libjpeg-version.props" Condition=" '$(libjpegVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <libjpegLibDir>$(BaseDir)libs\libjpeg-$(libjpegVersion)_$(libjpegBuildNumber)</libjpegLibDir>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libjpegBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/libjpeg-v$(libjpegVersion)_$(libjpegBuildNumber)/libjpeg-$(libjpegVersion)_$(libjpegBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(libjpegLibDir)\binaries\$(Platform)\$(Configuration)\libjpeg.lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="libjpegHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/libjpeg-v$(libjpegVersion)_$(libjpegBuildNumber)/libjpeg-$(libjpegVersion)_$(libjpegBuildNumber)-headers.zip"
+           expectfileordirectory="$(libjpegLibDir)\include\jpeglib.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(libjpegLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(libjpegLibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libjpeg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

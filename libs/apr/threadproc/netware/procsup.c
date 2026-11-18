@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "apr_arch_threadproc.h"
+#include "fspr_arch_threadproc.h"
 
-apr_status_t apr_proc_detach(int daemonize)
+fspr_status_t fspr_proc_detach(int daemonize)
 {
 #if 0
     int x;

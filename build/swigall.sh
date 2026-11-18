@@ -8,7 +8,7 @@ make swigclean
 make mod_perl_wrap.cpp
 cd ../../../..
 
-cd src/mod/languages/mod_python
+cd src/mod/languages/mod_python3
 make swigclean
 make mod_python_wrap.cpp
 cd ../../../..

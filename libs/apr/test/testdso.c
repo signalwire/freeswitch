@@ -16,13 +16,13 @@
 
 
 #include "testutil.h"
-#include "apr_general.h"
-#include "apr_pools.h"
-#include "apr_errno.h"
-#include "apr_dso.h"
-#include "apr_strings.h"
-#include "apr_file_info.h"
-#include "apr.h"
+#include "fspr_general.h"
+#include "fspr_pools.h"
+#include "fspr_errno.h"
+#include "fspr_dso.h"
+#include "fspr_strings.h"
+#include "fspr_file_info.h"
+#include "fspr.h"
 #if APR_HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -53,32 +53,32 @@ static char *modname;
 
 static void test_load_module(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_status_t status;
     char errstr[256];
 
-    status = apr_dso_load(&h, modname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, modname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    apr_dso_unload(h);
+    fspr_dso_unload(h);
 }
 
 static void test_dso_sym(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_dso_handle_sym_t func1 = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_dso_handle_sym_t func1 = NULL;
+    fspr_status_t status;
     void (*function)(char str[256]);
     char teststr[256];
     char errstr[256];
 
-    status = apr_dso_load(&h, modname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, modname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    status = apr_dso_sym(&func1, h, "print_hello");
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_sym(&func1, h, "print_hello");
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, func1);
 
     if (!tc->failed) {
@@ -87,23 +87,23 @@ static void test_dso_sym(abts_case *tc, void *data)
         ABTS_STR_EQUAL(tc, "Hello - I'm a DSO!\n", teststr);
     }
 
-    apr_dso_unload(h);
+    fspr_dso_unload(h);
 }
 
 static void test_dso_sym_return_value(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_dso_handle_sym_t func1 = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_dso_handle_sym_t func1 = NULL;
+    fspr_status_t status;
     int (*function)(int);
     char errstr[256];
 
-    status = apr_dso_load(&h, modname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, modname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    status = apr_dso_sym(&func1, h, "count_reps");
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_sym(&func1, h, "count_reps");
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, func1);
 
     if (!tc->failed) {
@@ -112,24 +112,24 @@ static void test_dso_sym_return_value(abts_case *tc, void *data)
         ABTS_INT_EQUAL(tc, 5, status);
     }
 
-    apr_dso_unload(h);
+    fspr_dso_unload(h);
 }
 
 static void test_unload_module(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_status_t status;
     char errstr[256];
-    apr_dso_handle_sym_t func1 = NULL;
+    fspr_dso_handle_sym_t func1 = NULL;
 
-    status = apr_dso_load(&h, modname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, modname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    status = apr_dso_unload(h);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_unload(h);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
 
-    status = apr_dso_sym(&func1, h, "print_hello");
+    status = fspr_dso_sym(&func1, h, "print_hello");
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_ESYMNOTFOUND(status));
 }
 
@@ -139,32 +139,32 @@ static char *libname;
 
 static void test_load_library(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_status_t status;
     char errstr[256];
 
-    status = apr_dso_load(&h, libname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, libname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    apr_dso_unload(h);
+    fspr_dso_unload(h);
 }
 
 static void test_dso_sym_library(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_dso_handle_sym_t func1 = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_dso_handle_sym_t func1 = NULL;
+    fspr_status_t status;
     void (*function)(char str[256]);
     char teststr[256];
     char errstr[256];
 
-    status = apr_dso_load(&h, libname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, libname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    status = apr_dso_sym(&func1, h, "print_hello");
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_sym(&func1, h, "print_hello");
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, func1);
 
     if (!tc->failed) {
@@ -173,23 +173,23 @@ static void test_dso_sym_library(abts_case *tc, void *data)
         ABTS_STR_EQUAL(tc, "Hello - I'm a DSO!\n", teststr);
     }
 
-    apr_dso_unload(h);
+    fspr_dso_unload(h);
 }
 
 static void test_dso_sym_return_value_library(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_dso_handle_sym_t func1 = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_dso_handle_sym_t func1 = NULL;
+    fspr_status_t status;
     int (*function)(int);
     char errstr[256];
 
-    status = apr_dso_load(&h, libname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, libname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    status = apr_dso_sym(&func1, h, "count_reps");
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_sym(&func1, h, "count_reps");
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, func1);
 
     if (!tc->failed) {
@@ -198,24 +198,24 @@ static void test_dso_sym_return_value_library(abts_case *tc, void *data)
         ABTS_INT_EQUAL(tc, 5, status);
     }
 
-    apr_dso_unload(h);
+    fspr_dso_unload(h);
 }
 
 static void test_unload_library(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_status_t status;
     char errstr[256];
-    apr_dso_handle_sym_t func1 = NULL;
+    fspr_dso_handle_sym_t func1 = NULL;
 
-    status = apr_dso_load(&h, libname, p);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_load(&h, libname, p);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
     ABTS_PTR_NOTNULL(tc, h);
 
-    status = apr_dso_unload(h);
-    ABTS_ASSERT(tc, apr_dso_error(h, errstr, 256), APR_SUCCESS == status);
+    status = fspr_dso_unload(h);
+    ABTS_ASSERT(tc, fspr_dso_error(h, errstr, 256), APR_SUCCESS == status);
 
-    status = apr_dso_sym(&func1, h, "print_hello");
+    status = fspr_dso_sym(&func1, h, "print_hello");
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_ESYMNOTFOUND(status));
 }
 
@@ -223,10 +223,10 @@ static void test_unload_library(abts_case *tc, void *data)
 
 static void test_load_notthere(abts_case *tc, void *data)
 {
-    apr_dso_handle_t *h = NULL;
-    apr_status_t status;
+    fspr_dso_handle_t *h = NULL;
+    fspr_status_t status;
 
-    status = apr_dso_load(&h, "No_File.so", p);
+    status = fspr_dso_load(&h, "No_File.so", p);
 
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_EDSOOPEN(status));
     ABTS_PTR_NOTNULL(tc, h);
@@ -239,7 +239,7 @@ abts_suite *testdso(abts_suite *suite)
     suite = ADD_SUITE(suite)
 
 #if APR_HAS_DSO
-    apr_filepath_merge(&modname, NULL, MOD_NAME, 0, p);
+    fspr_filepath_merge(&modname, NULL, MOD_NAME, 0, p);
     
     abts_run_test(suite, test_load_module, NULL);
     abts_run_test(suite, test_dso_sym, NULL);
@@ -247,7 +247,7 @@ abts_suite *testdso(abts_suite *suite)
     abts_run_test(suite, test_unload_module, NULL);
 
 #ifdef LIB_NAME
-    apr_filepath_merge(&libname, NULL, LIB_NAME, 0, p);
+    fspr_filepath_merge(&libname, NULL, LIB_NAME, 0, p);
     
     abts_run_test(suite, test_load_library, NULL);
     abts_run_test(suite, test_dso_sym_library, NULL);

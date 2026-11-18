@@ -15,10 +15,10 @@
  */
 
 #include "testutil.h"
-#include "apr_file_info.h"
-#include "apr_errno.h"
-#include "apr_pools.h"
-#include "apr_tables.h"
+#include "fspr_file_info.h"
+#include "fspr_errno.h"
+#include "fspr_pools.h"
+#include "fspr_tables.h"
 
 #if defined(WIN32) || defined(NETWARE) || defined(OS2)
 #define PSEP ";"
@@ -46,11 +46,11 @@ static const int  parts_out_count = sizeof(parts_out)/sizeof(*parts_out);
 static void list_split_multi(abts_case *tc, void *data)
 {
     int i;
-    apr_status_t rv;
-    apr_array_header_t *pathelts;
+    fspr_status_t rv;
+    fspr_array_header_t *pathelts;
 
     pathelts = NULL;
-    rv = apr_filepath_list_split(&pathelts, path_in, p);
+    rv = fspr_filepath_list_split(&pathelts, path_in, p);
     ABTS_PTR_NOTNULL(tc, pathelts);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_INT_EQUAL(tc, parts_out_count, pathelts->nelts);
@@ -61,13 +61,13 @@ static void list_split_multi(abts_case *tc, void *data)
 static void list_split_single(abts_case *tc, void *data)
 {
     int i;
-    apr_status_t rv;
-    apr_array_header_t *pathelts;
+    fspr_status_t rv;
+    fspr_array_header_t *pathelts;
 
     for (i = 0; i < parts_in_count; ++i)
     {
         pathelts = NULL;
-        rv = apr_filepath_list_split(&pathelts, parts_in[i], p);
+        rv = fspr_filepath_list_split(&pathelts, parts_in[i], p);
         ABTS_PTR_NOTNULL(tc, pathelts);
         ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
         if (parts_in[i][0] == '\0')
@@ -84,15 +84,15 @@ static void list_merge_multi(abts_case *tc, void *data)
 {
     int i;
     char *liststr;
-    apr_status_t rv;
-    apr_array_header_t *pathelts;
+    fspr_status_t rv;
+    fspr_array_header_t *pathelts;
 
-    pathelts = apr_array_make(p, parts_in_count, sizeof(const char*));
+    pathelts = fspr_array_make(p, parts_in_count, sizeof(const char*));
     for (i = 0; i < parts_in_count; ++i)
-        *(const char**)apr_array_push(pathelts) = parts_in[i];
+        *(const char**)fspr_array_push(pathelts) = parts_in[i];
 
     liststr = NULL;
-    rv = apr_filepath_list_merge(&liststr, pathelts, p);
+    rv = fspr_filepath_list_merge(&liststr, pathelts, p);
     ABTS_PTR_NOTNULL(tc, liststr);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_STR_EQUAL(tc, liststr, path_out);
@@ -102,16 +102,16 @@ static void list_merge_single(abts_case *tc, void *data)
 {
     int i;
     char *liststr;
-    apr_status_t rv;
-    apr_array_header_t *pathelts;
+    fspr_status_t rv;
+    fspr_array_header_t *pathelts;
 
-    pathelts = apr_array_make(p, 1, sizeof(const char*));
-    apr_array_push(pathelts);
+    pathelts = fspr_array_make(p, 1, sizeof(const char*));
+    fspr_array_push(pathelts);
     for (i = 0; i < parts_in_count; ++i)
     {
         *(const char**)pathelts->elts = parts_in[i];
         liststr = NULL;
-        rv = apr_filepath_list_merge(&liststr, pathelts, p);
+        rv = fspr_filepath_list_merge(&liststr, pathelts, p);
         if (parts_in[i][0] == '\0')
             ABTS_PTR_EQUAL(tc, NULL, liststr);
         else

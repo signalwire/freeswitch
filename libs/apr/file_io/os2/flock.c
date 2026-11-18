@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
+#include "fspr_arch_file_io.h"
 
-APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
+APR_DECLARE(fspr_status_t) fspr_file_lock(fspr_file_t *thefile, int type)
 {
     FILELOCK lockrange = { 0, 0x7fffffff };
     ULONG rc;
@@ -27,7 +27,7 @@ APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
     return APR_FROM_OS_ERROR(rc);
 }
 
-APR_DECLARE(apr_status_t) apr_file_unlock(apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_unlock(fspr_file_t *thefile)
 {
     FILELOCK unlockrange = { 0, 0x7fffffff };
     ULONG rc;

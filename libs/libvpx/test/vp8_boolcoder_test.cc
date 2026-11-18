@@ -15,7 +15,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "test/acm_random.h"
 #include "vp8/decoder/dboolhuff.h"
@@ -93,6 +93,9 @@ TEST(VP8, TestBitIO) {
         }
 
         vp8_stop_encode(&bw);
+        // vp8dx_bool_decoder_fill() may read into uninitialized data that
+        // isn't used meaningfully, but may trigger an MSan warning.
+        memset(bw_buffer + bw.pos, 0, sizeof(VP8_BD_VALUE) - 1);
 
         BOOL_DECODER br;
         encrypt_buffer(bw_buffer, kBufferSize);

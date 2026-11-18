@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VPX_VP8CX_H_
-#define VPX_VP8CX_H_
+#ifndef VPX_VPX_VP8CX_H_
+#define VPX_VPX_VP8CX_H_
 
 /*!\defgroup vp8_encoder WebM VP8/VP9 Encoder
  * \ingroup vp8
@@ -17,6 +17,7 @@
  */
 #include "./vp8.h"
 #include "./vpx_encoder.h"
+#include "./vpx_ext_ratectrl.h"
 
 /*!\file
  * \brief Provides definitions for using VP8 or VP9 encoder algorithm within the
@@ -32,7 +33,15 @@ extern "C" {
  * This interface provides the capability to encode raw VP8 streams.
  * @{
  */
+
+/*!\brief A single instance of the VP8 encoder.
+ *\deprecated This access mechanism is provided for backwards compatibility;
+ * prefer vpx_codec_vp8_cx().
+ */
 extern vpx_codec_iface_t vpx_codec_vp8_cx_algo;
+
+/*!\brief The interface to the VP8 encoder.
+ */
 extern vpx_codec_iface_t *vpx_codec_vp8_cx(void);
 /*!@} - end algorithm interface member group*/
 
@@ -41,7 +50,15 @@ extern vpx_codec_iface_t *vpx_codec_vp8_cx(void);
  * This interface provides the capability to encode raw VP9 streams.
  * @{
  */
+
+/*!\brief A single instance of the VP9 encoder.
+ *\deprecated This access mechanism is provided for backwards compatibility;
+ * prefer vpx_codec_vp9_cx().
+ */
 extern vpx_codec_iface_t vpx_codec_vp9_cx_algo;
+
+/*!\brief The interface to the VP9 encoder.
+ */
 extern vpx_codec_iface_t *vpx_codec_vp9_cx(void);
 /*!@} - end algorithm interface member group*/
 
@@ -125,7 +142,7 @@ extern vpx_codec_iface_t *vpx_codec_vp9_cx(void);
 enum vp8e_enc_control_id {
   /*!\brief Codec control function to pass an ROI map to encoder.
    *
-   * Supported in codecs: VP8, VP9
+   * Supported in codecs: VP8
    */
   VP8E_SET_ROI_MAP = 8,
 
@@ -148,13 +165,17 @@ enum vp8e_enc_control_id {
    * speed at the expense of quality.
    *
    * \note Valid range for VP8: -16..16
-   * \note Valid range for VP9: -8..8
+   * \note Valid range for VP9: -9..9
+   * \note A negative value (-n) is treated as its absolute value (n) in VP9.
    *
    * Supported in codecs: VP8, VP9
    */
   VP8E_SET_CPUUSED = 13,
 
-  /*!\brief Codec control function to enable automatic set and use alf frames.
+  /*!\brief Codec control function to enable automatic use of arf frames.
+   *
+   * \note Valid range for VP8: 0..1
+   * \note Valid range for VP9: 0..6
    *
    * Supported in codecs: VP8, VP9
    */
@@ -169,7 +190,10 @@ enum vp8e_enc_control_id {
    */
   VP8E_SET_NOISE_SENSITIVITY,
 
-  /*!\brief Codec control function to set sharpness.
+  /*!\brief Codec control function to set higher sharpness at the expense
+   * of a lower PSNR.
+   *
+   * \note Valid range: 0..7
    *
    * Supported in codecs: VP8, VP9
    */
@@ -225,10 +249,10 @@ enum vp8e_enc_control_id {
    */
   VP8E_SET_TUNING,
 
-  /*!\brief Codec control function to set constrained quality level.
+  /*!\brief Codec control function to set constrained / constant quality level.
    *
-   * \attention For this value to be used vpx_codec_enc_cfg_t::g_usage must be
-   *            set to #VPX_CQ.
+   * \attention For this value to be used vpx_codec_enc_cfg_t::rc_end_usage must
+   *            be set to #VPX_CQ or #VPX_Q
    * \note Valid range: 0..63
    *
    * Supported in codecs: VP8, VP9
@@ -279,7 +303,7 @@ enum vp8e_enc_control_id {
    * the feature is off, i.e., no golden frame boost in CBR mode and
    * average bitrate target is used.
    *
-   * For example, to allow 100% more bits, i.e, 2X, in a golden frame
+   * For example, to allow 100% more bits, i.e., 2X, in a golden frame
    * than average frame, set this to 100.
    *
    * Supported in codecs: VP9
@@ -423,6 +447,12 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_SVC,
 
+  /*!\brief Codec control function to pass an ROI map to encoder.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_ROI_MAP,
+
   /*!\brief Codec control function to set parameters for SVC.
    * \note Parameters contain min_q, max_q, scaling factor for each of the
    *       SVC layers.
@@ -481,25 +511,13 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_COLOR_SPACE,
 
-  /*!\brief Codec control function to set temporal layering mode.
-   * \note Valid ranges: 0..3, default is "0"
-   * (VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING).
-   *                     0 = VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING
-   *                     1 = VP9E_TEMPORAL_LAYERING_MODE_BYPASS
-   *                     2 = VP9E_TEMPORAL_LAYERING_MODE_0101
-   *                     3 = VP9E_TEMPORAL_LAYERING_MODE_0212
-   *
-   * Supported in codecs: VP9
-   */
-  VP9E_SET_TEMPORAL_LAYERING_MODE,
-
   /*!\brief Codec control function to set minimum interval between GF/ARF frames
    *
    * By default the value is set as 4.
    *
    * Supported in codecs: VP9
    */
-  VP9E_SET_MIN_GF_INTERVAL,
+  VP9E_SET_MIN_GF_INTERVAL = 48,
 
   /*!\brief Codec control function to set minimum interval between GF/ARF frames
    *
@@ -529,7 +547,7 @@ enum vp8e_enc_control_id {
    * struct #vpx_svc_ref_frame_config defined below.
    *
    * Supported in codecs: VP9
-  */
+   */
   VP9E_SET_SVC_REF_FRAME_CONFIG,
 
   /*!\brief Codec control function to set intended rendering image size.
@@ -550,11 +568,11 @@ enum vp8e_enc_control_id {
   VP9E_SET_TARGET_LEVEL,
 
   /*!\brief Codec control function to set row level multi-threading.
-  *
-  * 0 : off, 1 : on
-  *
-  * Supported in codecs: VP9
-  */
+   *
+   * 0 : off, 1 : on
+   *
+   * Supported in codecs: VP9
+   */
   VP9E_SET_ROW_MT,
 
   /*!\brief Codec control function to get bitstream level.
@@ -574,18 +592,18 @@ enum vp8e_enc_control_id {
   VP9E_SET_ALT_REF_AQ,
 
   /*!\brief Boost percentage for Golden Frame in CBR mode.
-    *
-    * This value controls the amount of boost given to Golden Frame in
-    * CBR mode. It is expressed as a percentage of the average
-    * per-frame bitrate, with the special (and default) value 0 meaning
-    * the feature is off, i.e., no golden frame boost in CBR mode and
-    * average bitrate target is used.
-    *
-    * For example, to allow 100% more bits, i.e, 2X, in a golden frame
-    * than average frame, set this to 100.
-    *
-    * Supported in codecs: VP8
-    */
+   *
+   * This value controls the amount of boost given to Golden Frame in
+   * CBR mode. It is expressed as a percentage of the average
+   * per-frame bitrate, with the special (and default) value 0 meaning
+   * the feature is off, i.e., no golden frame boost in CBR mode and
+   * average bitrate target is used.
+   *
+   * For example, to allow 100% more bits, i.e., 2X, in a golden frame
+   * than average frame, set this to 100.
+   *
+   * Supported in codecs: VP8
+   */
   VP8E_SET_GF_CBR_BOOST_PCT,
 
   /*!\brief Codec control function to enable the extreme motion vector unit test
@@ -596,6 +614,178 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST,
+
+  /*!\brief Codec control function to constrain the inter-layer prediction
+   * (prediction of lower spatial resolution) in VP9 SVC.
+   *
+   * 0 : inter-layer prediction on, 1 : off, 2 : off only on non-key frames
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_SVC_INTER_LAYER_PRED,
+
+  /*!\brief Codec control function to set mode and thresholds for frame
+   *  dropping in SVC. Drop frame thresholds are set per-layer. Mode is set as:
+   * 0 : layer-dependent dropping, 1 : constrained dropping, current layer drop
+   * forces drop on all upper layers. Default mode is 0.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_SVC_FRAME_DROP_LAYER,
+
+  /*!\brief Codec control function to get the refresh and reference flags and
+   * the buffer indices, up to the last encoded spatial layer.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_GET_SVC_REF_FRAME_CONFIG,
+
+  /*!\brief Codec control function to enable/disable use of golden reference as
+   * a second temporal reference for SVC. Only used when inter-layer prediction
+   * is disabled on INTER frames.
+   *
+   * 0: Off, 1: Enabled (default)
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_SVC_GF_TEMPORAL_REF,
+
+  /*!\brief Codec control function to enable spatial layer sync frame, for any
+   * spatial layer. Enabling it for layer k means spatial layer k will disable
+   * all temporal prediction, but keep the inter-layer prediction. It will
+   * refresh any temporal reference buffer for that layer, and reset the
+   * temporal layer for the superframe to 0. Setting the layer sync for base
+   * spatial layer forces a key frame. Default is off (0) for all spatial
+   * layers. Spatial layer sync flag is reset to 0 after each encoded layer,
+   * so when control is invoked it is only used for the current superframe.
+   *
+   * 0: Off (default), 1: Enabled
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_SVC_SPATIAL_LAYER_SYNC,
+
+  /*!\brief Codec control function to enable temporal dependency model.
+   *
+   * Vp9 allows the encoder to run temporal dependency model and use it to
+   * improve the compression performance. To enable, set this parameter to be
+   * 1. The default value is set to be 1.
+   */
+  VP9E_SET_TPL,
+
+  /*!\brief Codec control function to enable post encode frame drop.
+   *
+   * This will allow encoder to drop frame after it's encoded.
+   *
+   * 0: Off (default), 1: Enabled
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_POSTENCODE_DROP,
+
+  /*!\brief Codec control function to set delta q for uv.
+   *
+   * Cap it at +/-15.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_DELTA_Q_UV,
+
+  /*!\brief Codec control function to disable increase Q on overshoot in CBR.
+   *
+   * 0: On (default), 1: Disable.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_DISABLE_OVERSHOOT_MAXQ_CBR,
+
+  /*!\brief Codec control function to disable loopfilter.
+   *
+   * 0: Loopfilter on all frames, 1: Disable on non reference frames.
+   * 2: Disable on all frames.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_DISABLE_LOOPFILTER,
+
+  /*!\brief Codec control function to enable external rate control library.
+   *
+   * args[0]: path of the rate control library
+   *
+   * args[1]: private config of the rate control library
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_EXTERNAL_RATE_CONTROL,
+
+  /*!\brief Codec control to disable internal features in rate control.
+   *
+   * This will do 3 things, only for 1 pass:
+   *  - Turn off low motion computation
+   *  - Turn off gf update constraint on key frame frequency
+   *  - Turn off content mode for cyclic refresh
+   *
+   * With those, the rate control is expected to work exactly the same as the
+   * interface provided in ratectrl_rtc.cc/h
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_RTC_EXTERNAL_RATECTRL,
+
+  /*!\brief Codec control function to get loopfilter level in the encoder.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_GET_LOOPFILTER_LEVEL,
+
+  /*!\brief Codec control to get last quantizers for all spatial layers.
+   *
+   * Return value uses an array of internal quantizers scale defined by the
+   * codec, for all spatial layers.
+   * The size of the array passed in should be #VPX_SS_MAX_LAYERS.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_GET_LAST_QUANTIZER_SVC_LAYERS,
+
+  /*!\brief Codec control to disable internal features in rate control.
+   *
+   * This will turn off cyclic refresh for vp8.
+   *
+   * With this, the rate control is expected to work exactly the same as the
+   * interface provided in vp8_ratectrl_rtc.cc/h
+   *
+   * Supported in codecs: VP8
+   */
+  VP8E_SET_RTC_EXTERNAL_RATECTRL,
+
+  /*!\brief Codec control to set quantizer for the next frame.
+   *
+   * This will turn off cyclic refresh. Only applicable to 1-pass without
+   * spatial layers.
+   *
+   * Supported in codecs: VP9
+   *
+   */
+  VP9E_SET_QUANTIZER_ONE_PASS,
+
+  /*!\brief Codec control function to enable key frame temporal filtering.
+   *
+   * Vp9 allows the encoder to run key frame temporal filtering and use it to
+   * improve the compression performance. To enable, set this parameter to be
+   * 1. The default value is set to be 0.
+   */
+  VP9E_SET_KEY_FRAME_FILTERING,
+
+  /*!\brief Codec control function to validate HBD input, int parameter.
+   *
+   * VP9 allows the encoder to validate the high bitdepth (HBD) input and
+   * ensure that every pixel is within the valid range. To disable/enable,
+   * set this parameter to 0/1. The default value is set to be 1.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_VALIDATE_HBD_INPUT,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -622,8 +812,7 @@ typedef enum vp9e_temporal_layering_mode {
   VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING = 0,
 
   /*!\brief Bypass mode.
-   * Used when application needs to control temporal layering.
-   * This will only work when the number of spatial layers equals 1.
+   * Used when application needs to control spatial and temporal layering.
    */
   VP9E_TEMPORAL_LAYERING_MODE_BYPASS = 1,
 
@@ -643,16 +832,20 @@ typedef enum vp9e_temporal_layering_mode {
  */
 
 typedef struct vpx_roi_map {
-  /*! An id between 0 and 3 for each 16x16 region within a frame. */
+  /*! If ROI is enabled. */
+  uint8_t enabled;
+  /*! An id between 0-3 (0-7 for vp9) for each 16x16 (8x8 for VP9)
+   * region within a frame. */
   unsigned char *roi_map;
   unsigned int rows; /**< Number of rows. */
   unsigned int cols; /**< Number of columns. */
-  // TODO(paulwilkins): broken for VP9 which has 8 segments
-  // q and loop filter deltas for each segment
-  // (see MAX_MB_SEGMENTS)
-  int delta_q[4];  /**< Quantizer deltas. */
-  int delta_lf[4]; /**< Loop filter deltas. */
-  /*! Static breakout threshold for each segment. */
+  /*! VP8 only uses the first 4 segments. VP9 uses 8 segments. */
+  int delta_q[8];  /**< Quantizer deltas. Valid range: [-63, 63].*/
+  int delta_lf[8]; /**< Loop filter deltas. Valid range: [-63, 63].*/
+  /*! skip and ref frame segment is only used in VP9. */
+  int skip[8];      /**< Skip this block. */
+  int ref_frame[8]; /**< Reference frame for this block. */
+  /*! Static breakout threshold for each segment. Only used in VP8. */
   unsigned int static_threshold[4];
 } vpx_roi_map_t;
 
@@ -693,7 +886,7 @@ typedef enum {
   VP8_EIGHT_TOKENPARTITION = 3
 } vp8e_token_partitions;
 
-/*!brief VP9 encoder content type */
+/*!\brief VP9 encoder content type */
 typedef enum {
   VP9E_CONTENT_DEFAULT,
   VP9E_CONTENT_SCREEN,
@@ -716,11 +909,13 @@ typedef enum { VP8_TUNE_PSNR, VP8_TUNE_SSIM } vp8e_tuning;
  *
  */
 typedef struct vpx_svc_layer_id {
-  int spatial_layer_id;  /**< Spatial layer id number. */
+  int spatial_layer_id; /**< First spatial layer to start encoding. */
+  // TODO(jianj): Deprecated, to be removed.
   int temporal_layer_id; /**< Temporal layer id number. */
+  int temporal_layer_id_per_spatial[VPX_SS_MAX_LAYERS]; /**< Temp layer id. */
 } vpx_svc_layer_id_t;
 
-/*!\brief  vp9 svc frame flag parameters.
+/*!\brief vp9 svc frame flag parameters.
  *
  * This defines the frame flags and buffer indices for each spatial layer for
  * svc encoding.
@@ -729,11 +924,57 @@ typedef struct vpx_svc_layer_id {
  *
  */
 typedef struct vpx_svc_ref_frame_config {
-  int frame_flags[VPX_TS_MAX_LAYERS]; /**< Frame flags. */
-  int lst_fb_idx[VPX_TS_MAX_LAYERS];  /**< Last buffer index. */
-  int gld_fb_idx[VPX_TS_MAX_LAYERS];  /**< Golden buffer index. */
-  int alt_fb_idx[VPX_TS_MAX_LAYERS];  /**< Altref buffer index. */
+  int lst_fb_idx[VPX_SS_MAX_LAYERS];         /**< Last buffer index. */
+  int gld_fb_idx[VPX_SS_MAX_LAYERS];         /**< Golden buffer index. */
+  int alt_fb_idx[VPX_SS_MAX_LAYERS];         /**< Altref buffer index. */
+  int update_buffer_slot[VPX_SS_MAX_LAYERS]; /**< Update reference frames. */
+  // TODO(jianj): Remove update_last/golden/alt_ref, these are deprecated.
+  int update_last[VPX_SS_MAX_LAYERS];       /**< Update last. */
+  int update_golden[VPX_SS_MAX_LAYERS];     /**< Update golden. */
+  int update_alt_ref[VPX_SS_MAX_LAYERS];    /**< Update altref. */
+  int reference_last[VPX_SS_MAX_LAYERS];    /**< Last as reference. */
+  int reference_golden[VPX_SS_MAX_LAYERS];  /**< Golden as reference. */
+  int reference_alt_ref[VPX_SS_MAX_LAYERS]; /**< Altref as reference. */
+  int64_t duration[VPX_SS_MAX_LAYERS];      /**< Duration per spatial layer. */
 } vpx_svc_ref_frame_config_t;
+
+/*!\brief VP9 svc frame dropping mode.
+ *
+ * This defines the frame drop mode for SVC.
+ *
+ */
+typedef enum {
+  CONSTRAINED_LAYER_DROP,
+  /**< Upper layers are constrained to drop if current layer drops. */
+  LAYER_DROP,           /**< Any spatial layer can drop. */
+  FULL_SUPERFRAME_DROP, /**< Only full superframe can drop. */
+  CONSTRAINED_FROM_ABOVE_DROP,
+  /**< Lower layers are constrained to drop if current layer drops. */
+} SVC_LAYER_DROP_MODE;
+
+/*!\brief vp9 svc frame dropping parameters.
+ *
+ * This defines the frame drop thresholds for each spatial layer, and
+ * the frame dropping mode: 0 = layer based frame dropping (default),
+ * 1 = constrained dropping where current layer drop forces all upper
+ * spatial layers to drop.
+ */
+typedef struct vpx_svc_frame_drop {
+  int framedrop_thresh[VPX_SS_MAX_LAYERS]; /**< Frame drop thresholds */
+  SVC_LAYER_DROP_MODE
+  framedrop_mode;      /**< Layer-based or constrained dropping. */
+  int max_consec_drop; /**< Maximum consecutive drops, for any layer. */
+} vpx_svc_frame_drop_t;
+
+/*!\brief vp9 svc spatial layer sync parameters.
+ *
+ * This defines the spatial layer sync flag, defined per spatial layer.
+ *
+ */
+typedef struct vpx_svc_spatial_layer_sync {
+  int spatial_layer_sync[VPX_SS_MAX_LAYERS]; /**< Sync layer flags */
+  int base_layer_intra_only; /**< Flag for setting Intra-only frame on base */
+} vpx_svc_spatial_layer_sync_t;
 
 /*!\cond */
 /*!\brief VP8 encoder control function parameter type
@@ -743,26 +984,12 @@ typedef struct vpx_svc_ref_frame_config {
  *
  */
 
-VPX_CTRL_USE_TYPE(VP8E_SET_FRAME_FLAGS, int)
-#define VPX_CTRL_VP8E_SET_FRAME_FLAGS
-VPX_CTRL_USE_TYPE(VP8E_SET_TEMPORAL_LAYER_ID, int)
-#define VPX_CTRL_VP8E_SET_TEMPORAL_LAYER_ID
 VPX_CTRL_USE_TYPE(VP8E_SET_ROI_MAP, vpx_roi_map_t *)
 #define VPX_CTRL_VP8E_SET_ROI_MAP
 VPX_CTRL_USE_TYPE(VP8E_SET_ACTIVEMAP, vpx_active_map_t *)
 #define VPX_CTRL_VP8E_SET_ACTIVEMAP
 VPX_CTRL_USE_TYPE(VP8E_SET_SCALEMODE, vpx_scaling_mode_t *)
 #define VPX_CTRL_VP8E_SET_SCALEMODE
-
-VPX_CTRL_USE_TYPE(VP9E_SET_SVC, int)
-#define VPX_CTRL_VP9E_SET_SVC
-VPX_CTRL_USE_TYPE(VP9E_SET_SVC_PARAMETERS, void *)
-#define VPX_CTRL_VP9E_SET_SVC_PARAMETERS
-VPX_CTRL_USE_TYPE(VP9E_REGISTER_CX_CALLBACK, void *)
-#define VPX_CTRL_VP9E_REGISTER_CX_CALLBACK
-VPX_CTRL_USE_TYPE(VP9E_SET_SVC_LAYER_ID, vpx_svc_layer_id_t *)
-#define VPX_CTRL_VP9E_SET_SVC_LAYER_ID
-
 VPX_CTRL_USE_TYPE(VP8E_SET_CPUUSED, int)
 #define VPX_CTRL_VP8E_SET_CPUUSED
 VPX_CTRL_USE_TYPE(VP8E_SET_ENABLEAUTOALTREF, unsigned int)
@@ -775,7 +1002,10 @@ VPX_CTRL_USE_TYPE(VP8E_SET_STATIC_THRESHOLD, unsigned int)
 #define VPX_CTRL_VP8E_SET_STATIC_THRESHOLD
 VPX_CTRL_USE_TYPE(VP8E_SET_TOKEN_PARTITIONS, int) /* vp8e_token_partitions */
 #define VPX_CTRL_VP8E_SET_TOKEN_PARTITIONS
-
+VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER, int *)
+#define VPX_CTRL_VP8E_GET_LAST_QUANTIZER
+VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64, int *)
+#define VPX_CTRL_VP8E_GET_LAST_QUANTIZER_64
 VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_MAXFRAMES, unsigned int)
 #define VPX_CTRL_VP8E_SET_ARNR_MAXFRAMES
 VPX_CTRL_USE_TYPE(VP8E_SET_ARNR_STRENGTH, unsigned int)
@@ -786,86 +1016,109 @@ VPX_CTRL_USE_TYPE(VP8E_SET_TUNING, int) /* vp8e_tuning */
 #define VPX_CTRL_VP8E_SET_TUNING
 VPX_CTRL_USE_TYPE(VP8E_SET_CQ_LEVEL, unsigned int)
 #define VPX_CTRL_VP8E_SET_CQ_LEVEL
-
+VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
+#define VPX_CTRL_VP8E_SET_MAX_INTRA_BITRATE_PCT
+VPX_CTRL_USE_TYPE(VP8E_SET_FRAME_FLAGS, int)
+#define VPX_CTRL_VP8E_SET_FRAME_FLAGS
+VPX_CTRL_USE_TYPE(VP9E_SET_MAX_INTER_BITRATE_PCT, unsigned int)
+#define VPX_CTRL_VP9E_SET_MAX_INTER_BITRATE_PCT
+VPX_CTRL_USE_TYPE(VP9E_SET_GF_CBR_BOOST_PCT, unsigned int)
+#define VPX_CTRL_VP9E_SET_GF_CBR_BOOST_PCT
+VPX_CTRL_USE_TYPE(VP8E_SET_TEMPORAL_LAYER_ID, int)
+#define VPX_CTRL_VP8E_SET_TEMPORAL_LAYER_ID
+VPX_CTRL_USE_TYPE(VP8E_SET_SCREEN_CONTENT_MODE, unsigned int)
+#define VPX_CTRL_VP8E_SET_SCREEN_CONTENT_MODE
+VPX_CTRL_USE_TYPE(VP9E_SET_LOSSLESS, unsigned int)
+#define VPX_CTRL_VP9E_SET_LOSSLESS
 VPX_CTRL_USE_TYPE(VP9E_SET_TILE_COLUMNS, int)
 #define VPX_CTRL_VP9E_SET_TILE_COLUMNS
 VPX_CTRL_USE_TYPE(VP9E_SET_TILE_ROWS, int)
 #define VPX_CTRL_VP9E_SET_TILE_ROWS
-
-VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER, int *)
-#define VPX_CTRL_VP8E_GET_LAST_QUANTIZER
-VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64, int *)
-#define VPX_CTRL_VP8E_GET_LAST_QUANTIZER_64
-VPX_CTRL_USE_TYPE(VP9E_GET_SVC_LAYER_ID, vpx_svc_layer_id_t *)
-#define VPX_CTRL_VP9E_GET_SVC_LAYER_ID
-
-VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTRA_BITRATE_PCT, unsigned int)
-#define VPX_CTRL_VP8E_SET_MAX_INTRA_BITRATE_PCT
-VPX_CTRL_USE_TYPE(VP8E_SET_MAX_INTER_BITRATE_PCT, unsigned int)
-#define VPX_CTRL_VP8E_SET_MAX_INTER_BITRATE_PCT
-
-VPX_CTRL_USE_TYPE(VP8E_SET_GF_CBR_BOOST_PCT, unsigned int)
-#define VPX_CTRL_VP8E_SET_GF_CBR_BOOST_PCT
-
-VPX_CTRL_USE_TYPE(VP8E_SET_SCREEN_CONTENT_MODE, unsigned int)
-#define VPX_CTRL_VP8E_SET_SCREEN_CONTENT_MODE
-
-VPX_CTRL_USE_TYPE(VP9E_SET_GF_CBR_BOOST_PCT, unsigned int)
-#define VPX_CTRL_VP9E_SET_GF_CBR_BOOST_PCT
-
-VPX_CTRL_USE_TYPE(VP9E_SET_LOSSLESS, unsigned int)
-#define VPX_CTRL_VP9E_SET_LOSSLESS
-
 VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PARALLEL_DECODING, unsigned int)
 #define VPX_CTRL_VP9E_SET_FRAME_PARALLEL_DECODING
-
 VPX_CTRL_USE_TYPE(VP9E_SET_AQ_MODE, unsigned int)
 #define VPX_CTRL_VP9E_SET_AQ_MODE
-
-VPX_CTRL_USE_TYPE(VP9E_SET_ALT_REF_AQ, int)
-#define VPX_CTRL_VP9E_SET_ALT_REF_AQ
-
 VPX_CTRL_USE_TYPE(VP9E_SET_FRAME_PERIODIC_BOOST, unsigned int)
 #define VPX_CTRL_VP9E_SET_FRAME_PERIODIC_BOOST
-
 VPX_CTRL_USE_TYPE(VP9E_SET_NOISE_SENSITIVITY, unsigned int)
 #define VPX_CTRL_VP9E_SET_NOISE_SENSITIVITY
-
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC, int)
+#define VPX_CTRL_VP9E_SET_SVC
+VPX_CTRL_USE_TYPE(VP9E_SET_ROI_MAP, vpx_roi_map_t *)
+#define VPX_CTRL_VP9E_SET_ROI_MAP
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_PARAMETERS, void *)
+#define VPX_CTRL_VP9E_SET_SVC_PARAMETERS
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_LAYER_ID, vpx_svc_layer_id_t *)
+#define VPX_CTRL_VP9E_SET_SVC_LAYER_ID
 VPX_CTRL_USE_TYPE(VP9E_SET_TUNE_CONTENT, int) /* vp9e_tune_content */
 #define VPX_CTRL_VP9E_SET_TUNE_CONTENT
-
+VPX_CTRL_USE_TYPE(VP9E_GET_SVC_LAYER_ID, vpx_svc_layer_id_t *)
+#define VPX_CTRL_VP9E_GET_SVC_LAYER_ID
+VPX_CTRL_USE_TYPE(VP9E_REGISTER_CX_CALLBACK, void *)
+#define VPX_CTRL_VP9E_REGISTER_CX_CALLBACK
 VPX_CTRL_USE_TYPE(VP9E_SET_COLOR_SPACE, int)
 #define VPX_CTRL_VP9E_SET_COLOR_SPACE
-
 VPX_CTRL_USE_TYPE(VP9E_SET_MIN_GF_INTERVAL, unsigned int)
 #define VPX_CTRL_VP9E_SET_MIN_GF_INTERVAL
-
 VPX_CTRL_USE_TYPE(VP9E_SET_MAX_GF_INTERVAL, unsigned int)
 #define VPX_CTRL_VP9E_SET_MAX_GF_INTERVAL
-
 VPX_CTRL_USE_TYPE(VP9E_GET_ACTIVEMAP, vpx_active_map_t *)
 #define VPX_CTRL_VP9E_GET_ACTIVEMAP
-
 VPX_CTRL_USE_TYPE(VP9E_SET_COLOR_RANGE, int)
 #define VPX_CTRL_VP9E_SET_COLOR_RANGE
-
 VPX_CTRL_USE_TYPE(VP9E_SET_SVC_REF_FRAME_CONFIG, vpx_svc_ref_frame_config_t *)
 #define VPX_CTRL_VP9E_SET_SVC_REF_FRAME_CONFIG
-
 VPX_CTRL_USE_TYPE(VP9E_SET_RENDER_SIZE, int *)
 #define VPX_CTRL_VP9E_SET_RENDER_SIZE
-
 VPX_CTRL_USE_TYPE(VP9E_SET_TARGET_LEVEL, unsigned int)
 #define VPX_CTRL_VP9E_SET_TARGET_LEVEL
-
 VPX_CTRL_USE_TYPE(VP9E_SET_ROW_MT, unsigned int)
 #define VPX_CTRL_VP9E_SET_ROW_MT
-
 VPX_CTRL_USE_TYPE(VP9E_GET_LEVEL, int *)
 #define VPX_CTRL_VP9E_GET_LEVEL
-
+VPX_CTRL_USE_TYPE(VP9E_SET_ALT_REF_AQ, int)
+#define VPX_CTRL_VP9E_SET_ALT_REF_AQ
+VPX_CTRL_USE_TYPE(VP8E_SET_GF_CBR_BOOST_PCT, unsigned int)
+#define VPX_CTRL_VP8E_SET_GF_CBR_BOOST_PCT
 VPX_CTRL_USE_TYPE(VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, unsigned int)
 #define VPX_CTRL_VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_INTER_LAYER_PRED, unsigned int)
+#define VPX_CTRL_VP9E_SET_SVC_INTER_LAYER_PRED
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_FRAME_DROP_LAYER, vpx_svc_frame_drop_t *)
+#define VPX_CTRL_VP9E_SET_SVC_FRAME_DROP_LAYER
+VPX_CTRL_USE_TYPE(VP9E_GET_SVC_REF_FRAME_CONFIG, vpx_svc_ref_frame_config_t *)
+#define VPX_CTRL_VP9E_GET_SVC_REF_FRAME_CONFIG
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_GF_TEMPORAL_REF, unsigned int)
+#define VPX_CTRL_VP9E_SET_SVC_GF_TEMPORAL_REF
+VPX_CTRL_USE_TYPE(VP9E_SET_SVC_SPATIAL_LAYER_SYNC,
+                  vpx_svc_spatial_layer_sync_t *)
+#define VPX_CTRL_VP9E_SET_SVC_SPATIAL_LAYER_SYNC
+VPX_CTRL_USE_TYPE(VP9E_SET_TPL, int)
+#define VPX_CTRL_VP9E_SET_TPL
+VPX_CTRL_USE_TYPE(VP9E_SET_POSTENCODE_DROP, unsigned int)
+#define VPX_CTRL_VP9E_SET_POSTENCODE_DROP
+VPX_CTRL_USE_TYPE(VP9E_SET_DELTA_Q_UV, int)
+#define VPX_CTRL_VP9E_SET_DELTA_Q_UV
+VPX_CTRL_USE_TYPE(VP9E_SET_DISABLE_OVERSHOOT_MAXQ_CBR, int)
+#define VPX_CTRL_VP9E_SET_DISABLE_OVERSHOOT_MAXQ_CBR
+VPX_CTRL_USE_TYPE(VP9E_SET_DISABLE_LOOPFILTER, int)
+#define VPX_CTRL_VP9E_SET_DISABLE_LOOPFILTER
+VPX_CTRL_USE_TYPE(VP9E_SET_EXTERNAL_RATE_CONTROL, vpx_rc_funcs_t *)
+#define VPX_CTRL_VP9E_SET_EXTERNAL_RATE_CONTROL
+VPX_CTRL_USE_TYPE(VP9E_SET_RTC_EXTERNAL_RATECTRL, int)
+#define VPX_CTRL_VP9E_SET_RTC_EXTERNAL_RATECTRL
+VPX_CTRL_USE_TYPE(VP9E_GET_LOOPFILTER_LEVEL, int *)
+#define VPX_CTRL_VP9E_GET_LOOPFILTER_LEVEL
+VPX_CTRL_USE_TYPE(VP9E_GET_LAST_QUANTIZER_SVC_LAYERS, int *)
+#define VPX_CTRL_VP9E_GET_LAST_QUANTIZER_SVC_LAYERS
+VPX_CTRL_USE_TYPE(VP8E_SET_RTC_EXTERNAL_RATECTRL, int)
+#define VPX_CTRL_VP8E_SET_RTC_EXTERNAL_RATECTRL
+VPX_CTRL_USE_TYPE(VP9E_SET_QUANTIZER_ONE_PASS, int)
+#define VPX_CTRL_VP9E_SET_QUANTIZER_ONE_PASS
+VPX_CTRL_USE_TYPE(VP9E_SET_KEY_FRAME_FILTERING, int)
+#define VPX_CTRL_VP9E_SET_KEY_FRAME_FILTERING
+VPX_CTRL_USE_TYPE(VP9E_SET_VALIDATE_HBD_INPUT, int)
+#define VPX_CTRL_VP9E_SET_VALIDATE_HBD_INPUT
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
@@ -873,4 +1126,4 @@ VPX_CTRL_USE_TYPE(VP9E_ENABLE_MOTION_VECTOR_UNIT_TEST, unsigned int)
 }  // extern "C"
 #endif
 
-#endif  // VPX_VP8CX_H_
+#endif  // VPX_VPX_VP8CX_H_

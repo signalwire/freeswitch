@@ -45,7 +45,7 @@ TARGETS = $(TARGET_LIB) export_vars.c apr.exp
 CLEAN_TARGETS = apr-config.out apr.exp exports.c export_vars.c .make.dirs \
 	build/apr_rules.out
 DISTCLEAN_TARGETS = config.cache config.log config.status \
-	include/apr.h include/arch/unix/apr_private.h \
+	include/fspr.h include/arch/unix/apr_private.h \
 	libtool $(APR_CONFIG) build/apr_rules.mk apr.pc \
 	build/pkg/pkginfo
 EXTRACLEAN_TARGETS = configure aclocal.m4 include/arch/unix/apr_private.h.in \
@@ -81,7 +81,7 @@ $(top_srcdir)/configure:  $(top_srcdir)/configure.ac
 install: $(TARGET_LIB) apr-config.out build/apr_rules.out
 	$(APR_MKDIR) $(DESTDIR)$(libdir) $(DESTDIR)$(bindir) $(DESTDIR)$(installbuilddir) \
 		     $(DESTDIR)$(libdir)/pkgconfig $(DESTDIR)$(includedir)
-	$(INSTALL_DATA) $(top_blddir)/include/apr.h $(DESTDIR)$(includedir)
+	$(INSTALL_DATA) $(top_blddir)/include/fspr.h $(DESTDIR)$(includedir)
 	for f in $(top_srcdir)/include/apr_*.h; do \
 	    $(INSTALL_DATA) $${f} $(DESTDIR)$(includedir); \
 	done

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP9_COMMON_VP9_SEG_COMMON_H_
-#define VP9_COMMON_VP9_SEG_COMMON_H_
+#ifndef VPX_VP9_COMMON_VP9_SEG_COMMON_H_
+#define VPX_VP9_COMMON_VP9_SEG_COMMON_H_
 
 #include "vpx_dsp/prob.h"
 
@@ -24,6 +24,11 @@ extern "C" {
 #define SEG_TREE_PROBS (MAX_SEGMENTS - 1)
 
 #define PREDICTION_PROBS 3
+
+// Segment ID used to skip background encoding
+#define BACKGROUND_SEG_SKIP_ID 3
+// Number of frames that don't skip after a key frame
+#define FRAMES_NO_SKIPPING_AFTER_KEY 20
 
 // Segment level features.
 typedef enum {
@@ -78,4 +83,4 @@ extern const vpx_tree_index vp9_segment_tree[TREE_SIZE(MAX_SEGMENTS)];
 }  // extern "C"
 #endif
 
-#endif  // VP9_COMMON_VP9_SEG_COMMON_H_
+#endif  // VPX_VP9_COMMON_VP9_SEG_COMMON_H_

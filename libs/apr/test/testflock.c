@@ -16,39 +16,39 @@
 
 #include "testflock.h"
 #include "testutil.h"
-#include "apr_pools.h"
-#include "apr_thread_proc.h"
-#include "apr_file_io.h"
-#include "apr_file_info.h"
-#include "apr_general.h"
-#include "apr_strings.h"
+#include "fspr_pools.h"
+#include "fspr_thread_proc.h"
+#include "fspr_file_io.h"
+#include "fspr_file_info.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
 
 static int launch_reader(abts_case *tc)
 {
-    apr_proc_t proc = {0};
-    apr_procattr_t *procattr;
+    fspr_proc_t proc = {0};
+    fspr_procattr_t *procattr;
     const char *args[2];
-    apr_status_t rv;
-    apr_exit_why_e why;
+    fspr_status_t rv;
+    fspr_exit_why_e why;
     int exitcode;
 
-    rv = apr_procattr_create(&procattr, p);
+    rv = fspr_procattr_create(&procattr, p);
     APR_ASSERT_SUCCESS(tc, "Couldn't create procattr", rv);
 
-    rv = apr_procattr_io_set(procattr, APR_NO_PIPE, APR_NO_PIPE,
+    rv = fspr_procattr_io_set(procattr, APR_NO_PIPE, APR_NO_PIPE,
             APR_NO_PIPE);
     APR_ASSERT_SUCCESS(tc, "Couldn't set io in procattr", rv);
 
-    rv = apr_procattr_error_check_set(procattr, 1);
+    rv = fspr_procattr_error_check_set(procattr, 1);
     APR_ASSERT_SUCCESS(tc, "Couldn't set error check in procattr", rv);
 
     args[0] = "tryread" EXTENSION;
     args[1] = NULL;
-    rv = apr_proc_create(&proc, "./tryread" EXTENSION, args, NULL, procattr, p);
+    rv = fspr_proc_create(&proc, "./tryread" EXTENSION, args, NULL, procattr, p);
     APR_ASSERT_SUCCESS(tc, "Couldn't launch program", rv);
 
     ABTS_ASSERT(tc, "wait for child process",
-            apr_proc_wait(&proc, &exitcode, &why, APR_WAIT) == APR_CHILD_DONE);
+            fspr_proc_wait(&proc, &exitcode, &why, APR_WAIT) == APR_CHILD_DONE);
 
     ABTS_ASSERT(tc, "child terminated normally", why == APR_PROC_EXIT);
     return exitcode;
@@ -56,23 +56,23 @@ static int launch_reader(abts_case *tc)
 
 static void test_withlock(abts_case *tc, void *data)
 {
-    apr_file_t *file;
-    apr_status_t rv;
+    fspr_file_t *file;
+    fspr_status_t rv;
     int code;
     
-    rv = apr_file_open(&file, TESTFILE, APR_WRITE|APR_CREATE, 
+    rv = fspr_file_open(&file, TESTFILE, APR_WRITE|APR_CREATE, 
                        APR_OS_DEFAULT, p);
     APR_ASSERT_SUCCESS(tc, "Could not create file.", rv);
     ABTS_PTR_NOTNULL(tc, file);
 
-    rv = apr_file_lock(file, APR_FLOCK_EXCLUSIVE);
+    rv = fspr_file_lock(file, APR_FLOCK_EXCLUSIVE);
     APR_ASSERT_SUCCESS(tc, "Could not lock the file.", rv);
     ABTS_PTR_NOTNULL(tc, file);
 
     code = launch_reader(tc);
     ABTS_INT_EQUAL(tc, FAILED_READ, code);
 
-    (void) apr_file_close(file);
+    (void) fspr_file_close(file);
 }
 
 static void test_withoutlock(abts_case *tc, void *data)
@@ -86,7 +86,7 @@ static void test_withoutlock(abts_case *tc, void *data)
 static void remove_lockfile(abts_case *tc, void *data)
 {
     APR_ASSERT_SUCCESS(tc, "Couldn't remove lock file.",
-                       apr_file_remove(TESTFILE, p));
+                       fspr_file_remove(TESTFILE, p));
 }
     
 abts_suite *testflock(abts_suite *suite)

@@ -15,51 +15,51 @@
  */
 
 #include "testglobalmutex.h"
-#include "apr_thread_proc.h"
-#include "apr_global_mutex.h"
-#include "apr_strings.h"
-#include "apr_errno.h"
+#include "fspr_thread_proc.h"
+#include "fspr_global_mutex.h"
+#include "fspr_strings.h"
+#include "fspr_errno.h"
 #include "testutil.h"
 
-static void launch_child(abts_case *tc, apr_lockmech_e mech,
-                         apr_proc_t *proc, apr_pool_t *p)
+static void launch_child(abts_case *tc, fspr_lockmech_e mech,
+                         fspr_proc_t *proc, fspr_pool_t *p)
 {
-    apr_procattr_t *procattr;
+    fspr_procattr_t *procattr;
     const char *args[3];
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    rv = apr_procattr_create(&procattr, p);
+    rv = fspr_procattr_create(&procattr, p);
     APR_ASSERT_SUCCESS(tc, "Couldn't create procattr", rv);
 
-    rv = apr_procattr_io_set(procattr, APR_NO_PIPE, APR_NO_PIPE,
+    rv = fspr_procattr_io_set(procattr, APR_NO_PIPE, APR_NO_PIPE,
             APR_NO_PIPE);
     APR_ASSERT_SUCCESS(tc, "Couldn't set io in procattr", rv);
 
-    rv = apr_procattr_error_check_set(procattr, 1);
+    rv = fspr_procattr_error_check_set(procattr, 1);
     APR_ASSERT_SUCCESS(tc, "Couldn't set error check in procattr", rv);
 
     args[0] = "globalmutexchild" EXTENSION;
-    args[1] = (const char*)apr_itoa(p, (int)mech);
+    args[1] = (const char*)fspr_itoa(p, (int)mech);
     args[2] = NULL;
-    rv = apr_proc_create(proc, "./globalmutexchild" EXTENSION, args, NULL,
+    rv = fspr_proc_create(proc, "./globalmutexchild" EXTENSION, args, NULL,
             procattr, p);
     APR_ASSERT_SUCCESS(tc, "Couldn't launch program", rv);
 }
 
-static int wait_child(abts_case *tc, apr_proc_t *proc)
+static int wait_child(abts_case *tc, fspr_proc_t *proc)
 {
     int exitcode;
-    apr_exit_why_e why;
+    fspr_exit_why_e why;
 
     ABTS_ASSERT(tc, "Error waiting for child process",
-            apr_proc_wait(proc, &exitcode, &why, APR_WAIT) == APR_CHILD_DONE);
+            fspr_proc_wait(proc, &exitcode, &why, APR_WAIT) == APR_CHILD_DONE);
 
     ABTS_ASSERT(tc, "child didn't terminate normally", why == APR_PROC_EXIT);
     return exitcode;
 }
 
 /* return symbolic name for a locking meechanism */
-static const char *mutexname(apr_lockmech_e mech)
+static const char *mutexname(fspr_lockmech_e mech)
 {
     switch (mech) {
     case APR_LOCK_FCNTL: return "fcntl";
@@ -74,15 +74,15 @@ static const char *mutexname(apr_lockmech_e mech)
 
 static void test_exclusive(abts_case *tc, void *data)
 {
-    apr_lockmech_e mech = *(apr_lockmech_e *)data;
-    apr_proc_t p1, p2, p3, p4;
-    apr_status_t rv;
-    apr_global_mutex_t *global_lock;
+    fspr_lockmech_e mech = *(fspr_lockmech_e *)data;
+    fspr_proc_t p1, p2, p3, p4;
+    fspr_status_t rv;
+    fspr_global_mutex_t *global_lock;
     int x = 0;
     abts_log_message("lock mechanism is: ");
     abts_log_message(mutexname(mech));
  
-    rv = apr_global_mutex_create(&global_lock, LOCKNAME, mech, p);
+    rv = fspr_global_mutex_create(&global_lock, LOCKNAME, mech, p);
     APR_ASSERT_SUCCESS(tc, "Error creating mutex", rv);
 
     launch_child(tc, mech, &p1, p);
@@ -105,7 +105,7 @@ static void test_exclusive(abts_case *tc, void *data)
 
 abts_suite *testglobalmutex(abts_suite *suite)
 {
-    apr_lockmech_e mech = APR_LOCK_DEFAULT;
+    fspr_lockmech_e mech = APR_LOCK_DEFAULT;
 
     suite = ADD_SUITE(suite)
     abts_run_test(suite, test_exclusive, &mech);

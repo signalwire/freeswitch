@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_ACM_RANDOM_H_
-#define TEST_ACM_RANDOM_H_
+#ifndef VPX_TEST_ACM_RANDOM_H_
+#define VPX_TEST_ACM_RANDOM_H_
 
 #include <assert.h>
 
 #include <limits>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "vpx/vpx_integer.h"
 
@@ -28,30 +28,49 @@ class ACMRandom {
   explicit ACMRandom(int seed) : random_(seed) {}
 
   void Reset(int seed) { random_.Reseed(seed); }
-  uint16_t Rand16(void) {
+  uint16_t Rand16() {
     const uint32_t value =
         random_.Generate(testing::internal::Random::kMaxRange);
     return (value >> 15) & 0xffff;
   }
 
-  int16_t Rand9Signed(void) {
-    // Use 9 bits: values between 255 (0x0FF) and -256 (0x100).
-    const uint32_t value = random_.Generate(512);
-    return static_cast<int16_t>(value) - 256;
+  int32_t Rand20Signed() {
+    // Use 20 bits: values between 524287 and -524288.
+    const uint32_t value = random_.Generate(1048576);
+    return static_cast<int32_t>(value) - 524288;
   }
 
-  uint8_t Rand8(void) {
+  int16_t Rand16Signed() {
+    // Use 16 bits: values between 32767 and -32768.
+    return static_cast<int16_t>(random_.Generate(65536));
+  }
+
+  uint16_t Rand12() {
+    const uint32_t value =
+        random_.Generate(testing::internal::Random::kMaxRange);
+    // There's a bit more entropy in the upper bits of this implementation.
+    return (value >> 19) & 0xfff;
+  }
+
+  uint16_t Rand10() {
+    const uint32_t value =
+        random_.Generate(testing::internal::Random::kMaxRange);
+    // There's a bit more entropy in the upper bits of this implementation.
+    return (value >> 21) & 0x3ff;
+  }
+
+  uint8_t Rand8() {
     const uint32_t value =
         random_.Generate(testing::internal::Random::kMaxRange);
     // There's a bit more entropy in the upper bits of this implementation.
     return (value >> 23) & 0xff;
   }
 
-  uint8_t Rand8Extremes(void) {
+  uint8_t Rand8Extremes() {
     // Returns a random value near 0 or near 255, to better exercise
     // saturation behavior.
     const uint8_t r = Rand8();
-    return r < 128 ? r << 4 : r >> 4;
+    return static_cast<uint8_t>((r < 128) ? r << 4 : r >> 4);
   }
 
   uint32_t RandRange(const uint32_t range) {
@@ -65,7 +84,7 @@ class ACMRandom {
 
   int operator()(int n) { return PseudoUniform(n); }
 
-  static int DeterministicSeed(void) { return 0xbaba; }
+  static int DeterministicSeed() { return 0xbaba; }
 
  private:
   testing::internal::Random random_;
@@ -73,4 +92,4 @@ class ACMRandom {
 
 }  // namespace libvpx_test
 
-#endif  // TEST_ACM_RANDOM_H_
+#endif  // VPX_TEST_ACM_RANDOM_H_

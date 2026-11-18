@@ -286,12 +286,11 @@ static void event_handler(switch_event_t *event)
 #define USERSPY_SYNTAX "<user@domain> [uuid]"
 SWITCH_STANDARD_APP(userspy_function)
 {
-	int argc = 0;
 	char *argv[2] = { 0 };
 	char *params = NULL;
 
 	if (!zstr(data) && (params = switch_core_session_strdup(session, data))) {
-		if ((argc = switch_separate_string(params, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+		if (switch_separate_string(params, ' ', argv, (sizeof(argv) / sizeof(argv[0]))) >= 1) {
 			switch_channel_t *channel = switch_core_session_get_channel(session);
 			char *uuid = switch_core_session_get_uuid(session);
 			switch_status_t status;

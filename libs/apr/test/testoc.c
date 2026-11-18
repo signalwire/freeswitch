@@ -15,11 +15,11 @@
  */
 
 #include "testutil.h"
-#include "apr_thread_proc.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
+#include "fspr_thread_proc.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
 
 #if APR_HAS_OTHER_CHILD
 
@@ -29,19 +29,19 @@ static void ocmaint(int reason, void *data, int status)
 {
     switch (reason) {
     case APR_OC_REASON_DEATH:
-        apr_cpystrn(reasonstr, "APR_OC_REASON_DEATH", 
+        fspr_cpystrn(reasonstr, "APR_OC_REASON_DEATH", 
                     strlen("APR_OC_REASON_DEATH") + 1);
         break;
     case APR_OC_REASON_LOST:
-        apr_cpystrn(reasonstr, "APR_OC_REASON_LOST", 
+        fspr_cpystrn(reasonstr, "APR_OC_REASON_LOST", 
                     strlen("APR_OC_REASON_LOST") + 1);
         break;
     case APR_OC_REASON_UNWRITABLE:
-        apr_cpystrn(reasonstr, "APR_OC_REASON_UNWRITEABLE", 
+        fspr_cpystrn(reasonstr, "APR_OC_REASON_UNWRITEABLE", 
                     strlen("APR_OC_REASON_UNWRITEABLE") + 1);
         break;
     case APR_OC_REASON_RESTART:
-        apr_cpystrn(reasonstr, "APR_OC_REASON_RESTART", 
+        fspr_cpystrn(reasonstr, "APR_OC_REASON_RESTART", 
                     strlen("APR_OC_REASON_RESTART") + 1);
         break;
     }
@@ -56,24 +56,24 @@ static void ocmaint(int reason, void *data, int status)
  */
 static void test_child_kill(abts_case *tc, void *data)
 {
-    apr_file_t *std = NULL;
-    apr_proc_t newproc;
-    apr_procattr_t *procattr = NULL;
+    fspr_file_t *std = NULL;
+    fspr_proc_t newproc;
+    fspr_procattr_t *procattr = NULL;
     const char *args[3];
-    apr_status_t rv;
+    fspr_status_t rv;
 
-    args[0] = apr_pstrdup(p, "occhild" EXTENSION);
-    args[1] = apr_pstrdup(p, "-X");
+    args[0] = fspr_pstrdup(p, "occhild" EXTENSION);
+    args[1] = fspr_pstrdup(p, "-X");
     args[2] = NULL;
 
-    rv = apr_procattr_create(&procattr, p);
+    rv = fspr_procattr_create(&procattr, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
-    rv = apr_procattr_io_set(procattr, APR_FULL_BLOCK, APR_NO_PIPE, 
+    rv = fspr_procattr_io_set(procattr, APR_FULL_BLOCK, APR_NO_PIPE, 
                              APR_NO_PIPE);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
-    rv = apr_proc_create(&newproc, "./occhild" EXTENSION, args, NULL, procattr, p);
+    rv = fspr_proc_create(&newproc, "./occhild" EXTENSION, args, NULL, procattr, p);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_PTR_NOTNULL(tc, newproc.in);
     ABTS_PTR_EQUAL(tc, NULL, newproc.out);
@@ -81,16 +81,16 @@ static void test_child_kill(abts_case *tc, void *data)
 
     std = newproc.in;
 
-    apr_proc_other_child_register(&newproc, ocmaint, NULL, std, p);
+    fspr_proc_other_child_register(&newproc, ocmaint, NULL, std, p);
 
-    apr_sleep(apr_time_from_sec(1));
-    rv = apr_proc_kill(&newproc, SIGKILL);
+    fspr_sleep(fspr_time_from_sec(1));
+    rv = fspr_proc_kill(&newproc, SIGKILL);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     
     /* allow time for things to settle... */
-    apr_sleep(apr_time_from_sec(3));
+    fspr_sleep(fspr_time_from_sec(3));
     
-    apr_proc_other_child_refresh_all(APR_OC_REASON_RUNNING);
+    fspr_proc_other_child_refresh_all(APR_OC_REASON_RUNNING);
     ABTS_STR_EQUAL(tc, "APR_OC_REASON_DEATH", reasonstr);
 }    
 #else

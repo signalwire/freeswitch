@@ -97,6 +97,7 @@ static switch_status_t native_file_file_open(switch_file_handle_t *handle, const
 	handle->speed = 0;
 	handle->private_info = context;
 	handle->flags |= SWITCH_FILE_NATIVE;
+	handle->flags |= SWITCH_FILE_NOMUX;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Opening File [%s] %dhz\n", path, handle->samplerate);
 
 	return SWITCH_STATUS_SUCCESS;

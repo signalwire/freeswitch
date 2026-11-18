@@ -60,7 +60,6 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 {
 	png_file_context_t *context;
 	char *ext;
-	unsigned int flags = 0;
 
 	if ((ext = strrchr((char *)path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -76,12 +75,8 @@ static switch_status_t png_file_open(switch_file_handle_t *handle, const char *p
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (switch_test_flag(handle, SWITCH_FILE_FLAG_READ)) {
-		flags |= SWITCH_FOPEN_READ;
-	}
-
 	memset(context, 0, sizeof(png_file_context_t));
-	context->max = 10000;
+	context->max = 86400000;;
 	switch_mutex_init(&context->mutex, SWITCH_MUTEX_NESTED, handle->memory_pool);
 
 	if (handle->params) {
@@ -220,7 +215,7 @@ static switch_status_t png_file_read_video(switch_file_handle_t *handle, switch_
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if ((flags && SVR_BLOCK)) {
+	if ((flags & SVR_BLOCK)) {
 		switch_yield(33000);
 		have_frame = 1;
 	} else if ((context->reads++ % 20) == 0) {

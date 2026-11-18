@@ -333,6 +333,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_graylog2_load)
 	globals.gelf_format.full_message.name = "full_message";
 	globals.gelf_format.short_message.name = "short_message";
 	globals.gelf_format.custom_field_prefix = "_";
+	globals.gelf_format.sequence.name = "_sequence";
 
 	switch_event_create_plain(&globals.session_fields, SWITCH_EVENT_CHANNEL_DATA);
 

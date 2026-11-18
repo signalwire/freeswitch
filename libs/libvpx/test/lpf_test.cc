@@ -11,8 +11,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <string>
+#include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
@@ -35,29 +36,29 @@ const int kNumCoeffs = 1024;
 const int number_of_iterations = 10000;
 
 #if CONFIG_VP9_HIGHBITDEPTH
-typedef uint16_t Pixel;
+using Pixel = uint16_t;
 #define PIXEL_WIDTH 16
 
-typedef void (*loop_op_t)(Pixel *s, int p, const uint8_t *blimit,
-                          const uint8_t *limit, const uint8_t *thresh, int bd);
-typedef void (*dual_loop_op_t)(Pixel *s, int p, const uint8_t *blimit0,
-                               const uint8_t *limit0, const uint8_t *thresh0,
-                               const uint8_t *blimit1, const uint8_t *limit1,
-                               const uint8_t *thresh1, int bd);
+using loop_op_t = void (*)(Pixel *s, int p, const uint8_t *blimit,
+                           const uint8_t *limit, const uint8_t *thresh, int bd);
+using dual_loop_op_t = void (*)(Pixel *s, int p, const uint8_t *blimit0,
+                                const uint8_t *limit0, const uint8_t *thresh0,
+                                const uint8_t *blimit1, const uint8_t *limit1,
+                                const uint8_t *thresh1, int bd);
 #else
-typedef uint8_t Pixel;
+using Pixel = uint8_t;
 #define PIXEL_WIDTH 8
 
-typedef void (*loop_op_t)(Pixel *s, int p, const uint8_t *blimit,
-                          const uint8_t *limit, const uint8_t *thresh);
-typedef void (*dual_loop_op_t)(Pixel *s, int p, const uint8_t *blimit0,
-                               const uint8_t *limit0, const uint8_t *thresh0,
-                               const uint8_t *blimit1, const uint8_t *limit1,
-                               const uint8_t *thresh1);
+using loop_op_t = void (*)(Pixel *s, int p, const uint8_t *blimit,
+                           const uint8_t *limit, const uint8_t *thresh);
+using dual_loop_op_t = void (*)(Pixel *s, int p, const uint8_t *blimit0,
+                                const uint8_t *limit0, const uint8_t *thresh0,
+                                const uint8_t *blimit1, const uint8_t *limit1,
+                                const uint8_t *thresh1);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-typedef std::tr1::tuple<loop_op_t, loop_op_t, int> loop8_param_t;
-typedef std::tr1::tuple<dual_loop_op_t, dual_loop_op_t, int> dualloop8_param_t;
+using loop8_param_t = std::tuple<loop_op_t, loop_op_t, int>;
+using dualloop8_param_t = std::tuple<dual_loop_op_t, dual_loop_op_t, int>;
 
 void InitInput(Pixel *s, Pixel *ref_s, ACMRandom *rnd, const uint8_t limit,
                const int mask, const int32_t p, const int i) {
@@ -74,9 +75,9 @@ void InitInput(Pixel *s, Pixel *ref_s, ACMRandom *rnd, const uint8_t limit,
         if (j < 1) {
           tmp_s[j] = rnd->Rand16();
         } else if (val & 0x20) {  // Increment by a value within the limit.
-          tmp_s[j] = tmp_s[j - 1] + (limit - 1);
+          tmp_s[j] = static_cast<uint16_t>(tmp_s[j - 1] + (limit - 1));
         } else {  // Decrement by a value within the limit.
-          tmp_s[j] = tmp_s[j - 1] - (limit - 1);
+          tmp_s[j] = static_cast<uint16_t>(tmp_s[j - 1] - (limit - 1));
         }
         j++;
       }
@@ -93,11 +94,11 @@ void InitInput(Pixel *s, Pixel *ref_s, ACMRandom *rnd, const uint8_t limit,
         if (j < 1) {
           tmp_s[j] = rnd->Rand16();
         } else if (val & 0x20) {  // Increment by a value within the limit.
-          tmp_s[(j % 32) * 32 + j / 32] =
-              tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] + (limit - 1);
+          tmp_s[(j % 32) * 32 + j / 32] = static_cast<uint16_t>(
+              tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] + (limit - 1));
         } else {  // Decrement by a value within the limit.
-          tmp_s[(j % 32) * 32 + j / 32] =
-              tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] - (limit - 1);
+          tmp_s[(j % 32) * 32 + j / 32] = static_cast<uint16_t>(
+              tmp_s[((j - 1) % 32) * 32 + (j - 1) / 32] - (limit - 1));
         }
         j++;
       }
@@ -128,15 +129,15 @@ uint8_t GetHevThresh(ACMRandom *rnd) {
 
 class Loop8Test6Param : public ::testing::TestWithParam<loop8_param_t> {
  public:
-  virtual ~Loop8Test6Param() {}
-  virtual void SetUp() {
+  ~Loop8Test6Param() override = default;
+  void SetUp() override {
     loopfilter_op_ = GET_PARAM(0);
     ref_loopfilter_op_ = GET_PARAM(1);
     bit_depth_ = GET_PARAM(2);
     mask_ = (1 << bit_depth_) - 1;
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   int bit_depth_;
@@ -144,18 +145,21 @@ class Loop8Test6Param : public ::testing::TestWithParam<loop8_param_t> {
   loop_op_t loopfilter_op_;
   loop_op_t ref_loopfilter_op_;
 };
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(Loop8Test6Param);
 
+#if HAVE_NEON || HAVE_SSE2 || (HAVE_LSX && !CONFIG_VP9_HIGHBITDEPTH) || \
+    (HAVE_DSPR2 || HAVE_MSA && !CONFIG_VP9_HIGHBITDEPTH)
 class Loop8Test9Param : public ::testing::TestWithParam<dualloop8_param_t> {
  public:
-  virtual ~Loop8Test9Param() {}
-  virtual void SetUp() {
+  ~Loop8Test9Param() override = default;
+  void SetUp() override {
     loopfilter_op_ = GET_PARAM(0);
     ref_loopfilter_op_ = GET_PARAM(1);
     bit_depth_ = GET_PARAM(2);
     mask_ = (1 << bit_depth_) - 1;
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   int bit_depth_;
@@ -163,6 +167,9 @@ class Loop8Test9Param : public ::testing::TestWithParam<dualloop8_param_t> {
   dual_loop_op_t loopfilter_op_;
   dual_loop_op_t ref_loopfilter_op_;
 };
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(Loop8Test9Param);
+#endif  // HAVE_NEON || HAVE_SSE2 || (HAVE_DSPR2 || HAVE_MSA &&
+        // (!CONFIG_VP9_HIGHBITDEPTH) || (HAVE_LSX && !CONFIG_VP9_HIGHBITDEPTH))
 
 TEST_P(Loop8Test6Param, OperationCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
@@ -274,6 +281,8 @@ TEST_P(Loop8Test6Param, ValueCheck) {
       << "First failed at test case " << first_failure;
 }
 
+#if HAVE_NEON || HAVE_SSE2 || (HAVE_LSX && (!CONFIG_VP9_HIGHBITDEPTH)) || \
+    (HAVE_DSPR2 || HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH))
 TEST_P(Loop8Test9Param, OperationCheck) {
   ACMRandom rnd(ACMRandom::DeterministicSeed());
   const int count_test_block = number_of_iterations;
@@ -401,12 +410,15 @@ TEST_P(Loop8Test9Param, ValueCheck) {
          "loopfilter output. "
       << "First failed at test case " << first_failure;
 }
+#endif  // HAVE_NEON || HAVE_SSE2 || (HAVE_DSPR2 || HAVE_MSA &&
+        // (!CONFIG_VP9_HIGHBITDEPTH)) || (HAVE_LSX &&
+        // (!CONFIG_VP9_HIGHBITDEPTH))
 
-using std::tr1::make_tuple;
+using std::make_tuple;
 
 #if HAVE_SSE2
 #if CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE2, Loop8Test6Param,
     ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_sse2,
                                  &vpx_highbd_lpf_horizontal_4_c, 8),
@@ -457,7 +469,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_highbd_lpf_vertical_16_dual_sse2,
                                  &vpx_highbd_lpf_vertical_16_dual_c, 12)));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE2, Loop8Test6Param,
     ::testing::Values(
         make_tuple(&vpx_lpf_horizontal_4_sse2, &vpx_lpf_horizontal_4_c, 8),
@@ -474,7 +486,7 @@ INSTANTIATE_TEST_CASE_P(
 #endif
 
 #if HAVE_AVX2 && (!CONFIG_VP9_HIGHBITDEPTH)
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AVX2, Loop8Test6Param,
     ::testing::Values(make_tuple(&vpx_lpf_horizontal_16_avx2,
                                  &vpx_lpf_horizontal_16_c, 8),
@@ -484,7 +496,7 @@ INSTANTIATE_TEST_CASE_P(
 
 #if HAVE_SSE2
 #if CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE2, Loop8Test9Param,
     ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_dual_sse2,
                                  &vpx_highbd_lpf_horizontal_4_dual_c, 8),
@@ -511,7 +523,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_highbd_lpf_vertical_8_dual_sse2,
                                  &vpx_highbd_lpf_vertical_8_dual_c, 12)));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE2, Loop8Test9Param,
     ::testing::Values(make_tuple(&vpx_lpf_horizontal_4_dual_sse2,
                                  &vpx_lpf_horizontal_4_dual_c, 8),
@@ -526,7 +538,7 @@ INSTANTIATE_TEST_CASE_P(
 
 #if HAVE_NEON
 #if CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     NEON, Loop8Test6Param,
     ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_neon,
                                  &vpx_highbd_lpf_horizontal_4_c, 8),
@@ -576,7 +588,7 @@ INSTANTIATE_TEST_CASE_P(
                                  &vpx_highbd_lpf_vertical_16_dual_c, 10),
                       make_tuple(&vpx_highbd_lpf_vertical_16_dual_neon,
                                  &vpx_highbd_lpf_vertical_16_dual_c, 12)));
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     NEON, Loop8Test9Param,
     ::testing::Values(make_tuple(&vpx_highbd_lpf_horizontal_4_dual_neon,
                                  &vpx_highbd_lpf_horizontal_4_dual_c, 8),
@@ -603,7 +615,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_highbd_lpf_vertical_8_dual_neon,
                                  &vpx_highbd_lpf_vertical_8_dual_c, 12)));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     NEON, Loop8Test6Param,
     ::testing::Values(
         make_tuple(&vpx_lpf_horizontal_16_neon, &vpx_lpf_horizontal_16_c, 8),
@@ -616,7 +628,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vpx_lpf_vertical_8_neon, &vpx_lpf_vertical_8_c, 8),
         make_tuple(&vpx_lpf_horizontal_4_neon, &vpx_lpf_horizontal_4_c, 8),
         make_tuple(&vpx_lpf_vertical_4_neon, &vpx_lpf_vertical_4_c, 8)));
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     NEON, Loop8Test9Param,
     ::testing::Values(make_tuple(&vpx_lpf_horizontal_8_dual_neon,
                                  &vpx_lpf_horizontal_8_dual_c, 8),
@@ -630,7 +642,7 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_NEON
 
 #if HAVE_DSPR2 && !CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     DSPR2, Loop8Test6Param,
     ::testing::Values(
         make_tuple(&vpx_lpf_horizontal_4_dspr2, &vpx_lpf_horizontal_4_c, 8),
@@ -644,7 +656,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vpx_lpf_vertical_16_dual_dspr2, &vpx_lpf_vertical_16_dual_c,
                    8)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     DSPR2, Loop8Test9Param,
     ::testing::Values(make_tuple(&vpx_lpf_horizontal_4_dual_dspr2,
                                  &vpx_lpf_horizontal_4_dual_c, 8),
@@ -657,7 +669,7 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // HAVE_DSPR2 && !CONFIG_VP9_HIGHBITDEPTH
 
 #if HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH)
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     MSA, Loop8Test6Param,
     ::testing::Values(
         make_tuple(&vpx_lpf_horizontal_4_msa, &vpx_lpf_horizontal_4_c, 8),
@@ -669,7 +681,7 @@ INSTANTIATE_TEST_CASE_P(
         make_tuple(&vpx_lpf_vertical_8_msa, &vpx_lpf_vertical_8_c, 8),
         make_tuple(&vpx_lpf_vertical_16_msa, &vpx_lpf_vertical_16_c, 8)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     MSA, Loop8Test9Param,
     ::testing::Values(make_tuple(&vpx_lpf_horizontal_4_dual_msa,
                                  &vpx_lpf_horizontal_4_dual_c, 8),
@@ -680,5 +692,30 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_lpf_vertical_8_dual_msa,
                                  &vpx_lpf_vertical_8_dual_c, 8)));
 #endif  // HAVE_MSA && (!CONFIG_VP9_HIGHBITDEPTH)
+
+#if HAVE_LSX && (!CONFIG_VP9_HIGHBITDEPTH)
+INSTANTIATE_TEST_SUITE_P(
+    LSX, Loop8Test6Param,
+    ::testing::Values(
+        make_tuple(&vpx_lpf_horizontal_4_lsx, &vpx_lpf_horizontal_4_c, 8),
+        make_tuple(&vpx_lpf_horizontal_8_lsx, &vpx_lpf_horizontal_8_c, 8),
+        make_tuple(&vpx_lpf_horizontal_16_dual_lsx,
+                   &vpx_lpf_horizontal_16_dual_c, 8),
+        make_tuple(&vpx_lpf_vertical_4_lsx, &vpx_lpf_vertical_4_c, 8),
+        make_tuple(&vpx_lpf_vertical_8_lsx, &vpx_lpf_vertical_8_c, 8),
+        make_tuple(&vpx_lpf_vertical_16_dual_lsx, &vpx_lpf_vertical_16_dual_c,
+                   8)));
+
+INSTANTIATE_TEST_SUITE_P(
+    LSX, Loop8Test9Param,
+    ::testing::Values(make_tuple(&vpx_lpf_horizontal_4_dual_lsx,
+                                 &vpx_lpf_horizontal_4_dual_c, 8),
+                      make_tuple(&vpx_lpf_horizontal_8_dual_lsx,
+                                 &vpx_lpf_horizontal_8_dual_c, 8),
+                      make_tuple(&vpx_lpf_vertical_4_dual_lsx,
+                                 &vpx_lpf_vertical_4_dual_c, 8),
+                      make_tuple(&vpx_lpf_vertical_8_dual_lsx,
+                                 &vpx_lpf_vertical_8_dual_c, 8)));
+#endif  // HAVE_LSX && (!CONFIG_VP9_HIGHBITDEPTH)
 
 }  // namespace

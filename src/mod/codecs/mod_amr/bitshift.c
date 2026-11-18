@@ -47,7 +47,7 @@ extern int switch_amr_array_lshift(uint8_t lshift, uint8_t *buf, int a_len)
 	if (!buf || !a_len)
 		return (-1);
 
-	if ((lshift < 0) || (lshift > 8))
+	if (lshift > 8)
 		return (-1);
 
 	first_byte = 0xFF >> lshift;

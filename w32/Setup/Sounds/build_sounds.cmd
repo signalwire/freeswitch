@@ -11,7 +11,7 @@ for /F "tokens=*" %%A in (%cd%\..\..\..\build\sounds_upgradecode.txt) do (
 )
 
 ) ELSE (
-    echo "echo ERROR: Cannot find msbuild. You need Visual Studio 2017 to compile this solution."
+    echo "echo ERROR: Cannot find msbuild. You need Microsoft Visual Studio to compile this solution."
     EXIT /B 1
 )
 
@@ -25,11 +25,11 @@ EXIT /B %ERRORLEVEL%
 :Build
 set SoundPrimaryName=%1
 set SoundQuality=8000
-cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /p:PlatformToolset=v141 /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
+cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
 set SoundQuality=16000
-cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /p:PlatformToolset=v141 /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
+cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
 set SoundQuality=32000
-cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /p:PlatformToolset=v141 /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
+cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
 set SoundQuality=48000
-cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /p:PlatformToolset=v141 /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
+cmd /C %msbuild% %solution% /p:SoundPrimaryName=%SoundPrimaryName% /p:SoundQuality=%SoundQuality% /p:Configuration=Release /p:Platform=x64 /t:Build /verbosity:normal /fl /flp:logfile=..\..\..\x64\sound_logs\sounds_%SoundPrimaryName%_%SoundQuality%.log;verbosity=normal
 EXIT /B 0

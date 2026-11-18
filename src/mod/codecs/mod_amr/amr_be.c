@@ -94,21 +94,19 @@ extern switch_bool_t switch_amr_pack_be(unsigned char *shift_buf, int n)
 
 extern switch_bool_t switch_amr_unpack_be(unsigned char *encoded_buf, uint8_t *tmp, int encoded_len)
 {
-	int framesz, index, ft;
+	int framesz, index;
 	uint8_t shift_tocs[2] = {0x00, 0x00};
 	uint8_t *shift_buf;
 
 	memcpy(shift_tocs, encoded_buf, 2);
 	/* shift for BE */
 	switch_amr_array_lshift(4, shift_tocs, 2);
-	ft = shift_tocs[0] >> 3;
-	ft &= ~(1 << 5); /* Frame Type*/
 	shift_buf = encoded_buf + 1; /* skip CMR */
 	/* shift for BE */
 	switch_amr_array_lshift(2, shift_buf, encoded_len - 1);
 	/* get frame size */
 	index = ((shift_tocs[0] >> 3) & 0x0f);
-	if (index > 9) {
+	if (index > 9 && index != 0xf) {
 		return SWITCH_FALSE;
 	}
 	framesz = switch_amr_frame_sizes[index];

@@ -211,6 +211,7 @@ static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_au
 			break;
 		case 2:
 			codec |= 1;
+			break;
 		default:
 			return 0;
 	}
@@ -220,6 +221,7 @@ static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_au
 			break;
 		case 16:
 			codec |= 2;
+			break;
 		default:
 			return 0;
 	}
@@ -236,6 +238,7 @@ static inline uint8_t rtmp_audio_codec(int channels, int bits, int rate, rtmp_au
 			break;
 		case 44000:
 			codec |= 0xC;
+			break;
 		default:
 			return 0;
 	}

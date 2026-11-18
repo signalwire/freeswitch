@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include "apr_private.h"
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_thread_mutex.h"
+#include "fspr_private.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_thread_mutex.h"
 #if APR_HAVE_ERRNO_H
 #include <errno.h>
 #endif
@@ -29,11 +29,11 @@
 #if APR_HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
-#include "apr_arch_misc.h"
-#include "apr_arch_inherit.h"
+#include "fspr_arch_misc.h"
+#include "fspr_arch_inherit.h"
 
 #if APR_HAS_UNICODE_FS
-apr_status_t utf8_to_unicode_path(apr_wchar_t* retstr, apr_size_t retlen, 
+fspr_status_t utf8_to_unicode_path(fspr_wchar_t* retstr, fspr_size_t retlen, 
                                   const char* srcstr)
 {
     /* TODO: The computations could preconvert the string to determine
@@ -48,9 +48,9 @@ apr_status_t utf8_to_unicode_path(apr_wchar_t* retstr, apr_size_t retlen,
      * Note that the \\?\ form only works for local drive paths, and
      * \\?\UNC\ is needed UNC paths.
      */
-    apr_size_t srcremains = strlen(srcstr) + 1;
-    apr_wchar_t *t = retstr;
-    apr_status_t rv;
+    fspr_size_t srcremains = strlen(srcstr) + 1;
+    fspr_wchar_t *t = retstr;
+    fspr_status_t rv;
 
     /* This is correct, we don't twist the filename if it is will
      * definately be shorter than MAX_PATH.  It merits some 
@@ -81,7 +81,7 @@ apr_status_t utf8_to_unicode_path(apr_wchar_t* retstr, apr_size_t retlen,
         }
     }
 
-    if (rv = apr_conv_utf8_to_ucs2(srcstr, &srcremains, t, &retlen)) {
+    if (rv = fspr_conv_utf8_to_ucs2(srcstr, &srcremains, t, &retlen)) {
         return (rv == APR_INCOMPLETE) ? APR_EINVAL : rv;
     }
     if (srcremains) {
@@ -93,8 +93,8 @@ apr_status_t utf8_to_unicode_path(apr_wchar_t* retstr, apr_size_t retlen,
     return APR_SUCCESS;
 }
 
-apr_status_t unicode_to_utf8_path(char* retstr, apr_size_t retlen,
-                                  const apr_wchar_t* srcstr)
+fspr_status_t unicode_to_utf8_path(char* retstr, fspr_size_t retlen,
+                                  const fspr_wchar_t* srcstr)
 {
     /* Skip the leading 4 characters if the path begins \\?\, or substitute
      * // for the \\?\UNC\ path prefix, allocating the maximum string
@@ -102,8 +102,8 @@ apr_status_t unicode_to_utf8_path(char* retstr, apr_size_t retlen,
      * then transform \\'s back into /'s since the \\?\ form never
      * allows '/' path seperators, and APR always uses '/'s.
      */
-    apr_size_t srcremains = wcslen(srcstr) + 1;
-    apr_status_t rv;
+    fspr_size_t srcremains = wcslen(srcstr) + 1;
+    fspr_status_t rv;
     char *t = retstr;
     if (srcstr[0] == L'\\' && srcstr[1] == L'\\' && 
         srcstr[2] == L'?'  && srcstr[3] == L'\\') {
@@ -122,7 +122,7 @@ apr_status_t unicode_to_utf8_path(char* retstr, apr_size_t retlen,
         }
     }
         
-    if (rv = apr_conv_ucs2_to_utf8(srcstr, &srcremains, t, &retlen)) {
+    if (rv = fspr_conv_ucs2_to_utf8(srcstr, &srcremains, t, &retlen)) {
         return rv;
     }
     if (srcremains) {
@@ -132,17 +132,17 @@ apr_status_t unicode_to_utf8_path(char* retstr, apr_size_t retlen,
 }
 #endif
 
-void *res_name_from_filename(const char *file, int global, apr_pool_t *pool)
+void *res_name_from_filename(const char *file, int global, fspr_pool_t *pool)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t *wpre, *wfile, *ch;
-        apr_size_t n = strlen(file) + 1;
-        apr_size_t r, d;
-        apr_status_t rv;
+        fspr_wchar_t *wpre, *wfile, *ch;
+        fspr_size_t n = strlen(file) + 1;
+        fspr_size_t r, d;
+        fspr_status_t rv;
 
-        if (apr_os_level >= APR_WIN_2000) {
+        if (fspr_os_level >= APR_WIN_2000) {
             if (global)
                 wpre = L"Global\\";
             else
@@ -161,10 +161,10 @@ void *res_name_from_filename(const char *file, int global, apr_pool_t *pool)
                 --n;
             }
         }
-        wfile = apr_palloc(pool, (r + n) * sizeof(apr_wchar_t));
+        wfile = fspr_palloc(pool, (r + n) * sizeof(fspr_wchar_t));
         wcscpy(wfile, wpre);
         d = n;
-        if (rv = apr_conv_utf8_to_ucs2(file, &n, wfile + r, &d)) {
+        if (rv = fspr_conv_utf8_to_ucs2(file, &n, wfile + r, &d)) {
             return NULL;
         }
         for (ch = wfile + r; *ch; ++ch) {
@@ -178,14 +178,14 @@ void *res_name_from_filename(const char *file, int global, apr_pool_t *pool)
     ELSE_WIN_OS_IS_ANSI
     {
         char *nfile, *ch;
-        apr_size_t n = strlen(file) + 1;
+        fspr_size_t n = strlen(file) + 1;
 
 #if !APR_HAS_UNICODE_FS
-        apr_status_t rv;
-        apr_size_t r, d;
+        fspr_status_t rv;
+        fspr_size_t r, d;
         char *pre;
 
-        if (apr_os_level >= APR_WIN_2000) {
+        if (fspr_os_level >= APR_WIN_2000) {
             if (global)
                 pre = "Global\\";
             else
@@ -199,16 +199,16 @@ void *res_name_from_filename(const char *file, int global, apr_pool_t *pool)
             file += n - 256 - r;
             n = 256;
         }
-        nfile = apr_palloc(pool, (r + n) * sizeof(apr_wchar_t));
+        nfile = fspr_palloc(pool, (r + n) * sizeof(fspr_wchar_t));
         memcpy(nfile, pre, r);
         memcpy(nfile + r, file, n);
 #else
-        const apr_size_t r = 0;
+        const fspr_size_t r = 0;
         if (n > 256) {
             file += n - 256;
             n = 256;
         }
-        nfile = apr_pmemdup(pool, file, n);
+        nfile = fspr_pmemdup(pool, file, n);
 #endif
         for (ch = nfile + r; *ch; ++ch) {
             if (*ch == ':' || *ch == '/' || *ch == '\\')
@@ -220,10 +220,10 @@ void *res_name_from_filename(const char *file, int global, apr_pool_t *pool)
 }
 
 
-apr_status_t file_cleanup(void *thefile)
+fspr_status_t file_cleanup(void *thefile)
 {
-    apr_file_t *file = thefile;
-    apr_status_t flush_rv = APR_SUCCESS;
+    fspr_file_t *file = thefile;
+    fspr_status_t flush_rv = APR_SUCCESS;
 
     if (file->filehand != INVALID_HANDLE_VALUE) {
 
@@ -243,7 +243,7 @@ apr_status_t file_cleanup(void *thefile)
 
         if (file->buffered) {
             /* XXX: flush here is not mutex protected */
-            flush_rv = apr_file_flush((apr_file_t *)thefile);
+            flush_rv = fspr_file_flush((fspr_file_t *)thefile);
         }
         CloseHandle(file->filehand);
         file->filehand = INVALID_HANDLE_VALUE;
@@ -255,16 +255,16 @@ apr_status_t file_cleanup(void *thefile)
     return flush_rv;
 }
 
-APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
-                                   apr_int32_t flag, apr_fileperms_t perm,
-                                   apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open(fspr_file_t **new, const char *fname,
+                                   fspr_int32_t flag, fspr_fileperms_t perm,
+                                   fspr_pool_t *pool)
 {
     HANDLE handle = INVALID_HANDLE_VALUE;
     DWORD oflags = 0;
     DWORD createflags = 0;
     DWORD attributes = 0;
     DWORD sharemode = FILE_SHARE_READ | FILE_SHARE_WRITE;
-    apr_status_t rv;
+    fspr_status_t rv;
 
     if (flag & APR_READ) {
         oflags |= GENERIC_READ;
@@ -276,7 +276,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
         oflags |= FILE_WRITE_ATTRIBUTES;
     }
 
-    if (apr_os_level >= APR_WIN_NT) 
+    if (fspr_os_level >= APR_WIN_NT) 
         sharemode |= FILE_SHARE_DELETE;
 
     if (flag & APR_CREATE) {
@@ -310,7 +310,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
        attributes |= FILE_FLAG_OPEN_REPARSE_POINT;
     }
 
-    /* Without READ or WRITE, we fail unless apr called apr_file_open
+    /* Without READ or WRITE, we fail unless apr called fspr_file_open
      * internally with the private APR_OPENINFO flag.
      *
      * With the APR_OPENINFO flag on NT, use the option flag
@@ -319,7 +319,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
      */
     if (!(flag & (APR_READ | APR_WRITE))) {
         if (flag & APR_OPENINFO) {
-            if (apr_os_level >= APR_WIN_NT) {
+            if (fspr_os_level >= APR_WIN_NT) {
                 attributes |= FILE_FLAG_BACKUP_SEMANTICS;
             }
         }
@@ -340,7 +340,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wfname[APR_PATH_MAX];
+        fspr_wchar_t wfname[APR_PATH_MAX];
 
         if (flag & APR_SENDFILE_ENABLED) {    
             /* This feature is required to enable sendfile operations
@@ -351,7 +351,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
         }
 
         if (rv = utf8_to_unicode_path(wfname, sizeof(wfname) 
-                                               / sizeof(apr_wchar_t), fname))
+                                               / sizeof(fspr_wchar_t), fname))
             return rv;
         handle = CreateFileW(wfname, oflags, sharemode,
                              NULL, createflags, attributes, 0);
@@ -370,13 +370,13 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
     }
 #endif
     if (handle == INVALID_HANDLE_VALUE) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 
-    (*new) = (apr_file_t *)apr_pcalloc(pool, sizeof(apr_file_t));
+    (*new) = (fspr_file_t *)fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*new)->pool = pool;
     (*new)->filehand = handle;
-    (*new)->fname = apr_pstrdup(pool, fname);
+    (*new)->fname = fspr_pstrdup(pool, fname);
     (*new)->flags = flag;
     (*new)->timeout = -1;
     (*new)->ungetchar = -1;
@@ -387,15 +387,15 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
     }
     if (flag & APR_BUFFERED) {
         (*new)->buffered = 1;
-        (*new)->buffer = apr_palloc(pool, APR_FILE_BUFSIZE);
+        (*new)->buffer = fspr_palloc(pool, APR_FILE_BUFSIZE);
     }
     /* Need the mutex to handled buffered and O_APPEND style file i/o */
     if ((*new)->buffered || (*new)->append) {
-        rv = apr_thread_mutex_create(&(*new)->mutex, 
+        rv = fspr_thread_mutex_create(&(*new)->mutex, 
                                      APR_THREAD_MUTEX_DEFAULT, pool);
         if (rv) {
             if (file_cleanup(*new) == APR_SUCCESS) {
-                apr_pool_cleanup_kill(pool, *new, file_cleanup);
+                fspr_pool_cleanup_kill(pool, *new, file_cleanup);
             }
             return rv;
         }
@@ -403,23 +403,23 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname,
 
     /* Create a pollset with room for one descriptor. */
     /* ### check return codes */
-    (void) apr_pollset_create(&(*new)->pollset, 1, pool, 0);
+    (void) fspr_pollset_create(&(*new)->pollset, 1, pool, 0);
 
     if (!(flag & APR_FILE_NOCLEANUP)) {
-        apr_pool_cleanup_register((*new)->pool, (void *)(*new), file_cleanup,
-                                  apr_pool_cleanup_null);
+        fspr_pool_cleanup_register((*new)->pool, (void *)(*new), file_cleanup,
+                                  fspr_pool_cleanup_null);
     }
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_close(apr_file_t *file)
+APR_DECLARE(fspr_status_t) fspr_file_close(fspr_file_t *file)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     if ((stat = file_cleanup(file)) == APR_SUCCESS) {
-        apr_pool_cleanup_kill(file->pool, file, file_cleanup);
+        fspr_pool_cleanup_kill(file->pool, file, file_cleanup);
 
         if (file->mutex) {
-            apr_thread_mutex_destroy(file->mutex);
+            fspr_thread_mutex_destroy(file->mutex);
         }
 
         return APR_SUCCESS;
@@ -427,15 +427,15 @@ APR_DECLARE(apr_status_t) apr_file_close(apr_file_t *file)
     return stat;
 }
 
-APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_remove(const char *path, fspr_pool_t *pool)
 {
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t wpath[APR_PATH_MAX];
-        apr_status_t rv;
+        fspr_wchar_t wpath[APR_PATH_MAX];
+        fspr_status_t rv;
         if (rv = utf8_to_unicode_path(wpath, sizeof(wpath) 
-                                              / sizeof(apr_wchar_t), path)) {
+                                              / sizeof(fspr_wchar_t), path)) {
             return rv;
         }
         if (DeleteFileW(wpath))
@@ -447,24 +447,24 @@ APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
         if (DeleteFile(path))
             return APR_SUCCESS;
 #endif
-    return apr_get_os_error();
+    return fspr_get_os_error();
 }
 
-APR_DECLARE(apr_status_t) apr_file_rename(const char *frompath,
+APR_DECLARE(fspr_status_t) fspr_file_rename(const char *frompath,
                                           const char *topath,
-                                          apr_pool_t *pool)
+                                          fspr_pool_t *pool)
 {
     IF_WIN_OS_IS_UNICODE
     {
 #if APR_HAS_UNICODE_FS
-        apr_wchar_t wfrompath[APR_PATH_MAX], wtopath[APR_PATH_MAX];
-        apr_status_t rv;
+        fspr_wchar_t wfrompath[APR_PATH_MAX], wtopath[APR_PATH_MAX];
+        fspr_status_t rv;
         if (rv = utf8_to_unicode_path(wfrompath, sizeof(wfrompath) 
-                                           / sizeof(apr_wchar_t), frompath)) {
+                                           / sizeof(fspr_wchar_t), frompath)) {
             return rv;
         }
         if (rv = utf8_to_unicode_path(wtopath, sizeof(wtopath) 
-                                             / sizeof(apr_wchar_t), topath)) {
+                                             / sizeof(fspr_wchar_t), topath)) {
             return rv;
         }
 #ifndef _WIN32_WCE
@@ -496,28 +496,28 @@ APR_DECLARE(apr_status_t) apr_file_rename(const char *frompath,
         {
             CloseHandle(handle);
             if (!DeleteFile(topath))
-                return apr_get_os_error();
+                return fspr_get_os_error();
         }
         if (MoveFile(frompath, topath))
             return APR_SUCCESS;
     }        
 #endif
-    return apr_get_os_error();
+    return fspr_get_os_error();
 }
 
-APR_DECLARE(apr_status_t) apr_os_file_get(apr_os_file_t *thefile,
-                                          apr_file_t *file)
+APR_DECLARE(fspr_status_t) fspr_os_file_get(fspr_os_file_t *thefile,
+                                          fspr_file_t *file)
 {
     *thefile = file->filehand;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
-                                          apr_os_file_t *thefile,
-                                          apr_int32_t flags,
-                                          apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_file_put(fspr_file_t **file,
+                                          fspr_os_file_t *thefile,
+                                          fspr_int32_t flags,
+                                          fspr_pool_t *pool)
 {
-    (*file) = apr_pcalloc(pool, sizeof(apr_file_t));
+    (*file) = fspr_pcalloc(pool, sizeof(fspr_file_t));
     (*file)->pool = pool;
     (*file)->filehand = *thefile;
     (*file)->ungetchar = -1; /* no char avail */
@@ -529,16 +529,16 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
     }
     if (flags & APR_BUFFERED) {
         (*file)->buffered = 1;
-        (*file)->buffer = apr_palloc(pool, APR_FILE_BUFSIZE);
+        (*file)->buffer = fspr_palloc(pool, APR_FILE_BUFSIZE);
     }
 
     if ((*file)->append || (*file)->buffered) {
-        apr_status_t rv;
-        rv = apr_thread_mutex_create(&(*file)->mutex, 
+        fspr_status_t rv;
+        rv = fspr_thread_mutex_create(&(*file)->mutex, 
                                      APR_THREAD_MUTEX_DEFAULT, pool);
         if (rv) {
             if (file_cleanup(*file) == APR_SUCCESS) {
-                apr_pool_cleanup_kill(pool, *file, file_cleanup);
+                fspr_pool_cleanup_kill(pool, *file, file_cleanup);
             }
             return rv;
         }
@@ -546,7 +546,7 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
 
     /* Create a pollset with room for one descriptor. */
     /* ### check return codes */
-    (void) apr_pollset_create(&(*file)->pollset, 1, pool, 0);
+    (void) fspr_pollset_create(&(*file)->pollset, 1, pool, 0);
 
     /* XXX... we pcalloc above so all others are zeroed.
      * Should we be testing if thefile is a handle to 
@@ -557,7 +557,7 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file,
     return APR_SUCCESS;
 }    
 
-APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
+APR_DECLARE(fspr_status_t) fspr_file_eof(fspr_file_t *fptr)
 {
     if (fptr->eof_hit == 1) {
         return APR_EOF;
@@ -565,66 +565,66 @@ APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
     return APR_SUCCESS;
 }   
 
-APR_DECLARE(apr_status_t) apr_file_open_stderr(apr_file_t **thefile, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stderr(fspr_file_t **thefile, fspr_pool_t *pool)
 {
 #ifdef _WIN32_WCE
     return APR_ENOTIMPL;
 #else
-    apr_os_file_t file_handle;
+    fspr_os_file_t file_handle;
 
-    apr_set_os_error(APR_SUCCESS);
+    fspr_set_os_error(APR_SUCCESS);
     file_handle = GetStdHandle(STD_ERROR_HANDLE);
     if (!file_handle || (file_handle == INVALID_HANDLE_VALUE)) {
-        apr_status_t rv = apr_get_os_error();
+        fspr_status_t rv = fspr_get_os_error();
         if (rv == APR_SUCCESS) {
             return APR_EINVAL;
         }
         return rv;
     }
 
-    return apr_os_file_put(thefile, &file_handle, 0, pool);
+    return fspr_os_file_put(thefile, &file_handle, 0, pool);
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_stdout(apr_file_t **thefile, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stdout(fspr_file_t **thefile, fspr_pool_t *pool)
 {
 #ifdef _WIN32_WCE
     return APR_ENOTIMPL;
 #else
-    apr_os_file_t file_handle;
+    fspr_os_file_t file_handle;
 
-    apr_set_os_error(APR_SUCCESS);
+    fspr_set_os_error(APR_SUCCESS);
     file_handle = GetStdHandle(STD_OUTPUT_HANDLE);
     if (!file_handle || (file_handle == INVALID_HANDLE_VALUE)) {
-        apr_status_t rv = apr_get_os_error();
+        fspr_status_t rv = fspr_get_os_error();
         if (rv == APR_SUCCESS) {
             return APR_EINVAL;
         }
         return rv;
     }
 
-    return apr_os_file_put(thefile, &file_handle, 0, pool);
+    return fspr_os_file_put(thefile, &file_handle, 0, pool);
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_file_open_stdin(apr_file_t **thefile, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stdin(fspr_file_t **thefile, fspr_pool_t *pool)
 {
 #ifdef _WIN32_WCE
     return APR_ENOTIMPL;
 #else
-    apr_os_file_t file_handle;
+    fspr_os_file_t file_handle;
 
-    apr_set_os_error(APR_SUCCESS);
+    fspr_set_os_error(APR_SUCCESS);
     file_handle = GetStdHandle(STD_INPUT_HANDLE);
     if (!file_handle || (file_handle == INVALID_HANDLE_VALUE)) {
-        apr_status_t rv = apr_get_os_error();
+        fspr_status_t rv = fspr_get_os_error();
         if (rv == APR_SUCCESS) {
             return APR_EINVAL;
         }
         return rv;
     }
 
-    return apr_os_file_put(thefile, &file_handle, 0, pool);
+    return fspr_os_file_put(thefile, &file_handle, 0, pool);
 #endif
 }
 

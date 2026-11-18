@@ -2,13 +2,58 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="g722_1-version.props" Condition=" '$(G722_1_VersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <g722_1LibDir>$(SolutionDir)libs\g722_1-$(G722_1_Version)</g722_1LibDir>
+    <g722_1LibDir>$(BaseDir)libs\g722_1-$(G722_1_Version)_$(G722_1_BuildNumber)</g722_1LibDir>
   </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="g722_1BinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/g722_1-v$(G722_1_Version)_$(G722_1_BuildNumber)/g722_1-$(G722_1_Version)_$(G722_1_BuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(g722_1LibDir)\binaries\$(Platform)\$(Configuration)\libg722_1.lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="g722_1HeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/g722_1-v$(G722_1_Version)_$(G722_1_BuildNumber)/g722_1-$(G722_1_Version)_$(G722_1_BuildNumber)-headers.zip"
+           expectfileordirectory="$(g722_1LibDir)\include\g722_1\g722_1.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(g722_1LibDir)\src\msvc\;$(g722_1LibDir)\src\g722_1;$(g722_1LibDir)\src\generated\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(g722_1LibDir)\include;$(g722_1LibDir)\include\g722_1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(g722_1LibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libg722_1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>

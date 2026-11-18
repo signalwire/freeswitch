@@ -2,14 +2,67 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets">
     <Import Project="tiff-version.props" Condition=" '$(TiffVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <TiffLibDir>$(SolutionDir)libs\tiff-$(TiffVersion)</TiffLibDir>
-    <TiffDir>$(TiffLibDir)\libtiff</TiffDir>
+    <TiffLibDir>$(BaseDir)libs\libtiff-$(TiffVersion)_$(TiffBuildNumber)</TiffLibDir>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('debug'))">Debug</LibraryConfiguration>
+    <LibraryConfiguration Condition="$(Configuration.ToLower().Contains('release'))">Release</LibraryConfiguration>
+    <LibraryConfiguration Condition=" '$(LibraryConfiguration)' == '' ">Release</LibraryConfiguration>
+    <TiffLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Debug' ">tiffd</TiffLibraryFileName>
+    <TiffLibraryFileName Condition=" '$(LibraryConfiguration)' == 'Release' ">tiff</TiffLibraryFileName>
   </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <!-- Binaries are published for x64 only; the Win32 consumers here are spandsp
+       code generators, which need nothing but the headers. -->
+  <Target Name="tiffBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za" Condition=" '$(Platform)' == 'x64' ">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/libtiff-v$(TiffVersion)_$(TiffBuildNumber)/libtiff-$(TiffVersion)_$(TiffBuildNumber)-binaries-$(Platform.ToLower())-$(LibraryConfiguration.ToLower()).zip"
+           expectfileordirectory="$(TiffLibDir)\binaries\$(Platform)\$(LibraryConfiguration)\$(TiffLibraryFileName).lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="tiffHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/libtiff-v$(TiffVersion)_$(TiffBuildNumber)/libtiff-$(TiffVersion)_$(TiffBuildNumber)-headers.zip"
+           expectfileordirectory="$(TiffLibDir)\include\tiffio.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(TiffDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(TiffLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition=" '$(Platform)' == 'x64' ">
+    <Link>
+      <AdditionalLibraryDirectories>$(TiffLibDir)\binaries\$(Platform)\$(LibraryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(TiffLibraryFileName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
 </Project>

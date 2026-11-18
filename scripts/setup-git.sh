@@ -73,7 +73,7 @@ EOF
       via 'git config --global user.name "$name"
 EOF
 
-[ -n "$name" ] \
+[ -n "$email" ] \
   && cat 1>&2 <<EOF
 
     Your email has been set to: $email

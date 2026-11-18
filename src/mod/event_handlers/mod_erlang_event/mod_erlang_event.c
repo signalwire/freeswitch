@@ -249,10 +249,7 @@ static void event_handler(switch_event_t *event)
 						}
 
 						if (*hp->value == '/') {
-							switch_regex_t *re = NULL;
-							int ovector[30];
-							cmp = !!switch_regex_perform(hval, comp_to, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
-							switch_regex_safe_free(re);
+							cmp = !!switch_regex(hval, comp_to);
 						} else {
 							cmp = !strcasecmp(hval, comp_to);
 						}
@@ -971,9 +968,10 @@ static void handle_exit(listener_t *listener, erlang_pid * pid)
 static void listener_main_loop(listener_t *listener)
 {
 	int status = 1;
+	int recv_erl_errno = ETIMEDOUT;
 	int msgs_sent = 0; /* how many messages we sent in a loop */
 
-	while ((status >= 0 || erl_errno == ETIMEDOUT || erl_errno == EAGAIN) && !prefs.done) {
+	while ((status >= 0 || recv_erl_errno == ETIMEDOUT || recv_erl_errno == EAGAIN) && !prefs.done) {
 		erlang_msg msg;
 		ei_x_buff buf;
 		ei_x_buff rbuf;
@@ -986,6 +984,9 @@ static void listener_main_loop(listener_t *listener)
 		/* do we need the mutex when reading? */
 		/*switch_mutex_lock(listener->sock_mutex); */
 		status = ei_xreceive_msg_tmo(listener->sockdes, &msg, &buf, 1);
+		/* snapshot erl_errno before any outbound ei call (queue flushers below)
+		   clobbers this thread-local slot. */
+		recv_erl_errno = erl_errno;
 		/*switch_mutex_unlock(listener->sock_mutex); */
 
 		switch (status) {
@@ -1004,6 +1005,8 @@ static void listener_main_loop(listener_t *listener)
 
 				if (handle_msg(listener, &msg, &buf, &rbuf)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "handle_msg requested exit\n");
+					ei_x_free(&buf);
+					ei_x_free(&rbuf);
 					return;
 				}
 				break;
@@ -1019,6 +1022,8 @@ static void listener_main_loop(listener_t *listener)
 
 				if (handle_msg(listener, &msg, &buf, &rbuf)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "handle_msg requested exit\n");
+					ei_x_free(&buf);
+					ei_x_free(&rbuf);
 					return;
 				}
 				break;
@@ -1029,6 +1034,7 @@ static void listener_main_loop(listener_t *listener)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_unlink\n");
 				break;
 			case ERL_EXIT:
+			case ERL_EXIT2:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_exit from %s <%d.%d.%d>\n", msg.from.node, msg.from.creation, msg.from.num,
 								  msg.from.serial);
 
@@ -1040,8 +1046,8 @@ static void listener_main_loop(listener_t *listener)
 			}
 			break;
 		case ERL_ERROR:
-			if (erl_errno != ETIMEDOUT && erl_errno != EAGAIN) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "erl_error: status=%d, erl_errno=%d errno=%d\n", status,  erl_errno, errno);
+			if (recv_erl_errno != ETIMEDOUT && recv_erl_errno != EAGAIN) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "erl_error: status=%d, erl_errno=%d errno=%d\n", status,  recv_erl_errno, errno);
 			}
 			break;
 		default:
@@ -1072,7 +1078,7 @@ static void listener_main_loop(listener_t *listener)
 	if (prefs.done) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "shutting down listener\n");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "listener exit: status=%d, erl_errno=%d errno=%d\n", status,  erl_errno, errno);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "listener exit: status=%d, erl_errno=%d errno=%d\n", status,  recv_erl_errno, errno);
 	}
 }
 
@@ -1376,7 +1382,9 @@ static listener_t *new_outbound_listener_locked(char *node)
 		listener->peer_nodename = switch_core_strdup(listener->pool, node);
 	}
 
-	switch_thread_rwlock_rdlock(listener->rwlock);
+	if (listener) {
+		switch_thread_rwlock_rdlock(listener->rwlock);
+	}
 
 	return listener;
 }
@@ -1399,7 +1407,6 @@ void destroy_listener(listener_t * listener)
 	switch_mutex_unlock(listener->sock_mutex);
 
 	switch_core_hash_destroy(&listener->event_hash);
-	switch_core_hash_destroy(&listener->sessions);
 
 	/* remove any bindings for this connection */
 	remove_binding(listener, NULL);
@@ -1412,6 +1419,7 @@ void destroy_listener(listener_t * listener)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Orphaning call %s\n", s->uuid_str);
 		destroy_session_elem(s);
 	}
+	switch_core_hash_destroy(&listener->sessions);
 	switch_thread_rwlock_unlock(listener->session_rwlock);
 	switch_thread_rwlock_unlock(listener->rwlock);
 
@@ -1419,7 +1427,6 @@ void destroy_listener(listener_t * listener)
 		switch_memory_pool_t *pool = listener->pool;
 		switch_core_destroy_memory_pool(&pool);
 	}
-
 }
 
 static switch_status_t state_handler(switch_core_session_t *session)
@@ -1515,7 +1522,7 @@ session_elem_t *attach_call_to_spawned_process(listener_t *listener, char *modul
 {
 	/* create a session list element */
 	session_elem_t *session_element = session_elem_create(listener, session);
-	char hash[100];
+	char hash[EI_HASH_REF_LEN];
 	spawn_reply_t *p;
 	erlang_ref ref;
 
@@ -1722,8 +1729,6 @@ SWITCH_STANDARD_APP(erlang_sendmsg_function)
 	ei_x_buff buf;
 	listener_t *listener;
 
-	ei_x_new_with_version(&buf);
-
 	/* process app arguments */
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, 3);
@@ -1739,6 +1744,7 @@ SWITCH_STANDARD_APP(erlang_sendmsg_function)
 
 	/*switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "sendmsg: {%s, %s} ! %s\n", reg_name, node, argv[2]); */
 
+	ei_x_new_with_version(&buf);
 	ei_x_encode_tuple_header(&buf, 2);
 	ei_x_encode_atom(&buf, "freeswitch_sendmsg");
 	_ei_x_encode_string(&buf, argv[2]);
@@ -1756,6 +1762,8 @@ SWITCH_STANDARD_APP(erlang_sendmsg_function)
 
 		switch_thread_rwlock_unlock(listener->rwlock);
 	}
+
+	ei_x_free(&buf);
 }
 
 
@@ -1991,13 +1999,13 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	switch_memory_pool_t *pool = NULL, *listener_pool = NULL;
 	switch_status_t rv;
 	switch_sockaddr_t *sa;
-	switch_os_socket_t sockdes;
+	switch_os_socket_t sockdes = SWITCH_SOCK_INVALID;
 	listener_t *listener;
 	uint32_t x = 0;
 	struct ei_cnode_s ec;
 	ErlConnect conn;
 	int clientfd;
-	switch_os_socket_t epmdfd;
+	switch_os_socket_t epmdfd = SWITCH_SOCK_INVALID;
 	switch_socket_t *epmd_sock = NULL;
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {

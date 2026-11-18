@@ -189,7 +189,7 @@
       <param name="dec-threads" value="cpu/2/4"/>
       <param name="enc-threads" value="cpu/2/4"/>
       <param name="g-profile" value="2"/>
-      <!-- DEFULT | PARTITIONS -->
+      <!-- DEFAULT | PARTITIONS -->
       <param name="g-error-resilient" value="PARTITIONS"/>
       <!-- ONE_PASS, FIRST_PASS, LAST_PASS"/> -->
       <!-- <param name="g-pass" value="ONE_PASS"/> -->

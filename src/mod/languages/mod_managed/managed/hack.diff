@@ -1,0 +1,11 @@
+--- switch_event.cs.old	2025-06-18 14:42:04.451534270 +0000
++++ switch_event.cs	2025-06-18 14:43:13.731741625 +0000
+@@ -40,7 +40,7 @@
+     Dispose(false);
+   }
+ 
+-  public void Dispose() {
++  public virtual void Dispose() {
+     Dispose(true);
+     global::System.GC.SuppressFinalize(this);
+   }

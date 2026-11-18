@@ -45,6 +45,7 @@
 #include <EXTERN.h>
 #include <perl.h>
 #include <switch.h>
+#include "mod_perl_extra.h"
 static char *embedding[] = { "", "-e", "0", NULL };
 EXTERN_C void xs_init(pTHX);
 
@@ -207,7 +208,7 @@ static perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, char 
 
 
 
-static void perl_function(switch_core_session_t *session, char *data)
+static void perl_function(switch_core_session_t *session, const char *data)
 {
 	char *uuid = switch_core_session_get_uuid(session);
 	PerlInterpreter *my_perl = clone_perl();

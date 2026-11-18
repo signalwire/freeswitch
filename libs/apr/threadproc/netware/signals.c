@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-#include "apr_arch_threadproc.h"
+#include "fspr_arch_threadproc.h"
 #include <nks/thread.h>
-#include "apr_private.h"
-#include "apr_pools.h"
-#include "apr_signal.h"
-#include "apr_strings.h"
+#include "fspr_private.h"
+#include "fspr_pools.h"
+#include "fspr_signal.h"
+#include "fspr_strings.h"
 
 #include <assert.h>
 #if APR_HAS_THREADS && APR_HAVE_PTHREAD_H
 #include <pthread.h>
 #endif
 
-APR_DECLARE(apr_status_t) apr_proc_kill(apr_proc_t *proc, int signum)
+APR_DECLARE(fspr_status_t) fspr_proc_kill(fspr_proc_t *proc, int signum)
 {
     return APR_ENOTIMPL;
 }
 
 
-void apr_signal_init(apr_pool_t *pglobal)
+void fspr_signal_init(fspr_pool_t *pglobal)
 {
 }
 
-const char *apr_signal_description_get(int signum)
+const char *fspr_signal_description_get(int signum)
 {
     switch (signum)
     {
@@ -64,19 +64,19 @@ static void *signal_thread_func(void *signal_handler)
     return NULL;
 }
 
-APR_DECLARE(apr_status_t) apr_setup_signal_thread(void)
+APR_DECLARE(fspr_status_t) fspr_setup_signal_thread(void)
 {
     int rv = 0;
 
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_signal_block(int signum)
+APR_DECLARE(fspr_status_t) fspr_signal_block(int signum)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_signal_unblock(int signum)
+APR_DECLARE(fspr_status_t) fspr_signal_unblock(int signum)
 {
     return APR_ENOTIMPL;
 }

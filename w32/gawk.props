@@ -5,6 +5,7 @@
   </ImportGroup>
   <PropertyGroup>
     <GawkPropsImported>true</GawkPropsImported>
+    <gawkVersion>3.1.8</gawkVersion>
   </PropertyGroup>
 
   <!--
@@ -29,7 +30,7 @@
 
   <Target Name="GawkDownloadTarget" BeforeTargets="CustomBuild;PreBuildEvent;" DependsOnTargets="">
       <DownloadPackageTask
-           package="http://files.freeswitch.org/downloads/win32/gawk.exe"
+           package="https://github.com/freeswitch/gawk/releases/download/v$(gawkVersion)/gawk.exe"
            expectfileordirectory="$(ProjectDir)..\..\sofia-sip\win32\gawk.exe"
            outputfolder="$(ProjectDir)..\..\sofia-sip\win32\"
            outputfilename=""

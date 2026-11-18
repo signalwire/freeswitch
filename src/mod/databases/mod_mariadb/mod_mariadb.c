@@ -53,6 +53,8 @@ int mariadb_db_set_connection(MYSQL *mysql, enum enum_server_command command, co
 	size_t length, my_bool skipp_check, void *opt_arg);
 my_bool mariadb_db_dsn_reconnect(MYSQL *mysql);
 
+my_bool reconnect = 1;
+
 #define DEFAULT_MARIADB_RETRIES 120
 
 #ifndef MIN
@@ -409,7 +411,7 @@ switch_status_t mariadb_finish_results_real(const char* file, const char* func, 
 				if ((status = mysql_next_result(&handle->con))) {
 					if (status > 0) {
 						err_str = mariadb_handle_get_error(handle);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to get next for query (%s): %s\n", handle->sql, err_str);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "An error occurred trying to get next for query (%s): %s\n", handle->sql, switch_str_nil(err_str));
 						switch_safe_free(err_str);
 
 						break;
@@ -474,9 +476,12 @@ switch_status_t mariadb_handle_connect(mariadb_handle_t *handle)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG1, "Connecting %s\n", handle->dsn);
 	mysql_init(&handle->con);
 
-	// Enable non-blocking operation
-	// https://mariadb.com/kb/en/library/using-the-non-blocking-library/
+	/* Enable non-blocking operation */
+	/* https://mariadb.com/kb/en/library/using-the-non-blocking-library */
 	mysql_options(&handle->con, MYSQL_OPT_NONBLOCK, 0);
+
+	/* Enable automatic reconnect with the mariadb_reconnect function, without this that function does not work */
+	mysql_options(&handle->con, MYSQL_OPT_RECONNECT, &reconnect);
 
 	/* set timeouts to 300 microseconds */
 	/*int default_timeout = 3;
@@ -622,13 +627,27 @@ switch_status_t mariadb_send_query(mariadb_handle_t *handle, const char* sql)
 {
 	char *err_str;
 	int ret;
+	unsigned retries = 60; /* 60 tries, will take 30 to 60 seconds at worst */
 
 	switch_safe_free(handle->sql);
 	handle->sql = strdup(sql);
+    again:
 	handle->stored_results = 0;
 	ret = mysql_real_query(&handle->con, sql, (unsigned long)strlen(sql));	
 	if (ret) {
 		err_str = mariadb_handle_get_error(handle);
+		if (strstr(err_str, "Deadlock found when trying to get lock; try restarting transaction")) {
+			if (--retries > 0) {
+				switch_safe_free(err_str);
+				/* We are waiting for 500 ms and random time is not more than 500 ms.
+				  This is necessary so that the delay on the primary and secondary servers does not coincide and deadlock does not occur again. */
+				switch_yield(500 + (switch_rand() & 511));
+				goto again;
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DeadLock. The retries are over.\n");
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to send query (%s) to database: %s\n", sql, err_str);
 		switch_safe_free(err_str);
 		mariadb_finish_results(handle);
@@ -685,15 +704,10 @@ error:
 	err_str = mariadb_handle_get_error(handle);
 
 	if (zstr(err_str)) {
-		if (zstr(er)) {
-			err_str = strdup((char *)"SQL ERROR!");
-		} else {
-			err_str = er;
-		}
+		switch_safe_free(err_str);
+		err_str = (er) ? er : strdup((char *)"SQL ERROR!");
 	} else {
-		if (!zstr(er)) {
-			free(er);
-		}
+		switch_safe_free(er);
 	}
 
 	if (err_str) {
@@ -854,14 +868,15 @@ switch_status_t database_commit(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 
 	result = mariadb_SQLEndTran(handle, SWITCH_TRUE);
-	result = result && database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE);
-	result = result && mariadb_finish_results(handle);
+	result = database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = mariadb_finish_results(handle) && result;
 
 	return result;
 }
 
 switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 {
+	switch_status_t result;
 	mariadb_handle_t *handle;
 
 	if (!dih) {
@@ -874,9 +889,11 @@ switch_status_t database_rollback(switch_database_interface_handle_t *dih)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	mariadb_SQLEndTran(handle, SWITCH_FALSE);
+	result = mariadb_SQLEndTran(handle, SWITCH_FALSE);
+	result = database_SQLSetAutoCommitAttr(dih, SWITCH_TRUE) && result;
+	result = mariadb_finish_results(handle) && result;
 
-	return SWITCH_STATUS_SUCCESS;
+	return result;
 }
 
 switch_status_t mariadb_handle_callback_exec_detailed(const char *file, const char *func, int line,

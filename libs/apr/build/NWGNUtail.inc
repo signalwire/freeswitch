@@ -88,9 +88,9 @@ endif
 # Generic compiler rules
 #
 
-$(APR_WORK)\build\NWGNUversion.inc : $(APR_WORK)\include\apr_version.h $(APR_WORK)\build\nw_ver.awk
+$(APR_WORK)\build\NWGNUversion.inc : $(APR_WORK)\include\fspr_version.h $(APR_WORK)\build\nw_ver.awk
 	@echo Generating $(subst /,\,$@)
-	awk -f $(APR_WORK)\build\nw_ver.awk $(APR_WORK)\include\apr_version.h > $(APR_WORK)\build\NWGNUversion.inc
+	awk -f $(APR_WORK)\build\nw_ver.awk $(APR_WORK)\include\fspr_version.h > $(APR_WORK)\build\NWGNUversion.inc
 
 -include $(APR_WORK)\build\NWGNUversion.inc
 

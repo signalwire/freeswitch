@@ -58,6 +58,12 @@ typedef int zap_socket_t;
 #define SPANDSP_EVENT_TXFAXNEGOCIATERESULT "spandsp::txfaxnegociateresult"
 #define SPANDSP_EVENT_RXFAXNEGOCIATERESULT "spandsp::rxfaxnegociateresult"
 
+#include <spandsp/version.h>
+
+#if SPANDSP_RELEASE_DATE < 20230620
+#define V18_MODE_WEITBRECHT_5BIT_4545 V18_MODE_5BIT_4545
+#define V18_MODE_WEITBRECHT_5BIT_50   V18_MODE_5BIT_50
+#endif
 
 
 /* The global stuff */
@@ -70,6 +76,7 @@ struct spandsp_globals {
 
 	short int use_ecm;
 	short int verbose;
+	switch_log_level_t verbose_log_level;
 	short int disable_v17;
 	short int enable_tep;
 	short int enable_colour_fax;
@@ -105,6 +112,13 @@ typedef enum {
 	FUNCTION_RX,
 	FUNCTION_GW
 } mod_spandsp_fax_application_mode_t;
+
+struct mod_spandsp_log_data {
+	switch_log_level_t verbose_log_level;
+	switch_core_session_t *session;
+	FILE *trace_file;
+};
+typedef struct mod_spandsp_log_data mod_spandsp_log_data_t;
 
 /******************************************************************************
  * TONE DETECTION WITH CADENCE

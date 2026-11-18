@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP8_DECODER_DBOOLHUFF_H_
-#define VP8_DECODER_DBOOLHUFF_H_
+#ifndef VPX_VP8_DECODER_DBOOLHUFF_H_
+#define VPX_VP8_DECODER_DBOOLHUFF_H_
 
 #include <stddef.h>
 #include <limits.h>
 
 #include "./vpx_config.h"
+#include "vpx_ports/compiler_attributes.h"
 #include "vpx_ports/mem.h"
 #include "vpx/vp8dx.h"
 #include "vpx/vpx_integer.h"
@@ -50,7 +51,8 @@ int vp8dx_start_decode(BOOL_DECODER *br, const unsigned char *source,
 
 void vp8dx_bool_decoder_fill(BOOL_DECODER *br);
 
-static int vp8dx_decode_bool(BOOL_DECODER *br, int probability) {
+static VPX_NO_UNSIGNED_SHIFT_CHECK int vp8dx_decode_bool(BOOL_DECODER *br,
+                                                         int probability) {
   unsigned int bit = 0;
   VP8_BD_VALUE value;
   unsigned int split;
@@ -76,7 +78,7 @@ static int vp8dx_decode_bool(BOOL_DECODER *br, int probability) {
   }
 
   {
-    register int shift = vp8_norm[range];
+    const unsigned char shift = vp8_norm[(unsigned char)range];
     range <<= shift;
     value <<= shift;
     count -= shift;
@@ -127,4 +129,4 @@ static INLINE int vp8dx_bool_error(BOOL_DECODER *br) {
 }  // extern "C"
 #endif
 
-#endif  // VP8_DECODER_DBOOLHUFF_H_
+#endif  // VPX_VP8_DECODER_DBOOLHUFF_H_

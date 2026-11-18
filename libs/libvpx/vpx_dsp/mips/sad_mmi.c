@@ -334,19 +334,6 @@
   "paddw      %[ftmp3],   %[ftmp3],       %[ftmp1]            \n\t"
 #endif /* _MIPS_SIM == _ABIO32 */
 
-// depending on call sites, pass **ref_array to avoid & in subsequent call and
-// de-dup with 4D below.
-#define sadMxNxK_mmi(m, n, k)                                                 \
-  void vpx_sad##m##x##n##x##k##_mmi(const uint8_t *src, int src_stride,       \
-                                    const uint8_t *ref_array, int ref_stride, \
-                                    uint32_t *sad_array) {                    \
-    int i;                                                                    \
-    for (i = 0; i < k; ++i)                                                   \
-      sad_array[i] =                                                          \
-          vpx_sad##m##x##n##_mmi(src, src_stride, &ref_array[i], ref_stride); \
-  }
-
-// This appears to be equivalent to the above when k == 4 and refs is const
 #define sadMxNx4D_mmi(m, n)                                                  \
   void vpx_sad##m##x##n##x4d_mmi(const uint8_t *src, int src_stride,         \
                                  const uint8_t *const ref_array[],           \
@@ -364,8 +351,9 @@ static inline unsigned int vpx_sad64x(const uint8_t *src, int src_stride,
   double ftmp1, ftmp2, ftmp3, ftmp4, ftmp5;
   mips_reg l_counter = counter;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
+    "pxor       %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_REF_ABS_SUB_64
@@ -383,6 +371,7 @@ static inline unsigned int vpx_sad64x(const uint8_t *src, int src_stride,
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -394,6 +383,7 @@ static inline unsigned int vpx_sad64x(const uint8_t *src, int src_stride,
   }
 
 vpx_sad64xN(64);
+#if CONFIG_ENCODERS
 vpx_sad64xN(32);
 sadMxNx4D_mmi(64, 64);
 sadMxNx4D_mmi(64, 32);
@@ -405,9 +395,11 @@ static inline unsigned int vpx_sad_avg64x(const uint8_t *src, int src_stride,
   unsigned int sad;
   double ftmp1, ftmp2, ftmp3, ftmp4, ftmp5;
   mips_reg l_counter = counter;
+  mips_reg l_second_pred = (mips_reg)second_pred;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
+    "pxor       %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_AVGREF_ABS_SUB_64
@@ -424,11 +416,12 @@ static inline unsigned int vpx_sad_avg64x(const uint8_t *src, int src_stride,
     : [ftmp1]"=&f"(ftmp1), [ftmp2]"=&f"(ftmp2), [ftmp3]"=&f"(ftmp3),
       [ftmp4]"=&f"(ftmp4), [ftmp5]"=&f"(ftmp5), [counter]"+&r"(l_counter),
       [src]"+&r"(src), [ref]"+&r"(ref),
-      [second_pred]"+&r"((mips_reg)second_pred),
+      [second_pred]"+&r"(l_second_pred),
       [sad]"=&r"(sad)
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -442,6 +435,7 @@ static inline unsigned int vpx_sad_avg64x(const uint8_t *src, int src_stride,
 
 vpx_sad_avg64xN(64);
 vpx_sad_avg64xN(32);
+#endif  // CONFIG_ENCODERS
 
 static inline unsigned int vpx_sad32x(const uint8_t *src, int src_stride,
                                       const uint8_t *ref, int ref_stride,
@@ -450,8 +444,9 @@ static inline unsigned int vpx_sad32x(const uint8_t *src, int src_stride,
   double ftmp1, ftmp2, ftmp3, ftmp4, ftmp5;
   mips_reg l_counter = counter;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
+    "pxor       %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_REF_ABS_SUB_32
@@ -469,6 +464,7 @@ static inline unsigned int vpx_sad32x(const uint8_t *src, int src_stride,
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -479,8 +475,9 @@ static inline unsigned int vpx_sad32x(const uint8_t *src, int src_stride,
     return vpx_sad32x(src, src_stride, ref, ref_stride, H);              \
   }
 
-vpx_sad32xN(64);
 vpx_sad32xN(32);
+#if CONFIG_ENCODERS
+vpx_sad32xN(64);
 vpx_sad32xN(16);
 sadMxNx4D_mmi(32, 64);
 sadMxNx4D_mmi(32, 32);
@@ -493,9 +490,11 @@ static inline unsigned int vpx_sad_avg32x(const uint8_t *src, int src_stride,
   unsigned int sad;
   double ftmp1, ftmp2, ftmp3, ftmp4, ftmp5;
   mips_reg l_counter = counter;
+  mips_reg l_second_pred = (mips_reg)second_pred;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
+    "pxor       %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_AVGREF_ABS_SUB_32
@@ -512,11 +511,12 @@ static inline unsigned int vpx_sad_avg32x(const uint8_t *src, int src_stride,
     : [ftmp1]"=&f"(ftmp1), [ftmp2]"=&f"(ftmp2), [ftmp3]"=&f"(ftmp3),
       [ftmp4]"=&f"(ftmp4), [ftmp5]"=&f"(ftmp5), [counter]"+&r"(l_counter),
       [src]"+&r"(src), [ref]"+&r"(ref),
-      [second_pred]"+&r"((mips_reg)second_pred),
+      [second_pred]"+&r"(l_second_pred),
       [sad]"=&r"(sad)
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -531,6 +531,7 @@ static inline unsigned int vpx_sad_avg32x(const uint8_t *src, int src_stride,
 vpx_sad_avg32xN(64);
 vpx_sad_avg32xN(32);
 vpx_sad_avg32xN(16);
+#endif  // CONFIG_ENCODERS
 
 static inline unsigned int vpx_sad16x(const uint8_t *src, int src_stride,
                                       const uint8_t *ref, int ref_stride,
@@ -539,8 +540,9 @@ static inline unsigned int vpx_sad16x(const uint8_t *src, int src_stride,
   double ftmp1, ftmp2, ftmp3, ftmp4, ftmp5;
   mips_reg l_counter = counter;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
+    "pxor       %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_REF_ABS_SUB_16
@@ -558,6 +560,7 @@ static inline unsigned int vpx_sad16x(const uint8_t *src, int src_stride,
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -568,13 +571,10 @@ static inline unsigned int vpx_sad16x(const uint8_t *src, int src_stride,
     return vpx_sad16x(src, src_stride, ref, ref_stride, H);              \
   }
 
-vpx_sad16xN(32);
 vpx_sad16xN(16);
+#if CONFIG_ENCODERS
+vpx_sad16xN(32);
 vpx_sad16xN(8);
-sadMxNxK_mmi(16, 16, 3);
-sadMxNxK_mmi(16, 16, 8);
-sadMxNxK_mmi(16, 8, 3);
-sadMxNxK_mmi(16, 8, 8);
 sadMxNx4D_mmi(16, 32);
 sadMxNx4D_mmi(16, 16);
 sadMxNx4D_mmi(16, 8);
@@ -586,9 +586,11 @@ static inline unsigned int vpx_sad_avg16x(const uint8_t *src, int src_stride,
   unsigned int sad;
   double ftmp1, ftmp2, ftmp3, ftmp4, ftmp5;
   mips_reg l_counter = counter;
+  mips_reg l_second_pred = (mips_reg)second_pred;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
+    "pxor       %[ftmp5],   %[ftmp5],       %[ftmp5]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_AVGREF_ABS_SUB_16
@@ -605,11 +607,12 @@ static inline unsigned int vpx_sad_avg16x(const uint8_t *src, int src_stride,
     : [ftmp1]"=&f"(ftmp1), [ftmp2]"=&f"(ftmp2), [ftmp3]"=&f"(ftmp3),
       [ftmp4]"=&f"(ftmp4), [ftmp5]"=&f"(ftmp5), [counter]"+&r"(l_counter),
       [src]"+&r"(src), [ref]"+&r"(ref),
-      [second_pred]"+&r"((mips_reg)second_pred),
+      [second_pred]"+&r"(l_second_pred),
       [sad]"=&r"(sad)
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -632,8 +635,9 @@ static inline unsigned int vpx_sad8x(const uint8_t *src, int src_stride,
   double ftmp1, ftmp2, ftmp3;
   mips_reg l_counter = counter;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
+    "pxor       %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_REF_ABS_SUB_8
@@ -651,6 +655,7 @@ static inline unsigned int vpx_sad8x(const uint8_t *src, int src_stride,
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -664,10 +669,6 @@ static inline unsigned int vpx_sad8x(const uint8_t *src, int src_stride,
 vpx_sad8xN(16);
 vpx_sad8xN(8);
 vpx_sad8xN(4);
-sadMxNxK_mmi(8, 16, 3);
-sadMxNxK_mmi(8, 16, 8);
-sadMxNxK_mmi(8, 8, 3);
-sadMxNxK_mmi(8, 8, 8);
 sadMxNx4D_mmi(8, 16);
 sadMxNx4D_mmi(8, 8);
 sadMxNx4D_mmi(8, 4);
@@ -679,9 +680,11 @@ static inline unsigned int vpx_sad_avg8x(const uint8_t *src, int src_stride,
   unsigned int sad;
   double ftmp1, ftmp2, ftmp3;
   mips_reg l_counter = counter;
+  mips_reg l_second_pred = (mips_reg)second_pred;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
+    "pxor       %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_AVGREF_ABS_SUB_8
@@ -697,11 +700,12 @@ static inline unsigned int vpx_sad_avg8x(const uint8_t *src, int src_stride,
     "mfc1       %[sad],     %[ftmp3]                            \n\t"
     : [ftmp1]"=&f"(ftmp1), [ftmp2]"=&f"(ftmp2), [ftmp3]"=&f"(ftmp3),
       [counter]"+&r"(l_counter), [src]"+&r"(src), [ref]"+&r"(ref),
-      [second_pred]"+&r"((mips_reg)second_pred),
+      [second_pred]"+&r"(l_second_pred),
       [sad]"=&r"(sad)
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -724,8 +728,9 @@ static inline unsigned int vpx_sad4x(const uint8_t *src, int src_stride,
   double ftmp1, ftmp2, ftmp3;
   mips_reg l_counter = counter;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
+    "pxor       %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_REF_ABS_SUB_4
@@ -743,6 +748,7 @@ static inline unsigned int vpx_sad4x(const uint8_t *src, int src_stride,
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -755,8 +761,6 @@ static inline unsigned int vpx_sad4x(const uint8_t *src, int src_stride,
 
 vpx_sad4xN(8);
 vpx_sad4xN(4);
-sadMxNxK_mmi(4, 4, 3);
-sadMxNxK_mmi(4, 4, 8);
 sadMxNx4D_mmi(4, 8);
 sadMxNx4D_mmi(4, 4);
 
@@ -767,9 +771,11 @@ static inline unsigned int vpx_sad_avg4x(const uint8_t *src, int src_stride,
   unsigned int sad;
   double ftmp1, ftmp2, ftmp3;
   mips_reg l_counter = counter;
+  mips_reg l_second_pred = (mips_reg)second_pred;
 
+  /* clang-format off */
   __asm__ volatile (
-    "xor        %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
+    "pxor       %[ftmp3],   %[ftmp3],       %[ftmp3]            \n\t"
     "1:                                                         \n\t"
     // Include two loop body, to reduce loop time.
     SAD_SRC_AVGREF_ABS_SUB_4
@@ -785,11 +791,12 @@ static inline unsigned int vpx_sad_avg4x(const uint8_t *src, int src_stride,
     "mfc1       %[sad],     %[ftmp3]                            \n\t"
     : [ftmp1]"=&f"(ftmp1), [ftmp2]"=&f"(ftmp2), [ftmp3]"=&f"(ftmp3),
       [counter]"+&r"(l_counter), [src]"+&r"(src), [ref]"+&r"(ref),
-      [second_pred]"+&r"((mips_reg)second_pred),
+      [second_pred]"+&r"(l_second_pred),
       [sad]"=&r"(sad)
     : [src_stride]"r"((mips_reg)src_stride),
       [ref_stride]"r"((mips_reg)ref_stride)
   );
+  /* clang-format on */
 
   return sad;
 }
@@ -803,3 +810,4 @@ static inline unsigned int vpx_sad_avg4x(const uint8_t *src, int src_stride,
 
 vpx_sad_avg4xN(8);
 vpx_sad_avg4xN(4);
+#endif  // CONFIG_ENCODERS

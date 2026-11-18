@@ -28,22 +28,22 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -66,6 +66,8 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="$(SolutionDir)\w32\tiff.props" />
+    <Import Project="$(SolutionDir)\w32\libjpeg.props" />
+    <Import Project="$(SolutionDir)\w32\spandsp.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -89,7 +91,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -107,7 +109,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -123,7 +125,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -141,7 +143,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(RootDir)%(Directory)..\..\..\..\libs\jpeg-8d;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src\msvc;%(RootDir)%(Directory)..\..\..\..\libs\spandsp\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <DisableSpecificWarnings>4189;6031;4456;4024;4047;4324;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
@@ -168,7 +170,7 @@
     <ClInclude Include="udptl.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\libs\spandsp\src\libspandsp.2017.vcxproj">
+    <ProjectReference Include="..\..\..\..\libs\win32\spandsp\libspandsp.2017.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

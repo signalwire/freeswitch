@@ -53,7 +53,7 @@
       <!-- 'say:' will be considered text to say with TTS -->
       <!-- Set a default path here so you can use relative paths in the other sound params-->
       <param name="sound-prefix" value="$${sound_prefix}"/>
-      <!-- File to play to acknowledge succees -->
+      <!-- File to play to acknowledge success -->
       <!--<param name="ack-sound" value="beep.wav"/>-->
       <!-- File to play to acknowledge failure -->
       <!--<param name="nack-sound" value="beeperr.wav"/>-->

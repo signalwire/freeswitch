@@ -11,10 +11,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <limits>
+#include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
@@ -22,27 +22,32 @@
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "test/util.h"
+#include "vpx_config.h"
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 
 using libvpx_test::ACMRandom;
 using libvpx_test::Buffer;
-using std::tr1::tuple;
-using std::tr1::make_tuple;
+using std::make_tuple;
+using std::tuple;
 
 namespace {
-typedef void (*PartialFdctFunc)(const int16_t *in, tran_low_t *out, int stride);
+using PartialFdctFunc = void (*)(const int16_t *in, tran_low_t *out,
+                                 int stride);
 
-typedef tuple<PartialFdctFunc, int /* size */, vpx_bit_depth_t>
-    PartialFdctParam;
+using PartialFdctParam = tuple<PartialFdctFunc, int /*size*/, vpx_bit_depth_t>;
 
 tran_low_t partial_fdct_ref(const Buffer<int16_t> &in, int size) {
   int64_t sum = 0;
-  for (int y = 0; y < size; ++y) {
-    for (int x = 0; x < size; ++x) {
-      sum += in.TopLeftPixel()[y * in.stride() + x];
+  if (in.TopLeftPixel() != nullptr) {
+    for (int y = 0; y < size; ++y) {
+      for (int x = 0; x < size; ++x) {
+        sum += in.TopLeftPixel()[y * in.stride() + x];
+      }
     }
+  } else {
+    assert(0);
   }
 
   switch (size) {
@@ -63,7 +68,7 @@ class PartialFdctTest : public ::testing::TestWithParam<PartialFdctParam> {
     bit_depth_ = GET_PARAM(2);
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   void RunTest() {
@@ -77,21 +82,25 @@ class PartialFdctTest : public ::testing::TestWithParam<PartialFdctParam> {
     Buffer<tran_low_t> output_block = Buffer<tran_low_t>(size_, size_, 0, 16);
     ASSERT_TRUE(output_block.Init());
 
-    for (int i = 0; i < 100; ++i) {
-      if (i == 0) {
-        input_block.Set(maxvalue);
-      } else if (i == 1) {
-        input_block.Set(minvalue);
-      } else {
-        input_block.Set(&rnd, minvalue, maxvalue);
+    if (output_block.TopLeftPixel() != nullptr) {
+      for (int i = 0; i < 100; ++i) {
+        if (i == 0) {
+          input_block.Set(maxvalue);
+        } else if (i == 1) {
+          input_block.Set(minvalue);
+        } else {
+          input_block.Set(&rnd, minvalue, maxvalue);
+        }
+
+        ASM_REGISTER_STATE_CHECK(fwd_txfm_(input_block.TopLeftPixel(),
+                                           output_block.TopLeftPixel(),
+                                           input_block.stride()));
+
+        EXPECT_EQ(partial_fdct_ref(input_block, size_),
+                  output_block.TopLeftPixel()[0]);
       }
-
-      ASM_REGISTER_STATE_CHECK(fwd_txfm_(input_block.TopLeftPixel(),
-                                         output_block.TopLeftPixel(),
-                                         input_block.stride()));
-
-      EXPECT_EQ(partial_fdct_ref(input_block, size_),
-                output_block.TopLeftPixel()[0]);
+    } else {
+      assert(0);
     }
   }
 
@@ -103,7 +112,7 @@ class PartialFdctTest : public ::testing::TestWithParam<PartialFdctParam> {
 TEST_P(PartialFdctTest, PartialFdctTest) { RunTest(); }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     C, PartialFdctTest,
     ::testing::Values(make_tuple(&vpx_highbd_fdct32x32_1_c, 32, VPX_BITS_12),
                       make_tuple(&vpx_highbd_fdct32x32_1_c, 32, VPX_BITS_10),
@@ -116,7 +125,7 @@ INSTANTIATE_TEST_CASE_P(
                       make_tuple(&vpx_fdct8x8_1_c, 8, VPX_BITS_8),
                       make_tuple(&vpx_fdct4x4_1_c, 4, VPX_BITS_8)));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     C, PartialFdctTest,
     ::testing::Values(make_tuple(&vpx_fdct32x32_1_c, 32, VPX_BITS_8),
                       make_tuple(&vpx_fdct16x16_1_c, 16, VPX_BITS_8),
@@ -125,7 +134,7 @@ INSTANTIATE_TEST_CASE_P(
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
 #if HAVE_SSE2
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSE2, PartialFdctTest,
     ::testing::Values(make_tuple(&vpx_fdct32x32_1_sse2, 32, VPX_BITS_8),
                       make_tuple(&vpx_fdct16x16_1_sse2, 16, VPX_BITS_8),
@@ -135,16 +144,22 @@ INSTANTIATE_TEST_CASE_P(
 
 #if HAVE_NEON
 #if CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     NEON, PartialFdctTest,
-    ::testing::Values(make_tuple(&vpx_fdct32x32_1_neon, 32, VPX_BITS_8),
-                      make_tuple(&vpx_fdct16x16_1_neon, 16, VPX_BITS_8),
+    ::testing::Values(make_tuple(&vpx_highbd_fdct32x32_1_neon, 32, VPX_BITS_12),
+                      make_tuple(&vpx_highbd_fdct32x32_1_neon, 32, VPX_BITS_10),
+                      make_tuple(&vpx_highbd_fdct32x32_1_neon, 32, VPX_BITS_8),
+                      make_tuple(&vpx_highbd_fdct16x16_1_neon, 16, VPX_BITS_12),
+                      make_tuple(&vpx_highbd_fdct16x16_1_neon, 16, VPX_BITS_10),
+                      make_tuple(&vpx_highbd_fdct16x16_1_neon, 16, VPX_BITS_8),
                       make_tuple(&vpx_fdct8x8_1_neon, 8, VPX_BITS_12),
                       make_tuple(&vpx_fdct8x8_1_neon, 8, VPX_BITS_10),
                       make_tuple(&vpx_fdct8x8_1_neon, 8, VPX_BITS_8),
+                      make_tuple(&vpx_fdct4x4_1_neon, 4, VPX_BITS_12),
+                      make_tuple(&vpx_fdct4x4_1_neon, 4, VPX_BITS_10),
                       make_tuple(&vpx_fdct4x4_1_neon, 4, VPX_BITS_8)));
 #else
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     NEON, PartialFdctTest,
     ::testing::Values(make_tuple(&vpx_fdct32x32_1_neon, 32, VPX_BITS_8),
                       make_tuple(&vpx_fdct16x16_1_neon, 16, VPX_BITS_8),
@@ -155,11 +170,11 @@ INSTANTIATE_TEST_CASE_P(
 
 #if HAVE_MSA
 #if CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(MSA, PartialFdctTest,
-                        ::testing::Values(make_tuple(&vpx_fdct8x8_1_msa, 8,
-                                                     VPX_BITS_8)));
+INSTANTIATE_TEST_SUITE_P(MSA, PartialFdctTest,
+                         ::testing::Values(make_tuple(&vpx_fdct8x8_1_msa, 8,
+                                                      VPX_BITS_8)));
 #else   // !CONFIG_VP9_HIGHBITDEPTH
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     MSA, PartialFdctTest,
     ::testing::Values(make_tuple(&vpx_fdct32x32_1_msa, 32, VPX_BITS_8),
                       make_tuple(&vpx_fdct16x16_1_msa, 16, VPX_BITS_8),

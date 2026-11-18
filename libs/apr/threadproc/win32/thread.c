@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-#include "apr_private.h"
-#include "win32/apr_arch_threadproc.h"
-#include "apr_thread_proc.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_portable.h"
+#include "fspr_private.h"
+#include "win32/fspr_arch_threadproc.h"
+#include "fspr_thread_proc.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_portable.h"
 #if APR_HAVE_PROCESS_H
 #include <process.h>
 #endif
-#include "apr_arch_misc.h"   
+#include "fspr_arch_misc.h"   
 
-/* Chosen for us by apr_initialize */
-DWORD tls_apr_thread = 0;
+/* Chosen for us by fspr_initialize */
+DWORD tls_fspr_thread = 0;
 
-APR_DECLARE(apr_status_t) apr_threadattr_create(apr_threadattr_t **new,
-                                                apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_threadattr_create(fspr_threadattr_t **new,
+                                                fspr_pool_t *pool)
 {
-    (*new) = (apr_threadattr_t *)apr_palloc(pool, 
-              sizeof(apr_threadattr_t));
+    (*new) = (fspr_threadattr_t *)fspr_palloc(pool, 
+              sizeof(fspr_threadattr_t));
 
     if ((*new) == NULL) {
         return APR_ENOMEM;
@@ -45,51 +45,51 @@ APR_DECLARE(apr_status_t) apr_threadattr_create(apr_threadattr_t **new,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_detach_set(apr_threadattr_t *attr,
-                                                   apr_int32_t on)
+APR_DECLARE(fspr_status_t) fspr_threadattr_detach_set(fspr_threadattr_t *attr,
+                                                   fspr_int32_t on)
 {
     attr->detach = on;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_detach_get(apr_threadattr_t *attr)
+APR_DECLARE(fspr_status_t) fspr_threadattr_detach_get(fspr_threadattr_t *attr)
 {
     if (attr->detach == 1)
         return APR_DETACH;
     return APR_NOTDETACH;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_stacksize_set(apr_threadattr_t *attr,
-                                                       apr_size_t stacksize)
+APR_DECLARE(fspr_status_t) fspr_threadattr_stacksize_set(fspr_threadattr_t *attr,
+                                                       fspr_size_t stacksize)
 {
     attr->stacksize = stacksize;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_threadattr_guardsize_set(apr_threadattr_t *attr,
-                                                       apr_size_t size)
+APR_DECLARE(fspr_status_t) fspr_threadattr_guardsize_set(fspr_threadattr_t *attr,
+                                                       fspr_size_t size)
 {
     return APR_ENOTIMPL;
 }
 
 static void *dummy_worker(void *opaque)
 {
-    apr_thread_t *thd = (apr_thread_t *)opaque;
-    TlsSetValue(tls_apr_thread, thd->td);
+    fspr_thread_t *thd = (fspr_thread_t *)opaque;
+    TlsSetValue(tls_fspr_thread, thd->td);
     return thd->func(thd, thd->data);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
-                                            apr_threadattr_t *attr,
-                                            apr_thread_start_t func,
-                                            void *data, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_create(fspr_thread_t **new,
+                                            fspr_threadattr_t *attr,
+                                            fspr_thread_start_t func,
+                                            void *data, fspr_pool_t *pool)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
 	unsigned temp;
     HANDLE handle;
     int priority = THREAD_PRIORITY_NORMAL;
 
-    (*new) = (apr_thread_t *)apr_palloc(pool, sizeof(apr_thread_t));
+    (*new) = (fspr_thread_t *)fspr_palloc(pool, sizeof(fspr_thread_t));
 
     if ((*new) == NULL) {
         return APR_ENOMEM;
@@ -99,7 +99,7 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
     (*new)->data = data;
     (*new)->func = func;
     (*new)->td   = NULL;
-    stat = apr_pool_create(&(*new)->pool, pool);
+    stat = fspr_pool_create(&(*new)->pool, pool);
     if (stat != APR_SUCCESS) {
         return stat;
     }
@@ -131,7 +131,7 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
                         attr && attr->stacksize > 0 ? attr->stacksize : 0,
                         (unsigned int (APR_THREAD_FUNC *)(void *))dummy_worker,
                         (*new), 0, &temp)) == 0) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 #endif
 
@@ -148,11 +148,11 @@ APR_DECLARE(apr_status_t) apr_thread_create(apr_thread_t **new,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_exit(apr_thread_t *thd,
-                                          apr_status_t retval)
+APR_DECLARE(fspr_status_t) fspr_thread_exit(fspr_thread_t *thd,
+                                          fspr_status_t retval)
 {
     thd->exitval = retval;
-    apr_pool_destroy(thd->pool);
+    fspr_pool_destroy(thd->pool);
     thd->pool = NULL;
 #ifndef _WIN32_WCE
     _endthreadex(0);
@@ -162,10 +162,10 @@ APR_DECLARE(apr_status_t) apr_thread_exit(apr_thread_t *thd,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_join(apr_status_t *retval,
-                                          apr_thread_t *thd)
+APR_DECLARE(fspr_status_t) fspr_thread_join(fspr_status_t *retval,
+                                          fspr_thread_t *thd)
 {
-    apr_status_t rv = APR_SUCCESS;
+    fspr_status_t rv = APR_SUCCESS;
     
     if (!thd->td) {
         /* Can not join on detached threads */
@@ -180,25 +180,25 @@ APR_DECLARE(apr_status_t) apr_thread_join(apr_status_t *retval,
             rv = APR_INCOMPLETE;
     }
     else
-        rv = apr_get_os_error();
+        rv = fspr_get_os_error();
     CloseHandle(thd->td);
     thd->td = NULL;
 
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_detach(apr_thread_t *thd)
+APR_DECLARE(fspr_status_t) fspr_thread_detach(fspr_thread_t *thd)
 {
     if (thd->td && CloseHandle(thd->td)) {
         thd->td = NULL;
         return APR_SUCCESS;
     }
     else {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 }
 
-APR_DECLARE(void) apr_thread_yield()
+APR_DECLARE(void) fspr_thread_yield()
 {
     /* SwitchToThread is not supported on Win9x, but since it's
      * primarily a noop (entering time consuming code, therefore
@@ -206,29 +206,29 @@ APR_DECLARE(void) apr_thread_yield()
      * we won't worry too much if it's not available.
      */
 #ifndef _WIN32_WCE
-    if (apr_os_level >= APR_WIN_NT) {
+    if (fspr_os_level >= APR_WIN_NT) {
         SwitchToThread();
     }
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_thread_data_get(void **data, const char *key,
-                                             apr_thread_t *thread)
+APR_DECLARE(fspr_status_t) fspr_thread_data_get(void **data, const char *key,
+                                             fspr_thread_t *thread)
 {
-    return apr_pool_userdata_get(data, key, thread->pool);
+    return fspr_pool_userdata_get(data, key, thread->pool);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_data_set(void *data, const char *key,
-                                             apr_status_t (*cleanup) (void *),
-                                             apr_thread_t *thread)
+APR_DECLARE(fspr_status_t) fspr_thread_data_set(void *data, const char *key,
+                                             fspr_status_t (*cleanup) (void *),
+                                             fspr_thread_t *thread)
 {
-    return apr_pool_userdata_set(data, key, cleanup, thread->pool);
+    return fspr_pool_userdata_set(data, key, cleanup, thread->pool);
 }
 
 
-APR_DECLARE(apr_os_thread_t) apr_os_thread_current(void)
+APR_DECLARE(fspr_os_thread_t) fspr_os_thread_current(void)
 {
-    HANDLE hthread = (HANDLE)TlsGetValue(tls_apr_thread);
+    HANDLE hthread = (HANDLE)TlsGetValue(tls_fspr_thread);
     HANDLE hproc;
 
     if (hthread) {
@@ -242,12 +242,12 @@ APR_DECLARE(apr_os_thread_t) apr_os_thread_current(void)
                          DUPLICATE_SAME_ACCESS)) {
         return NULL;
     }
-    TlsSetValue(tls_apr_thread, hthread);
+    TlsSetValue(tls_fspr_thread, hthread);
     return hthread;
 }
 
-APR_DECLARE(apr_status_t) apr_os_thread_get(apr_os_thread_t **thethd,
-                                            apr_thread_t *thd)
+APR_DECLARE(fspr_status_t) fspr_os_thread_get(fspr_os_thread_t **thethd,
+                                            fspr_thread_t *thd)
 {
     if (thd == NULL) {
         return APR_ENOTHREAD;
@@ -256,29 +256,29 @@ APR_DECLARE(apr_status_t) apr_os_thread_get(apr_os_thread_t **thethd,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_thread_put(apr_thread_t **thd,
-                                            apr_os_thread_t *thethd,
-                                            apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_thread_put(fspr_thread_t **thd,
+                                            fspr_os_thread_t *thethd,
+                                            fspr_pool_t *pool)
 {
     if (pool == NULL) {
         return APR_ENOPOOL;
     }
     if ((*thd) == NULL) {
-        (*thd) = (apr_thread_t *)apr_palloc(pool, sizeof(apr_thread_t));
+        (*thd) = (fspr_thread_t *)fspr_palloc(pool, sizeof(fspr_thread_t));
         (*thd)->pool = pool;
     }
     (*thd)->td = thethd;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_once_init(apr_thread_once_t **control,
-                                               apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_thread_once_init(fspr_thread_once_t **control,
+                                               fspr_pool_t *p)
 {
-    (*control) = apr_pcalloc(p, sizeof(**control));
+    (*control) = fspr_pcalloc(p, sizeof(**control));
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_once(apr_thread_once_t *control,
+APR_DECLARE(fspr_status_t) fspr_thread_once(fspr_thread_once_t *control,
                                           void (*func)(void))
 {
     if (!InterlockedExchange(&control->value, 1)) {
@@ -287,11 +287,11 @@ APR_DECLARE(apr_status_t) apr_thread_once(apr_thread_once_t *control,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(int) apr_os_thread_equal(apr_os_thread_t tid1,
-                                     apr_os_thread_t tid2)
+APR_DECLARE(int) fspr_os_thread_equal(fspr_os_thread_t tid1,
+                                     fspr_os_thread_t tid2)
 {
     /* Since the only tid's we support our are own, and
-     * apr_os_thread_current returns the identical handle
+     * fspr_os_thread_current returns the identical handle
      * to the one we created initially, the test is simple.
      */
     return (tid1 == tid2);

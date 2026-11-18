@@ -16,31 +16,31 @@
 
 #include <stdlib.h>
 
-#include "apr_file_io.h"
+#include "fspr_file_io.h"
 
 int main(int argc, char *argv[])
 {
-    apr_file_t *in, *out;
-    apr_size_t nbytes, total_bytes;
-    apr_pool_t *p;
+    fspr_file_t *in, *out;
+    fspr_size_t nbytes, total_bytes;
+    fspr_pool_t *p;
     char buf[128];
-    apr_status_t rv;
+    fspr_status_t rv;
     
-    apr_initialize();
-    atexit(apr_terminate);
-    apr_pool_create(&p, NULL);
+    fspr_initialize();
+    atexit(fspr_terminate);
+    fspr_pool_create(&p, NULL);
 
-    apr_file_open_stdin(&in, p);
-    apr_file_open_stdout(&out, p);
+    fspr_file_open_stdin(&in, p);
+    fspr_file_open_stdout(&out, p);
 
     total_bytes = 0;
     nbytes = sizeof(buf);
-    while ((rv = apr_file_read(in, buf, &nbytes)) == APR_SUCCESS) {
+    while ((rv = fspr_file_read(in, buf, &nbytes)) == APR_SUCCESS) {
         total_bytes += nbytes;
         nbytes = sizeof(buf);
     }
 
-    apr_file_printf(out, "%" APR_SIZE_T_FMT " bytes were read\n",
+    fspr_file_printf(out, "%" APR_SIZE_T_FMT " bytes were read\n",
                     total_bytes);
     return 0;
 }

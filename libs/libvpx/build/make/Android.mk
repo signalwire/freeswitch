@@ -8,17 +8,15 @@
 ##  be found in the AUTHORS file in the root of the source tree.
 ##
 
+# Ignore this file during non-NDK builds.
+ifdef NDK_ROOT
 #
 # This file is to be used for compiling libvpx for Android using the NDK.
 # In an Android project place a libvpx checkout in the jni directory.
 # Run the configure script from the jni directory.  Base libvpx
 # encoder/decoder configuration will look similar to:
-# ./libvpx/configure --target=armv7-android-gcc --disable-examples \
-#                    --sdk-path=/opt/android-ndk-r6b/
-#
-# When targeting Android, realtime-only is enabled by default.  This can
-# be overridden by adding the command line flag:
-#  --disable-realtime-only
+# ./libvpx/configure --target=arm64-android-gcc --disable-examples \
+#                    --enable-external-build
 #
 # This will create .mk files that contain variables that contain the
 # source files to compile.
@@ -27,38 +25,24 @@
 # Android.mk file in the libvpx directory:
 # LOCAL_PATH := $(call my-dir)
 # include $(CLEAR_VARS)
-# include jni/libvpx/build/make/Android.mk
+# include libvpx/build/make/Android.mk
 #
-# By default libvpx will detect at runtime the existance of NEON extension.
-# For this we import the 'cpufeatures' module from the NDK sources.
-# libvpx can also be configured without this runtime detection method.
-# Configuring with --disable-runtime-cpu-detect will assume presence of NEON.
-# Configuring with --disable-runtime-cpu-detect --disable-neon \
-#     --disable-neon-asm
-# will remove any NEON dependency.
+# By default libvpx will use the 'cpufeatures' module from the NDK. This allows
+# the library to be built with all available optimizations (SSE2->AVX512 for
+# x86, NEON for arm, DSPr2 for mips). This can be disabled with
+#   --disable-runtime-cpu-detect
+# but the resulting library *must* be run on devices supporting all of the
+# enabled extensions. They can be disabled individually with
+#   --disable-{sse2, sse3, ssse3, sse4_1, avx, avx2, avx512}
+#   --disable-neon{, -asm, -neon-dotprod, -neon-i8mm}
+#   --disable-sve
+#   --disable-{dspr2, msa}
 
 #
-# Running ndk-build will build libvpx and include it in your project.
+# Running ndk-build will build libvpx and include it in your project. Set
+# APP_ABI to match the --target passed to configure:
+# https://developer.android.com/ndk/guides/application_mk#app_abi.
 #
-
-# Alternatively, building the examples and unit tests can be accomplished in the
-# following way:
-#
-# Create a standalone toolchain from the NDK:
-# https://developer.android.com/ndk/guides/standalone_toolchain.html
-#
-# For example - to test on arm64 devices with clang:
-# $NDK/build/tools/make_standalone_toolchain.py \
-#   --arch arm64 --install-dir=/tmp/my-android-toolchain
-# export PATH=/tmp/my-android-toolchain/bin:$PATH
-# CROSS=aarch64-linux-android- CC=clang CXX=clang++ /path/to/libvpx/configure \
-#   --target=arm64-android-gcc
-#
-# Push the resulting binaries to a device and run them:
-# adb push test_libvpx /data/tmp/test_libvpx
-# adb shell /data/tmp/test_libvpx --gtest_filter=\*Sixtap\*
-#
-# Make sure to push the test data as well and set LIBVPX_TEST_DATA
 
 CONFIG_DIR := $(LOCAL_PATH)/
 LIBVPX_PATH := $(LOCAL_PATH)/libvpx
@@ -99,6 +83,8 @@ include $(LIBVPX_PATH)/libs.mk
 
 # Optimise the code. May want to revisit this setting in the future.
 LOCAL_CFLAGS := -O3
+
+LOCAL_CONLYFLAGS := -std=c11
 
 # For x86, include the source code in the search path so it will find files
 # like x86inc.asm and x86_abi_support.asm
@@ -183,6 +169,9 @@ LOCAL_CFLAGS += \
     -I$(ASM_CNV_PATH)/libvpx
 
 LOCAL_MODULE := libvpx
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-BSD
+LOCAL_LICENSE_CONDITIONS := notice
+LOCAL_NOTICE_FILE := $(LOCAL_PATH)/../../LICENSE $(LOCAL_PATH)/../../PATENTS
 
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
   LOCAL_STATIC_LIBRARIES := cpufeatures
@@ -226,3 +215,4 @@ endif
 ifeq ($(CONFIG_RUNTIME_CPU_DETECT),yes)
 $(call import-module,android/cpufeatures)
 endif
+endif  # NDK_ROOT

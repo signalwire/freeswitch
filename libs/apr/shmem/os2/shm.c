@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-#include "apr_general.h"
-#include "apr_shm.h"
-#include "apr_errno.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_general.h"
+#include "fspr_shm.h"
+#include "fspr_errno.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
-struct apr_shm_t {
-    apr_pool_t *pool;
+struct fspr_shm_t {
+    fspr_pool_t *pool;
     void *memblock;
 };
 
-APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
-                                         apr_size_t reqsize,
+APR_DECLARE(fspr_status_t) fspr_shm_create(fspr_shm_t **m,
+                                         fspr_size_t reqsize,
                                          const char *filename,
-                                         apr_pool_t *pool)
+                                         fspr_pool_t *pool)
 {
     int rc;
-    apr_shm_t *newm = (apr_shm_t *)apr_palloc(pool, sizeof(apr_shm_t));
+    fspr_shm_t *newm = (fspr_shm_t *)fspr_palloc(pool, sizeof(fspr_shm_t));
     char *name = NULL;
     ULONG flags = PAG_COMMIT|PAG_READ|PAG_WRITE;
 
     newm->pool = pool;
 
     if (filename) {
-        name = apr_pstrcat(pool, "\\SHAREMEM\\", filename, NULL);
+        name = fspr_pstrcat(pool, "\\SHAREMEM\\", filename, NULL);
     }
 
     if (name == NULL) {
@@ -56,29 +56,29 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_destroy(apr_shm_t *m)
+APR_DECLARE(fspr_status_t) fspr_shm_destroy(fspr_shm_t *m)
 {
     DosFreeMem(m->memblock);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_shm_remove(const char *filename,
+                                         fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
+APR_DECLARE(fspr_status_t) fspr_shm_attach(fspr_shm_t **m,
                                          const char *filename,
-                                         apr_pool_t *pool)
+                                         fspr_pool_t *pool)
 {
     int rc;
-    apr_shm_t *newm = (apr_shm_t *)apr_palloc(pool, sizeof(apr_shm_t));
+    fspr_shm_t *newm = (fspr_shm_t *)fspr_palloc(pool, sizeof(fspr_shm_t));
     char *name = NULL;
     ULONG flags = PAG_READ|PAG_WRITE;
 
     newm->pool = pool;
-    name = apr_pstrcat(pool, "\\SHAREMEM\\", filename, NULL);
+    name = fspr_pstrcat(pool, "\\SHAREMEM\\", filename, NULL);
 
     rc = DosGetNamedSharedMem(&(newm->memblock), name, flags);
 
@@ -90,7 +90,7 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_detach(apr_shm_t *m)
+APR_DECLARE(fspr_status_t) fspr_shm_detach(fspr_shm_t *m)
 {
     int rc = 0;
 
@@ -101,12 +101,12 @@ APR_DECLARE(apr_status_t) apr_shm_detach(apr_shm_t *m)
     return APR_FROM_OS_ERROR(rc);
 }
 
-APR_DECLARE(void *) apr_shm_baseaddr_get(const apr_shm_t *m)
+APR_DECLARE(void *) fspr_shm_baseaddr_get(const fspr_shm_t *m)
 {
     return m->memblock;
 }
 
-APR_DECLARE(apr_size_t) apr_shm_size_get(const apr_shm_t *m)
+APR_DECLARE(fspr_size_t) fspr_shm_size_get(const fspr_shm_t *m)
 {
     ULONG flags, size = 0x1000000;
     DosQueryMem(m->memblock, &size, &flags);
@@ -115,19 +115,19 @@ APR_DECLARE(apr_size_t) apr_shm_size_get(const apr_shm_t *m)
 
 APR_POOL_IMPLEMENT_ACCESSOR(shm)
 
-APR_DECLARE(apr_status_t) apr_os_shm_get(apr_os_shm_t *osshm,
-                                         apr_shm_t *shm)
+APR_DECLARE(fspr_status_t) fspr_os_shm_get(fspr_os_shm_t *osshm,
+                                         fspr_shm_t *shm)
 {
     *osshm = shm->memblock;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_shm_put(apr_shm_t **m,
-                                         apr_os_shm_t *osshm,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_shm_put(fspr_shm_t **m,
+                                         fspr_os_shm_t *osshm,
+                                         fspr_pool_t *pool)
 {
     int rc;
-    apr_shm_t *newm = (apr_shm_t *)apr_palloc(pool, sizeof(apr_shm_t));
+    fspr_shm_t *newm = (fspr_shm_t *)fspr_palloc(pool, sizeof(fspr_shm_t));
     ULONG flags = PAG_COMMIT|PAG_READ|PAG_WRITE;
 
     newm->pool = pool;

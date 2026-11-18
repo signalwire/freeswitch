@@ -1,6 +1,6 @@
 /*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005-2018, Anthony Minessale II <anthm@freeswitch.org>
+ * Copyright (C) 2005-2021, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -23,6 +23,7 @@
  *
  * Contributor(s):
  * Chris Rienzo <chris@signalwire.com>
+ * Seven Du <dujinfang@gmail.com>
  *
  *
  * mod_test.c -- mock module interfaces for testing
@@ -37,6 +38,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_test_shutdown);
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_test_runtime);
 SWITCH_MODULE_DEFINITION(mod_test, mod_test_load, mod_test_shutdown, mod_test_runtime);
 
+typedef struct {
+	char *text;
+	int samples;
+	const char *channel_uuid;
+} test_tts_t;
 
 typedef enum {
 	ASRFLAG_READY = (1 << 0),
@@ -63,6 +69,7 @@ typedef struct {
 	char *grammar;
 	char *channel_uuid;
 	switch_vad_t *vad;
+	int partial;
 } test_asr_t;
 
 
@@ -263,12 +270,17 @@ static switch_status_t test_asr_get_results(switch_asr_handle_t *ah, char **resu
 	}
 
 	if (switch_test_flag(context, ASRFLAG_RESULT)) {
+		int is_partial = context->partial-- > 0 ? 1 : 0;
 
 		*resultstr = switch_mprintf("{\"grammar\": \"%s\", \"text\": \"%s\", \"confidence\": %f}", context->grammar, context->result_text, context->result_confidence);
 
-		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_ERROR, "Result: %s\n", *resultstr);
+		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_NOTICE, "%sResult: %s\n", is_partial ? "Partial " : "Final ", *resultstr);
 
-		status = SWITCH_STATUS_SUCCESS;
+		if (is_partial) {
+			status = SWITCH_STATUS_MORE_DATA;
+		} else {
+			status = SWITCH_STATUS_SUCCESS;
+		}
 	} else if (switch_test_flag(context, ASRFLAG_NOINPUT_TIMEOUT)) {
 		switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "Result: NO INPUT\n");
 
@@ -356,13 +368,95 @@ static void test_asr_text_param(switch_asr_handle_t *ah, char *param, const char
 		} else if (!strcasecmp("confidence", param) && fval >= 0.0) {
 			context->result_confidence = fval;
 			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "confidence = %f\n", fval);
+		} else if (!strcasecmp("partial", param) && switch_true(val)) {
+			context->partial = 3;
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "partial = %d\n", context->partial);
 		}
 	}
+}
+
+static switch_status_t test_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, int channels, switch_speech_flag_t *flags)
+{
+	test_tts_t *context = switch_core_alloc(sh->memory_pool, sizeof(test_tts_t));
+	switch_assert(context);
+	context->samples = sh->samplerate;
+	sh->private_info = context;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t test_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
+{
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t test_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
+{
+	test_tts_t *context = (test_tts_t *)sh->private_info;
+
+	if (switch_true(switch_core_get_variable("mod_test_tts_must_have_channel_uuid")) && zstr(context->channel_uuid)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!zstr(text)) {
+		char *p = strstr(text, "silence://");
+
+		if (p) {
+			p += strlen("silence://");
+			context->samples = atoi(p) * sh->samplerate / 1000;
+		}
+
+		context->text = switch_core_strdup(sh->memory_pool, text);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t test_speech_read_tts(switch_speech_handle_t *sh, void *data, switch_size_t *datalen, switch_speech_flag_t *flags)
+{
+	test_tts_t *context = (test_tts_t *)sh->private_info;
+
+	if (context->samples <= 0) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (context->samples < *datalen / 2 / sh->channels) {
+		*datalen = context->samples * 2 * sh->channels;
+	}
+
+	context->samples -= *datalen / 2 / sh->channels;
+	memset(data, 0, *datalen);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static void test_speech_flush_tts(switch_speech_handle_t *sh)
+{
+}
+
+static void test_speech_text_param_tts(switch_speech_handle_t *sh, char *param, const char *val)
+{
+	test_tts_t *context = (test_tts_t *)sh->private_info;
+	if (!zstr(param) && !zstr(val)) {
+		if (!strcasecmp("channel-uuid", param)) {
+			context->channel_uuid = switch_core_strdup(sh->memory_pool, val);
+			switch_log_printf(SWITCH_CHANNEL_UUID_LOG(context->channel_uuid), SWITCH_LOG_DEBUG, "channel-uuid = %s\n", val);
+		}
+	}
+}
+
+static void test_speech_numeric_param_tts(switch_speech_handle_t *sh, char *param, int val)
+{
+}
+
+static void test_speech_float_param_tts(switch_speech_handle_t *sh, char *param, double val)
+{
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_test_load)
 {
 	switch_asr_interface_t *asr_interface;
+	switch_speech_interface_t *speech_interface = NULL;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -379,6 +473,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_test_load)
 	asr_interface->asr_get_results = test_asr_get_results;
 	asr_interface->asr_start_input_timers = test_asr_start_input_timers;
 	asr_interface->asr_text_param = test_asr_text_param;
+
+	speech_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SPEECH_INTERFACE);
+	speech_interface->interface_name = "test";
+	speech_interface->speech_open = test_speech_open;
+	speech_interface->speech_close = test_speech_close;
+	speech_interface->speech_feed_tts = test_speech_feed_tts;
+	speech_interface->speech_read_tts = test_speech_read_tts;
+	speech_interface->speech_flush_tts = test_speech_flush_tts;
+	speech_interface->speech_text_param_tts = test_speech_text_param_tts;
+	speech_interface->speech_numeric_param_tts = test_speech_numeric_param_tts;
+	speech_interface->speech_float_param_tts = test_speech_float_param_tts;
 
 	return SWITCH_STATUS_SUCCESS;
 }

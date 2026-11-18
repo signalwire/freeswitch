@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TOOLS_COMMON_H_
-#define TOOLS_COMMON_H_
+#ifndef VPX_TOOLS_COMMON_H_
+#define VPX_TOOLS_COMMON_H_
 
 #include <stdio.h>
 
@@ -16,7 +16,6 @@
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_image.h"
 #include "vpx/vpx_integer.h"
-#include "vpx_ports/msvc.h"
 
 #if CONFIG_ENCODERS
 #include "./y4minput.h"
@@ -32,7 +31,13 @@ typedef int64_t FileOffset;
 #define fseeko fseeko64
 #define ftello ftello64
 typedef off64_t FileOffset;
-#elif CONFIG_OS_SUPPORT
+#elif CONFIG_OS_SUPPORT &&                                                  \
+    !(defined(__ANDROID__) && __ANDROID_API__ < 24 && !defined(__LP64__) && \
+      defined(_FILE_OFFSET_BITS) && _FILE_OFFSET_BITS == 64)
+/* POSIX.1 has fseeko and ftello. fseeko and ftello are not available before
+ * Android API level 24. See
+ * https://android.googlesource.com/platform/bionic/+/main/docs/32-bit-abi.md */
+#include <sys/types.h> /* NOLINT */
 typedef off_t FileOffset;
 /* Use 32-bit file operations in WebM file format when building ARM
  * executables (.axf) with RVCT. */
@@ -109,30 +114,44 @@ extern "C" {
 
 #if defined(__GNUC__)
 #define VPX_NO_RETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+#define VPX_NO_RETURN __declspec(noreturn)
 #else
 #define VPX_NO_RETURN
+#endif
+
+// Tells the compiler to perform `printf` format string checking if the
+// compiler supports it; see the 'format' attribute in
+// <https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html>.
+#define VPX_TOOLS_FORMAT_PRINTF(string_index, first_to_check)
+#if defined(__has_attribute)
+#if __has_attribute(format)
+#undef VPX_TOOLS_FORMAT_PRINTF
+#define VPX_TOOLS_FORMAT_PRINTF(string_index, first_to_check) \
+  __attribute__((__format__(__printf__, string_index, first_to_check)))
+#endif
 #endif
 
 /* Sets a stdio stream into binary mode */
 FILE *set_binary_mode(FILE *stream);
 
-void die(const char *fmt, ...) VPX_NO_RETURN;
-void fatal(const char *fmt, ...) VPX_NO_RETURN;
-void warn(const char *fmt, ...);
+VPX_NO_RETURN void die(const char *fmt, ...) VPX_TOOLS_FORMAT_PRINTF(1, 2);
+VPX_NO_RETURN void fatal(const char *fmt, ...) VPX_TOOLS_FORMAT_PRINTF(1, 2);
+void warn(const char *fmt, ...) VPX_TOOLS_FORMAT_PRINTF(1, 2);
 
-void die_codec(vpx_codec_ctx_t *ctx, const char *s) VPX_NO_RETURN;
+VPX_NO_RETURN void die_codec(vpx_codec_ctx_t *ctx, const char *s);
 
 /* The tool including this file must define usage_exit() */
-void usage_exit(void) VPX_NO_RETURN;
+VPX_NO_RETURN void usage_exit(void);
 
 #undef VPX_NO_RETURN
 
 int read_yuv_frame(struct VpxInputContext *input_ctx, vpx_image_t *yuv_frame);
 
 typedef struct VpxInterface {
-  const char *const name;
-  const uint32_t fourcc;
-  vpx_codec_iface_t *(*const codec_interface)();
+  const char *name;
+  uint32_t fourcc;
+  vpx_codec_iface_t *(*codec_interface)(void);
 } VpxInterface;
 
 int get_vpx_encoder_count(void);
@@ -144,8 +163,6 @@ const VpxInterface *get_vpx_decoder_by_index(int i);
 const VpxInterface *get_vpx_decoder_by_name(const char *name);
 const VpxInterface *get_vpx_decoder_by_fourcc(uint32_t fourcc);
 
-// TODO(dkovalev): move this function to vpx_image.{c, h}, so it will be part
-// of vpx_image_t support
 int vpx_img_plane_width(const vpx_image_t *img, int plane);
 int vpx_img_plane_height(const vpx_image_t *img, int plane);
 void vpx_img_write(const vpx_image_t *img, FILE *file);
@@ -153,14 +170,31 @@ int vpx_img_read(vpx_image_t *img, FILE *file);
 
 double sse_to_psnr(double samples, double peak, double mse);
 
+#if CONFIG_ENCODERS
+int read_frame(struct VpxInputContext *input_ctx, vpx_image_t *img);
+int file_is_y4m(const char detect[4]);
+int fourcc_is_ivf(const char detect[4]);
+void open_input_file(struct VpxInputContext *input);
+void close_input_file(struct VpxInputContext *input);
+#endif
+
 #if CONFIG_VP9_HIGHBITDEPTH
 void vpx_img_upshift(vpx_image_t *dst, vpx_image_t *src, int input_shift);
 void vpx_img_downshift(vpx_image_t *dst, vpx_image_t *src, int down_shift);
 void vpx_img_truncate_16_to_8(vpx_image_t *dst, vpx_image_t *src);
 #endif
 
+int compare_img(const vpx_image_t *const img1, const vpx_image_t *const img2);
+#if CONFIG_VP9_HIGHBITDEPTH
+void find_mismatch_high(const vpx_image_t *const img1,
+                        const vpx_image_t *const img2, int yloc[4], int uloc[4],
+                        int vloc[4]);
+#endif
+void find_mismatch(const vpx_image_t *const img1, const vpx_image_t *const img2,
+                   int yloc[4], int uloc[4], int vloc[4]);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
 
-#endif  // TOOLS_COMMON_H_
+#endif  // VPX_TOOLS_COMMON_H_

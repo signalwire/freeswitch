@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_lib.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_lib.h"
 #include <string.h>
 #include <io.h>
 
 
-static apr_status_t setptr(apr_file_t *thefile, unsigned long pos )
+static fspr_status_t setptr(fspr_file_t *thefile, unsigned long pos )
 {
     long newbufpos;
     ULONG rc;
 
     if (thefile->direction == 1) {
-        apr_status_t rv = apr_file_flush(thefile);
+        fspr_status_t rv = fspr_file_flush(thefile);
 
         if (rv != APR_SUCCESS) {
             return rv;
@@ -52,7 +52,7 @@ static apr_status_t setptr(apr_file_t *thefile, unsigned long pos )
 
 
 
-APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t where, apr_off_t *offset)
+APR_DECLARE(fspr_status_t) fspr_file_seek(fspr_file_t *thefile, fspr_seek_where_t where, fspr_off_t *offset)
 {
     if (!thefile->isopen) {
         return APR_EBADF;
@@ -62,7 +62,7 @@ APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t wh
 
     if (thefile->buffered) {
         int rc = EINVAL;
-        apr_finfo_t finfo;
+        fspr_finfo_t finfo;
 
         switch (where) {
         case APR_SET:
@@ -74,7 +74,7 @@ APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t wh
             break;
 
         case APR_END:
-            rc = apr_file_info_get(&finfo, APR_FINFO_NORM, thefile);
+            rc = fspr_file_info_get(&finfo, APR_FINFO_NORM, thefile);
             if (rc == APR_SUCCESS)
                 rc = setptr(thefile, finfo.size + *offset);
             break;
@@ -103,7 +103,7 @@ APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t wh
 
 
 
-APR_DECLARE(apr_status_t) apr_file_trunc(apr_file_t *fp, apr_off_t offset)
+APR_DECLARE(fspr_status_t) fspr_file_trunc(fspr_file_t *fp, fspr_off_t offset)
 {
     int rc = DosSetFileSize(fp->filedes, offset);
 

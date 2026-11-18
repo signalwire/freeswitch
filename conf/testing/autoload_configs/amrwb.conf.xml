@@ -1,0 +1,24 @@
+<configuration name="amrwb.conf">
+	<settings>
+	<!--  AMRWB modes (supported bitrates):
+		mode 8 AMR-WB_23.85 23.85 Kbit/s
+		mode 7 AMR-WB_23.05 23.05 Kbit/s
+		mode 7 AMR-WB_19.85 19.85 Kbit/s
+		mode 6 AMR-WB_18.25 18.25 Kbit/s
+		mode 5 AMR-WB_15.85 15.85 Kbit/s
+		mode 4 AMR-WB_14.25 14.25 Kbit/s
+		mode 3 AMR-WB_12.65 12.65 Kbit/s
+		mode 2 AMR-WB_8.85 8.85 Kbit/s
+		mode 1 AMR-WB_6.60 6.60 Kbit/s
+	-->
+	<param name="default-bitrate" value="8"/>
+	 <!-- Enable VoLTE specific FMTP -->
+	<param name="volte" value="1"/>
+	<!-- Enable automatic bitrate variation during the call based on RTCP feedback -->
+	<param name="adjust-bitrate" value="0"/>
+	<!-- force OA when originating -->
+	<param name="force-oa" value="0"/>
+	<!-- don't mirror mode-set in SDP answer, but use our own (default-bitrate). -->
+	<param name="mode-set-overwrite" value="0"/>
+  </settings>
+</configuration>

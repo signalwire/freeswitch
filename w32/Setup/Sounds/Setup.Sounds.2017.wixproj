@@ -108,7 +108,7 @@
 
        extractto: Folder to extract an archive to
    -->
-    <DownloadPackageTask package="http://files.freeswitch.org/releases/sounds/$(SoundFileName)" expectfileordirectory="$(BaseDir)libs\download-always" outputfolder="" outputfilename="" extractto="$(BaseDir)libs\sounds\$(SoundSuffix)\" />
+    <DownloadPackageTask package="https://github.com/freeswitch/freeswitch-sounds/releases/download/$(SoundPrimaryName)-$(SoundVersion)/$(SoundFileName)" expectfileordirectory="$(BaseDir)libs\download-always" outputfolder="" outputfilename="" extractto="$(BaseDir)libs\sounds\$(SoundSuffix)\" />
   </Target>
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(OutputPath)$(OutputName).msi" DestinationFiles="$(DestinationFileName)" />

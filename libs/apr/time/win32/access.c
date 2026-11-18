@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "win32/apr_arch_atime.h"
-#include "apr_time.h"
-#include "apr_general.h"
-#include "apr_lib.h"
+#include "win32/fspr_arch_atime.h"
+#include "fspr_time.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
 
-apr_status_t apr_get_curtime(struct atime_t *time, apr_time_t *rv)
+fspr_status_t fspr_get_curtime(struct atime_t *time, fspr_time_t *rv)
 {
     if (time) {
         (*rv) = time->currtime;
@@ -28,7 +28,7 @@ apr_status_t apr_get_curtime(struct atime_t *time, apr_time_t *rv)
     return APR_ENOTIME;    
 }
 
-apr_status_t apr_get_sec(struct atime_t *time, apr_int32_t *rv)
+fspr_status_t fspr_get_sec(struct atime_t *time, fspr_int32_t *rv)
 {
     if (time) {
         (*rv) = time->explodedtime->wSecond;
@@ -37,7 +37,7 @@ apr_status_t apr_get_sec(struct atime_t *time, apr_int32_t *rv)
     return APR_ENOTIME;
 }
 
-apr_status_t apr_get_min(struct atime_t *time, apr_int32_t *rv)
+fspr_status_t fspr_get_min(struct atime_t *time, fspr_int32_t *rv)
 {
     if (time) {
         (*rv) = time->explodedtime->wMinute;
@@ -46,7 +46,7 @@ apr_status_t apr_get_min(struct atime_t *time, apr_int32_t *rv)
     return APR_ENOTIME;
 }
 
-apr_status_t apr_get_hour(struct atime_t *time, apr_int32_t *rv)
+fspr_status_t fspr_get_hour(struct atime_t *time, fspr_int32_t *rv)
 {
     if (time) {
         (*rv) = time->explodedtime->wHour;
@@ -55,7 +55,7 @@ apr_status_t apr_get_hour(struct atime_t *time, apr_int32_t *rv)
     return APR_ENOTIME;
 }
 
-apr_status_t apr_get_mday(struct atime_t *time, apr_int32_t *rv)
+fspr_status_t fspr_get_mday(struct atime_t *time, fspr_int32_t *rv)
 {
     if (time) {
         (*rv) = time->explodedtime->wDay;
@@ -64,7 +64,7 @@ apr_status_t apr_get_mday(struct atime_t *time, apr_int32_t *rv)
     return APR_ENOTIME;
 }
 
-apr_status_t apr_get_mon(struct atime_t *time, apr_int32_t *rv)
+fspr_status_t fspr_get_mon(struct atime_t *time, fspr_int32_t *rv)
 {
     if (time) {
         (*rv) = time->explodedtime->wMonth;
@@ -73,7 +73,7 @@ apr_status_t apr_get_mon(struct atime_t *time, apr_int32_t *rv)
     return APR_ENOTIME;
 }
 
-apr_status_t apr_get_year(struct atime_t *time, apr_int32_t *rv)
+fspr_status_t fspr_get_year(struct atime_t *time, fspr_int32_t *rv)
 {
     if (time) {
         (*rv) = time->explodedtime->wYear;
@@ -82,7 +82,7 @@ apr_status_t apr_get_year(struct atime_t *time, apr_int32_t *rv)
     return APR_ENOTIME;
 }
 
-apr_status_t apr_get_wday(struct atime_t *time, apr_int32_t *rv)
+fspr_status_t fspr_get_wday(struct atime_t *time, fspr_int32_t *rv)
 {
     if (time) {
         (*rv) = time->explodedtime->wDayOfWeek;
@@ -91,13 +91,13 @@ apr_status_t apr_get_wday(struct atime_t *time, apr_int32_t *rv)
     return APR_ENOTIME;
 }
 
-apr_status_t apr_set_sec(struct atime_t *time, apr_int32_t value)
+fspr_status_t fspr_set_sec(struct atime_t *time, fspr_int32_t value)
 {
     if (!time) {
         return APR_ENOTIME;
     }
     if (time->explodedtime == NULL) {
-        time->explodedtime = (SYSTEMTIME *)apr_pcalloc(time->cntxt, 
+        time->explodedtime = (SYSTEMTIME *)fspr_pcalloc(time->cntxt, 
                               sizeof(SYSTEMTIME));
     }
     if (time->explodedtime == NULL) {
@@ -107,13 +107,13 @@ apr_status_t apr_set_sec(struct atime_t *time, apr_int32_t value)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_set_min(struct atime_t *time, apr_int32_t value)
+fspr_status_t fspr_set_min(struct atime_t *time, fspr_int32_t value)
 {
     if (!time) {
         return APR_ENOTIME;
     }
     if (time->explodedtime == NULL) {
-        time->explodedtime = (SYSTEMTIME *)apr_pcalloc(time->cntxt, 
+        time->explodedtime = (SYSTEMTIME *)fspr_pcalloc(time->cntxt, 
                               sizeof(SYSTEMTIME));
     }
     if (time->explodedtime == NULL) {
@@ -123,13 +123,13 @@ apr_status_t apr_set_min(struct atime_t *time, apr_int32_t value)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_set_hour(struct atime_t *time, apr_int32_t value)
+fspr_status_t fspr_set_hour(struct atime_t *time, fspr_int32_t value)
 {
     if (!time) {
         return APR_ENOTIME;
     }
     if (time->explodedtime == NULL) {
-        time->explodedtime = (SYSTEMTIME *)apr_pcalloc(time->cntxt, 
+        time->explodedtime = (SYSTEMTIME *)fspr_pcalloc(time->cntxt, 
                               sizeof(SYSTEMTIME));
     }
     if (time->explodedtime == NULL) {
@@ -139,13 +139,13 @@ apr_status_t apr_set_hour(struct atime_t *time, apr_int32_t value)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_set_mday(struct atime_t *time, apr_int32_t value)
+fspr_status_t fspr_set_mday(struct atime_t *time, fspr_int32_t value)
 {
     if (!time) {
         return APR_ENOTIME;
     }
     if (time->explodedtime == NULL) {
-        time->explodedtime = (SYSTEMTIME *)apr_pcalloc(time->cntxt, 
+        time->explodedtime = (SYSTEMTIME *)fspr_pcalloc(time->cntxt, 
                               sizeof(SYSTEMTIME));
     }
     if (time->explodedtime == NULL) {
@@ -155,13 +155,13 @@ apr_status_t apr_set_mday(struct atime_t *time, apr_int32_t value)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_set_mon(struct atime_t *time, apr_int32_t value)
+fspr_status_t fspr_set_mon(struct atime_t *time, fspr_int32_t value)
 {
     if (!time) {
         return APR_ENOTIME;
     }
     if (time->explodedtime == NULL) {
-        time->explodedtime = (SYSTEMTIME *)apr_pcalloc(time->cntxt, 
+        time->explodedtime = (SYSTEMTIME *)fspr_pcalloc(time->cntxt, 
                               sizeof(SYSTEMTIME));
     }
     if (time->explodedtime == NULL) {
@@ -171,13 +171,13 @@ apr_status_t apr_set_mon(struct atime_t *time, apr_int32_t value)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_set_year(struct atime_t *time, apr_int32_t value)
+fspr_status_t fspr_set_year(struct atime_t *time, fspr_int32_t value)
 {
     if (!time) {
         return APR_ENOTIME;
     }
     if (time->explodedtime == NULL) {
-        time->explodedtime = (SYSTEMTIME *)apr_pcalloc(time->cntxt, 
+        time->explodedtime = (SYSTEMTIME *)fspr_pcalloc(time->cntxt, 
                               sizeof(SYSTEMTIME));
     }
     if (time->explodedtime == NULL) {
@@ -187,13 +187,13 @@ apr_status_t apr_set_year(struct atime_t *time, apr_int32_t value)
     return APR_SUCCESS;
 }
 
-apr_status_t apr_set_wday(struct atime_t *time, apr_int32_t value)
+fspr_status_t fspr_set_wday(struct atime_t *time, fspr_int32_t value)
 {
     if (!time) {
         return APR_ENOTIME;
     }
     if (time->explodedtime == NULL) {
-        time->explodedtime = (SYSTEMTIME *)apr_pcalloc(time->cntxt, 
+        time->explodedtime = (SYSTEMTIME *)fspr_pcalloc(time->cntxt, 
                               sizeof(SYSTEMTIME));
     }
     if (time->explodedtime == NULL) {

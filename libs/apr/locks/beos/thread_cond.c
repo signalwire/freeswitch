@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#include "apr_arch_thread_mutex.h"
-#include "apr_arch_thread_cond.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_arch_thread_cond.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
-static apr_status_t thread_cond_cleanup(void *data)
+static fspr_status_t thread_cond_cleanup(void *data)
 {
     struct waiter *w;
-    apr_thread_cond_t *cond = (apr_thread_cond_t *)data;
+    fspr_thread_cond_t *cond = (fspr_thread_cond_t *)data;
 
     acquire_sem(cond->lock);
     delete_sem(cond->lock);
@@ -30,10 +30,10 @@ static apr_status_t thread_cond_cleanup(void *data)
     return APR_SUCCESS;
 }
 
-static struct waiter_t *make_waiter(apr_pool_t *pool)
+static struct waiter_t *make_waiter(fspr_pool_t *pool)
 {
     struct waiter_t *w = (struct waiter_t*)
-                       apr_palloc(pool, sizeof(struct waiter_t));
+                       fspr_palloc(pool, sizeof(struct waiter_t));
     if (w == NULL)
         return NULL;
       
@@ -46,14 +46,14 @@ static struct waiter_t *make_waiter(apr_pool_t *pool)
     return w;
 }
   
-APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
-                                                 apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_create(fspr_thread_cond_t **cond,
+                                                 fspr_pool_t *pool)
 {
-    apr_thread_cond_t *new_cond;
+    fspr_thread_cond_t *new_cond;
     sem_id rv;
     int i;
 
-    new_cond = (apr_thread_cond_t *)apr_palloc(pool, sizeof(apr_thread_cond_t));
+    new_cond = (fspr_thread_cond_t *)fspr_palloc(pool, sizeof(fspr_thread_cond_t));
 
     if (new_cond == NULL)
         return APR_ENOMEM;
@@ -71,21 +71,21 @@ APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
         APR_RING_INSERT_TAIL(&new_cond->flist, nw, waiter_t, link);
     }
 
-    apr_pool_cleanup_register(new_cond->pool,
+    fspr_pool_cleanup_register(new_cond->pool,
                               (void *)new_cond, thread_cond_cleanup,
-                              apr_pool_cleanup_null);
+                              fspr_pool_cleanup_null);
 
     *cond = new_cond;
     return APR_SUCCESS;
 }
 
 
-static apr_status_t do_wait(apr_thread_cond_t *cond, apr_thread_mutex_t *mutex,
+static fspr_status_t do_wait(fspr_thread_cond_t *cond, fspr_thread_mutex_t *mutex,
                             int timeout)
 {
     struct waiter_t *wait;
     thread_id cth = find_thread(NULL);
-    apr_status_t rv;
+    fspr_status_t rv;
     int flags = B_RELATIVE_TIMEOUT;
     
     /* We must be the owner of the mutex or we can't do this... */    
@@ -104,14 +104,14 @@ static apr_status_t do_wait(apr_thread_cond_t *cond, apr_thread_mutex_t *mutex,
     cond->condlock = mutex;
     release_sem(cond->lock);
        
-    apr_thread_mutex_unlock(cond->condlock);
+    fspr_thread_mutex_unlock(cond->condlock);
 
     if (timeout == 0)
         flags = 0;
         
     rv = acquire_sem_etc(wait->sem, 1, flags, timeout);
 
-    apr_thread_mutex_lock(cond->condlock);
+    fspr_thread_mutex_lock(cond->condlock);
     
     if (rv != B_OK)
         if (rv == B_TIMED_OUT)
@@ -126,20 +126,20 @@ static apr_status_t do_wait(apr_thread_cond_t *cond, apr_thread_mutex_t *mutex,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_wait(apr_thread_cond_t *cond,
-                                               apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_wait(fspr_thread_cond_t *cond,
+                                               fspr_thread_mutex_t *mutex)
 {
     return do_wait(cond, mutex, 0);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_timedwait(apr_thread_cond_t *cond,
-                                                    apr_thread_mutex_t *mutex,
-                                                    apr_interval_time_t timeout)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_timedwait(fspr_thread_cond_t *cond,
+                                                    fspr_thread_mutex_t *mutex,
+                                                    fspr_interval_time_t timeout)
 {
     return do_wait(cond, mutex, timeout);
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_signal(fspr_thread_cond_t *cond)
 {
     struct waiter_t *wake;
 
@@ -155,7 +155,7 @@ APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_broadcast(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_broadcast(fspr_thread_cond_t *cond)
 {
     struct waiter_t *wake;
     
@@ -171,11 +171,11 @@ APR_DECLARE(apr_status_t) apr_thread_cond_broadcast(apr_thread_cond_t *cond)
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_destroy(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_destroy(fspr_thread_cond_t *cond)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     if ((stat = thread_cond_cleanup(cond)) == APR_SUCCESS) {
-        apr_pool_cleanup_kill(cond->pool, cond, thread_cond_cleanup);
+        fspr_pool_cleanup_kill(cond->pool, cond, thread_cond_cleanup);
         return APR_SUCCESS;
     }
     return stat;

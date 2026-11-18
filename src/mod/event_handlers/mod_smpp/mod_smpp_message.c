@@ -121,46 +121,24 @@ switch_status_t mod_smpp_message_create(mod_smpp_gateway_t *gateway, switch_even
 switch_status_t mod_smpp_message_decode(mod_smpp_gateway_t *gateway, deliver_sm_t *res, switch_event_t **event)
 {
 	switch_event_t *evt = NULL;
-	char *str = NULL;
 
 	if (switch_event_create(&evt, SWITCH_EVENT_MESSAGE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create new event\n");
 	}
 
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "endpoint", "mod_smpp");
-
-	str = switch_mprintf("%d", res->sequence_number);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "sequence_number", str);
-
-	str = switch_mprintf("%d", res->command_status);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "command_status", str);
-
-	str = switch_mprintf("%d", res->command_id);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "command_id", str);
-
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "sequence_number", "%d", res->sequence_number);
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "command_status", "%d", res->command_status);
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "command_id", "%d", res->command_id);
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "smpp_gateway", gateway->name);
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "proto", "smpp");
-
-	str = switch_mprintf("%d", res->source_addr_ton);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "source_addr_ton", str);
-
-	str = switch_mprintf("%d", res->source_addr_npi);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "source_addr_npi", str);
-
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "source_addr_ton", "%d", res->source_addr_ton);
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "source_addr_npi", "%d", res->source_addr_npi);
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "from_user", (const char *) res->source_addr);
-
-	str = switch_mprintf("%d", res->dest_addr_ton);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "dest_addr_ton", str);
-
-	str = switch_mprintf("%d", res->dest_addr_npi);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "dest_addr_npi", str);
-
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "dest_addr_ton", "%d", res->dest_addr_ton);
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "dest_addr_npi", "%d", res->dest_addr_npi);
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "to_user", (const char *) res->destination_addr);
-
-	str = switch_mprintf("%d", res->data_coding);
-	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM | SWITCH_STACK_NODUP, "data_coding", str);
-	str = NULL;
-
+	switch_event_add_header(evt, SWITCH_STACK_BOTTOM, "data_coding", "%d", res->data_coding);
 	switch_event_add_header_string(evt, SWITCH_STACK_BOTTOM, "profile", gateway->profile);
 
 	switch_event_add_body(evt, "%s", (const char *) res->short_message);

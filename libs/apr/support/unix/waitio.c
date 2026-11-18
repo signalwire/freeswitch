@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_arch_networkio.h"
-#include "apr_poll.h"
-#include "apr_errno.h"
-#include "apr_support.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_poll.h"
+#include "fspr_errno.h"
+#include "fspr_support.h"
 
 /* The only case where we don't use wait_for_io_or_timeout is on
  * pre-BONE BeOS, so this check should be sufficient and simpler */
@@ -37,7 +37,7 @@
 #include <sys/poll.h>
 #endif
 
-apr_status_t apr_wait_for_io_or_timeout(apr_file_t *f, apr_socket_t *s,
+fspr_status_t fspr_wait_for_io_or_timeout(fspr_file_t *f, fspr_socket_t *s,
                                         int for_read)
 {
     struct pollfd pfd;
@@ -63,14 +63,14 @@ apr_status_t apr_wait_for_io_or_timeout(apr_file_t *f, apr_socket_t *s,
 
 #else /* !WAITIO_USES_POLL */
 
-apr_status_t apr_wait_for_io_or_timeout(apr_file_t *f, apr_socket_t *s,
+fspr_status_t fspr_wait_for_io_or_timeout(fspr_file_t *f, fspr_socket_t *s,
                                         int for_read)
 {
-    apr_interval_time_t timeout;
-    apr_pollfd_t pfd;
+    fspr_interval_time_t timeout;
+    fspr_pollfd_t pfd;
     int type = for_read ? APR_POLLIN : APR_POLLOUT;
-    apr_pollset_t *pollset;
-    apr_status_t status;
+    fspr_pollset_t *pollset;
+    fspr_status_t status;
 
     /* TODO - timeout should be less each time through this loop */
     if (f) {
@@ -79,7 +79,7 @@ apr_status_t apr_wait_for_io_or_timeout(apr_file_t *f, apr_socket_t *s,
 
         pollset = f->pollset;
         if (pollset == NULL) {
-            status = apr_pollset_create(&(f->pollset), 1, f->pool, 0);
+            status = fspr_pollset_create(&(f->pollset), 1, f->pool, 0);
             if (status != APR_SUCCESS) {
                 return status;
             }
@@ -100,16 +100,16 @@ apr_status_t apr_wait_for_io_or_timeout(apr_file_t *f, apr_socket_t *s,
      * object with the correct reqevents value. Ignore the status result
      * on the remove, because it might not be in there (yet).
      */
-    (void) apr_pollset_remove(pollset, &pfd);
+    (void) fspr_pollset_remove(pollset, &pfd);
 
     /* ### check status code */
-    (void) apr_pollset_add(pollset, &pfd);
+    (void) fspr_pollset_add(pollset, &pfd);
 
     do {
         int numdesc;
-        const apr_pollfd_t *pdesc;
+        const fspr_pollfd_t *pdesc;
 
-        status = apr_pollset_poll(pollset, timeout, &numdesc, &pdesc);
+        status = fspr_pollset_poll(pollset, timeout, &numdesc, &pdesc);
 
         if (numdesc == 1 && (pdesc[0].rtnevents & type) != 0) {
             return APR_SUCCESS;

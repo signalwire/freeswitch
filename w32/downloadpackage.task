@@ -15,11 +15,11 @@
                 <extractto />   
                 <moveafter />
                 <archivecontains />
-             </ParameterGroup>  
+                <arctool />
+             </ParameterGroup>
              <Task>  
                 <Reference Include="Microsoft.Build" />
                 <Reference Include="Microsoft.Build.Framework" />
-                <Reference Include="Microsoft.Build.Utilities.Core" />
                 <Code Type="Class" Language="cs">
 <![CDATA[  
 using System;
@@ -38,6 +38,10 @@ using System.Diagnostics;
         {
             public string filename;
             public int progress;
+            public long lastActivityTicks;
+            public Exception error;
+            public bool cancelled;
+            public bool completed;
         }
 
         protected ManualResetEvent TaskCanceled { get; private set; }
@@ -58,6 +62,7 @@ using System.Diagnostics;
         public string extractto { get; set; }
         public string moveafter { get; set; }
         public string archivecontains { get; set; }
+        public string arctool { get; set; }
 
         internal static bool FileOrDirectoryExists(string name)
         {
@@ -69,6 +74,8 @@ using System.Diagnostics;
             basedir = Path.GetFullPath(@"$(BaseDir)");
 
             TaskCanceled = new ManualResetEvent(false);
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+            bool result = true;
 
             //Log.LogMessage(MessageImportance.High,
             //     "Checking for package \"" + package + "\".");
@@ -95,49 +102,29 @@ using System.Diagnostics;
                 Log.LogMessage(MessageImportance.High,
                     "Start downloading package \"" + package + "\".");
 
+                bool downloaded = true;
+
                 using (var client = new System.Net.WebClient())
                 {
                     Uri uri = new Uri(package);
                     string urifilename = Path.GetFileName(uri.LocalPath);
                     string output = Path.Combine(outputfolder ?? librarypath, (outputfilename ?? urifilename));
+                    string cachedir = Environment.GetEnvironmentVariable("FreeSWITCHBuildCachePath") ?? "";
+                    string cached_file = cachedir != "" ? Path.Combine(cachedir, (outputfilename ?? urifilename)) : "";
 
+                    if (cached_file != "" && File.Exists(cached_file)) {
+                        Log.LogMessage(MessageImportance.High,
+                                            "Found package in cache \"" + cached_file + "\".");
+                        File.Copy(cached_file, output); 
+                    } else
                     //if (!File.Exists(output)) // Uncomment to skip download if exists
                     {
-                        var syncObject = new State
-                        {
-                            filename = urifilename,
-                            progress = -1
-                        };
-                        lock (syncObject)
-                        {
-                            client.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadFileCompleted);
-                            client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
-                            client.DownloadFileAsync(uri, output, syncObject);
-
-                            while (!Monitor.Wait(syncObject, 1000))
-                            {
-                                if (TaskCanceled.WaitOne(0))
-                                {
-                                    client.CancelAsync();
-                                    Monitor.Wait(syncObject);
-
-                                    if (File.Exists(output))
-                                    {
-                                        Log.LogMessage(MessageImportance.High,
-                                            "Deleting incomplete file " + output + " for package \"" + package + "\".");
-                                        File.Delete(output);
-                                    }
-
-                                    Log.LogMessage(MessageImportance.High,
-                                            "Downloading canceled for package \"" + package + "\".");
-
-                                    break;
-                                }
-                            }
-                        }
+                        client.DownloadFileCompleted += new AsyncCompletedEventHandler(DownloadFileCompleted);
+                        client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
+                        downloaded = Download(client, uri, output, urifilename);
                     }
 
-                    if (File.Exists(output))
+                    if (downloaded && File.Exists(output))
                     {
                         // Successful download.
 
@@ -173,7 +160,11 @@ using System.Diagnostics;
                     }
                 }
 
-                if (!TaskCanceled.WaitOne(0))
+                if (!downloaded && !TaskCanceled.WaitOne(0))
+                {
+                    result = false;
+                }
+                else if (!TaskCanceled.WaitOne(0))
                 {
                     Log.LogMessage(MessageImportance.High,
                         "Downloading finished for package \"" + package + "\".");
@@ -182,31 +173,183 @@ using System.Diagnostics;
 
             m.ReleaseMutex();
 
-            return true;
+            return result;
+        }
+
+        // Every failure is retried -- an HTTP status of any kind, 404 and 403
+        // included, a dropped or stalled connection, an empty file. The URL a sheet
+        // names is taken to be right, so a failure is something passing, and a
+        // missing file on a mirror or a release CDN is often exactly that. Only
+        // cancelling the build stops the retries early.
+        private static readonly int[] retryDelaysSeconds = { 2, 5, 10, 20, 30 };
+        private const int stallTimeoutSeconds = 60;
+
+        private bool Download(WebClient client, Uri uri, string output, string urifilename)
+        {
+            int attempts = retryDelaysSeconds.Length + 1;
+            string reason = null;
+
+            for (int attempt = 1; attempt <= attempts; attempt++)
+            {
+                if (attempt > 1)
+                {
+                    int delay = retryDelaysSeconds[attempt - 2];
+                    Log.LogWarning("Downloading package \"" + package + "\" failed (" + reason + "), attempt " +
+                        (attempt - 1) + " of " + attempts + "; retrying in " + delay + " s.");
+                    if (TaskCanceled.WaitOne(delay * 1000))
+                    {
+                        Log.LogMessage(MessageImportance.High,
+                            "Downloading canceled for package \"" + package + "\".");
+                        return false;
+                    }
+                }
+
+                reason = DownloadOnce(client, uri, output, urifilename);
+                if (reason == null)
+                {
+                    return true;
+                }
+
+                if (File.Exists(output))
+                {
+                    Log.LogMessage(MessageImportance.High,
+                        "Deleting incomplete file " + output + " for package \"" + package + "\".");
+                    try
+                    {
+                        File.Delete(output);
+                    }
+                    catch (Exception e)
+                    {
+                        // A scanner may still hold the file; the next attempt
+                        // overwrites it anyway, so do not let this end the retries.
+                        Log.LogWarning("Could not delete " + output + ": " + e.Message);
+                    }
+                }
+
+                if (TaskCanceled.WaitOne(0))
+                {
+                    Log.LogMessage(MessageImportance.High,
+                        "Downloading canceled for package \"" + package + "\".");
+                    return false;
+                }
+            }
+
+            Log.LogError("Downloading package \"" + package + "\" failed after " + attempts + " attempts: " + reason + ".");
+            return false;
+        }
+
+        // One attempt: null when the file arrived, otherwise why it did not.
+        private string DownloadOnce(WebClient client, Uri uri, string output, string urifilename)
+        {
+            var syncObject = new State
+            {
+                filename = urifilename,
+                progress = -1,
+                lastActivityTicks = DateTime.UtcNow.Ticks
+            };
+
+            lock (syncObject)
+            {
+                client.DownloadFileAsync(uri, output, syncObject);
+
+                // Wait on the completed flag, not on Monitor.Wait's result: a pulse
+                // that lands while a timed-out Wait is reacquiring the lock is lost.
+                while (!syncObject.completed)
+                {
+                    if (Monitor.Wait(syncObject, 1000) || syncObject.completed)
+                    {
+                        continue;
+                    }
+
+                    if (TaskCanceled.WaitOne(0))
+                    {
+                        client.CancelAsync();
+                        WaitCompleted(syncObject);
+                        return "canceled";
+                    }
+
+                    // DownloadFileAsync ignores WebRequest timeouts, so a connection
+                    // that stops delivering would otherwise wait forever.
+                    long idle = DateTime.UtcNow.Ticks - Interlocked.Read(ref syncObject.lastActivityTicks);
+                    if (idle > TimeSpan.FromSeconds(stallTimeoutSeconds).Ticks)
+                    {
+                        client.CancelAsync();
+                        WaitCompleted(syncObject);
+                        return "no data for " + stallTimeoutSeconds + " s";
+                    }
+                }
+            }
+
+            if (syncObject.error != null)
+            {
+                return Describe(syncObject.error);
+            }
+            if (syncObject.cancelled)
+            {
+                return "canceled";
+            }
+            if (!File.Exists(output))
+            {
+                return "no file written";
+            }
+            if (new FileInfo(output).Length == 0)
+            {
+                return "0 bytes";
+            }
+            return null;
+        }
+
+        // Caller holds the lock on state.
+        private static void WaitCompleted(State state)
+        {
+            while (!state.completed)
+            {
+                Monitor.Wait(state);
+            }
+        }
+
+        private static string Describe(Exception error)
+        {
+            var web = error as WebException;
+            if (web != null)
+            {
+                var http = web.Response as HttpWebResponse;
+                if (http != null)
+                {
+                    return "HTTP " + (int)http.StatusCode + " " + http.StatusDescription;
+                }
+                return web.Status + ": " + web.Message;
+            }
+            return error.GetType().Name + ": " + error.Message;
         }
 
         private void Extract(string filename, string extracttofolder)
         {
-            string arctool = Path.Combine(new string[] { basedir, "libs", "win32", "7za1701.exe" });
+            // Use the caller-supplied extraction tool when set (the 7za bootstrap
+            // passes 7zr.exe to unpack the full 7za.exe out of the "extra" package);
+            // otherwise fall back to that bootstrapped 7za.exe for every other package.
+            string tool = (arctool != null && arctool.Trim() != "")
+                ? arctool
+                : Path.Combine(new string[] { basedir, "libs", "win32", "7za", "7za.exe" });
             string args = " x \"" + filename + "\" -y -o\"" + extracttofolder + "\"";
 
             Log.LogMessage(MessageImportance.High,
-                  "arctool : " + arctool);
+                  "arctool : " + tool);
             Log.LogMessage(MessageImportance.High,
                   "args : " + args);
             Log.LogMessage(MessageImportance.High,
-                  "WorkingDirectory : " + Path.GetDirectoryName(arctool));                    
+                  "WorkingDirectory : " + Path.GetDirectoryName(tool));
 
             var proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = arctool,
+                    FileName = tool,
                     Arguments = args,
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true,
-                    WorkingDirectory = Path.GetDirectoryName(arctool)
+                    WorkingDirectory = Path.GetDirectoryName(tool)
                 }
             };
 
@@ -231,10 +374,14 @@ using System.Diagnostics;
 
         private void DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
         {
-            lock (e.UserState)
+            var state = (State)e.UserState;
+            lock (state)
             {
+                state.error = e.Error;
+                state.cancelled = e.Cancelled;
+                state.completed = true;
                 //releases blocked thread
-                Monitor.Pulse(e.UserState);
+                Monitor.Pulse(state);
             }
         }
 
@@ -254,6 +401,8 @@ using System.Diagnostics;
 
         private void DownloadProgressCallback(object sender, DownloadProgressChangedEventArgs e)
         {
+            Interlocked.Exchange(ref ((State)e.UserState).lastActivityTicks, DateTime.UtcNow.Ticks);
+
             if (((State)e.UserState).progress < e.ProgressPercentage)
             {
                 ((State)e.UserState).progress = e.ProgressPercentage;
@@ -268,15 +417,33 @@ using System.Diagnostics;
              </Task>  
   </UsingTask>  
 
-  <Target Name="7za" BeforeTargets="Build">  
-      <DownloadPackageTask 
-          package="http://files.freeswitch.org/downloads/win32/7za1701.exe" 
-          expectfileordirectory="$(BaseDir)libs/win32/7za1701.exe" 
-          outputfolder="$(BaseDir)libs/win32/" 
-          outputfilename="7za1701.exe"
+  <PropertyGroup>
+    <SevenZipVersion Condition=" '$(SevenZipVersion)' == '' ">26.02</SevenZipVersion>
+    <SevenZipBaseUrl Condition=" '$(SevenZipBaseUrl)' == '' ">https://github.com/ip7z/7zip/releases/download/$(SevenZipVersion)</SevenZipBaseUrl>
+    <SevenZipExtra Condition=" '$(SevenZipExtra)' == '' ">7z$(SevenZipVersion.Replace('.',''))-extra</SevenZipExtra>
+  </PropertyGroup>
+
+  <Target Name="7za" BeforeTargets="Build">
+      <!-- Step 1: download 7zr.exe. As an .exe it is stored as-is, not extracted. -->
+      <DownloadPackageTask
+          package="$(SevenZipBaseUrl)/7zr.exe"
+          expectfileordirectory="$(BaseDir)libs/win32/7zr.exe"
+          outputfolder="$(BaseDir)libs/win32/"
+          outputfilename="7zr.exe"
           extractto=""
       />
-  </Target> 
+      <!-- Step 2: download the extra package and unpack the full 7za.exe from it
+           with 7zr.exe (the default 7za.exe does not exist yet at this point). -->
+      <DownloadPackageTask
+          package="$(SevenZipBaseUrl)/$(SevenZipExtra).7z"
+          expectfileordirectory="$(BaseDir)libs/win32/7za/7za.exe"
+          outputfolder="$(BaseDir)libs/win32/"
+          outputfilename="$(SevenZipExtra).7z"
+          extractto="$(BaseDir)libs/win32/7za"
+          archivecontains="binary"
+          arctool="$(BaseDir)libs/win32/7zr.exe"
+      />
+  </Target>
 
   <PropertyGroup>
     <downloadpackagetask_Imported>true</downloadpackagetask_Imported>

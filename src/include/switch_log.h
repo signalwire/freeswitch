@@ -66,6 +66,10 @@ SWITCH_BEGIN_EXTERN_C
 	switch_text_channel_t channel;
 	switch_log_level_t slevel;
 	switch_event_t *tags;
+	/* Log sequence */
+	int64_t sequence;
+	/* Optional extra log metadata */
+	cJSON *meta;
 } switch_log_node_t;
 
 ///\{
@@ -94,6 +98,7 @@ typedef struct {
 	switch_log_json_format_item_t short_message;
 	const char *custom_field_prefix;
 	double timestamp_divisor;
+	switch_log_json_format_item_t sequence;
 } switch_log_json_format_t;
 
 typedef switch_status_t (*switch_log_function_t) (const switch_log_node_t *node, switch_log_level_t level);
@@ -154,7 +159,40 @@ SWITCH_DECLARE(void) switch_log_printf(_In_ switch_text_channel_t channel, _In_z
 SWITCH_DECLARE(void) switch_log_vprintf(_In_ switch_text_channel_t channel, _In_z_ const char *file,
 										_In_z_ const char *func, _In_ int line,
 										_In_opt_z_ const char *userdata, _In_ switch_log_level_t level, const char *fmt, va_list ap);
+/*!
+  \brief Write log data to the logging engine w/ optional JSON metadata
+  \param channel the log channel to write to
+  \param file the current file
+  \param func the current function
+  \param line the current line
+  \param userdata ununsed
+  \param level the current log level
+  \param meta log metadata - consumed by this function
+  \param fmt desired format
+  \param ... variable args
+  \note there are channel macros to supply the first 4 parameters (SWITCH_CHANNEL_LOG, SWITCH_CHANNEL_LOG_CLEAN, ...)
+  \see switch_types.h
+*/
+SWITCH_DECLARE(void) switch_log_meta_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
+									   const char *userdata, switch_log_level_t level, cJSON **meta, const char *fmt, ...) PRINTF_FUNCTION(8, 9);
 
+/*!
+  \brief Write log data to the logging engine w/ optional JSON metadata
+  \param channel the log channel to write to
+  \param file the current file
+  \param func the current function
+  \param line the current line
+  \param userdata ununsed
+  \param level the current log level
+  \param meta log metadata - consumed by this function
+  \param fmt desired format
+  \param ap variable args
+  \note there are channel macros to supply the first 4 parameters (SWITCH_CHANNEL_LOG, SWITCH_CHANNEL_LOG_CLEAN, ...)
+  \see switch_types.h
+*/
+SWITCH_DECLARE(void) switch_log_meta_vprintf(_In_ switch_text_channel_t channel, _In_z_ const char *file,
+										_In_z_ const char *func, _In_ int line,
+										_In_opt_z_ const char *userdata, _In_ switch_log_level_t level, cJSON **meta, const char *fmt, va_list ap);
 #endif
 /*!
   \brief Shut down  the logging engine

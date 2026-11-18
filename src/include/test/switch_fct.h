@@ -254,10 +254,18 @@ fctstr_safe_cpy(char *dst, char const *src, size_t num)
     FCT_ASSERT( num > 0 );
 #if defined(WIN32) && _MSC_VER >= 1400
     strncpy_s(dst, num, src, _TRUNCATE);
+    dst[num - 1] = '\0';
 #else
-    strncpy(dst, src, num);
+    {
+        size_t i;
+
+        for (i = 0; (i < num - 1) && src[i] != '\0'; ++i) {
+            dst[i] = src[i];
+        }
+
+        dst[i] = '\0';
+    }
 #endif
-    dst[num-1] = '\0';
 }
 
 /* Isolate the vsnprintf implementation */
@@ -743,6 +751,7 @@ fct_nlist__final(fct_nlist_t *list, fct_nlist_on_del_t on_del)
     FCT_ASSERT( list != NULL );
     fct_nlist__clear(list, on_del);
     free(list->itm_list);
+    list->itm_list = NULL;
 }
 
 
@@ -759,6 +768,7 @@ fct_nlist__init2(fct_nlist_t *list, size_t start_sz)
         list->itm_list = (void**)malloc(sizeof(void*)*start_sz);
         if ( list->itm_list == NULL )
         {
+            list->used_itm_num = 0;
             return 0;
         }
     }
@@ -1715,6 +1725,12 @@ fct_clp__parse(fct_clp_t *clp, int argc, char const *argv[])
             arg =NULL;
         }
     }
+
+    if (arg != NULL)
+    {
+        free(arg);
+        arg = NULL;
+    }
 }
 
 
@@ -2193,12 +2209,14 @@ should be directly from the program's main. */
 static int
 fctkern__init(fctkern_t *nk, int argc, const char *argv[])
 {
+    int ok = 0;
     if ( argc == 0 && argv == NULL )
     {
         return 0;
     }
     memset(nk, 0, sizeof(fctkern_t));
-    fct_clp__init(&(nk->cl_parser), NULL);
+    ok = fct_clp__init(&(nk->cl_parser), NULL);
+    if (!ok) return ok;
     fct_nlist__init(&(nk->logger_list));
     nk->lt_usr = NULL;  /* Supplied via 'install' mechanics. */
     nk->lt_sys = FCT_LOGGER_TYPES;
@@ -2849,6 +2867,10 @@ fct_standard_logger__on_chk(
     /* Only record failures. */
     if ( !fctchk__is_pass(e->chk) )
     {
+        printf("\nTEST FAIL: %s(%d): %s\n",
+            fctchk__file(e->chk),
+            fctchk__lineno(e->chk),
+            fctchk__msg(e->chk));
         fct_logger_record_failure(e->chk, &(logger->failed_cndtns_list));
     }
 }

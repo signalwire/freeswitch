@@ -17,13 +17,13 @@
 #include <stdio.h>
 
 #include "testutil.h"
-#include "apr_version.h"
-#include "apr_general.h"
+#include "fspr_version.h"
+#include "fspr_general.h"
 
 
 static void test_strings(abts_case *tc, void *data)
 {
-    ABTS_STR_EQUAL(tc, APR_VERSION_STRING, apr_version_string());
+    ABTS_STR_EQUAL(tc, APR_VERSION_STRING, fspr_version_string());
 }
 
 #ifdef APR_IS_DEV_VERSION
@@ -34,9 +34,9 @@ static void test_strings(abts_case *tc, void *data)
 
 static void test_ints(abts_case *tc, void *data)
 {
-    apr_version_t vsn;
+    fspr_version_t vsn;
 
-    apr_version(&vsn);
+    fspr_version(&vsn);
 
     ABTS_INT_EQUAL(tc, APR_MAJOR_VERSION, vsn.major);
     ABTS_INT_EQUAL(tc, APR_MINOR_VERSION, vsn.minor);

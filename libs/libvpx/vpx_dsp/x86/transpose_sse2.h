@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_DSP_X86_TRANSPOSE_SSE2_H_
-#define VPX_DSP_X86_TRANSPOSE_SSE2_H_
+#ifndef VPX_VPX_DSP_X86_TRANSPOSE_SSE2_H_
+#define VPX_VPX_DSP_X86_TRANSPOSE_SSE2_H_
 
 #include <emmintrin.h>  // SSE2
 
 #include "./vpx_config.h"
 
 static INLINE __m128i transpose_8bit_4x4(const __m128i *const in) {
-  // Unpack 16 bit elements. Goes from:
+  // Unpack 8 bit elements. Goes from:
   // in[0]: 00 01 02 03
   // in[1]: 10 11 12 13
   // in[2]: 20 21 22 23
@@ -27,7 +27,7 @@ static INLINE __m128i transpose_8bit_4x4(const __m128i *const in) {
   const __m128i a0 = _mm_unpacklo_epi8(in[0], in[1]);
   const __m128i a1 = _mm_unpacklo_epi8(in[2], in[3]);
 
-  // Unpack 32 bit elements resulting in:
+  // Unpack 16 bit elements resulting in:
   // 00 10 20 30  01 11 21 31  02 12 22 32  03 13 23 33
   return _mm_unpacklo_epi16(a0, a1);
 }
@@ -364,4 +364,4 @@ static INLINE void transpose_32bit_8x4(const __m128i *const in,
   out[7] = _mm_unpackhi_epi64(a6, a7);
 }
 
-#endif  // VPX_DSP_X86_TRANSPOSE_SSE2_H_
+#endif  // VPX_VPX_DSP_X86_TRANSPOSE_SSE2_H_

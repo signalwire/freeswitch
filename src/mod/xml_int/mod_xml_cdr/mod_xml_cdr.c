@@ -88,7 +88,7 @@ static size_t httpCallBack(char *buffer, size_t size, size_t nitems, void *outst
 	return size * nitems;
 }
 
-static switch_status_t set_xml_cdr_log_dirs()
+static switch_status_t set_xml_cdr_log_dirs(void)
 {
 	switch_time_exp_t tm;
 	char *path = NULL;
@@ -254,9 +254,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-				wrote++;
+				(void)wrote;
 				close(fd);
-				fd = -1;
 			} else {
 				char ebuf[512] = { 0 };
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error writing [%s][%s]\n",
@@ -428,9 +427,8 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 #endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
-				wrote++;
+				(void)wrote;
 				close(fd);
-				fd = -1;
 			} else {
 				char ebuf[512] = { 0 };
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error![%s]\n",

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "arch/win32/apr_arch_utf8.h"
+#include "fspr.h"
+#include "arch/win32/fspr_arch_utf8.h"
 #include <wchar.h>
 #include <string.h>
 
@@ -54,15 +54,15 @@ void displaynw(struct testval *f, struct testval *l)
 void test_nrange(struct testval *p)
 {
     struct testval f, l, s;
-    apr_status_t rc;
+    fspr_status_t rc;
     int success = 0;
     
     memcpy (&s, p, sizeof(s));
     ++s.nl;    
     
     do {
-        apr_size_t nl = s.nl, wl = sizeof(s.w) / 2;
-        rc = apr_conv_utf8_to_ucs2(s.n, &nl, s.w, &wl);
+        fspr_size_t nl = s.nl, wl = sizeof(s.w) / 2;
+        rc = fspr_conv_utf8_to_ucs2(s.n, &nl, s.w, &wl);
         s.wl = (sizeof(s.w) / 2) - wl;
         if (!nl && rc == APR_SUCCESS) {
             if (!success) {
@@ -106,15 +106,15 @@ void test_nrange(struct testval *p)
 void test_wrange(struct testval *p)
 {
     struct testval f, l, s;
-    apr_status_t rc;
+    fspr_status_t rc;
     int success = 0;
     
     memcpy (&s, p, sizeof(s));
     ++s.wl;    
     
     do {
-        apr_size_t nl = sizeof(s.n), wl = s.wl;        
-        rc = apr_conv_ucs2_to_utf8(s.w, &wl, s.n, &nl);
+        fspr_size_t nl = sizeof(s.n), wl = s.wl;        
+        rc = fspr_conv_ucs2_to_utf8(s.w, &wl, s.n, &nl);
         s.nl = sizeof(s.n) - nl;
         if (!wl && rc == APR_SUCCESS) {
             if (!success) {
@@ -146,7 +146,7 @@ void test_wrange(struct testval *p)
 
     do {
         int wl = s.wl, nl = sizeof(s.n);
-        rc = apr_conv_ucs2_to_utf8(s.w, &wl, s.n, &nl);
+        rc = fspr_conv_ucs2_to_utf8(s.w, &wl, s.n, &nl);
         s.nl = sizeof(s.n) - s.nl;
         if (rc == APR_INCOMPLETE) {
             test_wrange(&s);
@@ -164,11 +164,11 @@ int main(int argc, char **argv)
     struct testval s;
     memset (&s, 0, sizeof(s));
 
-    if (argc < 2 || apr_tolower(*argv[1]) != 'w') {
+    if (argc < 2 || fspr_tolower(*argv[1]) != 'w') {
         printf ("\n\nTesting Narrow Char Ranges\n");
         test_nrange(&s);
     }
-    if (argc < 2 || apr_tolower(*argv[1]) != 'n') {
+    if (argc < 2 || fspr_tolower(*argv[1]) != 'n') {
         printf ("\n\nTesting Wide Char Ranges\n");
         test_wrange(&s);
     }

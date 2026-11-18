@@ -19,7 +19,7 @@ namespace Setup.CA.DownloadOpenH264
 
             try
             {
-                WebRequest request = HttpWebRequest.Create("http://ciscobinary.openh264.org/openh264-1.8.0-win64.dll.bz2");
+                WebRequest request = HttpWebRequest.Create("http://ciscobinary.openh264.org/openh264-2.7.0-win64.dll.bz2");
 
                 using (WebResponse response = request.GetResponse())
                 {

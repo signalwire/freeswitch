@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "apr_private.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_user.h"
-#include "apr_arch_file_io.h"
+#include "fspr_private.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_user.h"
+#include "fspr_arch_file_io.h"
 #if APR_HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -30,7 +30,7 @@
  * depends on IsValidSid(), which internally we better test long
  * before we get here!
  */
-void get_sid_string(char *buf, apr_size_t blen, apr_uid_t id)
+void get_sid_string(char *buf, fspr_size_t blen, fspr_uid_t id)
 {
     PSID_IDENTIFIER_AUTHORITY psia;
     DWORD nsa;
@@ -45,10 +45,10 @@ void get_sid_string(char *buf, apr_size_t blen, apr_uid_t id)
         + ((DWORD)(psia->Value[3]) << 16) + ((DWORD)(psia->Value[2]) << 24);
     sa  =  (DWORD)(psia->Value[1])        + ((DWORD)(psia->Value[0]) <<  8);
     if (sa) {
-        slen = apr_snprintf(buf, blen, "S-%lu-0x%04x%08x",
+        slen = fspr_snprintf(buf, blen, "S-%lu-0x%04x%08x",
                             SID_REVISION, sa, nsa);
     } else {
-        slen = apr_snprintf(buf, blen, "S-%lu-%lu",
+        slen = fspr_snprintf(buf, blen, "S-%lu-%lu",
                             SID_REVISION, nsa);
     }
 
@@ -56,7 +56,7 @@ void get_sid_string(char *buf, apr_size_t blen, apr_uid_t id)
      */
     nsa = *GetSidSubAuthorityCount(id);
     for (sa = 0; sa < nsa; ++sa) {
-        slen += apr_snprintf(buf + slen, blen - slen, "-%lu",
+        slen += fspr_snprintf(buf + slen, blen - slen, "-%lu",
                              *GetSidSubAuthority(id, sa));
     }
 } 
@@ -64,26 +64,26 @@ void get_sid_string(char *buf, apr_size_t blen, apr_uid_t id)
 /* Query the ProfileImagePath from the version-specific branch, where the
  * regkey uses the user's name on 9x, and user's sid string on NT.
  */
-APR_DECLARE(apr_status_t) apr_uid_homepath_get(char **dirname, 
+APR_DECLARE(fspr_status_t) fspr_uid_homepath_get(char **dirname, 
                                                const char *username, 
-                                               apr_pool_t *p)
+                                               fspr_pool_t *p)
 {
 #ifdef _WIN32_WCE
-    *dirname = apr_pstrdup(p, "/My Documents");
+    *dirname = fspr_pstrdup(p, "/My Documents");
     return APR_SUCCESS;
 #else
-    apr_status_t rv;
+    fspr_status_t rv;
     char regkey[MAX_PATH * 2];
     char *fixch;
     DWORD keylen;
     DWORD type;
     HKEY key;
 
-    if (apr_os_level >= APR_WIN_NT) {
-        apr_uid_t uid;
-        apr_gid_t gid;
+    if (fspr_os_level >= APR_WIN_NT) {
+        fspr_uid_t uid;
+        fspr_gid_t gid;
     
-        if ((rv = apr_uid_get(&uid, &gid, username, p)) != APR_SUCCESS)
+        if ((rv = fspr_uid_get(&uid, &gid, username, p)) != APR_SUCCESS)
             return rv;
 
         strcpy(regkey, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\"
@@ -95,7 +95,7 @@ APR_DECLARE(apr_status_t) apr_uid_homepath_get(char **dirname,
         strcpy(regkey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\"
                        "ProfileList\\");
         keylen = (DWORD)strlen(regkey);
-        apr_cpystrn(regkey + keylen, username, sizeof(regkey) - keylen);
+        fspr_cpystrn(regkey + keylen, username, sizeof(regkey) - keylen);
     }
 
     if ((rv = RegOpenKeyEx(HKEY_LOCAL_MACHINE, regkey, 0, 
@@ -114,18 +114,18 @@ APR_DECLARE(apr_status_t) apr_uid_homepath_get(char **dirname,
         if (type == REG_SZ) {
             char retdir[MAX_PATH];
             if ((rv = unicode_to_utf8_path(retdir, sizeof(retdir), 
-                                           (apr_wchar_t*)regkey)) != APR_SUCCESS)
+                                           (fspr_wchar_t*)regkey)) != APR_SUCCESS)
                 return rv;
-            *dirname = apr_pstrdup(p, retdir);
+            *dirname = fspr_pstrdup(p, retdir);
         }
         else if (type == REG_EXPAND_SZ) {
-            apr_wchar_t path[MAX_PATH];
+            fspr_wchar_t path[MAX_PATH];
             char retdir[MAX_PATH];
-            ExpandEnvironmentStringsW((apr_wchar_t*)regkey, path, sizeof(path));
+            ExpandEnvironmentStringsW((fspr_wchar_t*)regkey, path, sizeof(path));
             if ((rv = unicode_to_utf8_path(retdir, sizeof(retdir), path))
                     != APR_SUCCESS)
                 return rv;
-            *dirname = apr_pstrdup(p, retdir);
+            *dirname = fspr_pstrdup(p, retdir);
         }
         else
             return APR_ENOENT;
@@ -141,12 +141,12 @@ APR_DECLARE(apr_status_t) apr_uid_homepath_get(char **dirname,
         if (rv != ERROR_SUCCESS)
             return APR_FROM_OS_ERROR(rv);
         if (type == REG_SZ) {
-            *dirname = apr_pstrdup(p, regkey);
+            *dirname = fspr_pstrdup(p, regkey);
         }
         else if (type == REG_EXPAND_SZ) {
             char path[MAX_PATH];
             ExpandEnvironmentStrings(regkey, path, sizeof(path));
-            *dirname = apr_pstrdup(p, path);
+            *dirname = fspr_pstrdup(p, path);
         }
         else
             return APR_ENOENT;
@@ -159,9 +159,9 @@ APR_DECLARE(apr_status_t) apr_uid_homepath_get(char **dirname,
 #endif /* _WIN32_WCE */
 }
 
-APR_DECLARE(apr_status_t) apr_uid_current(apr_uid_t *uid,
-                                          apr_gid_t *gid,
-                                          apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_current(fspr_uid_t *uid,
+                                          fspr_gid_t *gid,
+                                          fspr_pool_t *p)
 {
 #ifdef _WIN32_WCE
     return APR_ENOTIMPL;
@@ -172,32 +172,32 @@ APR_DECLARE(apr_status_t) apr_uid_current(apr_uid_t *uid,
     TOKEN_PRIMARY_GROUP *grp;
     
     if(!OpenProcessToken(GetCurrentProcess(), STANDARD_RIGHTS_READ | READ_CONTROL | TOKEN_QUERY, &threadtok)) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
 
     *uid = NULL;
     if (!GetTokenInformation(threadtok, TokenUser, NULL, 0, &needed)
         && (GetLastError() == ERROR_INSUFFICIENT_BUFFER) 
-        && (usr = apr_palloc(p, needed))
+        && (usr = fspr_palloc(p, needed))
         && GetTokenInformation(threadtok, TokenUser, usr, needed, &needed))
         *uid = usr->User.Sid;
     else
-        return apr_get_os_error();
+        return fspr_get_os_error();
 
     if (!GetTokenInformation(threadtok, TokenPrimaryGroup, NULL, 0, &needed)
         && (GetLastError() == ERROR_INSUFFICIENT_BUFFER) 
-        && (grp = apr_palloc(p, needed))
+        && (grp = fspr_palloc(p, needed))
         && GetTokenInformation(threadtok, TokenPrimaryGroup, grp, needed, &needed))
         *gid = grp->PrimaryGroup;
     else
-        return apr_get_os_error();
+        return fspr_get_os_error();
 
     return APR_SUCCESS;
 #endif 
 }
 
-APR_DECLARE(apr_status_t) apr_uid_get(apr_uid_t *uid, apr_gid_t *gid,
-                                      const char *username, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_get(fspr_uid_t *uid, fspr_gid_t *gid,
+                                      const char *username, fspr_pool_t *p)
 {
 #ifdef _WIN32_WCE
     return APR_ENOTIMPL;
@@ -211,11 +211,11 @@ APR_DECLARE(apr_status_t) apr_uid_get(apr_uid_t *uid, apr_gid_t *gid,
     char *pos;
 
     if (pos = strchr(username, '/')) {
-        domain = apr_pstrndup(p, username, pos - username);
+        domain = fspr_pstrndup(p, username, pos - username);
         username = pos + 1;
     }
     else if (pos = strchr(username, '\\')) {
-        domain = apr_pstrndup(p, username, pos - username);
+        domain = fspr_pstrndup(p, username, pos - username);
         username = pos + 1;
     }
     else {
@@ -228,13 +228,13 @@ APR_DECLARE(apr_status_t) apr_uid_get(apr_uid_t *uid, apr_gid_t *gid,
     if (sidlen) {
         /* Give it back on the second pass
          */
-        *uid = apr_palloc(p, sidlen);
+        *uid = fspr_palloc(p, sidlen);
         domlen = sizeof(anydomain);
         rv = LookupAccountName(domain, username, *uid, &sidlen, 
                                anydomain, &domlen, &sidtype);
     }
     if (!sidlen || !rv) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
     /* There doesn't seem to be a simple way to retrieve the primary group sid
      */
@@ -243,11 +243,11 @@ APR_DECLARE(apr_status_t) apr_uid_get(apr_uid_t *uid, apr_gid_t *gid,
 #endif
 }
 
-APR_DECLARE(apr_status_t) apr_uid_name_get(char **username, apr_uid_t userid,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_name_get(char **username, fspr_uid_t userid,
+                                           fspr_pool_t *p)
 {
 #ifdef _WIN32_WCE
-    *username = apr_pstrdup(p, "Administrator");
+    *username = fspr_pstrdup(p, "Administrator");
     return APR_SUCCESS;
 #else
     SID_NAME_USE type;
@@ -256,15 +256,15 @@ APR_DECLARE(apr_status_t) apr_uid_name_get(char **username, apr_uid_t userid,
     if (!userid)
         return APR_EINVAL;
     if (!LookupAccountSid(NULL, userid, name, &cbname, domain, &cbdomain, &type))
-        return apr_get_os_error();
+        return fspr_get_os_error();
     if (type != SidTypeUser && type != SidTypeAlias && type != SidTypeWellKnownGroup)
         return APR_EINVAL;
-    *username = apr_pstrdup(p, name);
+    *username = fspr_pstrdup(p, name);
     return APR_SUCCESS;
 #endif
 }
   
-APR_DECLARE(apr_status_t) apr_uid_compare(apr_uid_t left, apr_uid_t right)
+APR_DECLARE(fspr_status_t) fspr_uid_compare(fspr_uid_t left, fspr_uid_t right)
 {
     if (!left || !right)
         return APR_EINVAL;

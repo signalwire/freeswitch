@@ -4,7 +4,8 @@
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <libpqVersion>10.3</libpqVersion>
+    <libpqVersion>17.11</libpqVersion>
+    <libpqBuildNumber>3</libpqBuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <libpqVersionImported>true</libpqVersionImported>

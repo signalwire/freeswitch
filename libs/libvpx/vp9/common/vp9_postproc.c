@@ -119,8 +119,8 @@ void vp9_highbd_mbpost_proc_across_ip_c(uint16_t *src, int pitch, int rows,
   uint16_t d[16];
 
   for (r = 0; r < rows; r++) {
-    int sumsq = 0;
-    int sum = 0;
+    int64_t sumsq = 0;
+    int64_t sum = 0;
 
     for (i = -8; i <= 6; i++) {
       sumsq += s[i] * s[i];
@@ -138,7 +138,7 @@ void vp9_highbd_mbpost_proc_across_ip_c(uint16_t *src, int pitch, int rows,
       d[c & 15] = s[c];
 
       if (sumsq * 15 - sum * sum < flimit) {
-        d[c & 15] = (8 + sum + s[c]) >> 4;
+        d[c & 15] = (uint16_t)((8 + sum + s[c]) >> 4);
       }
 
       s[c - 8] = d[(c - 8) & 15];
@@ -157,8 +157,8 @@ void vp9_highbd_mbpost_proc_down_c(uint16_t *dst, int pitch, int rows, int cols,
 
   for (c = 0; c < cols; c++) {
     uint16_t *s = &dst[c];
-    int sumsq = 0;
-    int sum = 0;
+    int64_t sumsq = 0;
+    int64_t sum = 0;
     uint16_t d[16];
     const int16_t *rv2 = rv3 + ((c * 17) & 127);
 
@@ -173,7 +173,7 @@ void vp9_highbd_mbpost_proc_down_c(uint16_t *dst, int pitch, int rows, int cols,
       d[r & 15] = s[0];
 
       if (sumsq * 15 - sum * sum < flimit) {
-        d[r & 15] = (rv2[r & 127] + sum + s[0]) >> 4;
+        d[r & 15] = (uint16_t)((rv2[r & 127] + sum + s[0]) >> 4);
       }
 
       s[-8 * pitch] = d[(r - 8) & 15];
@@ -183,7 +183,8 @@ void vp9_highbd_mbpost_proc_down_c(uint16_t *dst, int pitch, int rows, int cols,
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-static void deblock_and_de_macro_block(YV12_BUFFER_CONFIG *source,
+static void deblock_and_de_macro_block(VP9_COMMON *cm,
+                                       YV12_BUFFER_CONFIG *source,
                                        YV12_BUFFER_CONFIG *post, int q,
                                        int low_var_thresh, int flag,
                                        uint8_t *limits) {
@@ -216,7 +217,7 @@ static void deblock_and_de_macro_block(YV12_BUFFER_CONFIG *source,
         source->uv_height, source->uv_width, ppl);
   } else {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-    vp9_deblock(source, post, q, limits);
+    vp9_deblock(cm, source, post, q, limits);
     vpx_mbpost_proc_across_ip(post->y_buffer, post->y_stride, post->y_height,
                               post->y_width, q2mbl(q));
     vpx_mbpost_proc_down(post->y_buffer, post->y_stride, post->y_height,
@@ -226,8 +227,8 @@ static void deblock_and_de_macro_block(YV12_BUFFER_CONFIG *source,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
-void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q,
-                 uint8_t *limits) {
+void vp9_deblock(struct VP9Common *cm, const YV12_BUFFER_CONFIG *src,
+                 YV12_BUFFER_CONFIG *dst, int q, uint8_t *limits) {
   const int ppl =
       (int)(6.0e-05 * q * q * q - 0.0067 * q * q + 0.306 * q + 0.0065 + 0.5);
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -252,10 +253,8 @@ void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q,
   } else {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     int mbr;
-    const int mb_rows = src->y_height / 16;
-    const int mb_cols = src->y_width / 16;
-
-    memset(limits, (unsigned char)ppl, 16 * mb_cols);
+    const int mb_rows = cm->mb_rows;
+    memset(limits, (unsigned char)ppl, cm->postproc_state.limits_size);
 
     for (mbr = 0; mbr < mb_rows; mbr++) {
       vpx_post_proc_down_and_across_mb_row(
@@ -276,9 +275,15 @@ void vp9_deblock(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 }
 
-void vp9_denoise(const YV12_BUFFER_CONFIG *src, YV12_BUFFER_CONFIG *dst, int q,
-                 uint8_t *limits) {
-  vp9_deblock(src, dst, q, limits);
+void vp9_denoise(struct VP9Common *cm, const YV12_BUFFER_CONFIG *src,
+                 YV12_BUFFER_CONFIG *dst, int q, uint8_t *limits) {
+  if (src->uv_width < 8) {
+    // This function is only called by the encoder to perform an in place
+    // modification of 'src'.
+    assert(src == dst);
+    return;
+  }
+  vp9_deblock(cm, src, dst, q, limits);
 }
 
 static void swap_mi_and_prev_mi(VP9_COMMON *cm) {
@@ -293,14 +298,28 @@ static void swap_mi_and_prev_mi(VP9_COMMON *cm) {
 }
 
 int vp9_post_proc_frame(struct VP9Common *cm, YV12_BUFFER_CONFIG *dest,
-                        vp9_ppflags_t *ppflags) {
+                        vp9_ppflags_t *ppflags, int unscaled_width) {
   const int q = VPXMIN(105, cm->lf.filter_level * 2);
-  const int flags = ppflags->post_proc_flag;
   YV12_BUFFER_CONFIG *const ppbuf = &cm->post_proc_buffer;
   struct postproc_state *const ppstate = &cm->postproc_state;
+  int generated_noise_size = unscaled_width + 256;
+  int pp_width = cm->width;
+  int pp_height = cm->height;
 
   if (!cm->frame_to_show) return -1;
 
+  int flags = ppflags->post_proc_flag;
+#if CONFIG_VP9_HIGHBITDEPTH
+  if (cm->use_highbitdepth) {
+    // VP9D_ADDNOISE is an 8-bit only implementation. See issue 499602810.
+    flags &= ~VP9D_ADDNOISE;
+  }
+#endif
+  if (cm->frame_to_show->uv_width < 8) {
+    // vp9_deblock() has a minimum width of 8.
+    flags &= ~VP9D_DEBLOCK;
+    flags &= ~VP9D_DEMACROBLOCK;
+  }
   if (!flags) {
     *dest = *cm->frame_to_show;
     return 0;
@@ -314,65 +333,82 @@ int vp9_post_proc_frame(struct VP9Common *cm, YV12_BUFFER_CONFIG *dest,
     ppstate->last_frame_valid = 1;
   }
 
-  if ((flags & VP9D_MFQE) && ppstate->prev_mip == NULL) {
-    ppstate->prev_mip = vpx_calloc(cm->mi_alloc_size, sizeof(*cm->mip));
-    if (!ppstate->prev_mip) {
-      return 1;
+  if ((flags & VP9D_MFQE)) {
+    if (ppstate->prev_mip == NULL ||
+        cm->mi_alloc_size > ppstate->prev_mip_size) {
+      vpx_free(ppstate->prev_mip);
+      CHECK_MEM_ERROR(&cm->error, ppstate->prev_mip,
+                      vpx_calloc(cm->mi_alloc_size, sizeof(*cm->mip)));
+      ppstate->prev_mip_size = cm->mi_alloc_size;
     }
     ppstate->prev_mi = ppstate->prev_mip + cm->mi_stride + 1;
   }
 
-  // Allocate post_proc_buffer_int if needed.
-  if ((flags & VP9D_MFQE) && !cm->post_proc_buffer_int.buffer_alloc) {
-    if ((flags & VP9D_DEMACROBLOCK) || (flags & VP9D_DEBLOCK)) {
-      const int width = ALIGN_POWER_OF_TWO(cm->width, 4);
-      const int height = ALIGN_POWER_OF_TWO(cm->height, 4);
+  // Allocate/resize post_proc_buffer_int if needed.
+  if ((flags & VP9D_MFQE) &&
+      ((flags & VP9D_DEMACROBLOCK) || (flags & VP9D_DEBLOCK))) {
+    // Keep postproc and noise buffer sizes in sync as the dimensions from the
+    // buffers are used interchangeably.
+    pp_width = ALIGN_POWER_OF_TWO(cm->width, 4);
+    pp_height = ALIGN_POWER_OF_TWO(cm->height, 4);
+    generated_noise_size = pp_width + 256;
 
-      if (vpx_alloc_frame_buffer(&cm->post_proc_buffer_int, width, height,
-                                 cm->subsampling_x, cm->subsampling_y,
+    if (vpx_alloc_frame_buffer(&cm->post_proc_buffer_int, pp_width, pp_height,
+                               cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
-                                 cm->use_highbitdepth,
+                               cm->use_highbitdepth,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-                                 VP9_ENC_BORDER_IN_PIXELS,
-                                 cm->byte_alignment) < 0) {
-        vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
-                           "Failed to allocate MFQE framebuffer");
-      }
-
-      // Ensure that postproc is set to all 0s so that post proc
-      // doesn't pull random data in from edge.
-      memset(cm->post_proc_buffer_int.buffer_alloc, 128,
-             cm->post_proc_buffer.frame_size);
+                               VP9_ENC_BORDER_IN_PIXELS,
+                               cm->byte_alignment) < 0) {
+      vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
+                         "Failed to allocate MFQE framebuffer");
     }
+
+    // Ensure that postproc is set to flat image so that post proc
+    // doesn't pull random data in from edge.
+    memset(cm->post_proc_buffer_int.buffer_alloc, 128,
+           cm->post_proc_buffer_int.frame_size);
   }
 
-  if (vpx_realloc_frame_buffer(&cm->post_proc_buffer, cm->width, cm->height,
+  if (vpx_realloc_frame_buffer(&cm->post_proc_buffer, pp_width, pp_height,
                                cm->subsampling_x, cm->subsampling_y,
 #if CONFIG_VP9_HIGHBITDEPTH
                                cm->use_highbitdepth,
 #endif
                                VP9_DEC_BORDER_IN_PIXELS, cm->byte_alignment,
-                               NULL, NULL, NULL) < 0)
+                               NULL, NULL, NULL) < 0) {
     vpx_internal_error(&cm->error, VPX_CODEC_MEM_ERROR,
                        "Failed to allocate post-processing buffer");
+  }
+  memset(cm->post_proc_buffer.buffer_alloc, 128,
+         cm->post_proc_buffer.frame_size);
 
   if (flags & (VP9D_DEMACROBLOCK | VP9D_DEBLOCK)) {
-    if (!cm->postproc_state.limits) {
+    const int limits_size = ALIGN_POWER_OF_TWO(unscaled_width, 4);
+    if (!cm->postproc_state.limits ||
+        cm->postproc_state.limits_size < limits_size) {
+      if (cm->postproc_state.limits) vpx_free(cm->postproc_state.limits);
       cm->postproc_state.limits =
-          vpx_calloc(cm->width, sizeof(*cm->postproc_state.limits));
+          vpx_calloc(limits_size, sizeof(*cm->postproc_state.limits));
+      if (!cm->postproc_state.limits) return 1;
+      cm->postproc_state.limits_size = limits_size;
     }
   }
 
   if (flags & VP9D_ADDNOISE) {
-    if (!cm->postproc_state.generated_noise) {
+    if (!cm->postproc_state.generated_noise ||
+        cm->postproc_state.generated_noise_size < generated_noise_size) {
+      vpx_free(cm->postproc_state.generated_noise);
       cm->postproc_state.generated_noise = vpx_calloc(
-          cm->width + 256, sizeof(*cm->postproc_state.generated_noise));
+          generated_noise_size, sizeof(*cm->postproc_state.generated_noise));
       if (!cm->postproc_state.generated_noise) return 1;
+      cm->postproc_state.generated_noise_size = generated_noise_size;
     }
   }
 
   if ((flags & VP9D_MFQE) && cm->current_video_frame >= 2 &&
-      ppstate->last_frame_valid && cm->bit_depth == 8 &&
+      ppstate->last_frame_valid && cm->width == cm->prev_frame->buf.y_width &&
+      cm->height == cm->prev_frame->buf.y_height && cm->bit_depth == 8 &&
       ppstate->last_base_qindex <= last_q_thresh &&
       cm->base_qindex - ppstate->last_base_qindex >= q_diff_thresh) {
     vp9_mfqe(cm);
@@ -383,21 +419,21 @@ int vp9_post_proc_frame(struct VP9Common *cm, YV12_BUFFER_CONFIG *dest,
       vpx_yv12_copy_frame(ppbuf, &cm->post_proc_buffer_int);
     }
     if ((flags & VP9D_DEMACROBLOCK) && cm->post_proc_buffer_int.buffer_alloc) {
-      deblock_and_de_macro_block(&cm->post_proc_buffer_int, ppbuf,
+      deblock_and_de_macro_block(cm, &cm->post_proc_buffer_int, ppbuf,
                                  q + (ppflags->deblocking_level - 5) * 10, 1, 0,
                                  cm->postproc_state.limits);
     } else if (flags & VP9D_DEBLOCK) {
-      vp9_deblock(&cm->post_proc_buffer_int, ppbuf, q,
+      vp9_deblock(cm, &cm->post_proc_buffer_int, ppbuf, q,
                   cm->postproc_state.limits);
     } else {
       vpx_yv12_copy_frame(&cm->post_proc_buffer_int, ppbuf);
     }
   } else if (flags & VP9D_DEMACROBLOCK) {
-    deblock_and_de_macro_block(cm->frame_to_show, ppbuf,
+    deblock_and_de_macro_block(cm, cm->frame_to_show, ppbuf,
                                q + (ppflags->deblocking_level - 5) * 10, 1, 0,
                                cm->postproc_state.limits);
   } else if (flags & VP9D_DEBLOCK) {
-    vp9_deblock(cm->frame_to_show, ppbuf, q, cm->postproc_state.limits);
+    vp9_deblock(cm, cm->frame_to_show, ppbuf, q, cm->postproc_state.limits);
   } else {
     vpx_yv12_copy_frame(cm->frame_to_show, ppbuf);
   }
@@ -410,14 +446,14 @@ int vp9_post_proc_frame(struct VP9Common *cm, YV12_BUFFER_CONFIG *dest,
       double sigma;
       vpx_clear_system_state();
       sigma = noise_level + .5 + .6 * q / 63.0;
-      ppstate->clamp =
-          vpx_setup_noise(sigma, ppstate->generated_noise, cm->width + 256);
+      ppstate->clamp = vpx_setup_noise(sigma, ppstate->generated_noise,
+                                       generated_noise_size);
       ppstate->last_q = q;
       ppstate->last_noise = noise_level;
     }
     vpx_plane_add_noise(ppbuf->y_buffer, ppstate->generated_noise,
-                        ppstate->clamp, ppstate->clamp, ppbuf->y_width,
-                        ppbuf->y_height, ppbuf->y_stride);
+                        ppstate->clamp, ppstate->clamp, ppbuf->y_crop_width,
+                        ppbuf->y_crop_height, ppbuf->y_stride);
   }
 
   *dest = *ppbuf;

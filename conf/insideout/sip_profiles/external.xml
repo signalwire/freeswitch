@@ -48,7 +48,6 @@
     <param name="auth-calls" value="false"/>
     <param name="rtp-timeout-sec" value="1800"/>
     <param name="inbound-late-negotiation" value="true"/>
-    <param name="inbound-zrtp-passthru" value="true"/> <!-- (also enables late negotiation) -->
     <!--
         DO NOT USE HOSTNAMES, ONLY IP ADDRESSES IN THESE SETTINGS!
     -->

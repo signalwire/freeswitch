@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_getopt.h"
-#include "apr_strings.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_getopt.h"
+#include "fspr_strings.h"
 #include "testutil.h"
 
 static void format_arg(char *str, char option, const char *arg)
 {
     if (arg) {
-        apr_snprintf(str, 8196, "%soption: %c with %s\n", str, option, arg);
+        fspr_snprintf(str, 8196, "%soption: %c with %s\n", str, option, arg);
     }
     else {
-        apr_snprintf(str, 8196, "%soption: %c\n", str, option);
+        fspr_snprintf(str, 8196, "%soption: %c\n", str, option);
     }
 }
 
@@ -35,7 +35,7 @@ static void unknown_arg(void *str, const char *err, ...)
     va_list va;
 
     va_start(va, err);
-    apr_vsnprintf(str, 8196, err, va);
+    fspr_vsnprintf(str, 8196, err, va);
     va_end(va);
 }
 
@@ -43,17 +43,17 @@ static void no_options_found(abts_case *tc, void *data)
 {
     int largc = 5;
     const char * const largv[] = {"testprog", "-a", "-b", "-c", "-d"};
-    apr_getopt_t *opt;
-    apr_status_t rv;
+    fspr_getopt_t *opt;
+    fspr_status_t rv;
     char ch;
     const char *optarg;
     char str[8196];
 
     str[0] = '\0';
-    rv = apr_getopt_init(&opt, p, largc, largv);
+    rv = fspr_getopt_init(&opt, p, largc, largv);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
    
-    while (apr_getopt(opt, "abcd", &ch, &optarg) == APR_SUCCESS) {
+    while (fspr_getopt(opt, "abcd", &ch, &optarg) == APR_SUCCESS) {
         switch (ch) {
             case 'a':
             case 'b':
@@ -73,20 +73,20 @@ static void no_options(abts_case *tc, void *data)
 {
     int largc = 5;
     const char * const largv[] = {"testprog", "-a", "-b", "-c", "-d"};
-    apr_getopt_t *opt;
-    apr_status_t rv;
+    fspr_getopt_t *opt;
+    fspr_status_t rv;
     char ch;
     const char *optarg;
     char str[8196];
 
     str[0] = '\0';
-    rv = apr_getopt_init(&opt, p, largc, largv);
+    rv = fspr_getopt_init(&opt, p, largc, largv);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     opt->errfn = unknown_arg;
     opt->errarg = str;
    
-    while (apr_getopt(opt, "efgh", &ch, &optarg) == APR_SUCCESS) {
+    while (fspr_getopt(opt, "efgh", &ch, &optarg) == APR_SUCCESS) {
         switch (ch) {
             case 'a':
             case 'b':
@@ -105,20 +105,20 @@ static void required_option(abts_case *tc, void *data)
 {
     int largc = 3;
     const char * const largv[] = {"testprog", "-a", "foo"};
-    apr_getopt_t *opt;
-    apr_status_t rv;
+    fspr_getopt_t *opt;
+    fspr_status_t rv;
     char ch;
     const char *optarg;
     char str[8196];
 
     str[0] = '\0';
-    rv = apr_getopt_init(&opt, p, largc, largv);
+    rv = fspr_getopt_init(&opt, p, largc, largv);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     opt->errfn = unknown_arg;
     opt->errarg = str;
    
-    while (apr_getopt(opt, "a:", &ch, &optarg) == APR_SUCCESS) {
+    while (fspr_getopt(opt, "a:", &ch, &optarg) == APR_SUCCESS) {
         switch (ch) {
             case 'a':
                 format_arg(str, ch, optarg);
@@ -134,20 +134,20 @@ static void required_option_notgiven(abts_case *tc, void *data)
 {
     int largc = 2;
     const char * const largv[] = {"testprog", "-a"};
-    apr_getopt_t *opt;
-    apr_status_t rv;
+    fspr_getopt_t *opt;
+    fspr_status_t rv;
     char ch;
     const char *optarg;
     char str[8196];
 
     str[0] = '\0';
-    rv = apr_getopt_init(&opt, p, largc, largv);
+    rv = fspr_getopt_init(&opt, p, largc, largv);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     opt->errfn = unknown_arg;
     opt->errarg = str;
    
-    while (apr_getopt(opt, "a:", &ch, &optarg) == APR_SUCCESS) {
+    while (fspr_getopt(opt, "a:", &ch, &optarg) == APR_SUCCESS) {
         switch (ch) {
             case 'a':
                 format_arg(str, ch, optarg);
@@ -163,20 +163,20 @@ static void optional_option(abts_case *tc, void *data)
 {
     int largc = 3;
     const char * const largv[] = {"testprog", "-a", "foo"};
-    apr_getopt_t *opt;
-    apr_status_t rv;
+    fspr_getopt_t *opt;
+    fspr_status_t rv;
     char ch;
     const char *optarg;
     char str[8196];
 
     str[0] = '\0';
-    rv = apr_getopt_init(&opt, p, largc, largv);
+    rv = fspr_getopt_init(&opt, p, largc, largv);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     opt->errfn = unknown_arg;
     opt->errarg = str;
    
-    while (apr_getopt(opt, "a::", &ch, &optarg) == APR_SUCCESS) {
+    while (fspr_getopt(opt, "a::", &ch, &optarg) == APR_SUCCESS) {
         switch (ch) {
             case 'a':
                 format_arg(str, ch, optarg);
@@ -192,20 +192,20 @@ static void optional_option_notgiven(abts_case *tc, void *data)
 {
     int largc = 2;
     const char * const largv[] = {"testprog", "-a"};
-    apr_getopt_t *opt;
-    apr_status_t rv;
+    fspr_getopt_t *opt;
+    fspr_status_t rv;
     char ch;
     const char *optarg;
     char str[8196];
 
     str[0] = '\0';
-    rv = apr_getopt_init(&opt, p, largc, largv);
+    rv = fspr_getopt_init(&opt, p, largc, largv);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
 
     opt->errfn = unknown_arg;
     opt->errarg = str;
    
-    while (apr_getopt(opt, "a::", &ch, &optarg) == APR_SUCCESS) {
+    while (fspr_getopt(opt, "a::", &ch, &optarg) == APR_SUCCESS) {
         switch (ch) {
             case 'a':
                 format_arg(str, ch, optarg);

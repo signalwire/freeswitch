@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #include "test/codec_factory.h"
@@ -29,16 +29,16 @@ class LosslessTest
       : EncoderTest(GET_PARAM(0)), psnr_(kMaxPsnr), nframes_(0),
         encoding_mode_(GET_PARAM(1)) {}
 
-  virtual ~LosslessTest() {}
+  ~LosslessTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(encoding_mode_);
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
-    if (video->frame() == 1) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
+    if (video->frame() == 0) {
       // Only call Control if quantizer > 0 to verify that using quantizer
       // alone will activate lossless
       if (cfg_.rc_max_quantizer > 0 || cfg_.rc_min_quantizer > 0) {
@@ -47,12 +47,12 @@ class LosslessTest
     }
   }
 
-  virtual void BeginPassHook(unsigned int /*pass*/) {
+  void BeginPassHook(unsigned int /*pass*/) override {
     psnr_ = kMaxPsnr;
     nframes_ = 0;
   }
 
-  virtual void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) {
+  void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) override {
     if (pkt->data.psnr.psnr[0] < psnr_) psnr_ = pkt->data.psnr.psnr[0];
   }
 
@@ -118,8 +118,13 @@ TEST_P(LosslessTest, TestLossLessEncodingCtrl) {
   EXPECT_GE(psnr_lossless, kMaxPsnr);
 }
 
-VP9_INSTANTIATE_TEST_CASE(LosslessTest,
-                          ::testing::Values(::libvpx_test::kRealTime,
-                                            ::libvpx_test::kOnePassGood,
-                                            ::libvpx_test::kTwoPassGood));
+#if CONFIG_REALTIME_ONLY
+VP9_INSTANTIATE_TEST_SUITE(LosslessTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
+#else
+VP9_INSTANTIATE_TEST_SUITE(LosslessTest,
+                           ::testing::Values(::libvpx_test::kRealTime,
+                                             ::libvpx_test::kOnePassGood,
+                                             ::libvpx_test::kTwoPassGood));
+#endif
 }  // namespace

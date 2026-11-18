@@ -45,7 +45,7 @@
 
     ;Compute max and min values of a pixel
     mov         rdx, 0x00010001
-    movsxd      rcx, DWORD PTR arg(6)      ;bps
+    movsxd      rcx, DWORD PTR arg(6)      ;bd
     movq        xmm0, rdx
     movq        xmm1, rcx
     pshufd      xmm0, xmm0, 0b
@@ -121,7 +121,7 @@
 
     ;Compute max and min values of a pixel
     mov         rdx, 0x00010001
-    movsxd      rcx, DWORD PTR arg(6)       ;bps
+    movsxd      rcx, DWORD PTR arg(6)       ;bd
     movq        xmm0, rdx
     movq        xmm1, rcx
     pshufd      xmm0, xmm0, 0b
@@ -199,7 +199,7 @@
 
 SECTION .text
 
-;void vpx_filter_block1d4_v8_sse2
+;void vpx_highbd_filter_block1d4_v8_sse2
 ;(
 ;    unsigned char *src_ptr,
 ;    unsigned int   src_pitch,
@@ -208,7 +208,7 @@ SECTION .text
 ;    unsigned int   output_height,
 ;    short *filter
 ;)
-global sym(vpx_highbd_filter_block1d4_v8_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d4_v8_sse2)
 sym(vpx_highbd_filter_block1d4_v8_sse2):
     push        rbp
     mov         rbp, rsp
@@ -269,7 +269,7 @@ sym(vpx_highbd_filter_block1d4_v8_sse2):
     pop         rbp
     ret
 
-;void vpx_filter_block1d8_v8_sse2
+;void vpx_highbd_filter_block1d8_v8_sse2
 ;(
 ;    unsigned char *src_ptr,
 ;    unsigned int   src_pitch,
@@ -278,7 +278,7 @@ sym(vpx_highbd_filter_block1d4_v8_sse2):
 ;    unsigned int   output_height,
 ;    short *filter
 ;)
-global sym(vpx_highbd_filter_block1d8_v8_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d8_v8_sse2)
 sym(vpx_highbd_filter_block1d8_v8_sse2):
     push        rbp
     mov         rbp, rsp
@@ -328,7 +328,7 @@ sym(vpx_highbd_filter_block1d8_v8_sse2):
     pop         rbp
     ret
 
-;void vpx_filter_block1d16_v8_sse2
+;void vpx_highbd_filter_block1d16_v8_sse2
 ;(
 ;    unsigned char *src_ptr,
 ;    unsigned int   src_pitch,
@@ -337,7 +337,7 @@ sym(vpx_highbd_filter_block1d8_v8_sse2):
 ;    unsigned int   output_height,
 ;    short *filter
 ;)
-global sym(vpx_highbd_filter_block1d16_v8_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d16_v8_sse2)
 sym(vpx_highbd_filter_block1d16_v8_sse2):
     push        rbp
     mov         rbp, rsp
@@ -391,7 +391,7 @@ sym(vpx_highbd_filter_block1d16_v8_sse2):
     pop         rbp
     ret
 
-global sym(vpx_highbd_filter_block1d4_v8_avg_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d4_v8_avg_sse2)
 sym(vpx_highbd_filter_block1d4_v8_avg_sse2):
     push        rbp
     mov         rbp, rsp
@@ -452,7 +452,7 @@ sym(vpx_highbd_filter_block1d4_v8_avg_sse2):
     pop         rbp
     ret
 
-global sym(vpx_highbd_filter_block1d8_v8_avg_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d8_v8_avg_sse2)
 sym(vpx_highbd_filter_block1d8_v8_avg_sse2):
     push        rbp
     mov         rbp, rsp
@@ -501,7 +501,7 @@ sym(vpx_highbd_filter_block1d8_v8_avg_sse2):
     pop         rbp
     ret
 
-global sym(vpx_highbd_filter_block1d16_v8_avg_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d16_v8_avg_sse2)
 sym(vpx_highbd_filter_block1d16_v8_avg_sse2):
     push        rbp
     mov         rbp, rsp
@@ -554,7 +554,7 @@ sym(vpx_highbd_filter_block1d16_v8_avg_sse2):
     pop         rbp
     ret
 
-;void vpx_filter_block1d4_h8_sse2
+;void vpx_highbd_filter_block1d4_h8_sse2
 ;(
 ;    unsigned char  *src_ptr,
 ;    unsigned int    src_pixels_per_line,
@@ -563,7 +563,7 @@ sym(vpx_highbd_filter_block1d16_v8_avg_sse2):
 ;    unsigned int    output_height,
 ;    short *filter
 ;)
-global sym(vpx_highbd_filter_block1d4_h8_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d4_h8_sse2)
 sym(vpx_highbd_filter_block1d4_h8_sse2):
     push        rbp
     mov         rbp, rsp
@@ -629,7 +629,7 @@ sym(vpx_highbd_filter_block1d4_h8_sse2):
     pop         rbp
     ret
 
-;void vpx_filter_block1d8_h8_sse2
+;void vpx_highbd_filter_block1d8_h8_sse2
 ;(
 ;    unsigned char  *src_ptr,
 ;    unsigned int    src_pixels_per_line,
@@ -638,7 +638,7 @@ sym(vpx_highbd_filter_block1d4_h8_sse2):
 ;    unsigned int    output_height,
 ;    short *filter
 ;)
-global sym(vpx_highbd_filter_block1d8_h8_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d8_h8_sse2)
 sym(vpx_highbd_filter_block1d8_h8_sse2):
     push        rbp
     mov         rbp, rsp
@@ -695,7 +695,7 @@ sym(vpx_highbd_filter_block1d8_h8_sse2):
     pop         rbp
     ret
 
-;void vpx_filter_block1d16_h8_sse2
+;void vpx_highbd_filter_block1d16_h8_sse2
 ;(
 ;    unsigned char  *src_ptr,
 ;    unsigned int    src_pixels_per_line,
@@ -704,7 +704,7 @@ sym(vpx_highbd_filter_block1d8_h8_sse2):
 ;    unsigned int    output_height,
 ;    short *filter
 ;)
-global sym(vpx_highbd_filter_block1d16_h8_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d16_h8_sse2)
 sym(vpx_highbd_filter_block1d16_h8_sse2):
     push        rbp
     mov         rbp, rsp
@@ -772,7 +772,7 @@ sym(vpx_highbd_filter_block1d16_h8_sse2):
     pop         rbp
     ret
 
-global sym(vpx_highbd_filter_block1d4_h8_avg_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d4_h8_avg_sse2)
 sym(vpx_highbd_filter_block1d4_h8_avg_sse2):
     push        rbp
     mov         rbp, rsp
@@ -838,7 +838,7 @@ sym(vpx_highbd_filter_block1d4_h8_avg_sse2):
     pop         rbp
     ret
 
-global sym(vpx_highbd_filter_block1d8_h8_avg_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d8_h8_avg_sse2)
 sym(vpx_highbd_filter_block1d8_h8_avg_sse2):
     push        rbp
     mov         rbp, rsp
@@ -895,7 +895,7 @@ sym(vpx_highbd_filter_block1d8_h8_avg_sse2):
     pop         rbp
     ret
 
-global sym(vpx_highbd_filter_block1d16_h8_avg_sse2) PRIVATE
+globalsym(vpx_highbd_filter_block1d16_h8_avg_sse2)
 sym(vpx_highbd_filter_block1d16_h8_avg_sse2):
     push        rbp
     mov         rbp, rsp

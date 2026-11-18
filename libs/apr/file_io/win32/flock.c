@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
+#include "fspr_arch_file_io.h"
 
-APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
+APR_DECLARE(fspr_status_t) fspr_file_lock(fspr_file_t *thefile, int type)
 {
 #ifdef _WIN32_WCE
     /* The File locking is unsuported on WCE */
@@ -28,12 +28,12 @@ APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
     flags = ((type & APR_FLOCK_NONBLOCK) ? LOCKFILE_FAIL_IMMEDIATELY : 0)
           + (((type & APR_FLOCK_TYPEMASK) == APR_FLOCK_SHARED) 
                                        ? 0 : LOCKFILE_EXCLUSIVE_LOCK);
-    if (apr_os_level >= APR_WIN_NT) {
+    if (fspr_os_level >= APR_WIN_NT) {
         /* Syntax is correct, len is passed for LengthLow and LengthHigh*/
         OVERLAPPED offset;
         memset (&offset, 0, sizeof(offset));
         if (!LockFileEx(thefile->filehand, flags, 0, len, len, &offset))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
     else {
         /* On Win9x, LockFile() never blocks.  Hack in a crufty poll.
@@ -62,23 +62,23 @@ APR_DECLARE(apr_status_t) apr_file_lock(apr_file_t *thefile, int type)
 #endif /* !defined(_WIN32_WCE) */
 }
 
-APR_DECLARE(apr_status_t) apr_file_unlock(apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_unlock(fspr_file_t *thefile)
 {
 #ifdef _WIN32_WCE
     return APR_ENOTIMPL;
 #else
     DWORD len = 0xffffffff;
 
-    if (apr_os_level >= APR_WIN_NT) {
+    if (fspr_os_level >= APR_WIN_NT) {
         /* Syntax is correct, len is passed for LengthLow and LengthHigh*/
         OVERLAPPED offset;
         memset (&offset, 0, sizeof(offset));
         if (!UnlockFileEx(thefile->filehand, 0, len, len, &offset))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
     else {
         if (!UnlockFile(thefile->filehand, 0, 0, len, 0))
-            return apr_get_os_error();
+            return fspr_get_os_error();
     }
 
     return APR_SUCCESS;

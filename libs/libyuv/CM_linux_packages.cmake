@@ -1,6 +1,7 @@
 # determine the version number from the #define in libyuv/version.h
 EXECUTE_PROCESS (
-	COMMAND grep --perl-regex --only-matching "(?<=LIBYUV_VERSION )[0-9]+" include/libyuv/version.h
+	COMMAND grep -Eo "LIBYUV_VERSION\ [0-9]+" include/libyuv/version.h
+	COMMAND grep -Eo "[0-9]+"
 	WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 	OUTPUT_VARIABLE YUV_VERSION_NUMBER
 	OUTPUT_STRIP_TRAILING_WHITESPACE )
@@ -8,7 +9,7 @@ SET ( YUV_VER_MAJOR 0 )
 SET ( YUV_VER_MINOR 0 )
 SET ( YUV_VER_PATCH ${YUV_VERSION_NUMBER} )
 SET ( YUV_VERSION ${YUV_VER_MAJOR}.${YUV_VER_MINOR}.${YUV_VER_PATCH} )
-MESSAGE ( "Building ver.: ${YUV_VERSION}" )
+MESSAGE ( VERBOSE "Building ver.: ${YUV_VERSION}" )
 
 # is this a 32-bit or 64-bit build?
 IF ( CMAKE_SIZEOF_VOID_P EQUAL 8 )
@@ -45,7 +46,7 @@ ELSE ()
 		SET ( YUV_SYSTEM_NAME "amd-${YUV_BIT_SIZE}" )
 	ENDIF ()
 ENDIF ()
-MESSAGE ( "Packaging for: ${YUV_SYSTEM_NAME}" )
+MESSAGE ( VERBOSE "Packaging for: ${YUV_SYSTEM_NAME}" )
 
 # define all the variables needed by CPack to create .deb and .rpm packages
 SET ( CPACK_PACKAGE_VENDOR					"Frank Barchard" )

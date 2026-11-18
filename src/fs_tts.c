@@ -46,7 +46,7 @@
 #pragma warning (disable:167)
 #endif
 
-static void fs_tts_cleanup()
+static void fs_tts_cleanup(void)
 {
 	switch_safe_free(SWITCH_GLOBAL_dirs.conf_dir);
 	switch_safe_free(SWITCH_GLOBAL_dirs.mod_dir);

@@ -21,9 +21,9 @@ all: .DEFAULT
 clean:: .DEFAULT
 exampletest: .DEFAULT
 install:: .DEFAULT
-test:: .DEFAULT
-test-no-data-check:: .DEFAULT
-testdata:: .DEFAULT
+test: .DEFAULT
+test-no-data-check: .DEFAULT
+testdata: .DEFAULT
 utiltest: .DEFAULT
 exampletest-no-data-check utiltest-no-data-check: .DEFAULT
 test_%: .DEFAULT ;
@@ -99,6 +99,7 @@ distclean: clean
       rm -f Makefile; \
       rm -f config.log config.mk; \
       rm -f vpx_config.[hc] vpx_config.asm; \
+      rm -f arm_neon.h; \
     else \
       rm -f $(target)-$(TOOLCHAIN).mk; \
     fi
@@ -110,13 +111,13 @@ exampletest:
 .PHONY: install
 install::
 .PHONY: test
-test::
+test:
 .PHONY: testdata
-testdata::
+testdata:
 .PHONY: utiltest
 utiltest:
 .PHONY: test-no-data-check exampletest-no-data-check utiltest-no-data-check
-test-no-data-check::
+test-no-data-check:
 exampletest-no-data-check utiltest-no-data-check:
 
 # Force to realign stack always on OS/2
@@ -142,9 +143,29 @@ $(BUILD_PFX)%_avx2.c.o: CFLAGS += -mavx2
 $(BUILD_PFX)%_avx512.c.d: CFLAGS += -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl
 $(BUILD_PFX)%_avx512.c.o: CFLAGS += -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl
 
+# AARCH64
+$(BUILD_PFX)%_neon_dotprod.c.d: CFLAGS += -march=armv8.2-a+dotprod
+$(BUILD_PFX)%_neon_dotprod.c.o: CFLAGS += -march=armv8.2-a+dotprod
+$(BUILD_PFX)%_neon_i8mm.c.d: CFLAGS += -march=armv8.2-a+dotprod+i8mm
+$(BUILD_PFX)%_neon_i8mm.c.o: CFLAGS += -march=armv8.2-a+dotprod+i8mm
+$(BUILD_PFX)%_sve.c.d: CFLAGS += -march=armv8.2-a+dotprod+i8mm+sve
+$(BUILD_PFX)%_sve.c.o: CFLAGS += -march=armv8.2-a+dotprod+i8mm+sve
+$(BUILD_PFX)%_sve2.c.d: CFLAGS += -march=armv9-a+i8mm+sve2
+$(BUILD_PFX)%_sve2.c.o: CFLAGS += -march=armv9-a+i8mm+sve2
+
 # POWER
 $(BUILD_PFX)%_vsx.c.d: CFLAGS += -maltivec -mvsx
 $(BUILD_PFX)%_vsx.c.o: CFLAGS += -maltivec -mvsx
+
+# MIPS
+$(BUILD_PFX)%_msa.c.d: CFLAGS += -mmsa
+$(BUILD_PFX)%_msa.c.o: CFLAGS += -mmsa
+
+# LOONGARCH
+$(BUILD_PFX)%_lsx.c.d:  CFLAGS += -mlsx
+$(BUILD_PFX)%_lsx.c.o:  CFLAGS += -mlsx
+$(BUILD_PFX)%_lasx.c.d: CFLAGS += -mlasx
+$(BUILD_PFX)%_lasx.c.o: CFLAGS += -mlasx
 
 $(BUILD_PFX)%.c.d: %.c
 	$(if $(quiet),@echo "    [DEP] $@")
@@ -293,6 +314,19 @@ $(1):
 	$(qexec)$$(AR) $$(ARFLAGS) $$@ $$^
 endef
 
+# Don't use -Wl,-z,defs with Clang's sanitizers.
+#
+# Clang's AddressSanitizer documentation says "When linking shared libraries,
+# the AddressSanitizer run-time is not linked, so -Wl,-z,defs may cause link
+# errors (don't use it with AddressSanitizer)." See
+# https://clang.llvm.org/docs/AddressSanitizer.html#usage.
+NO_UNDEFINED := -Wl,-z,defs
+ifeq ($(findstring clang,$(CC)),clang)
+    ifneq ($(filter -fsanitize=%,$(LDFLAGS)),)
+        NO_UNDEFINED :=
+    endif
+endif
+
 define so_template
 # Not using a pattern rule here because we don't want to generate empty
 # archives when they are listed as a dependency in files not responsible
@@ -302,7 +336,8 @@ define so_template
 $(1):
 	$(if $(quiet),@echo "    [LD] $$@")
 	$(qexec)$$(LD) -shared $$(LDFLAGS) \
-            -Wl,--no-undefined -Wl,-soname,$$(SONAME) \
+            $(NO_UNDEFINED) \
+            -Wl,-soname,$$(SONAME) \
             -Wl,--version-script,$$(EXPORTS_FILE) -o $$@ \
             $$(filter %.o,$$^) $$(extralibs)
 endef
@@ -429,10 +464,10 @@ ifneq ($(call enabled,DIST-SRCS),)
     DIST-SRCS-$(CONFIG_MSVS)  += build/make/gen_msvs_vcxproj.sh
     DIST-SRCS-$(CONFIG_MSVS)  += build/make/msvs_common.sh
     DIST-SRCS-$(CONFIG_RVCT) += build/make/armlink_adapter.sh
-    DIST-SRCS-$(ARCH_ARM)    += build/make/ads2gas.pl
-    DIST-SRCS-$(ARCH_ARM)    += build/make/ads2gas_apple.pl
-    DIST-SRCS-$(ARCH_ARM)    += build/make/ads2armasm_ms.pl
-    DIST-SRCS-$(ARCH_ARM)    += build/make/thumb.pm
+    DIST-SRCS-$(VPX_ARCH_ARM) += build/make/ads2gas.pl
+    DIST-SRCS-$(VPX_ARCH_ARM) += build/make/ads2gas_apple.pl
+    DIST-SRCS-$(VPX_ARCH_ARM) += build/make/ads2armasm_ms.pl
+    DIST-SRCS-$(VPX_ARCH_ARM) += build/make/thumb.pm
     DIST-SRCS-yes            += $(target:-$(TOOLCHAIN)=).mk
 endif
 INSTALL-SRCS := $(call cond_enabled,CONFIG_INSTALL_SRCS,INSTALL-SRCS)
@@ -454,6 +489,6 @@ INSTALL_TARGETS += .install-docs .install-srcs .install-libs .install-bins
 all: $(BUILD_TARGETS)
 install:: $(INSTALL_TARGETS)
 dist: $(INSTALL_TARGETS)
-test::
+test:
 
 .SUFFIXES:  # Delete default suffix rules

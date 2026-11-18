@@ -11,21 +11,7 @@ Refer to chromium instructions for each platform for other prerequisites.
 
 Create a working directory, enter it, and run:
 
-    gclient config --name src https://chromium.googlesource.com/libyuv/libyuv
-    gclient sync
-
-Then you'll get a .gclient file like:
-
-    solutions = [
-      { "name"        : "src",
-        "url"         : "https://chromium.googlesource.com/libyuv/libyuv",
-        "deps_file"   : "DEPS",
-        "managed"     : True,
-        "custom_deps" : {
-        },
-        "safesync_url": "",
-      },
-    ];
+    fetch libyuv
 
 For iOS add `;target_os=['ios'];` to your OSX .gclient and run `gclient sync.`
 
@@ -57,15 +43,47 @@ To get just the source (not buildable):
 
 ## Building the Library and Unittests
 
+### Bazel
+
+Libyuv can be built using [Bazel](https://bazel.build/).
+
+#### Android Prerequisites
+To build for Android using Bazel, you must have the Android SDK and NDK installed. Bazel will look for the following environment variables to locate them:
+*   `ANDROID_HOME`: Set this to the path of your Android SDK.
+*   `ANDROID_NDK_HOME`: Set this to the path of your Android NDK.
+
+Ensure these variables are set before running the Bazel Android build commands.
+
+**Android arm64:**
+
+    bazel build -c opt --config=android_arm64 //:libyuv_test
+
+    # Or, specifying standard open-source flags (if NDK is set up in workspace):
+    bazel build -c opt --cpu=arm64-v8a --crosstool_top=//external:android/crosstool //:libyuv_test
+
+**Linux x86_64:**
+
+    bazel build -c opt //:libyuv_test
+
+    # Or, specifying a specific CPU architecture:
+    bazel build -c opt --cpu=haswell //:libyuv_test
+
+Additional commonly used compiler options can be passed to Bazel via `--copt`:
+
+    bazel build -c opt --config=android_arm64 \
+        --copt=-DLIBYUV_UNLIMITED_DATA \
+        --copt=-DENABLE_ROW_TESTS \
+        //:libyuv_test
+
 ### Windows
 
-    call gn gen out\Release "--args=is_debug=false target_cpu=\"x64\""
-    call gn gen out\Debug "--args=is_debug=true target_cpu=\"x64\""
+    gn gen out\Release "--args=is_debug=false target_cpu=\"x64\""
+    gn gen out\Debug "--args=is_debug=true target_cpu=\"x64\""
     ninja -v -C out\Release
     ninja -v -C out\Debug
 
-    call gn gen out\Release "--args=is_debug=false target_cpu=\"x86\""
-    call gn gen out\Debug "--args=is_debug=true target_cpu=\"x86\""
+    gn gen out\Release "--args=is_debug=false target_cpu=\"x86\""
+    gn gen out\Debug "--args=is_debug=true target_cpu=\"x86\""
     ninja -v -C out\Release
     ninja -v -C out\Debug
 
@@ -130,20 +148,13 @@ ia32
     ninja -v -C out/Debug libyuv_unittest
     ninja -v -C out/Release libyuv_unittest
 
-mips
-
-    gn gen out/Release "--args=is_debug=false target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true"
-    gn gen out/Debug "--args=is_debug=true target_os=\"android\" target_cpu=\"mips64el\" mips_arch_variant=\"r6\" mips_use_msa=true is_component_build=true"
-    ninja -v -C out/Debug libyuv_unittest
-    ninja -v -C out/Release libyuv_unittest
-
 arm disassembly:
 
-    third_party/android_ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-objdump -d ./out/Release/obj/libyuv/row_common.o >row_common.txt
+    llvm-objdump -d ./out/Release/obj/libyuv/row_common.o >row_common.txt
 
-    third_party/android_ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-objdump -d ./out/Release/obj/libyuv_neon/row_neon.o >row_neon.txt
+    llvm-objdump -d ./out/Release/obj/libyuv_neon/row_neon.o >row_neon.txt
 
-    third_party/android_ndk/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64/bin/aarch64-linux-android-objdump -d ./out/Release/obj/libyuv_neon/row_neon64.o >row_neon64.txt
+    llvm-objdump -d ./out/Release/obj/libyuv_neon/row_neon64.o >row_neon64.txt
 
     Caveat: Disassembly may require optimize_max be disabled in BUILD.gn
 
@@ -165,6 +176,7 @@ Running test with C code:
     ninja -C out/Debug libyuv_unittest
     ninja -C out/Debug compare
     ninja -C out/Debug yuvconvert
+    ninja -C out/Debug yuvconstants
     ninja -C out/Debug psnr
     ninja -C out/Debug cpuid
 
@@ -175,22 +187,13 @@ Running test with C code:
     ninja -v -C out/Debug libyuv_unittest
     ninja -v -C out/Release libyuv_unittest
 
-### MIPS Linux
-
-mips
-
-   gn gen out/Release "--args=is_debug=false target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" mips_use_mmi=true is_component_build=false use_sysroot=false use_gold=false"
-   gn gen out/Debug "--args=is_debug=true target_os=\"linux\" target_cpu=\"mips64el\" mips_arch_variant=\"loongson3\" mips_use_mmi=true is_component_build=false use_sysroot=false use_gold=false"
-   ninja -v -C out/Debug libyuv_unittest
-   ninja -v -C out/Release libyuv_unittest
-
 ## Building the Library with make
 
 ### Linux
 
     make V=1 -f linux.mk
     make V=1 -f linux.mk clean
-    make V=1 -f linux.mk CXX=clang++
+    make V=1 -f linux.mk CXX=clang++ CC=clang
 
 ## Building the library with cmake
 
@@ -219,6 +222,88 @@ Install cmake: http://www.cmake.org/
     make -j4
     make package
 
+## Building RISC-V target with cmake
+
+### Native build on RISC-V SBC (e.g. SpacemiT K1/K3)
+
+On a 64-bit RISC-V system, CMake automatically detects `riscv64` and enables
+RVV with `-march=rv64gcv`:
+
+    cmake -B out/Release -DCMAKE_BUILD_TYPE=Release -DUNIT_TEST=ON
+    cmake --build out/Release
+
+To build for 32-bit RISC-V targets:
+
+    cmake -B out/Release -DCMAKE_BUILD_TYPE=Release -DRISCV_COMPILER_FLAGS="-march=rv32gcv"
+    cmake --build out/Release
+
+#### Customized Compiler Flags
+
+Customized compiler flags can be passed with `-DRISCV_COMPILER_FLAGS="xxx"`.
+When assigned, the specified flags are used instead of the default `-march=rv64gcv`:
+
+Targeting SiFive X280:
+
+    cmake -B out/Release -DUNIT_TEST=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DRISCV_COMPILER_FLAGS="-mcpu=sifive-x280"
+
+Targeting Coral (32-bit without floating point, Zve32x):
+
+    cmake -B out/Release -DUNIT_TEST=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DRISCV_COMPILER_FLAGS="-march=rv32imac_zve32x"
+
+To disable RVV:
+
+    cmake -B out/Release -DCMAKE_BUILD_TYPE=Release -DUSE_RVV=OFF
+
+### Building RISC-V with Bazel and Blaze
+
+To build with Bazel for 64-bit or 32-bit RISC-V targets:
+
+    bazel test --platforms=@platforms//cpu:riscv64 //...
+    bazel test --platforms=@platforms//cpu:riscv32 //...
+
+For custom targets such as SiFive X280 or Coral:
+
+    bazel test --platforms=@platforms//cpu:riscv64 --copt=-mcpu=sifive-x280 //...
+    bazel test --platforms=@platforms//cpu:riscv32 --copt=-march=rv32imac_zve32x //...
+
+In google3 using Blaze:
+
+    blaze test --config=mpu64 //third_party/libyuv:libyuv_test
+    blaze run --config=mpu64 //third_party/libyuv:cpuid
+    blaze run --config=mpu64 //third_party/libyuv:yuvconvert
+
+### Cross-compile for RISC-V target using QEMU
+
+#### Prerequisite: build risc-v clang toolchain and qemu
+
+If you don't have prebuilt clang and riscv64 qemu, run the script to download source and build them.
+
+    ./riscv_script/prepare_toolchain_qemu.sh
+
+After running script, clang & qemu are built in `build-toolchain-qemu/riscv-clang/` & `build-toolchain-qemu/riscv-qemu/`.
+
+#### Cross-compile for RISC-V target
+    cmake -B out/Release/ -DUNIT_TEST=ON \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_TOOLCHAIN_FILE="./riscv_script/riscv-clang.cmake" \
+          -DTOOLCHAIN_PATH={TOOLCHAIN_PATH} \
+          -DUSE_RVV=ON .
+    cmake --build out/Release/
+
+### Run on QEMU
+
+#### Run libyuv_unittest on QEMU
+    cd out/Release/
+    USE_RVV=ON \
+    TOOLCHAIN_PATH={TOOLCHAIN_PATH} \
+    QEMU_PREFIX_PATH={QEMU_PREFIX_PATH} \
+    ../../riscv_script/run_qemu.sh libyuv_unittest
+
+
 ## Setup for Arm Cross compile
 
 See also https://www.ccoderun.ca/programming/2015-12-20_CrossCompiling/index.html
@@ -238,6 +323,20 @@ See also https://www.ccoderun.ca/programming/2015-12-20_CrossCompiling/index.htm
     arm-linux-gnueabihf-objdump -d psnr
 
 ## Running Unittests
+
+### Bazel
+
+You can run the tests using Bazel's `test` command. This will build and run the test in an isolated environment:
+
+    bazel test -c opt //:libyuv_test
+
+To pass specific arguments to the test binary (like a gtest filter), use `--test_arg`:
+
+    bazel test -c opt //:libyuv_test --test_arg=--gtest_filter="*" --test_output=all
+
+Alternatively, you can run the compiled binary directly from the `bazel-bin` directory:
+
+    ./bazel-bin/libyuv_test --gtest_filter="*"
 
 ### Windows
 

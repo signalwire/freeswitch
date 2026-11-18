@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_PORTS_ASMDEFS_MMI_H_
-#define VPX_PORTS_ASMDEFS_MMI_H_
+#ifndef VPX_VPX_PORTS_ASMDEFS_MMI_H_
+#define VPX_VPX_PORTS_ASMDEFS_MMI_H_
 
 #include "./vpx_config.h"
 #include "vpx/vpx_integer.h"
@@ -34,7 +34,7 @@
   "ld          " #reg ",        " #bias "(" #addr ")               \n\t"
 
 #define MMI_SRL(reg1, reg2, shift) \
-  "dsrl        " #reg1 ",       " #reg2 ",       " #shift "        \n\t"
+  "ssrld       " #reg1 ",       " #reg2 ",       " #shift "        \n\t"
 
 #define MMI_SLL(reg1, reg2, shift) \
   "dsll        " #reg1 ",       " #reg2 ",       " #shift "        \n\t"
@@ -63,7 +63,7 @@
   "lw          " #reg ",        " #bias "(" #addr ")               \n\t"
 
 #define MMI_SRL(reg1, reg2, shift) \
-  "srl         " #reg1 ",       " #reg2 ",       " #shift "        \n\t"
+  "ssrlw       " #reg1 ",       " #reg2 ",       " #shift "        \n\t"
 
 #define MMI_SLL(reg1, reg2, shift) \
   "sll         " #reg1 ",       " #reg2 ",       " #shift "        \n\t"
@@ -78,4 +78,4 @@
 
 #endif /* HAVE_MMI */
 
-#endif /* VPX_PORTS_ASMDEFS_MMI_H_ */
+#endif  // VPX_VPX_PORTS_ASMDEFS_MMI_H_

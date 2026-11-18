@@ -152,17 +152,27 @@ static void put_text_msg(void *user_data, const uint8_t *msg, int len)
 
 }
 
+#if SPANDSP_RELEASE_DATE >= 20230620
+static void handle_v18_status(void *user_data, int status)
+{
+	switch_core_session_t *session = (switch_core_session_t *) user_data;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_INFO, "%s detected V.18 modem: %s\n", switch_channel_get_name(channel), v18_status_to_str(status));
+}
+#endif
+
 static int get_v18_mode(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *var;
-	int r = V18_MODE_5BIT_4545;
+	int r = V18_MODE_WEITBRECHT_5BIT_4545;
 
 	if ((var = switch_channel_get_variable(channel, "v18_mode"))) {
 		if (!strcasecmp(var, "5BIT_45") || !strcasecmp(var, "baudot")) {
-			r = V18_MODE_5BIT_4545;
+			r = V18_MODE_WEITBRECHT_5BIT_4545;
 		} else if (!strcasecmp(var, "5BIT_50")) {
-			r = V18_MODE_5BIT_50;
+			r = V18_MODE_WEITBRECHT_5BIT_50;
 		} else if (!strcasecmp(var, "DTMF")) {
 			r = V18_MODE_DTMF;
 		} else if (!strcasecmp(var, "EDT")) {
@@ -213,8 +223,11 @@ switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const c
 		return SWITCH_STATUS_FALSE;
 	}
 
+#if SPANDSP_RELEASE_DATE >= 20230620
+	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL, handle_v18_status, session);
+#else
 	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
-
+#endif
 
 	v18_put(tdd_state, text, -1);
 
@@ -260,7 +273,13 @@ switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const
 	}
 
 	pvt->session = session;
+
+#if SPANDSP_RELEASE_DATE >= 20230620
+	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL, handle_v18_status, session);
+#else
 	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
+#endif
+
 	pvt->head_lead = TDD_LEAD;
 
 	v18_put(pvt->tdd_state, text, -1);
@@ -338,7 +357,12 @@ switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session)
 	}
 
 	pvt->session = session;
+
+#if SPANDSP_RELEASE_DATE >= 20230620
+	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, pvt, handle_v18_status, session);
+#else
 	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, pvt);
+#endif
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_decode", NULL,
 						tdd_decode_callback, pvt, 0, SMBF_READ_REPLACE | SMBF_NO_PAUSE, &bug)) != SWITCH_STATUS_SUCCESS) {
@@ -406,7 +430,12 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT: {
 		pvt->dtmf_detect = dtmf_rx_init(NULL, NULL, NULL);
-		span_log_set_message_handler(dtmf_rx_get_logging_state(pvt->dtmf_detect), mod_spandsp_log_message, pvt->session);
+		{
+			mod_spandsp_log_data_t *log_data = switch_core_session_alloc(pvt->session, sizeof(*log_data));
+			log_data->session = pvt->session;
+			log_data->verbose_log_level = spandsp_globals.verbose_log_level;
+			span_log_set_message_handler(dtmf_rx_get_logging_state(pvt->dtmf_detect), mod_spandsp_log_message, log_data);
+		}
 		if (pvt->verbose) {
 			span_log_set_level(dtmf_rx_get_logging_state(pvt->dtmf_detect), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
 		}

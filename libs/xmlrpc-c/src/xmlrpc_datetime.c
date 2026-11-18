@@ -299,7 +299,7 @@ xmlrpc_value *
 xmlrpc_datetime_new(xmlrpc_env *    const envP, 
                     xmlrpc_datetime const dt) {
 
-    xmlrpc_value * valP;
+    xmlrpc_value * valP = NULL;
 
     const char ** readBufferP;
         
@@ -502,7 +502,7 @@ xmlrpc_datetime_new_str(xmlrpc_env * const envP,
    Do not extend this.  The user should use more normal C representations
    of datetimes.
 -----------------------------------------------------------------------------*/
-    xmlrpc_value * retval;
+    xmlrpc_value * retval = NULL;
 
     validateFormat(envP, datetimeString);
     if (!envP->fault_occurred) {
@@ -533,7 +533,7 @@ xmlrpc_datetime_new_usec(xmlrpc_env * const envP,
                          time_t       const secs,
                          unsigned int const usecs) {
 
-    xmlrpc_value * valueP;
+    xmlrpc_value * valueP = NULL;
 
     if (usecs >= 1000000)
         xmlrpc_faultf(envP, "Number of fractional microseconds must be less "

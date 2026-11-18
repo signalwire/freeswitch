@@ -11,6 +11,8 @@
 #ifndef INCLUDE_LIBYUV_CPU_ID_H_
 #define INCLUDE_LIBYUV_CPU_ID_H_
 
+#include <stdint.h>
+
 #include "libyuv/basic_types.h"
 
 #ifdef __cplusplus
@@ -21,34 +23,60 @@ extern "C" {
 // Internal flag to indicate cpuid requires initialization.
 static const int kCpuInitialized = 0x1;
 
-// These flags are only valid on ARM processors.
+// These flags are only valid on Arm processors.
 static const int kCpuHasARM = 0x2;
-static const int kCpuHasNEON = 0x4;
-// 0x8 reserved for future ARM flag.
+static const int kCpuHasNEON = 0x100;
+static const int kCpuHasNeonDotProd = 0x200;
+static const int kCpuHasNeonI8MM = 0x400;
+static const int kCpuHasSVE = 0x800;
+static const int kCpuHasSVE2 = 0x1000;
+static const int kCpuHasSME = 0x2000;
+static const int kCpuHasSME2 = 0x4000;
+static const int kCpuHasSVEF32MM = 0x8000;
+
+// These flags are only valid on RISCV processors.
+static const int kCpuHasRISCV = 0x4;
+static const int kCpuHasRVV = 0x100;
+static const int kCpuHasRVVZVFH = 0x200;
 
 // These flags are only valid on x86 processors.
-static const int kCpuHasX86 = 0x10;
-static const int kCpuHasSSE2 = 0x20;
-static const int kCpuHasSSSE3 = 0x40;
-static const int kCpuHasSSE41 = 0x80;
-static const int kCpuHasSSE42 = 0x100;  // unused at this time.
-static const int kCpuHasAVX = 0x200;
-static const int kCpuHasAVX2 = 0x400;
-static const int kCpuHasERMS = 0x800;
-static const int kCpuHasFMA3 = 0x1000;
-static const int kCpuHasF16C = 0x2000;
-static const int kCpuHasGFNI = 0x4000;
-static const int kCpuHasAVX512BW = 0x8000;
-static const int kCpuHasAVX512VL = 0x10000;
-static const int kCpuHasAVX512VBMI = 0x20000;
-static const int kCpuHasAVX512VBMI2 = 0x40000;
-static const int kCpuHasAVX512VBITALG = 0x80000;
-static const int kCpuHasAVX512VPOPCNTDQ = 0x100000;
+static const int kCpuHasX86 = 0x8;
+static const int kCpuHasSSE2 = 0x100;
+static const int kCpuHasSSSE3 = 0x200;
+static const int kCpuHasSSE41 = 0x400;
+static const int kCpuHasSSE42 = 0x800;
+static const int kCpuHasAVX = 0x1000;
+static const int kCpuHasAVX2 = 0x2000;
+static const int kCpuHasERMS = 0x4000;
+static const int kCpuHasFSMR = 0x8000;
+static const int kCpuHasFMA3 = 0x10000;
+static const int kCpuHasF16C = 0x20000;
+static const int kCpuHasAVX512BW = 0x40000;
+static const int kCpuHasAVX512VL = 0x80000;
+static const int kCpuHasAVX512VNNI = 0x100000;
+static const int kCpuHasAVX512VBMI = 0x200000;
+static const int kCpuHasAVX512VBMI2 = 0x400000;
+static const int kCpuHasAVX512VBITALG = 0x800000;
+static const int kCpuHasAVX10 = 0x1000000;
+static const int kCpuHasAVX10_2 = 0x2000000;
+static const int kCpuHasAVXVNNI = 0x4000000;
+static const int kCpuHasAVXVNNIINT8 = 0x8000000;
+static const int kCpuHasAMXINT8 = 0x10000000;
+static const int kCpuHasAVX512BMM = 0x20000000;
+static const int kCpuHasAMXTF32 = 0x40000000;
 
-// These flags are only valid on MIPS processors.
-static const int kCpuHasMIPS = 0x200000;
-static const int kCpuHasMSA = 0x400000;
-static const int kCpuHasMMI = 0x800000;
+// These flags are only valid on LOONGARCH processors.
+static const int kCpuHasLOONGARCH = 0x20;
+static const int kCpuHasLSX = 0x100;
+static const int kCpuHasLASX = 0x200;
+
+// These flags are only valid on WASM processors.
+static const int kCpuHasWASM = 0x40;
+static const int kCpuHasWASMSIMD = 0x100;
+
+// These flags are only valid on Hexagon processors.
+static const int kCpuHasHexagon = 0x80;
+static const int kCpuHasHVX = 0x100;
 
 // Optional init function. TestCpuFlag does an auto-init.
 // Returns cpu_info flags.
@@ -71,6 +99,17 @@ static __inline int TestCpuFlag(int test_flag) {
 // Internal function for parsing /proc/cpuinfo.
 LIBYUV_API
 int ArmCpuCaps(const char* cpuinfo_name);
+LIBYUV_API
+int RiscvCpuCaps(const char* cpuinfo_name);
+
+#ifdef __linux__
+// On Linux, parse AArch64 features from getauxval(AT_HWCAP{,2}).
+LIBYUV_API
+int AArch64CpuCaps(unsigned long hwcap, unsigned long hwcap2);
+#else
+LIBYUV_API
+int AArch64CpuCaps(void);
+#endif
 
 // For testing, allow CPU flags to be disabled.
 // ie MaskCpuFlags(~kCpuHasSSSE3) to disable SSSE3.

@@ -65,7 +65,6 @@
 #include <xmlrpc-c/abyss.h>
 #include <xmlrpc-c/server.h>
 #include <xmlrpc-c/server_abyss.h>
-#include <xmlrpc-c/base64_int.h>
 #include <../lib/abyss/src/token.h>
 #include <../lib/abyss/src/http.h>
 #include <../lib/abyss/src/session.h>
@@ -321,7 +320,7 @@ static abyss_bool user_attributes(const char *user, const char *domain_name,
 static abyss_bool is_authorized(const TSession * r, const char *command)
 {
 	char *user = NULL, *domain_name = NULL;
-	char *allowed_commands = NULL;
+	const char *allowed_commands = NULL;
 	char *dp;
 	char *dup = NULL;
 	char *argv[256] = { 0 };
@@ -397,7 +396,9 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 {
 	char *p = NULL;
 	char *x = NULL;
-	char z[256] = "", t[80] = "";
+	char z[256] = "";
+	/* base64: 4 output bytes per 3 input, rounded up, plus a NUL */
+	char t[4 * ((sizeof(z) + 2) / 3) + 1] = "";
 	char user[512] = "" ;
 	char *pass = NULL;
 	const char *mypass1 = NULL, *mypass2 = NULL;
@@ -429,7 +430,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				if (!domain_name) {
 					if (globals.virtual_host) {
 						if ((domain_name = (char *) r->requestInfo.host)) {
-							if (!strncasecmp(domain_name, "www.", 3)) {
+							if (!strncasecmp(domain_name, "www.", 4)) {
 								domain_name += 4;
 							}
 						}
@@ -455,7 +456,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					} else {
 						switch_snprintf(z, sizeof(z), "%s:%s", globals.user, globals.pass);
 					}
-					xmlrpc_base64Encode(z, t);
+					switch_b64_encode((unsigned char *)z, strlen(z), (unsigned char *)t, sizeof(t));
 
 					if (!strcmp(p, t)) {
 						goto authed;
@@ -479,7 +480,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 					} else {
 						switch_snprintf(z, sizeof(z), "%s:%s", user, mypass1);
 					}
-					xmlrpc_base64Encode(z, t);
+					switch_b64_encode((unsigned char *)z, strlen(z), (unsigned char *)t, sizeof(t));
 
 					if (!strcmp(p, t)) {
 						goto authed;
@@ -491,7 +492,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						} else {
 							switch_snprintf(z, sizeof(z), "%s:%s", user, mypass2);
 						}
-						xmlrpc_base64Encode(z, t);
+						switch_b64_encode((unsigned char *)z, strlen(z), (unsigned char *)t, sizeof(t));
 
 						if (!strcmp(p, t)) {
 							goto authed;
@@ -504,7 +505,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 						} else {
 							switch_snprintf(z, sizeof(z), "%s:%s", box, mypass1);
 						}
-						xmlrpc_base64Encode(z, t);
+						switch_b64_encode((unsigned char *)z, strlen(z), (unsigned char *)t, sizeof(t));
 
 						if (!strcmp(p, t)) {
 							goto authed;
@@ -517,7 +518,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 								switch_snprintf(z, sizeof(z), "%s:%s", box, mypass2);
 							}
 
-							xmlrpc_base64Encode(z, t);
+							switch_b64_encode((unsigned char *)z, strlen(z), (unsigned char *)t, sizeof(t));
 
 							if (!strcmp(p, t)) {
 								goto authed;
@@ -614,7 +615,7 @@ abyss_bool websocket_hook(TSession *r)
 
 	if (ret != 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "handshake error %d\n", ret);
-		return FALSE;
+		goto err;
 	}
 
 	if (switch_event_bind_removable("websocket", SWITCH_EVENT_CUSTOM, "websocket::stophook", stop_hook_event_handler, wsh, &nodes[node_count++]) != SWITCH_STATUS_SUCCESS) {
@@ -696,8 +697,11 @@ abyss_bool websocket_hook(TSession *r)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "wsh->down = %d, node_count = %d\n", wsh->down, node_count);
 
 	switch_yield(2000);
+
 	while (--node_count >= 0) switch_event_unbind(&nodes[node_count]);
 
+  err:
+	ws_destroy(wsh);
 	switch_safe_free(wsh);
 
 	return FALSE;
@@ -919,7 +923,7 @@ abyss_bool handler_hook(TSession * r)
 				if (len > 0) {
 					int succeeded = TRUE;
 					char *qp = qbuf;
-					char *readError;
+					const char *readError;
 
 					do {
 						int blen = r->connP->buffersize - r->connP->bufferpos;

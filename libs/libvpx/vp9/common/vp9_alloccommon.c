@@ -17,17 +17,26 @@
 #include "vp9/common/vp9_entropymv.h"
 #include "vp9/common/vp9_onyxc_int.h"
 
-void vp9_set_mb_mi(VP9_COMMON *cm, int width, int height) {
+void vp9_set_mi_size(int *mi_rows, int *mi_cols, int *mi_stride, int width,
+                     int height) {
   const int aligned_width = ALIGN_POWER_OF_TWO(width, MI_SIZE_LOG2);
   const int aligned_height = ALIGN_POWER_OF_TWO(height, MI_SIZE_LOG2);
+  *mi_cols = aligned_width >> MI_SIZE_LOG2;
+  *mi_rows = aligned_height >> MI_SIZE_LOG2;
+  *mi_stride = calc_mi_size(*mi_cols);
+}
 
-  cm->mi_cols = aligned_width >> MI_SIZE_LOG2;
-  cm->mi_rows = aligned_height >> MI_SIZE_LOG2;
-  cm->mi_stride = calc_mi_size(cm->mi_cols);
+void vp9_set_mb_size(int *mb_rows, int *mb_cols, int *mb_num, int mi_rows,
+                     int mi_cols) {
+  *mb_cols = (mi_cols + 1) >> 1;
+  *mb_rows = (mi_rows + 1) >> 1;
+  *mb_num = (*mb_rows) * (*mb_cols);
+}
 
-  cm->mb_cols = (cm->mi_cols + 1) >> 1;
-  cm->mb_rows = (cm->mi_rows + 1) >> 1;
-  cm->MBs = cm->mb_rows * cm->mb_cols;
+void vp9_set_mb_mi(VP9_COMMON *cm, int width, int height) {
+  vp9_set_mi_size(&cm->mi_rows, &cm->mi_cols, &cm->mi_stride, width, height);
+  vp9_set_mb_size(&cm->mb_rows, &cm->mb_cols, &cm->MBs, cm->mi_rows,
+                  cm->mi_cols);
 }
 
 static int alloc_seg_map(VP9_COMMON *cm, int seg_map_size) {
@@ -56,6 +65,7 @@ static void free_seg_map(VP9_COMMON *cm) {
     vpx_free(cm->seg_map_array[i]);
     cm->seg_map_array[i] = NULL;
   }
+  cm->seg_map_alloc_size = 0;
 
   cm->current_frame_seg_map = NULL;
   cm->last_frame_seg_map = NULL;
@@ -63,6 +73,8 @@ static void free_seg_map(VP9_COMMON *cm) {
 
 void vp9_free_ref_frame_buffers(BufferPool *pool) {
   int i;
+
+  if (!pool) return;
 
   for (i = 0; i < FRAME_BUFFERS; ++i) {
     if (!pool->frame_bufs[i].released &&
@@ -85,18 +97,20 @@ void vp9_free_postproc_buffers(VP9_COMMON *cm) {
   cm->postproc_state.limits = NULL;
   vpx_free(cm->postproc_state.generated_noise);
   cm->postproc_state.generated_noise = NULL;
+  cm->postproc_state.generated_noise_size = 0;
 #else
   (void)cm;
 #endif
 }
 
 void vp9_free_context_buffers(VP9_COMMON *cm) {
-  cm->free_mi(cm);
+  if (cm->free_mi) cm->free_mi(cm);
   free_seg_map(cm);
   vpx_free(cm->above_context);
   cm->above_context = NULL;
   vpx_free(cm->above_seg_context);
   cm->above_seg_context = NULL;
+  cm->above_context_alloc_cols = 0;
   vpx_free(cm->lf.lfm);
   cm->lf.lfm = NULL;
 }
@@ -122,13 +136,6 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
     cm->free_mi(cm);
     if (cm->alloc_mi(cm, new_mi_size)) goto fail;
   }
-
-  if (cm->seg_map_alloc_size < cm->mi_rows * cm->mi_cols) {
-    // Create the segmentation map structure and set to 0.
-    free_seg_map(cm);
-    if (alloc_seg_map(cm, cm->mi_rows * cm->mi_cols)) goto fail;
-  }
-
   if (cm->above_context_alloc_cols < cm->mi_cols) {
     vpx_free(cm->above_context);
     cm->above_context = (ENTROPY_CONTEXT *)vpx_calloc(
@@ -141,6 +148,12 @@ int vp9_alloc_context_buffers(VP9_COMMON *cm, int width, int height) {
         mi_cols_aligned_to_sb(cm->mi_cols), sizeof(*cm->above_seg_context));
     if (!cm->above_seg_context) goto fail;
     cm->above_context_alloc_cols = cm->mi_cols;
+  }
+
+  if (cm->seg_map_alloc_size < cm->mi_rows * cm->mi_cols) {
+    // Create the segmentation map structure and set to 0.
+    free_seg_map(cm);
+    if (alloc_seg_map(cm, cm->mi_rows * cm->mi_cols)) goto fail;
   }
 
   if (vp9_alloc_loop_filter(cm)) goto fail;

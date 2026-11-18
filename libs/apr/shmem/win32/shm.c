@@ -14,54 +14,54 @@
  * limitations under the License.
  */
 
-#include "apr_general.h"
-#include "apr_errno.h"
-#include "apr_file_io.h"
-#include "apr_shm.h"
-#include "apr_arch_file_io.h"
+#include "fspr_general.h"
+#include "fspr_errno.h"
+#include "fspr_file_io.h"
+#include "fspr_shm.h"
+#include "fspr_arch_file_io.h"
 #include "limits.h"
 
 typedef struct memblock_t {
-    apr_size_t size;
-    apr_size_t length;
+    fspr_size_t size;
+    fspr_size_t length;
 } memblock_t;
 
-struct apr_shm_t {
-    apr_pool_t *pool;
+struct fspr_shm_t {
+    fspr_pool_t *pool;
     memblock_t *memblk;
     void       *usrmem;
-    apr_size_t  size;
-    apr_size_t  length;
+    fspr_size_t  size;
+    fspr_size_t  length;
     HANDLE      hMap;
 };
 
-static apr_status_t shm_cleanup(void* shm)
+static fspr_status_t shm_cleanup(void* shm)
 {
-    apr_status_t rv = APR_SUCCESS;
-    apr_shm_t *m = shm;
+    fspr_status_t rv = APR_SUCCESS;
+    fspr_shm_t *m = shm;
     
     if (UnmapViewOfFile(m->memblk)) {
-        rv = apr_get_os_error();
+        rv = fspr_get_os_error();
     }
     if (CloseHandle(m->hMap)) {
-        return (rv != APR_SUCCESS) ? rv : apr_get_os_error();
+        return (rv != APR_SUCCESS) ? rv : fspr_get_os_error();
     }
     /* ### Do we want to make a point of unlinking m->file here? 
-     * Need to add the fname to the apr_shm_t, in that case.
+     * Need to add the fname to the fspr_shm_t, in that case.
      */
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
-                                         apr_size_t reqsize,
+APR_DECLARE(fspr_status_t) fspr_shm_create(fspr_shm_t **m,
+                                         fspr_size_t reqsize,
                                          const char *file,
-                                         apr_pool_t *pool)
+                                         fspr_pool_t *pool)
 {
-    static apr_size_t memblock = 0;
+    static fspr_size_t memblock = 0;
     HANDLE hMap, hFile;
-    apr_status_t rv;
-    apr_size_t size;
-    apr_file_t *f;
+    fspr_status_t rv;
+    fspr_size_t size;
+    fspr_file_t *f;
     void *base;
     void *mapkey;
     DWORD err, sizelo, sizehi;
@@ -97,14 +97,14 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
          * ever did.  Ignore that error here, but fail later when
          * we discover we aren't the creator of the file map object.
          */
-        rv = apr_file_open(&f, file,
+        rv = fspr_file_open(&f, file,
                            APR_READ | APR_WRITE | APR_BINARY | APR_CREATE,
                            APR_UREAD | APR_UWRITE, pool);
         if ((rv != APR_SUCCESS)
-                || ((rv = apr_os_file_get(&hFile, f)) != APR_SUCCESS)) {
+                || ((rv = fspr_os_file_get(&hFile, f)) != APR_SUCCESS)) {
             return rv;
         }
-        rv = apr_file_trunc(f, size);
+        rv = fspr_file_trunc(f, size);
 
         /* res_name_from_filename turns file into a pseudo-name
          * without slashes or backslashes, and prepends the \global
@@ -127,10 +127,10 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
                                   sizehi, sizelo, mapkey);
     }
 #endif
-    err = apr_get_os_error();
+    err = fspr_get_os_error();
 
     if (file) {
-        apr_file_close(f);
+        fspr_file_close(f);
     }
 
     if (hMap && err == ERROR_ALREADY_EXISTS) {
@@ -145,10 +145,10 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
                          0, 0, size);
     if (!base) {
         CloseHandle(hMap);
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
     
-    *m = (apr_shm_t *) apr_palloc(pool, sizeof(apr_shm_t));
+    *m = (fspr_shm_t *) fspr_palloc(pool, sizeof(fspr_shm_t));
     (*m)->pool = pool;
     (*m)->hMap = hMap;
     (*m)->memblk = base;
@@ -160,27 +160,27 @@ APR_DECLARE(apr_status_t) apr_shm_create(apr_shm_t **m,
     (*m)->memblk->length = (*m)->length;
     (*m)->memblk->size = (*m)->size;
 
-    apr_pool_cleanup_register((*m)->pool, *m, 
-                              shm_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*m)->pool, *m, 
+                              shm_cleanup, fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_destroy(apr_shm_t *m) 
+APR_DECLARE(fspr_status_t) fspr_shm_destroy(fspr_shm_t *m) 
 {
-    apr_status_t rv = shm_cleanup(m);
-    apr_pool_cleanup_kill(m->pool, m, shm_cleanup);
+    fspr_status_t rv = shm_cleanup(m);
+    fspr_pool_cleanup_kill(m->pool, m, shm_cleanup);
     return rv;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_remove(const char *filename,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_shm_remove(const char *filename,
+                                         fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
+APR_DECLARE(fspr_status_t) fspr_shm_attach(fspr_shm_t **m,
                                          const char *file,
-                                         apr_pool_t *pool)
+                                         fspr_pool_t *pool)
 {
     HANDLE hMap;
     void *mapkey;
@@ -207,7 +207,7 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
          * opening the existing shmem and reading its size from the header 
          */
         hMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, 
-                                  PAGE_READWRITE, 0, sizeof(apr_shm_t), mapkey);
+                                  PAGE_READWRITE, 0, sizeof(fspr_shm_t), mapkey);
 #endif
     }
 #endif
@@ -219,16 +219,16 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
 #endif
 
     if (!hMap) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
     
     base = MapViewOfFile(hMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
     if (!base) {
         CloseHandle(hMap);
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
     
-    *m = (apr_shm_t *) apr_palloc(pool, sizeof(apr_shm_t));
+    *m = (fspr_shm_t *) fspr_palloc(pool, sizeof(fspr_shm_t));
     (*m)->pool = pool;
     (*m)->memblk = base;
     /* Real (*m)->mem->size could be recovered with VirtualQuery */
@@ -241,59 +241,59 @@ APR_DECLARE(apr_status_t) apr_shm_attach(apr_shm_t **m,
     hMap = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, 
                               PAGE_READWRITE, 0, (*m)->size, mapkey);
     if (!hMap) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
     base = MapViewOfFile(hMap, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
     if (!base) {
         CloseHandle(hMap);
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }    
 #endif
     (*m)->hMap = hMap;
     (*m)->length = (*m)->memblk->length;
     (*m)->usrmem = (char*)base + sizeof(memblock_t);
-    apr_pool_cleanup_register((*m)->pool, *m, 
-                              shm_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*m)->pool, *m, 
+                              shm_cleanup, fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_shm_detach(apr_shm_t *m)
+APR_DECLARE(fspr_status_t) fspr_shm_detach(fspr_shm_t *m)
 {
-    apr_status_t rv = shm_cleanup(m);
-    apr_pool_cleanup_kill(m->pool, m, shm_cleanup);
+    fspr_status_t rv = shm_cleanup(m);
+    fspr_pool_cleanup_kill(m->pool, m, shm_cleanup);
     return rv;
 }
 
-APR_DECLARE(void *) apr_shm_baseaddr_get(const apr_shm_t *m)
+APR_DECLARE(void *) fspr_shm_baseaddr_get(const fspr_shm_t *m)
 {
     return m->usrmem;
 }
 
-APR_DECLARE(apr_size_t) apr_shm_size_get(const apr_shm_t *m)
+APR_DECLARE(fspr_size_t) fspr_shm_size_get(const fspr_shm_t *m)
 {
     return m->length;
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(shm)
 
-APR_DECLARE(apr_status_t) apr_os_shm_get(apr_os_shm_t *osshm,
-                                         apr_shm_t *shm)
+APR_DECLARE(fspr_status_t) fspr_os_shm_get(fspr_os_shm_t *osshm,
+                                         fspr_shm_t *shm)
 {
     *osshm = shm->hMap;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_os_shm_put(apr_shm_t **m,
-                                         apr_os_shm_t *osshm,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_shm_put(fspr_shm_t **m,
+                                         fspr_os_shm_t *osshm,
+                                         fspr_pool_t *pool)
 {
     void* base;
     base = MapViewOfFile(*osshm, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 0);
     if (!base) {
-        return apr_get_os_error();
+        return fspr_get_os_error();
     }
     
-    *m = (apr_shm_t *) apr_palloc(pool, sizeof(apr_shm_t));
+    *m = (fspr_shm_t *) fspr_palloc(pool, sizeof(fspr_shm_t));
     (*m)->pool = pool;
     (*m)->hMap = *osshm;
     (*m)->memblk = base;
@@ -302,8 +302,8 @@ APR_DECLARE(apr_status_t) apr_os_shm_put(apr_shm_t **m,
     (*m)->size = (*m)->memblk->size;
     (*m)->length = (*m)->memblk->length;
 
-    apr_pool_cleanup_register((*m)->pool, *m, 
-                              shm_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register((*m)->pool, *m, 
+                              shm_cleanup, fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }    
 

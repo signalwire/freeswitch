@@ -36,10 +36,10 @@ bool CopyMasteringMetadata(const mkvparser::MasteringMetadata& parser_mm,
   if (MasteringMetadataValuePresent(parser_mm.luminance_min))
     muxer_mm->set_luminance_min(parser_mm.luminance_min);
 
-  PrimaryChromaticityPtr r_ptr(NULL);
-  PrimaryChromaticityPtr g_ptr(NULL);
-  PrimaryChromaticityPtr b_ptr(NULL);
-  PrimaryChromaticityPtr wp_ptr(NULL);
+  PrimaryChromaticityPtr r_ptr(nullptr);
+  PrimaryChromaticityPtr g_ptr(nullptr);
+  PrimaryChromaticityPtr b_ptr(nullptr);
+  PrimaryChromaticityPtr wp_ptr(nullptr);
 
   if (parser_mm.r) {
     if (!CopyPrimaryChromaticity(*parser_mm.r, &r_ptr))
@@ -202,7 +202,8 @@ bool ParseVpxCodecPrivate(const uint8_t* private_data, int32_t length,
       features->bit_depth = priv_profile;
     } else if (id_byte == kVp9ChromaSubsamplingId) {
       const int priv_profile = static_cast<int>(private_data[offset++]);
-      if (priv_profile != 0 && priv_profile != 2 && priv_profile != 3)
+      if (priv_profile != 0 && priv_profile != 1 && priv_profile != 2 &&
+          priv_profile != 3)
         return false;
       if (features->chroma_subsampling != Vp9CodecFeatures::kValueNotPresent &&
           features->chroma_subsampling != priv_profile) {

@@ -15,16 +15,16 @@
  */
 
 #include "testutil.h"
-#include "apr_general.h"
-#include "apr_network_io.h"
-#include "apr_errno.h"
+#include "fspr_general.h"
+#include "fspr_network_io.h"
+#include "fspr_errno.h"
 
 static void test_bad_input(abts_case *tc, void *data)
 {
     struct {
         const char *ipstr;
         const char *mask;
-        apr_status_t expected_rv;
+        fspr_status_t expected_rv;
     } testcases[] =
     {
         /* so we have a few good inputs in here; sue me */
@@ -63,11 +63,11 @@ static void test_bad_input(abts_case *tc, void *data)
 #endif
     };
     int i;
-    apr_ipsubnet_t *ipsub;
-    apr_status_t rv;
+    fspr_ipsubnet_t *ipsub;
+    fspr_status_t rv;
 
     for (i = 0; i < (sizeof testcases / sizeof testcases[0]); i++) {
-        rv = apr_ipsubnet_create(&ipsub, testcases[i].ipstr, testcases[i].mask, p);
+        rv = fspr_ipsubnet_create(&ipsub, testcases[i].ipstr, testcases[i].mask, p);
         ABTS_INT_EQUAL(tc, rv, testcases[i].expected_rv);
     }
 }
@@ -79,18 +79,18 @@ static void test_singleton_subnets(abts_case *tc, void *data)
         "198.144.203.195", "192.18.97.241", "198.137.240.91", "62.156.179.119", 
         "204.177.92.181"
     };
-    apr_ipsubnet_t *ipsub;
-    apr_sockaddr_t *sa;
-    apr_status_t rv;
+    fspr_ipsubnet_t *ipsub;
+    fspr_sockaddr_t *sa;
+    fspr_status_t rv;
     int i, j, rc;
 
     for (i = 0; i < sizeof v4addrs / sizeof v4addrs[0]; i++) {
-        rv = apr_ipsubnet_create(&ipsub, v4addrs[i], NULL, p);
+        rv = fspr_ipsubnet_create(&ipsub, v4addrs[i], NULL, p);
         ABTS_TRUE(tc, rv == APR_SUCCESS);
         for (j = 0; j < sizeof v4addrs / sizeof v4addrs[0]; j++) {
-            rv = apr_sockaddr_info_get(&sa, v4addrs[j], APR_INET, 0, 0, p);
+            rv = fspr_sockaddr_info_get(&sa, v4addrs[j], APR_INET, 0, 0, p);
             ABTS_TRUE(tc, rv == APR_SUCCESS);
-            rc = apr_ipsubnet_test(ipsub, sa);
+            rc = fspr_ipsubnet_test(ipsub, sa);
             if (!strcmp(v4addrs[i], v4addrs[j])) {
                 ABTS_TRUE(tc, rc != 0);
             }
@@ -124,21 +124,21 @@ static void test_interesting_subnets(abts_case *tc, void *data)
         ,{"127.0.0.1",        "8",             APR_INET6, "::ffff:127.0.0.1",    "fe80::1"}
 #endif
     };
-    apr_ipsubnet_t *ipsub;
-    apr_sockaddr_t *sa;
-    apr_status_t rv;
+    fspr_ipsubnet_t *ipsub;
+    fspr_sockaddr_t *sa;
+    fspr_status_t rv;
     int i, rc;
 
     for (i = 0; i < sizeof testcases / sizeof testcases[0]; i++) {
-        rv = apr_ipsubnet_create(&ipsub, testcases[i].ipstr, testcases[i].mask, p);
+        rv = fspr_ipsubnet_create(&ipsub, testcases[i].ipstr, testcases[i].mask, p);
         ABTS_TRUE(tc, rv == APR_SUCCESS);
-        rv = apr_sockaddr_info_get(&sa, testcases[i].in_subnet, testcases[i].family, 0, 0, p);
+        rv = fspr_sockaddr_info_get(&sa, testcases[i].in_subnet, testcases[i].family, 0, 0, p);
         ABTS_TRUE(tc, rv == APR_SUCCESS);
-        rc = apr_ipsubnet_test(ipsub, sa);
+        rc = fspr_ipsubnet_test(ipsub, sa);
         ABTS_TRUE(tc, rc != 0);
-        rv = apr_sockaddr_info_get(&sa, testcases[i].not_in_subnet, testcases[i].family, 0, 0, p);
+        rv = fspr_sockaddr_info_get(&sa, testcases[i].not_in_subnet, testcases[i].family, 0, 0, p);
         ABTS_TRUE(tc, rv == APR_SUCCESS);
-        rc = apr_ipsubnet_test(ipsub, sa);
+        rc = fspr_ipsubnet_test(ipsub, sa);
         ABTS_TRUE(tc, rc == 0);
     }
 }
@@ -147,7 +147,7 @@ static void test_badmask_str(abts_case *tc, void *data)
 {
     char buf[128];
 
-    ABTS_STR_EQUAL(tc, apr_strerror(APR_EBADMASK, buf, sizeof buf),
+    ABTS_STR_EQUAL(tc, fspr_strerror(APR_EBADMASK, buf, sizeof buf),
                       "The specified network mask is invalid.");
 }
 
@@ -155,7 +155,7 @@ static void test_badip_str(abts_case *tc, void *data)
 {
     char buf[128];
 
-    ABTS_STR_EQUAL(tc, apr_strerror(APR_EBADIP, buf, sizeof buf),
+    ABTS_STR_EQUAL(tc, fspr_strerror(APR_EBADIP, buf, sizeof buf),
                       "The specified IP address is invalid.");
 }
 

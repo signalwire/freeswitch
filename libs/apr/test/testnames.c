@@ -15,12 +15,12 @@
  */
 
 #include "testutil.h"
-#include "apr_file_io.h"
-#include "apr_file_info.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_pools.h"
-#include "apr_lib.h"
+#include "fspr_file_io.h"
+#include "fspr_file_info.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_pools.h"
+#include "fspr_lib.h"
 
 #if WIN32
 #define ABS_ROOT "C:/"
@@ -32,13 +32,13 @@
 
 static void merge_aboveroot(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
     char errmsg[256];
 
-    rv = apr_filepath_merge(&dstpath, ABS_ROOT"foo", ABS_ROOT"bar", APR_FILEPATH_NOTABOVEROOT,
+    rv = fspr_filepath_merge(&dstpath, ABS_ROOT"foo", ABS_ROOT"bar", APR_FILEPATH_NOTABOVEROOT,
                             p);
-    apr_strerror(rv, errmsg, sizeof(errmsg));
+    fspr_strerror(rv, errmsg, sizeof(errmsg));
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_EABOVEROOT(rv));
     ABTS_PTR_EQUAL(tc, NULL, dstpath);
     ABTS_STR_EQUAL(tc, "The given path was above the root path", errmsg);
@@ -46,10 +46,10 @@ static void merge_aboveroot(abts_case *tc, void *data)
 
 static void merge_belowroot(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
 
-    rv = apr_filepath_merge(&dstpath, ABS_ROOT"foo", ABS_ROOT"foo/bar", 
+    rv = fspr_filepath_merge(&dstpath, ABS_ROOT"foo", ABS_ROOT"foo/bar", 
                             APR_FILEPATH_NOTABOVEROOT, p);
     ABTS_PTR_NOTNULL(tc, dstpath);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
@@ -58,10 +58,10 @@ static void merge_belowroot(abts_case *tc, void *data)
 
 static void merge_noflag(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
 
-    rv = apr_filepath_merge(&dstpath, ABS_ROOT"foo", ABS_ROOT"foo/bar", 0, p);
+    rv = fspr_filepath_merge(&dstpath, ABS_ROOT"foo", ABS_ROOT"foo/bar", 0, p);
     ABTS_PTR_NOTNULL(tc, dstpath);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_STR_EQUAL(tc, ABS_ROOT"foo/bar", dstpath);
@@ -69,15 +69,15 @@ static void merge_noflag(abts_case *tc, void *data)
 
 static void merge_dotdot(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
 
-    rv = apr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../baz", 0, p);
+    rv = fspr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../baz", 0, p);
     ABTS_PTR_NOTNULL(tc, dstpath);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_STR_EQUAL(tc, ABS_ROOT"foo/baz", dstpath);
 
-    rv = apr_filepath_merge(&dstpath, "", "../test", 0, p);
+    rv = fspr_filepath_merge(&dstpath, "", "../test", 0, p);
     ABTS_INT_EQUAL(tc, 0, APR_SUCCESS);
     ABTS_STR_EQUAL(tc, "../test", dstpath);
 
@@ -86,23 +86,23 @@ static void merge_dotdot(abts_case *tc, void *data)
      * return ../test unless a previously fixed bug remains or the developer changes
      * the case of the test directory:
      */
-    rv = apr_filepath_merge(&dstpath, "", "../test", APR_FILEPATH_TRUENAME, p);
+    rv = fspr_filepath_merge(&dstpath, "", "../test", APR_FILEPATH_TRUENAME, p);
     ABTS_INT_EQUAL(tc, 0, APR_SUCCESS);
     ABTS_STR_EQUAL(tc, "../test", dstpath);
 }
 
 static void merge_dotdot_dotdot_dotdot(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
 
-    rv = apr_filepath_merge(&dstpath, "", 
+    rv = fspr_filepath_merge(&dstpath, "", 
                             "../../..", APR_FILEPATH_TRUENAME, p);
     ABTS_PTR_NOTNULL(tc, dstpath);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_STR_EQUAL(tc, "../../..", dstpath);
 
-    rv = apr_filepath_merge(&dstpath, "", 
+    rv = fspr_filepath_merge(&dstpath, "", 
                             "../../../", APR_FILEPATH_TRUENAME, p);
     ABTS_PTR_NOTNULL(tc, dstpath);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
@@ -111,10 +111,10 @@ static void merge_dotdot_dotdot_dotdot(abts_case *tc, void *data)
 
 static void merge_secure(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
 
-    rv = apr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../bar/baz", 0, p);
+    rv = fspr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../bar/baz", 0, p);
     ABTS_PTR_NOTNULL(tc, dstpath);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
     ABTS_STR_EQUAL(tc, ABS_ROOT"foo/bar/baz", dstpath);
@@ -122,10 +122,10 @@ static void merge_secure(abts_case *tc, void *data)
 
 static void merge_notrel(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
 
-    rv = apr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../baz",
+    rv = fspr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../baz",
                             APR_FILEPATH_NOTRELATIVE, p);
     ABTS_PTR_NOTNULL(tc, dstpath);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
@@ -134,13 +134,13 @@ static void merge_notrel(abts_case *tc, void *data)
 
 static void merge_notrelfail(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
     char errmsg[256];
 
-    rv = apr_filepath_merge(&dstpath, "foo/bar", "../baz", 
+    rv = fspr_filepath_merge(&dstpath, "foo/bar", "../baz", 
                             APR_FILEPATH_NOTRELATIVE, p);
-    apr_strerror(rv, errmsg, sizeof(errmsg));
+    fspr_strerror(rv, errmsg, sizeof(errmsg));
 
     ABTS_PTR_EQUAL(tc, NULL, dstpath);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_ERELATIVE(rv));
@@ -149,13 +149,13 @@ static void merge_notrelfail(abts_case *tc, void *data)
 
 static void merge_notabsfail(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
     char errmsg[256];
 
-    rv = apr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../baz", 
+    rv = fspr_filepath_merge(&dstpath, ABS_ROOT"foo/bar", "../baz", 
                             APR_FILEPATH_NOTABSOLUTE, p);
-    apr_strerror(rv, errmsg, sizeof(errmsg));
+    fspr_strerror(rv, errmsg, sizeof(errmsg));
 
     ABTS_PTR_EQUAL(tc, NULL, dstpath);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_EABSOLUTE(rv));
@@ -164,10 +164,10 @@ static void merge_notabsfail(abts_case *tc, void *data)
 
 static void merge_notabs(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     char *dstpath = NULL;
 
-    rv = apr_filepath_merge(&dstpath, "foo/bar", "../baz", 
+    rv = fspr_filepath_merge(&dstpath, "foo/bar", "../baz", 
                             APR_FILEPATH_NOTABSOLUTE, p);
 
     ABTS_PTR_NOTNULL(tc, dstpath);
@@ -177,11 +177,11 @@ static void merge_notabs(abts_case *tc, void *data)
 
 static void root_absolute(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     const char *root = NULL;
     const char *path = ABS_ROOT"foo/bar";
 
-    rv = apr_filepath_root(&root, &path, 0, p);
+    rv = fspr_filepath_root(&root, &path, 0, p);
 
     ABTS_PTR_NOTNULL(tc, root);
     ABTS_INT_EQUAL(tc, APR_SUCCESS, rv);
@@ -190,13 +190,13 @@ static void root_absolute(abts_case *tc, void *data)
 
 static void root_relative(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     const char *root = NULL;
     const char *path = "foo/bar";
     char errmsg[256];
 
-    rv = apr_filepath_root(&root, &path, 0, p);
-    apr_strerror(rv, errmsg, sizeof(errmsg));
+    rv = fspr_filepath_root(&root, &path, 0, p);
+    fspr_strerror(rv, errmsg, sizeof(errmsg));
 
     ABTS_PTR_EQUAL(tc, NULL, root);
     ABTS_INT_EQUAL(tc, 1, APR_STATUS_IS_ERELATIVE(rv));
@@ -205,11 +205,11 @@ static void root_relative(abts_case *tc, void *data)
 
 static void root_from_slash(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     const char *root = NULL;
     const char *path = "//";
 
-    rv = apr_filepath_root(&root, &path, APR_FILEPATH_TRUENAME, p);
+    rv = fspr_filepath_root(&root, &path, APR_FILEPATH_TRUENAME, p);
 
 #if defined(WIN32) || defined(OS2)
     ABTS_INT_EQUAL(tc, APR_EINCOMPLETE, rv);
@@ -223,15 +223,15 @@ static void root_from_slash(abts_case *tc, void *data)
 
 static void root_from_cwd_and_back(abts_case *tc, void *data)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     const char *root = NULL;
     const char *path = "//";
     char *origpath;
     char *testpath;
 
-    ABTS_INT_EQUAL(tc, APR_SUCCESS, apr_filepath_get(&origpath, 0, p));
+    ABTS_INT_EQUAL(tc, APR_SUCCESS, fspr_filepath_get(&origpath, 0, p));
     path = origpath;
-    rv = apr_filepath_root(&root, &path, APR_FILEPATH_TRUENAME, p);
+    rv = fspr_filepath_root(&root, &path, APR_FILEPATH_TRUENAME, p);
 
 #if defined(WIN32) || defined(OS2)
     ABTS_INT_EQUAL(tc, origpath[0], root[0]);
@@ -257,7 +257,7 @@ static void root_from_cwd_and_back(abts_case *tc, void *data)
     ABTS_STR_EQUAL(tc, origpath + 1, path);
 #endif
 
-    rv = apr_filepath_merge(&testpath, root, path, 
+    rv = fspr_filepath_merge(&testpath, root, path, 
                             APR_FILEPATH_TRUENAME
                           | APR_FILEPATH_NOTABOVEROOT
                           | APR_FILEPATH_NOTRELATIVE, p);

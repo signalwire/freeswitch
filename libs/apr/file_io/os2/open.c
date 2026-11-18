@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_lib.h"
-#include "apr_portable.h"
-#include "apr_strings.h"
-#include "apr_arch_inherit.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_lib.h"
+#include "fspr_portable.h"
+#include "fspr_strings.h"
+#include "fspr_arch_inherit.h"
 #include <string.h>
 
-apr_status_t apr_file_cleanup(void *thefile)
+fspr_status_t fspr_file_cleanup(void *thefile)
 {
-    apr_file_t *file = thefile;
-    return apr_file_close(file);
+    fspr_file_t *file = thefile;
+    return fspr_file_close(file);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname, apr_int32_t flag,  apr_fileperms_t perm, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open(fspr_file_t **new, const char *fname, fspr_int32_t flag,  fspr_fileperms_t perm, fspr_pool_t *pool)
 {
     int oflags = 0;
     int mflags = OPEN_FLAGS_FAIL_ON_ERROR|OPEN_SHARE_DENYNONE;
     int rv;
     ULONG action;
-    apr_file_t *dafile = (apr_file_t *)apr_palloc(pool, sizeof(apr_file_t));
+    fspr_file_t *dafile = (fspr_file_t *)fspr_palloc(pool, sizeof(fspr_file_t));
 
     dafile->pool = pool;
     dafile->isopen = FALSE;
@@ -59,8 +59,8 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname, apr
     dafile->buffered = (flag & APR_BUFFERED) > 0;
 
     if (dafile->buffered) {
-        dafile->buffer = apr_palloc(pool, APR_FILE_BUFSIZE);
-        rv = apr_thread_mutex_create(&dafile->mutex, 0, pool);
+        dafile->buffer = fspr_palloc(pool, APR_FILE_BUFSIZE);
+        rv = fspr_thread_mutex_create(&dafile->mutex, 0, pool);
 
         if (rv)
             return rv;
@@ -97,7 +97,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname, apr
         return APR_FROM_OS_ERROR(rv);
     
     dafile->isopen = TRUE;
-    dafile->fname = apr_pstrdup(pool, fname);
+    dafile->fname = fspr_pstrdup(pool, fname);
     dafile->filePtr = 0;
     dafile->bufpos = 0;
     dafile->dataRead = 0;
@@ -105,7 +105,7 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname, apr
     dafile->pipe = FALSE;
 
     if (!(flag & APR_FILE_NOCLEANUP)) { 
-        apr_pool_cleanup_register(dafile->pool, dafile, apr_file_cleanup, apr_file_cleanup);
+        fspr_pool_cleanup_register(dafile->pool, dafile, fspr_file_cleanup, fspr_file_cleanup);
     }
 
     *new = dafile;
@@ -114,13 +114,13 @@ APR_DECLARE(apr_status_t) apr_file_open(apr_file_t **new, const char *fname, apr
 
 
 
-APR_DECLARE(apr_status_t) apr_file_close(apr_file_t *file)
+APR_DECLARE(fspr_status_t) fspr_file_close(fspr_file_t *file)
 {
     ULONG rc;
-    apr_status_t status;
+    fspr_status_t status;
     
     if (file && file->isopen) {
-        apr_file_flush(file);
+        fspr_file_flush(file);
         rc = DosClose(file->filedes);
     
         if (rc == 0) {
@@ -136,14 +136,14 @@ APR_DECLARE(apr_status_t) apr_file_close(apr_file_t *file)
     }
 
     if (file->buffered)
-        apr_thread_mutex_destroy(file->mutex);
+        fspr_thread_mutex_destroy(file->mutex);
 
     return APR_SUCCESS;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_remove(const char *path, fspr_pool_t *pool)
 {
     ULONG rc = DosDelete(path);
     return APR_FROM_OS_ERROR(rc);
@@ -151,8 +151,8 @@ APR_DECLARE(apr_status_t) apr_file_remove(const char *path, apr_pool_t *pool)
 
 
 
-APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path, const char *to_path,
-                                   apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_rename(const char *from_path, const char *to_path,
+                                   fspr_pool_t *p)
 {
     ULONG rc = DosMove(from_path, to_path);
 
@@ -169,7 +169,7 @@ APR_DECLARE(apr_status_t) apr_file_rename(const char *from_path, const char *to_
 
 
 
-APR_DECLARE(apr_status_t) apr_os_file_get(apr_os_file_t *thefile, apr_file_t *file)
+APR_DECLARE(fspr_status_t) fspr_os_file_get(fspr_os_file_t *thefile, fspr_file_t *file)
 {
     *thefile = file->filedes;
     return APR_SUCCESS;
@@ -177,11 +177,11 @@ APR_DECLARE(apr_status_t) apr_os_file_get(apr_os_file_t *thefile, apr_file_t *fi
 
 
 
-APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file, apr_os_file_t *thefile, apr_int32_t flags, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_file_put(fspr_file_t **file, fspr_os_file_t *thefile, fspr_int32_t flags, fspr_pool_t *pool)
 {
-    apr_os_file_t *dafile = thefile;
+    fspr_os_file_t *dafile = thefile;
 
-    (*file) = apr_palloc(pool, sizeof(apr_file_t));
+    (*file) = fspr_palloc(pool, sizeof(fspr_file_t));
     (*file)->pool = pool;
     (*file)->filedes = *dafile;
     (*file)->isopen = TRUE;
@@ -191,10 +191,10 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file, apr_os_file_t *thef
     (*file)->buffered = (flags & APR_BUFFERED) > 0;
 
     if ((*file)->buffered) {
-        apr_status_t rv;
+        fspr_status_t rv;
 
-        (*file)->buffer = apr_palloc(pool, APR_FILE_BUFSIZE);
-        rv = apr_thread_mutex_create(&(*file)->mutex, 0, pool);
+        (*file)->buffer = fspr_palloc(pool, APR_FILE_BUFSIZE);
+        rv = fspr_thread_mutex_create(&(*file)->mutex, 0, pool);
 
         if (rv)
             return rv;
@@ -204,7 +204,7 @@ APR_DECLARE(apr_status_t) apr_os_file_put(apr_file_t **file, apr_os_file_t *thef
 }    
 
 
-APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
+APR_DECLARE(fspr_status_t) fspr_file_eof(fspr_file_t *fptr)
 {
     if (!fptr->isopen || fptr->eof_hit == 1) {
         return APR_EOF;
@@ -213,33 +213,33 @@ APR_DECLARE(apr_status_t) apr_file_eof(apr_file_t *fptr)
 }   
 
 
-APR_DECLARE(apr_status_t) apr_file_open_stderr(apr_file_t **thefile, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stderr(fspr_file_t **thefile, fspr_pool_t *pool)
 {
-    apr_os_file_t fd = 2;
+    fspr_os_file_t fd = 2;
 
-    return apr_os_file_put(thefile, &fd, 0, pool);
+    return fspr_os_file_put(thefile, &fd, 0, pool);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_file_open_stdout(apr_file_t **thefile, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stdout(fspr_file_t **thefile, fspr_pool_t *pool)
 {
-    apr_os_file_t fd = 1;
+    fspr_os_file_t fd = 1;
 
-    return apr_os_file_put(thefile, &fd, 0, pool);
+    return fspr_os_file_put(thefile, &fd, 0, pool);
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_open_stdin(apr_file_t **thefile, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_open_stdin(fspr_file_t **thefile, fspr_pool_t *pool)
 {
-    apr_os_file_t fd = 0;
+    fspr_os_file_t fd = 0;
 
-    return apr_os_file_put(thefile, &fd, 0, pool);
+    return fspr_os_file_put(thefile, &fd, 0, pool);
 }
 
 APR_POOL_IMPLEMENT_ACCESSOR(file);
 
-APR_IMPLEMENT_INHERIT_SET(file, flags, pool, apr_file_cleanup)
+APR_IMPLEMENT_INHERIT_SET(file, flags, pool, fspr_file_cleanup)
 
-APR_IMPLEMENT_INHERIT_UNSET(file, flags, pool, apr_file_cleanup)
+APR_IMPLEMENT_INHERIT_UNSET(file, flags, pool, fspr_file_cleanup)
 

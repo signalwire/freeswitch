@@ -387,7 +387,7 @@ struct vpx_context {
 
 	vpx_codec_ctx_t	encoder;
 	uint8_t encoder_init;
-	vpx_image_t *pic;
+	switch_image_t *pic;
 	switch_bool_t force_key_frame;
 	int fps;
 	int format;
@@ -1109,13 +1109,15 @@ static switch_status_t buffer_vp9_packets(vpx_context_t *context, switch_frame_t
 	vp9++;
 
 	if (desc->have_pid) {
+#ifdef DEBUG_VP9
 		uint16_t pid = 0;
-
 		pid = *vp9 & 0x7f;	//0 bit is M , 1-7 bit is pid.
-
+#endif
 		if (*vp9 & 0x80) {	//if (M==1)
 			vp9++;
+#ifdef DEBUG_VP9
 			pid = (pid << 8) + *vp9;
+#endif 
 		}
 
 		vp9++;
@@ -1236,7 +1238,7 @@ static switch_status_t switch_vpx_decode(switch_codec_t *codec, switch_frame_t *
 
 		if (context->last_received_seq && context->last_received_seq + 1 != frame->seq) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, VPX_SWITCH_LOG_LEVEL, "Packet loss detected last=%d got=%d lost=%d\n", context->last_received_seq, frame->seq, frame->seq - context->last_received_seq);
-			if (is_keyframe && context->vpx_packet_buffer) switch_buffer_zero(context->vpx_packet_buffer);
+			if (is_keyframe) switch_buffer_zero(context->vpx_packet_buffer);
 		}
 
 		context->last_received_seq = frame->seq;
@@ -1500,7 +1502,7 @@ static switch_status_t switch_vpx_destroy(switch_codec_t *codec)
 		}
 
 		if (context->pic) {
-			vpx_img_free(context->pic);
+			vpx_img_free((vpx_image_t*)context->pic);
 			context->pic = NULL;
 		}
 		if (context->vpx_packet_buffer) {
@@ -1851,7 +1853,7 @@ static void parse_codecs(my_vpx_cfg_t *my_cfg, switch_xml_t codecs)
 	}
 }
 
-static void load_config()
+static void load_config(void)
 {
 	switch_xml_t cfg = NULL, xml = NULL;
 	my_vpx_cfg_t *my_cfg = NULL;

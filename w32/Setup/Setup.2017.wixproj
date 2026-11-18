@@ -13,6 +13,10 @@
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>FreeSWITCH</OutputName>
     <OutputType>Package</OutputType>
+    <CertificateThumbprint>e0dad9125302803aa4fe4ba2fdf9edeb99a42ea9</CertificateThumbprint>
+    <TimestampUrl>http://timestamp.comodoca.com</TimestampUrl>
+    <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x86\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='x86' ">$(WindowsSDK80Path)bin\x86\signtool.exe</SignToolPath>
+    <SignToolPath Condition=" Exists('$(WindowsSDK80Path)bin\x64\signtool.exe') and '$(SignToolPath)'=='' and '$(PROCESSOR_ARCHITECTURE)'=='AMD64' ">$(WindowsSDK80Path)bin\x64\signtool.exe</SignToolPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' AND '$(MSBuildExtensionsPath32)' != '' ">$(MSBuildExtensionsPath32)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
     <WixTargetsPath Condition=" '$(WixTargetsPath)' == '' ">$(MSBuildExtensionsPath)\Microsoft\WiX\v3.x\Wix.targets</WixTargetsPath>
   </PropertyGroup>
@@ -80,14 +84,6 @@
     <ProjectReference Include="..\..\libs\win32\Sound_Files\8khzmusic.2017.vcxproj">
       <Name>8khz music</Name>
       <Project>{d1abe208-6442-4fb4-9aad-1677e41bc870}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\applications\mod_abstraction\mod_abstraction.2017.vcxproj">
-      <Name>mod_abstraction</Name>
-      <Project>{60c542ee-6882-4ea2-8c21-5ab6db1ba73f}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -293,14 +289,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\applications\mod_rss\mod_rss.2017.vcxproj">
-      <Name>mod_rss</Name>
-      <Project>{b69247fa-ecd6-40ed-8e44-5ca6c3baf9a4}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\applications\mod_signalwire\mod_signalwire.2017.vcxproj">
       <Name>mod_signalwire</Name>
       <Project>{b19ae6fc-bfff-428d-b483-3bbeaeccc618}</Project>
@@ -312,14 +300,6 @@
     <ProjectReference Include="..\..\src\mod\applications\mod_sms\mod_sms.2017.vcxproj">
       <Name>mod_sms</Name>
       <Project>{2469b306-b027-4ff2-8815-c9c1ea2cae79}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\applications\mod_snom\mod_snom.2017.vcxproj">
-      <Name>mod_snom</Name>
-      <Project>{2a3d00c6-588d-4e86-81ac-9ef5ede86e03}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -381,14 +361,6 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\asr_tts\mod_unimrcp\mod_unimrcp.2017.vcxproj">
-      <Name>mod_unimrcp</Name>
-      <Project>{d07c378a-f5f7-438f-adf3-4ac4fb1883cd}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_amr\mod_amr.2017.vcxproj">
       <Name>mod_amr</Name>
       <Project>{8deb383c-4091-4f42-a56f-c9e46d552d79}</Project>
@@ -429,25 +401,9 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\codecs\mod_h26x\mod_h26x.2017.vcxproj">
-      <Name>mod_h26x</Name>
-      <Project>{2c3c2423-234b-4772-8899-d3b137e5ca35}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\codecs\mod_ilbc\mod_ilbc.2017.vcxproj">
       <Name>mod_ilbc</Name>
       <Project>{d3ec0aff-76fc-4210-a825-9a17410660a3}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\codecs\mod_isac\mod_iSAC.2017.vcxproj">
-      <Name>mod_iSAC</Name>
-      <Project>{7f1610f1-dd5a-4cf7-8610-30ab12c60add}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -525,33 +481,9 @@
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_dingaling\mod_dingaling.2017.vcxproj">
-      <Name>mod_dingaling</Name>
-      <Project>{ffaa4c52-3a53-4f99-90c1-d59d1f0427f3}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_gsmopen\mod_gsmopen.2017.vcxproj">
-      <Name>mod_gsmopen</Name>
-      <Project>{74b120ff-6935-4dfe-a142-cdb6bea99c90}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
     <ProjectReference Include="..\..\src\mod\endpoints\mod_loopback\mod_loopback.2017.vcxproj">
       <Name>mod_loopback</Name>
       <Project>{b3f424ec-3d8f-417c-b244-3919d5e1a577}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\endpoints\mod_portaudio\mod_PortAudio.2017.vcxproj">
-      <Name>mod_PortAudio</Name>
-      <Project>{5fd31a25-5d83-4794-8bee-904dad84ce71}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -608,14 +540,6 @@
     <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_csv\mod_cdr_csv.2017.vcxproj">
       <Name>mod_cdr_csv</Name>
       <Project>{44d7deaf-fda5-495e-8b9d-1439e4f4c21e}</Project>
-      <Private>True</Private>
-      <DoNotHarvest>True</DoNotHarvest>
-      <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
-      <RefTargetDir>INSTALLFOLDER</RefTargetDir>
-    </ProjectReference>
-    <ProjectReference Include="..\..\src\mod\event_handlers\mod_cdr_mongodb\mod_cdr_mongodb.2017.vcxproj">
-      <Name>mod_cdr_mongodb</Name>
-      <Project>{4dff29b4-2976-447d-a8b3-43476451517c}</Project>
       <Private>True</Private>
       <DoNotHarvest>True</DoNotHarvest>
       <RefProjectOutputGroups>Binaries;Content;Satellites</RefProjectOutputGroups>
@@ -1005,8 +929,25 @@
     <Message Importance="High" Text="Deleting previously created MSI files." />
     <Delete Files="$(OutputPath)$(OutputName).msi" />
     <Delete Files="$(DestinationFileName)" />
-
-   <HeatDirectory
+    <CreateItem Include="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\f*.exe">
+        <Output ItemName="ExeFiles" TaskParameter="Include" />
+    </CreateItem>
+    <CreateItem Include="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\mod\*.dll">
+        <Output ItemName="Modules" TaskParameter="Include" />
+    </CreateItem>
+    <Message Importance="High" Text="Signing FreeSWITCH Core Library" />
+    <SignFile ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\FreeSwitch.dll"
+            TargetFrameworkVersion="v4.5" />
+    <Message Importance="High" Text="Signing FreeSWITCH Executables" />
+    <SignFile ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="%(ExeFiles.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHConfFiles.wxs"
         Directory="$(ProjectDir)..\..\conf\vanilla"
@@ -1017,9 +958,10 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHConfFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHSoundFiles8.wxs"
         Directory="$(SoundsDir)"
@@ -1030,9 +972,10 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHSoundFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHhtdocsFilesDir.wxs"
         Directory="$(ProjectDir)..\..\htdocs"
@@ -1043,9 +986,10 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHhtdocsFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHimagesFilesDir.wxs"
         Directory="$(ProjectDir)..\..\images"
@@ -1056,9 +1000,10 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHimagesFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHfontsFilesDir.wxs"
         Directory="$(ProjectDir)..\..\fonts"
@@ -1069,9 +1014,10 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHfontsFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHgrammarFilesDir.wxs"
         Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)\grammar"
@@ -1082,9 +1028,10 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHgrammarFilesDir">
     </HeatDirectory>
-   <HeatDirectory
+    <HeatDirectory
         ToolPath="$(WixToolPath)"
         OutputFile="$(ProjectDir)Fragments\FreeSWITCHBaseFiles.wxs"
         Directory="$(SolutionDir)$(UserFriendlyPlatform)\$(Configuration)"
@@ -1096,11 +1043,34 @@
         SuppressRegistry="true"
         SuppressCom="true"
         SuppressFragments="true"
+        RunAsSeparateProcess="true"
         PreprocessorVariable="var.FreeSWITCHBaseDir">
     </HeatDirectory>
+    <Message Importance="High" Text="Signing FreeSWITCH Modules" />
+  </Target>
+  <!-- One batch per module so each file is logged as it is signed. The Modules items
+       are created in AfterResolveReferences and only visible after it completes. -->
+  <Target Name="SignFreeSWITCHModules"
+          AfterTargets="AfterResolveReferences"
+          Outputs="%(Modules.Identity)"
+          Condition="'@(Modules)' != ''">
+    <Message Importance="High" Text="Signing %(Modules.Identity)" />
+    <SignFile Condition="'$(GitCommits)' != '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
+    <SignFile Condition="'$(GitCommits)' == '0'" ContinueOnError="WarnAndContinue"
+            CertificateThumbprint="$(CertificateThumbprint)"
+            TimestampUrl="$(TimestampUrl)"
+            SigningTarget="%(Modules.Identity)"
+            TargetFrameworkVersion="v4.5" />
   </Target>
   <Target Name="AfterBuild">
     <Copy SourceFiles="$(OutputPath)$(OutputName).msi" DestinationFiles="$(DestinationFileName)" />
+    <Message Importance="High" Text="Signing FreeSWITCH MSI Package" />
+    <Exec ContinueOnError="WarnAndContinue"
+        Command="&quot;$(SignToolPath)&quot; sign /fd sha256 /sha1 $(CertificateThumbprint) /t &quot;$(TimestampUrl)&quot; &quot;$(DestinationFileName)&quot;"
+        StandardOutputImportance="high" />
     <Message Importance="High" Condition="Exists('$(DestinationFileName)')" Text="Success. An output MSI has been copied to $(DestinationFileName)" />
   </Target>
 </Project>

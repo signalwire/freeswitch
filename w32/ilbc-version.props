@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <iLBC_Version>0.0.1</iLBC_Version>
+    <iLBC_BuildNumber>1</iLBC_BuildNumber>
   </PropertyGroup>
   <PropertyGroup>
     <iLBC_VersionImported>true</iLBC_VersionImported>
@@ -12,6 +13,9 @@
   <ItemGroup>
     <BuildMacro Include="iLBC_Version">
       <Value>$(iLBC_Version)</Value>
+    </BuildMacro>
+    <BuildMacro Include="iLBC_BuildNumber">
+      <Value>$(iLBC_BuildNumber)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

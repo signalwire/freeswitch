@@ -23,34 +23,41 @@
     <ProjectGuid>{202D7A4E-760D-4D0E-AFA1-D7459CED30FF}</ProjectGuid>
     <RootNamespace>FreeSwitchCoreLib</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(SolutionDir)\w32\switch_version.props" Condition=" '$(switch_versionPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\openssl.props" Condition=" '$(OpensslPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\curl.props" Condition=" '$(CurlPropsImported)' == '' " />
   <Import Project="$(SolutionDir)\w32\pcre.props" Condition=" '$(pcrePropsImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\libpng.props" Condition=" '$(libpngImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\sqlite.props" Condition=" '$(sqliteVersionImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\speex.props" Condition=" '$(speexVersionImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\speexdsp.props" Condition=" '$(speexdspVersionImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\freetype.props" Condition=" '$(freetypeVersionImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\miniupnpc.props" Condition=" '$(miniupnpcVersionImported)' == '' " />
+  <Import Project="$(SolutionDir)\w32\libnatpmp.props" Condition=" '$(libnatpmpVersionImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -128,8 +135,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <BuildLog />
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\libvpx;..\..\libs\win32\libvpx\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -151,7 +158,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ProjectReference>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AddModuleNamesToAssembly>%(AddModuleNamesToAssembly)</AddModuleNamesToAssembly>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -178,8 +185,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\libvpx;..\..\libs\win32\libvpx\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -200,7 +207,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ProjectReference>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AddModuleNamesToAssembly>%(AddModuleNamesToAssembly)</AddModuleNamesToAssembly>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -219,8 +226,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <BuildLog />
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\libvpx;..\..\libs\win32\libvpx\include_x86;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;CRASH_PROT;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -238,7 +245,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ProjectReference>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -257,8 +264,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\sqlite-amalgamation-3080401;..\..\libs\speex-1.2rc1\include;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libzrtp\include;..\..\libs\libzrtp\third_party\bgaes;..\..\libs\libzrtp\third_party\bnlib;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\freetype\include;..\..\libs\libpng;..\..\libs\libvpx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;STATICLIB;CRASH_PROT;ENABLE_ZRTP;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\spandsp\src\msvc;..\..\libs\spandsp\src;..\..\libs\libtpl-1.5\src;..\..\libs\libtpl-1.5\src\win;..\..\libs\sofia-sip\libsofia-sip-ua\sdp;..\..\libs\sofia-sip\libsofia-sip-ua\su;..\..\libs\sofia-sip\win32;..\..\libs\libyuv\include;..\..\libs\libvpx;..\..\libs\win32\libvpx\include_x64;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CJSON_EXPORT_SYMBOLS;_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;CRASH_PROT;TPL_NOLIB;LIBSOFIA_SIP_UA_STATIC;SWITCH_HAVE_YUV;SWITCH_HAVE_VPX;SWITCH_HAVE_PNG;SWITCH_HAVE_FREETYPE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>switch.h</PrecompiledHeaderFile>
@@ -276,7 +283,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ProjectReference>
     <Link>
       <AdditionalDependencies>rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\sqlite\$(OutDir) DLL;$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\libs\apr\$(OutDir);$(ProjectDir)..\..\libs\apr-util\$(OutDir);$(ProjectDir)..\..\libs\apr-iconv\$(OutDir);$(ProjectDir)..\..\libs\libresample\win;$(ProjectDir)..\..\libs\srtp\$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -311,6 +318,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ClCompile>
     <ClCompile Include="..\..\src\switch_core_video.c" />
     <ClCompile Include="..\..\src\switch_apr.c" />
+    <ClCompile Include="..\..\src\switch_apr_queue.c" />
     <ClCompile Include="..\..\src\switch_buffer.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -359,6 +367,7 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClCompile Include="..\..\src\switch_estimators.c" />
     <ClCompile Include="..\..\src\switch_event.c" />
     <ClCompile Include="..\..\src\switch_hashtable.c" />
+    <ClCompile Include="..\..\src\switch_image.c" />
     <ClCompile Include="..\..\src\switch_ivr.c" />
     <ClCompile Include="..\..\src\switch_ivr_async.c" />
     <ClCompile Include="..\..\src\switch_ivr_bridge.c" />
@@ -400,299 +409,24 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClCompile Include="..\..\src\switch_odbc.c" />
     <ClCompile Include="..\..\src\switch_pcm.c" />
     <ClCompile Include="..\..\src\switch_speex.c" />
+    <ClCompile Include="..\..\src\switch_packetizer.c" />
     <ClCompile Include="..\..\src\switch_profile.c" />
     <ClCompile Include="..\..\src\switch_regex.c" />
     <ClCompile Include="..\..\src\switch_resample.c" />
     <ClCompile Include="..\..\src\switch_rtp.c" />
     <ClCompile Include="..\..\src\switch_scheduler.c" />
     <ClCompile Include="..\..\src\switch_sdp.c" />
+    <ClCompile Include="..\..\src\switch_spandsp.c" />
     <ClCompile Include="..\..\src\switch_stun.c" />
     <ClCompile Include="..\..\src\switch_time.c" />
     <ClCompile Include="..\..\src\switch_utils.c" />
+    <ClCompile Include="..\..\src\switch_uuidv7.c" />
     <ClCompile Include="..\..\src\switch_vad.c" />
     <ClCompile Include="..\..\src\switch_version.c" />
     <ClCompile Include="..\..\src\switch_vpx.c" />
     <ClCompile Include="..\..\src\switch_jitterbuffer.c" />
     <ClCompile Include="..\..\src\switch_xml.c" />
     <ClCompile Include="..\..\src\switch_xml_config.c" />
-    <ClCompile Include="..\..\libs\miniupnpc\igd_desc_parse.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\minisoap.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\minissdpc.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\miniupnpc.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;4389;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;4389;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;4389;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;4389;4706;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\miniwget.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\minixml.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\upnpcommands.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\upnperrors.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\miniupnpc\upnpreplyparse.c">
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_SECURE_NO_DEPRECATE;STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;4127;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\libnatpmp\getgateway.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="..\..\libs\libnatpmp\natpmp.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeaderOutputFile>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-      </PrecompiledHeader>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
     <ClCompile Include="..\..\src\switch_utf8.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -705,7 +439,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\libs\miniupnpc\declspec.h" />
     <ClInclude Include="..\..\src\include\g711.h" />
     <ClInclude Include="..\..\src\include\SimpleGlob.h" />
     <ClInclude Include="..\..\src\include\switch.h" />
@@ -729,23 +462,26 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ClInclude Include="..\..\src\include\switch_cJSON.h" />
     <ClInclude Include="..\..\src\include\switch_cJSON_Utils.h" />
     <ClInclude Include="..\..\src\include\switch_json.h" />
+    <ClInclude Include="..\..\src\include\switch_image.h" />
     <ClInclude Include="..\..\src\include\switch_limit.h" />
     <ClInclude Include="..\..\src\include\switch_loadable_module.h" />
     <ClInclude Include="..\..\src\include\switch_log.h" />
     <ClInclude Include="..\..\src\include\switch_module_interfaces.h" />
     <ClInclude Include="..\..\src\include\switch_mprintf.h" />
     <ClInclude Include="..\..\src\include\switch_odbc.h" />
+    <ClInclude Include="..\..\src\include\switch_packetizer.h" />
     <ClInclude Include="..\..\src\include\switch_platform.h" />
     <ClInclude Include="..\..\src\include\switch_regex.h" />
     <ClInclude Include="..\..\src\include\switch_resample.h" />
     <ClInclude Include="..\..\src\include\switch_rtp.h" />
     <ClInclude Include="..\..\src\include\switch_scheduler.h" />
+    <ClInclude Include="..\..\src\include\switch_spandsp.h" />
     <ClInclude Include="..\..\src\include\switch_stun.h" />
     <ClInclude Include="..\..\src\include\switch_types.h" />
     <ClInclude Include="..\..\src\include\switch_utils.h" />
+    <ClInclude Include="..\..\src\include\private\switch_uuidv7_pvt.h" />
     <ClInclude Include="..\..\src\include\switch_vad.h" />
     <ClInclude Include="..\..\src\include\switch_version.h" />
-    <ClInclude Include="..\..\src\include\switch_vpx.h" />
     <ClInclude Include="..\..\src\include\switch_xml.h" />
     <ClInclude Include="..\..\src\include\switch_xml_config.h" />
   </ItemGroup>
@@ -763,17 +499,8 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
       <Project>{89385c74-5860-4174-9caf-a39e7c48909c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\libzrtp\projects\win\libzrtp.2017.vcxproj">
-      <Project>{c13cc324-0032-4492-9a30-310a6bd64ff5}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\spandsp\src\libspandsp.2017.vcxproj">
+    <ProjectReference Include="..\..\libs\win32\spandsp\libspandsp.2017.vcxproj">
       <Project>{1cbb0077-18c5-455f-801c-0a0ce7b0bbf5}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\freetype\freetype.2017.vcxproj">
-      <Project>{78b079bd-9fc7-4b9e-b4a6-96da0f00248b}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\libpng\libpng.2017.vcxproj">
-      <Project>{d6973076-9317-4ef2-a0b8-b7a18ac0713e}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\libvpx\libvpx.2017.vcxproj">
       <Project>{dce19daf-69ac-46db-b14a-39f0faa5db74}</Project>
@@ -781,19 +508,15 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
     <ProjectReference Include="..\..\libs\win32\libyuv\libyuv.2017.vcxproj">
       <Project>{b6e22500-3db6-4e6e-8cd5-591b781d7d99}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\libs\win32\sofia\libsofia_sip_ua_static.2017.vcxproj">
+      <Project>{70a49bc2-7500-41d0-b75d-edcc5be987a0}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\speex\libspeexdsp.2017.vcxproj">
       <Project>{03207781-0d1c-4db3-a71d-45c608f28dbd}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\speex\libspeex.2017.vcxproj">
-      <Project>{e972c52f-9e85-4d65-b19c-031e511e9db4}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\libs\srtp\libsrtp.2017.vcxproj">
       <Project>{eef031cb-fed8-451e-a471-91ec8d4f6750}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\apr-util\libaprutil.2017.vcxproj">
-      <Project>{f057da7f-79e5-4b00-845c-ef446ef055e3}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\libs\win32\apr\libapr.2017.vcxproj">
@@ -803,10 +526,6 @@ if not exist "$(OutDir)fonts" xcopy "$(SolutionDir)fonts\*.*" "$(OutDir)fonts\" 
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
       <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
-    </ProjectReference>
-    <ProjectReference Include="..\..\libs\win32\sqlite\sqlite.2017.vcxproj">
-      <Project>{6edfefd5-3596-4fa9-8eba-b331547b35a3}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

@@ -175,6 +175,11 @@ static switch_status_t switch_silk_init(switch_codec_t *codec,
 	}
 
 	memset(&codec_fmtp, '\0', sizeof(struct switch_codec_fmtp));
+	codec_fmtp.actual_samples_per_second = codec->implementation->actual_samples_per_second;
+	codec_fmtp.bits_per_second = codec->implementation->bits_per_second;
+	codec_fmtp.microseconds_per_packet = codec->implementation->microseconds_per_packet;
+	codec_fmtp.stereo = codec->implementation->number_of_channels > 1;
+
 	codec_fmtp.private_info = &silk_codec_settings;
 	switch_silk_fmtp_parse(codec->fmtp_in, &codec_fmtp);
 
@@ -323,13 +328,13 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 										  uint32_t encoded_rate, void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
 	struct silk_context *context = codec->private_info;
-	SKP_int16 ret, len;
 	int16_t *target = decoded_data;
 	switch_core_session_t *session = codec->session;
 	switch_jb_t *jb = NULL;
 	SKP_int lost_flag = (*flag & SFF_PLC);
 	switch_bool_t did_lbrr = SWITCH_FALSE;
 	int i;
+	int decoded_frames = 0;
 
 	*decoded_data_len = 0;
 
@@ -347,7 +352,7 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 			frame.buflen = sizeof(buf);
 
 			for (i = 1; i <= MAX_LBRR_DELAY; i++) {
-				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, (uint16_t)i, &frame)) {
+				if (switch_jb_peek_frame(jb, codec->cur_frame->timestamp, 0, (uint16_t)i, &frame) == SWITCH_STATUS_SUCCESS) {
 					SKP_Silk_SDK_search_for_LBRR(frame.data, (const int)frame.datalen, i, (SKP_uint8*) &context->recbuff, &context->reclen);
 
 					if (context->reclen) {
@@ -363,6 +368,8 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 	}
 
 	do {
+		SKP_int16 ret, len = 0;
+
 		ret = (SKP_int16)SKP_Silk_SDK_Decode(context->dec_state,
 								  &context->decoder_object,
 								  lost_flag,
@@ -374,12 +381,21 @@ static switch_status_t switch_silk_decode(switch_codec_t *codec,
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "SKP_Silk_Decode returned %d!\n", ret);
 			printSilkError(ret);
 			/* if FEC was activated, we can ignore bit errors*/
-			if (! (ret == SKP_SILK_DEC_PAYLOAD_ERROR && did_lbrr))
-			return SWITCH_STATUS_FALSE;
+			if (! (ret == SKP_SILK_DEC_PAYLOAD_ERROR && did_lbrr)) {
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 
-		target += len;
-		*decoded_data_len += (len * 2);
+		if (len > 0) {
+			target += len;
+			*decoded_data_len += (len * 2);
+		}
+
+		/* A conformant SILK packet decodes to at most MAX_INPUT_FRAMES internal frames; stop there so
+		   the accumulated PCM cannot run past the destination buffer regardless of the bitstream. */
+		if (++decoded_frames >= MAX_INPUT_FRAMES) {
+			break;
+		}
 	} while (context->decoder_object.moreInternalDecoderFrames);
 
 	return SWITCH_STATUS_SUCCESS;

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <algorithm>
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/util.h"
@@ -62,25 +62,25 @@ class ActiveMapRefreshTest
       public ::libvpx_test::CodecTestWith2Params<libvpx_test::TestMode, int> {
  protected:
   ActiveMapRefreshTest() : EncoderTest(GET_PARAM(0)) {}
-  virtual ~ActiveMapRefreshTest() {}
+  ~ActiveMapRefreshTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(GET_PARAM(1));
     cpu_used_ = GET_PARAM(2);
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
     ::libvpx_test::Y4mVideoSource *y4m_video =
         static_cast<libvpx_test::Y4mVideoSource *>(video);
-    if (video->frame() == 1) {
+    if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, cpu_used_);
       encoder->Control(VP9E_SET_AQ_MODE, kAqModeCyclicRefresh);
     } else if (video->frame() >= 2 && video->img()) {
       vpx_image_t *current = video->img();
       vpx_image_t *previous = y4m_holder_->img();
-      ASSERT_TRUE(previous != NULL);
+      ASSERT_NE(previous, nullptr);
       vpx_active_map_t map = vpx_active_map_t();
       const int width = static_cast<int>(current->d_w);
       const int height = static_cast<int>(current->d_h);
@@ -122,7 +122,7 @@ TEST_P(ActiveMapRefreshTest, Test) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
-VP9_INSTANTIATE_TEST_CASE(ActiveMapRefreshTest,
-                          ::testing::Values(::libvpx_test::kRealTime),
-                          ::testing::Range(5, 6));
+VP9_INSTANTIATE_TEST_SUITE(ActiveMapRefreshTest,
+                           ::testing::Values(::libvpx_test::kRealTime),
+                           ::testing::Range(5, 6));
 }  // namespace

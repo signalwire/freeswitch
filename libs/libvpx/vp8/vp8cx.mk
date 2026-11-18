@@ -23,6 +23,7 @@ VP8_CX_SRCS-yes += vp8_cx_iface.c
 VP8_CX_SRCS-yes += encoder/defaultcoefcounts.h
 VP8_CX_SRCS-yes += encoder/bitstream.c
 VP8_CX_SRCS-yes += encoder/boolhuff.c
+VP8_CX_SRCS-yes += encoder/copy_c.c
 VP8_CX_SRCS-yes += encoder/dct.c
 VP8_CX_SRCS-yes += encoder/encodeframe.c
 VP8_CX_SRCS-yes += encoder/encodeframe.h
@@ -82,8 +83,6 @@ VP8_CX_SRCS_REMOVE-yes += encoder/temporal_filter.c
 VP8_CX_SRCS_REMOVE-yes += encoder/temporal_filter.h
 endif
 
-VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/dct_sse2.asm
-VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/fwalsh_sse2.asm
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp8_quantize_sse2.c
 VP8_CX_SRCS-$(HAVE_SSSE3) += encoder/x86/vp8_quantize_ssse3.c
 VP8_CX_SRCS-$(HAVE_SSE4_1) += encoder/x86/quantize_sse4.c
@@ -92,11 +91,17 @@ ifeq ($(CONFIG_TEMPORAL_DENOISING),yes)
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/denoising_sse2.c
 endif
 
+ifeq ($(HAVE_X86_ASM),yes)
+VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/block_error_sse2.asm
+VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/copy_sse2.asm
+VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/copy_sse3.asm
+VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/dct_sse2.asm
+VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/fwalsh_sse2.asm
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/temporal_filter_apply_sse2.asm
 VP8_CX_SRCS-$(HAVE_SSE2) += encoder/x86/vp8_enc_stubs_sse2.c
-VP8_CX_SRCS-$(ARCH_X86)$(ARCH_X86_64) += encoder/x86/encodeopt.asm
+endif
 
-ifeq ($(CONFIG_REALTIME_ONLY),yes)
+ifeq ($(CONFIG_REALTIME_ONLY)$(HAVE_X86_ASM),yesyes)
 VP8_CX_SRCS_REMOVE-$(HAVE_SSE2) += encoder/x86/temporal_filter_apply_sse2.asm
 endif
 
@@ -120,5 +125,10 @@ endif
 ifeq ($(CONFIG_REALTIME_ONLY),yes)
 VP8_CX_SRCS_REMOVE-$(HAVE_MSA) += encoder/mips/msa/temporal_filter_msa.c
 endif
+
+# common (loongarch LSX intrinsics)
+VP8_CX_SRCS-$(HAVE_LSX) += encoder/loongarch/dct_lsx.c
+VP8_CX_SRCS-$(HAVE_LSX) += encoder/loongarch/encodeopt_lsx.c
+VP8_CX_SRCS-$(HAVE_LSX) += encoder/loongarch/vp8_quantize_lsx.c
 
 VP8_CX_SRCS-yes := $(filter-out $(VP8_CX_SRCS_REMOVE-yes),$(VP8_CX_SRCS-yes))

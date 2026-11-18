@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_DSP_SSIM_H_
-#define VPX_DSP_SSIM_H_
+#ifndef VPX_VPX_DSP_SSIM_H_
+#define VPX_VPX_DSP_SSIM_H_
 
-#define MAX_SSIM_DB 100.0;
+#define MAX_SSIM_DB 100.0
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,4 +84,4 @@ double vpx_highbd_calc_ssim(const YV12_BUFFER_CONFIG *source,
 }  // extern "C"
 #endif
 
-#endif  // VPX_DSP_SSIM_H_
+#endif  // VPX_VPX_DSP_SSIM_H_

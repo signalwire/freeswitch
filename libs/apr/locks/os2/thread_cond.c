@@ -14,44 +14,44 @@
  * limitations under the License.
  */
 
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_arch_thread_mutex.h"
-#include "apr_arch_thread_cond.h"
-#include "apr_arch_file_io.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_arch_thread_cond.h"
+#include "fspr_arch_file_io.h"
 #include <string.h>
 
-APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
-                                                 apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_create(fspr_thread_cond_t **cond,
+                                                 fspr_pool_t *pool)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_wait(apr_thread_cond_t *cond,
-                                               apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_wait(fspr_thread_cond_t *cond,
+                                               fspr_thread_mutex_t *mutex)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_timedwait(apr_thread_cond_t *cond,
-                                                    apr_thread_mutex_t *mutex,
-                                                    apr_interval_time_t timeout){
+APR_DECLARE(fspr_status_t) fspr_thread_cond_timedwait(fspr_thread_cond_t *cond,
+                                                    fspr_thread_mutex_t *mutex,
+                                                    fspr_interval_time_t timeout){
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_signal(fspr_thread_cond_t *cond)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_broadcast(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_broadcast(fspr_thread_cond_t *cond)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_destroy(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_destroy(fspr_thread_cond_t *cond)
 {
     return APR_ENOTIMPL;
 }

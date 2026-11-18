@@ -188,7 +188,7 @@ static switch_status_t nl_say_time(switch_core_session_t *session, char *tosay, 
 	if (say_args->type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
 		int64_t minutes = 0;
-		int64_t seconds = 0;
+		int64_t seconds;
 		int64_t r = 0;
 
 		if (strchr(tosay, ':')) {
@@ -197,7 +197,6 @@ static switch_status_t nl_say_time(switch_core_session_t *session, char *tosay, 
 
 			if ((p = strrchr(tme, ':'))) {
 				*p++ = '\0';
-				seconds = atoi(p);
 				if ((p = strchr(tme, ':'))) {
 					*p++ = '\0';
 					minutes = atoi(p);
@@ -215,8 +214,6 @@ static switch_status_t nl_say_time(switch_core_session_t *session, char *tosay, 
 
 			if (seconds >= 60) {
 				minutes = seconds / 60;
-				r = seconds % 60;
-				seconds = r;
 			}
 
 			if (minutes >= 60) {

@@ -11,16 +11,16 @@
 #ifndef UNIT_TEST_UNIT_TEST_H_  // NOLINT
 #define UNIT_TEST_UNIT_TEST_H_
 
-#ifdef WIN32
+#include <stddef.h>  // For NULL
+#include <stdint.h>
+#ifdef _WIN32
 #include <windows.h>
-#else
-#include <sys/resource.h>
+#elif !defined(__hexagon__)
 #include <sys/time.h>
 #endif
 
-#include <gtest/gtest.h>
-
-#include "libyuv/basic_types.h"
+// pragma to disable warning for ASSERT_NE
+#include <gtest/gtest.h>  // IWYU pragma: export
 
 #ifndef SIMD_ALIGNED
 #if defined(_MSC_VER) && !defined(__CLR_VER)
@@ -69,15 +69,53 @@ static inline bool SizeValid(int src_width,
   return true;
 }
 
+#ifdef LIBYUV_MSAN
+#define align_buffer_page_end(var, size)                                   \
+  uint8_t* var = NULL;                                                     \
+  uint8_t* var##_mem =                                                     \
+      reinterpret_cast<uint8_t*>(calloc(1, ((size) + 4095 + 63) & ~4095)); \
+  if (var##_mem)                                                           \
+  var = reinterpret_cast<uint8_t*>(                                        \
+      (intptr_t)(var##_mem + (((size) + 4095 + 63) & ~4095) - (size)) & ~63)
+#else
 #define align_buffer_page_end(var, size)                                \
+  uint8_t* var = NULL;                                                  \
   uint8_t* var##_mem =                                                  \
       reinterpret_cast<uint8_t*>(malloc(((size) + 4095 + 63) & ~4095)); \
-  uint8_t* var = reinterpret_cast<uint8_t*>(                            \
+  if (var##_mem)                                                        \
+  var = reinterpret_cast<uint8_t*>(                                     \
       (intptr_t)(var##_mem + (((size) + 4095 + 63) & ~4095) - (size)) & ~63)
+#endif
 
 #define free_aligned_buffer_page_end(var) \
   free(var##_mem);                        \
-  var = 0
+  var = NULL
+
+#ifdef LIBYUV_MSAN
+#define align_buffer_page_end_16(var, size)                                    \
+  uint16_t* var = NULL;                                                        \
+  uint8_t* var##_mem =                                                         \
+      reinterpret_cast<uint8_t*>(calloc(1, ((size) * 2 + 4095 + 63) & ~4095)); \
+  if (var##_mem)                                                               \
+  var = reinterpret_cast<uint16_t*>(                                           \
+      (intptr_t)(var##_mem + (((size) * 2 + 4095 + 63) & ~4095) -              \
+                 (size) * 2) &                                                 \
+      ~63)
+#else
+#define align_buffer_page_end_16(var, size)                                 \
+  uint16_t* var = NULL;                                                     \
+  uint8_t* var##_mem =                                                      \
+      reinterpret_cast<uint8_t*>(malloc(((size) * 2 + 4095 + 63) & ~4095)); \
+  if (var##_mem)                                                            \
+  var = reinterpret_cast<uint16_t*>(                                        \
+      (intptr_t)(var##_mem + (((size) * 2 + 4095 + 63) & ~4095) -           \
+                 (size) * 2) &                                              \
+      ~63)
+#endif
+
+#define free_aligned_buffer_page_end_16(var) \
+  free(var##_mem);                           \
+  var = NULL
 
 #ifdef WIN32
 static inline double get_time() {
@@ -85,6 +123,10 @@ static inline double get_time() {
   QueryPerformanceCounter(&t);
   QueryPerformanceFrequency(&f);
   return static_cast<double>(t.QuadPart) / static_cast<double>(f.QuadPart);
+}
+#elif defined(__hexagon__)
+static inline double get_time() {
+  return 0.;
 }
 #else
 static inline double get_time() {
@@ -111,10 +153,13 @@ inline int fastrand() {
   return static_cast<int>((fastrand_seed >> 16) & 0xffff);
 }
 
+// ubsan fails if dst is unaligned unless we use uint8
 static inline void MemRandomize(uint8_t* dst, int64_t len) {
   int64_t i;
   for (i = 0; i < len - 1; i += 2) {
-    *reinterpret_cast<uint16_t*>(dst) = fastrand();
+    int r = fastrand();
+    dst[0] = static_cast<uint8_t>(r);
+    dst[1] = static_cast<uint8_t>(r >> 8);
     dst += 2;
   }
   for (; i < len; ++i) {

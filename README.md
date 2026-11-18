@@ -6,9 +6,9 @@ Visit  [https://signalwire.com](https://signalwire.com/)  or https://github.com/
 
 ## Getting Started
 
-FreeSWITCH is available on [Github](https://github.com/signalwire/freeswitch) in source code format.  You can checkout the development branch and build for many poplular platforms including Linux, Windows, MacOSX and BSD.  There is an issue tracker and pull request system available as part of the repo online.
+FreeSWITCH is available on [Github](https://github.com/signalwire/freeswitch) in source code format.  You can checkout the development branch and build for many popular platforms including Linux, Windows, MacOSX and BSD.  There is an issue tracker and pull request system available as part of the repo online.
 
-See [https://freeswitch.com/#getting-started](https://freeswitch.com/#getting-started) for more detailed instructions.
+See https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/ for more detailed instructions.
 
 ## Additional Help
 
@@ -24,23 +24,39 @@ The main index for documentation is available at:
 
   * https://freeswitch.org/confluence/
 
-### Release notes: 
 
-  * https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes 
+### Release notes:
 
-### Installation
+  * https://freeswitch.org/confluence/display/FREESWITCH/Release+Notes
 
-Step by step tutorials to install FreeSWITCH from packages or source code are available at:
+### Install from packages
 
-  * [Debian 10 Buster](https://freeswitch.org/confluence/display/FREESWITCH/Debian+10+Buster) [<b>Recommended</b>]
+Step by step tutorials to install FreeSWITCH from packages:
+
+  * [Using FSGET](/scripts/packaging) [<b>Recommended</b>]
+  * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian)
   * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
   * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
+
+### Build from source
+
+Example Dockerfiles to build FreeSWITCH and dependencies from source:
+  * https://github.com/signalwire/freeswitch/tree/master/docker/examples
+
+Step by step tutorials to build FreeSWITCH with provided dependency packages:
+  * [Debian](https://freeswitch.org/confluence/display/FREESWITCH/Debian#Debian-buildfromsource) [<b>Recommended</b>]
+  * [Raspberry Pi](https://freeswitch.org/confluence/display/FREESWITCH/Raspberry+Pi)
+  * [CentOS 7](https://freeswitch.org/confluence/display/FREESWITCH/CentOS+7+and+RHEL+7)
+
+### How to build Debian packages
+
+  * [Using FSDEB](/scripts/packaging/build)
 
 ## Downloads
 
   * [Tarballs](https://files.freeswitch.org/releases/freeswitch/)
   * [Windows Installer](http://files.freeswitch.org/windows/installer/x64/)
-  * [Windows Sound Packages](http://files.freeswitch.org/windows/installer/x64/sounds/)
+  * [Windows Sound Packages](https://github.com/freeswitch/freeswitch-sounds/releases)
 
 ## Contributions
 
@@ -56,8 +72,8 @@ This is the place to get answers faster and chat with other users in real time. 
 Slack Community:
   * https://signalwire.community/
 
-Mailing list:
+Mailing list (ARCHIVED):
 
-  * http://lists.freeswitch.org/mailman/listinfo/freeswitch-users
+  * http://lists.freeswitch.org/pipermail/freeswitch-users/
 
 **Thank you for using FreeSWITCH!**

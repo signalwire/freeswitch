@@ -16,10 +16,10 @@ include $(APR_WORK)\build\NWGNUhead.inc
 # build this level's files
 
 FILES_prebuild_headers = \
-	$(APR)/include/apr.h \
+	$(APR)/include/fspr.h \
 	$(APRUTIL)/include/apu.h \
 	$(APRUTIL)/include/apu_want.h \
-	$(APRUTIL)/include/apr_ldap.h \
+	$(APRUTIL)/include/fspr_ldap.h \
 	$(APRUTIL)/include/private/apu_config.h \
 	$(APRUTIL)/include/private/apu_select_dbm.h \
 	$(APRUTIL)/xml/expat/lib/expat.h \
@@ -83,9 +83,9 @@ clean ::
 	$(CHK) nw_export.i                                              $(DEL) nw_export.i
 	$(CHK) $(NLM_NAME)_cc.opt                                       $(DEL) $(NLM_NAME)_cc.opt
 	$(CHK) NWGNUversion.inc                                         $(DEL) NWGNUversion.inc	
-	$(CHK) $(subst /,\,$(APR))\include\apr.h                        $(DEL) $(subst /,\,$(APR))\include\apr.h
+	$(CHK) $(subst /,\,$(APR))\include\fspr.h                        $(DEL) $(subst /,\,$(APR))\include\fspr.h
 	$(CHK) $(subst /,\,$(APRUTIL))\include\apu.h                    $(DEL) $(subst /,\,$(APRUTIL))\include\apu.h
-	$(CHK) $(subst /,\,$(APRUTIL))\include\apr_ldap.h               $(DEL) $(subst /,\,$(APRUTIL))\include\apr_ldap.h
+	$(CHK) $(subst /,\,$(APRUTIL))\include\fspr_ldap.h               $(DEL) $(subst /,\,$(APRUTIL))\include\fspr_ldap.h
 	$(CHK) $(subst /,\,$(APRUTIL))\include\private\apu_config.h     $(DEL) $(subst /,\,$(APRUTIL))\include\private\apu_config.h
 	$(CHK) $(subst /,\,$(APRUTIL))\include\private\apu_select_dbm.h $(DEL) $(subst /,\,$(APRUTIL))\include\private\apu_select_dbm.h
 	$(CHK) $(subst /,\,$(APRUTIL))\xml\expat\lib\expat.h            $(DEL) $(subst /,\,$(APRUTIL))\xml\expat\lib\expat.h

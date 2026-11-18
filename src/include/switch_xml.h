@@ -102,6 +102,10 @@ struct switch_xml {
 	/*! is_switch_xml_root bool */
 	switch_bool_t is_switch_xml_root_t;
 	uint32_t refs;
+	/*! pointer to end of opening tag, '>', in the original parsed text */
+	const char *open;
+	/*! pointer to start of closing tag, '<', in the original parsed text */
+	const char *close;
 };
 
 /*!
@@ -233,7 +237,7 @@ SWITCH_DECLARE(char *) switch_xml_tohtml_ex(_In_ switch_xml_t xml, _In_ switch_b
 ///\param prn_header add <?xml version..> header too
 ///\param use_utf8_encoding encoding into ampersand entities for UTF-8 chars
 ///\return the xml text string
-#define switch_xml_toxml_buf(xml, buf, buflen, offset, prn_header) switch_xml_toxml_buf(xml, buf, buflen, offset, prn_header, USE_UTF_8_ENCODING);
+#define switch_xml_toxml_buf(xml, buf, buflen, offset, prn_header) switch_xml_toxml_buf_ex(xml, buf, buflen, offset, prn_header, USE_UTF_8_ENCODING);
 SWITCH_DECLARE(char *) switch_xml_toxml_buf_ex(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_ switch_size_t offset,
 											_In_ switch_bool_t prn_header, switch_bool_t use_utf8_encoding);
 

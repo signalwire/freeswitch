@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_user.h"
-#include "apr_private.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_user.h"
+#include "fspr_private.h"
 #ifdef HAVE_PWD_H
 #include <pwd.h>
 #endif
@@ -30,25 +30,25 @@
 
 #define PWBUF_SIZE 512
 
-static apr_status_t getpwnam_safe(const char *username,
+static fspr_status_t getpwnam_safe(const char *username,
                                   struct passwd *pw,
                                   char pwbuf[PWBUF_SIZE])
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_uid_homepath_get(char **dirname,
+APR_DECLARE(fspr_status_t) fspr_uid_homepath_get(char **dirname,
                                                const char *username,
-                                               apr_pool_t *p)
+                                               fspr_pool_t *p)
 {
     return APR_ENOTIMPL;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_uid_current(apr_uid_t *uid,
-                                          apr_gid_t *gid,
-                                          apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_current(fspr_uid_t *uid,
+                                          fspr_gid_t *gid,
+                                          fspr_pool_t *p)
 {
     return APR_ENOTIMPL;
 }
@@ -56,14 +56,14 @@ APR_DECLARE(apr_status_t) apr_uid_current(apr_uid_t *uid,
 
 
 
-APR_DECLARE(apr_status_t) apr_uid_get(apr_uid_t *uid, apr_gid_t *gid,
-                                      const char *username, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_get(fspr_uid_t *uid, fspr_gid_t *gid,
+                                      const char *username, fspr_pool_t *p)
 {
     return APR_ENOTIMPL;
 }
 
-APR_DECLARE(apr_status_t) apr_uid_name_get(char **username, apr_uid_t userid,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_uid_name_get(char **username, fspr_uid_t userid,
+                                           fspr_pool_t *p)
 {
     return APR_ENOTIMPL;
 }

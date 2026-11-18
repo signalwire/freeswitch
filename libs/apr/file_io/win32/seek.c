@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include "win32/apr_arch_file_io.h"
-#include "apr_file_io.h"
+#include "win32/fspr_arch_file_io.h"
+#include "fspr_file_io.h"
 #include <errno.h>
 #include <string.h>
 
-static apr_status_t setptr(apr_file_t *thefile, apr_off_t pos )
+static fspr_status_t setptr(fspr_file_t *thefile, fspr_off_t pos )
 {
-    apr_size_t newbufpos;
-    apr_status_t rv;
+    fspr_size_t newbufpos;
+    fspr_status_t rv;
     DWORD rc;
 
     if (thefile->direction == 1) {
         /* XXX: flush here is not mutex protected */
-        rv = apr_file_flush(thefile);
+        rv = fspr_file_flush(thefile);
         if (rv != APR_SUCCESS)
             return rv;
         thefile->bufpos = thefile->dataRead = 0;
@@ -37,11 +37,11 @@ static apr_status_t setptr(apr_file_t *thefile, apr_off_t pos )
     /* We may be truncating to size here. 
      * XXX: testing an 'unsigned' as >= 0 below indicates a bug
      */
-    newbufpos = (apr_size_t)(pos - (thefile->filePtr 
+    newbufpos = (fspr_size_t)(pos - (thefile->filePtr 
                                   - thefile->dataRead));
 
     if (newbufpos >= 0 && newbufpos <= thefile->dataRead) {
-        thefile->bufpos = (apr_size_t)newbufpos;
+        thefile->bufpos = (fspr_size_t)newbufpos;
         rv = APR_SUCCESS;
     } else {
         DWORD offlo = (DWORD)pos;
@@ -54,7 +54,7 @@ static apr_status_t setptr(apr_file_t *thefile, apr_off_t pos )
              * to confirm this.  INVALID_SET_FILE_POINTER is too recently
              * added for us to rely on it as a constant.
              */
-            rv = apr_get_os_error();
+            rv = fspr_get_os_error();
         else
             rv = APR_SUCCESS;
 
@@ -70,10 +70,10 @@ static apr_status_t setptr(apr_file_t *thefile, apr_off_t pos )
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t where, apr_off_t *offset)
+APR_DECLARE(fspr_status_t) fspr_file_seek(fspr_file_t *thefile, fspr_seek_where_t where, fspr_off_t *offset)
 {
-    apr_finfo_t finfo;
-    apr_status_t rc = APR_SUCCESS;
+    fspr_finfo_t finfo;
+    fspr_status_t rc = APR_SUCCESS;
 
     thefile->eof_hit = 0;
 
@@ -89,7 +89,7 @@ APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t wh
                 break;
 
             case APR_END:
-                rc = apr_file_info_get(&finfo, APR_FINFO_SIZE, thefile);
+                rc = fspr_file_info_get(&finfo, APR_FINFO_SIZE, thefile);
                 if (rc == APR_SUCCESS)
                     rc = setptr(thefile, finfo.size + *offset);
                 break;
@@ -115,7 +115,7 @@ APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t wh
                 break;
         
             case APR_END:
-                rc = apr_file_info_get(&finfo, APR_FINFO_SIZE, thefile);
+                rc = fspr_file_info_get(&finfo, APR_FINFO_SIZE, thefile);
                 if (rc == APR_SUCCESS && finfo.size + *offset >= 0)
                     thefile->filePtr = finfo.size + *offset;
                 break;
@@ -144,31 +144,31 @@ APR_DECLARE(apr_status_t) apr_file_seek(apr_file_t *thefile, apr_seek_where_t wh
         offlo = SetFilePointer(thefile->filehand, (LONG)offlo, 
                                (LONG*)&offhi, howmove);
         if (offlo == 0xFFFFFFFF)
-            rc = apr_get_os_error();
+            rc = fspr_get_os_error();
         else
             rc = APR_SUCCESS;
         /* Since we can land at 0xffffffff we will measure our APR_SUCCESS */
         if (rc == APR_SUCCESS)
-            *offset = ((apr_off_t)offhi << 32) | offlo;
+            *offset = ((fspr_off_t)offhi << 32) | offlo;
         return rc;
     }
 }
 
 
-APR_DECLARE(apr_status_t) apr_file_trunc(apr_file_t *thefile, apr_off_t offset)
+APR_DECLARE(fspr_status_t) fspr_file_trunc(fspr_file_t *thefile, fspr_off_t offset)
 {
-    apr_status_t rv;
+    fspr_status_t rv;
     DWORD offlo = (DWORD)offset;
     DWORD offhi = (DWORD)(offset >> 32);
     DWORD rc;
 
     rc = SetFilePointer(thefile->filehand, offlo, &offhi, FILE_BEGIN);
     if (rc == 0xFFFFFFFF)
-        if ((rv = apr_get_os_error()) != APR_SUCCESS)
+        if ((rv = fspr_get_os_error()) != APR_SUCCESS)
             return rv;
 
     if (!SetEndOfFile(thefile->filehand))
-        return apr_get_os_error();
+        return fspr_get_os_error();
 
     if (thefile->buffered) {
         return setptr(thefile, offset);

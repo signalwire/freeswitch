@@ -217,6 +217,8 @@ typedef enum {
 #define esl_strlen_zero_buf(s) (*(s) == '\0')
 #define end_of(_s) *(*_s == '\0' ? _s : _s + strlen(_s) - 1)
 
+#define ESL_MAX_CONTENT_LENGTH (16 * 1024 * 1024)
+
 #ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>

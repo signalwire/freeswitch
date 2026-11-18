@@ -15,11 +15,11 @@
  */
 
 #define INCL_DOSERRORS
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
 #include <errno.h>
 #include <string.h>
-#include "apr_errno.h"
+#include "fspr_errno.h"
 
 static int errormap[][2] = {
     { NO_ERROR,                   APR_SUCCESS      },
@@ -75,7 +75,7 @@ static int errormap[][2] = {
 
 #define MAPSIZE (sizeof(errormap)/sizeof(errormap[0]))
 
-int apr_canonical_error(apr_status_t err)
+int fspr_canonical_error(fspr_status_t err)
 {
     int rv = -1, index;
 
@@ -89,7 +89,7 @@ int apr_canonical_error(apr_status_t err)
     if (index<MAPSIZE)
         rv = errormap[index][1];
     else
-        fprintf(stderr, "apr_canonical_error: Unknown OS/2 error code %d\n", err );
+        fprintf(stderr, "fspr_canonical_error: Unknown OS/2 error code %d\n", err );
         
     return rv;
 }

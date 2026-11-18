@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_network_io.h"
-#include "apr_portable.h"
-#include "apr_general.h"
-#include "apr_lib.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_network_io.h"
+#include "fspr_portable.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
 
 static int os2_socket_init(int, int ,int);
 
-int (*apr_os2_socket)(int, int, int) = os2_socket_init;
-int (*apr_os2_select)(int *, int, int, int, long) = NULL;
-int (*apr_os2_sock_errno)() = NULL;
-int (*apr_os2_accept)(int, struct sockaddr *, int *) = NULL;
-int (*apr_os2_bind)(int, struct sockaddr *, int) = NULL;
-int (*apr_os2_connect)(int, struct sockaddr *, int) = NULL;
-int (*apr_os2_getpeername)(int, struct sockaddr *, int *) = NULL;
-int (*apr_os2_getsockname)(int, struct sockaddr *, int *) = NULL;
-int (*apr_os2_getsockopt)(int, int, int, char *, int *) = NULL;
-int (*apr_os2_ioctl)(int, int, caddr_t, int) = NULL;
-int (*apr_os2_listen)(int, int) = NULL;
-int (*apr_os2_recv)(int, char *, int, int) = NULL;
-int (*apr_os2_send)(int, const char *, int, int) = NULL;
-int (*apr_os2_setsockopt)(int, int, int, char *, int) = NULL;
-int (*apr_os2_shutdown)(int, int) = NULL;
-int (*apr_os2_soclose)(int) = NULL;
-int (*apr_os2_writev)(int, struct iovec *, int) = NULL;
-int (*apr_os2_sendto)(int, const char *, int, int, const struct sockaddr *, int);
-int (*apr_os2_recvfrom)(int, char *, int, int, struct sockaddr *, int *);
+int (*fspr_os2_socket)(int, int, int) = os2_socket_init;
+int (*fspr_os2_select)(int *, int, int, int, long) = NULL;
+int (*fspr_os2_sock_errno)() = NULL;
+int (*fspr_os2_accept)(int, struct sockaddr *, int *) = NULL;
+int (*fspr_os2_bind)(int, struct sockaddr *, int) = NULL;
+int (*fspr_os2_connect)(int, struct sockaddr *, int) = NULL;
+int (*fspr_os2_getpeername)(int, struct sockaddr *, int *) = NULL;
+int (*fspr_os2_getsockname)(int, struct sockaddr *, int *) = NULL;
+int (*fspr_os2_getsockopt)(int, int, int, char *, int *) = NULL;
+int (*fspr_os2_ioctl)(int, int, caddr_t, int) = NULL;
+int (*fspr_os2_listen)(int, int) = NULL;
+int (*fspr_os2_recv)(int, char *, int, int) = NULL;
+int (*fspr_os2_send)(int, const char *, int, int) = NULL;
+int (*fspr_os2_setsockopt)(int, int, int, char *, int) = NULL;
+int (*fspr_os2_shutdown)(int, int) = NULL;
+int (*fspr_os2_soclose)(int) = NULL;
+int (*fspr_os2_writev)(int, struct iovec *, int) = NULL;
+int (*fspr_os2_sendto)(int, const char *, int, int, const struct sockaddr *, int);
+int (*fspr_os2_recvfrom)(int, char *, int, int, struct sockaddr *, int *);
 
 static HMODULE hSO32DLL;
 
@@ -48,7 +48,7 @@ static int os2_fn_link()
 {
     DosEnterCritSec(); /* Stop two threads doing this at the same time */
 
-    if (apr_os2_socket == os2_socket_init) {
+    if (fspr_os2_socket == os2_socket_init) {
         ULONG rc;
         char errorstr[200];
 
@@ -57,61 +57,61 @@ static int os2_fn_link()
         if (rc)
             return APR_OS2_STATUS(rc);
 
-        rc = DosQueryProcAddr(hSO32DLL, 0, "SOCKET", &apr_os2_socket);
+        rc = DosQueryProcAddr(hSO32DLL, 0, "SOCKET", &fspr_os2_socket);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "SELECT", &apr_os2_select);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "SELECT", &fspr_os2_select);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "SOCK_ERRNO", &apr_os2_sock_errno);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "SOCK_ERRNO", &fspr_os2_sock_errno);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "ACCEPT", &apr_os2_accept);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "ACCEPT", &fspr_os2_accept);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "BIND", &apr_os2_bind);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "BIND", &fspr_os2_bind);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "CONNECT", &apr_os2_connect);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "CONNECT", &fspr_os2_connect);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "GETPEERNAME", &apr_os2_getpeername);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "GETPEERNAME", &fspr_os2_getpeername);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "GETSOCKNAME", &apr_os2_getsockname);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "GETSOCKNAME", &fspr_os2_getsockname);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "GETSOCKOPT", &apr_os2_getsockopt);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "GETSOCKOPT", &fspr_os2_getsockopt);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "IOCTL", &apr_os2_ioctl);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "IOCTL", &fspr_os2_ioctl);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "LISTEN", &apr_os2_listen);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "LISTEN", &fspr_os2_listen);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "RECV", &apr_os2_recv);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "RECV", &fspr_os2_recv);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "SEND", &apr_os2_send);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "SEND", &fspr_os2_send);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "SETSOCKOPT", &apr_os2_setsockopt);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "SETSOCKOPT", &fspr_os2_setsockopt);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "SHUTDOWN", &apr_os2_shutdown);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "SHUTDOWN", &fspr_os2_shutdown);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "SOCLOSE", &apr_os2_soclose);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "SOCLOSE", &fspr_os2_soclose);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "WRITEV", &apr_os2_writev);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "WRITEV", &fspr_os2_writev);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "SENDTO", &apr_os2_sendto);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "SENDTO", &fspr_os2_sendto);
 
         if (!rc)
-            rc = DosQueryProcAddr(hSO32DLL, 0, "RECVFROM", &apr_os2_recvfrom);
+            rc = DosQueryProcAddr(hSO32DLL, 0, "RECVFROM", &fspr_os2_recvfrom);
 
         if (rc)
             return APR_OS2_STATUS(rc);
@@ -127,6 +127,6 @@ static int os2_socket_init(int domain, int type, int protocol)
 {
     int rc = os2_fn_link();
     if (rc == APR_SUCCESS)
-        return apr_os2_socket(domain, type, protocol);
+        return fspr_os2_socket(domain, type, protocol);
     return rc;
 }

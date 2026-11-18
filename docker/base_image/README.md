@@ -70,7 +70,7 @@ systemd enable freeswitch-docker.service
 
 .bashrc file
 ------------
-To simplify freeswitch managment you can add alias for ```fs_cli``` to ```.bashrc``` file as example bellow.
+To simplify freeswitch management you can add alias for ```fs_cli``` to ```.bashrc``` file as example bellow.
 ```sh
 alias fs_cli='docker exec -i -t freeswitch /usr/bin/fs_cli'
 ```

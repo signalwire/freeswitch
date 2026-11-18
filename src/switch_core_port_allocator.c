@@ -115,7 +115,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_new(const char *ip, s
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static switch_bool_t test_port(switch_core_port_allocator_t *alloc, int family, int type, switch_port_t port)
+static switch_bool_t test_port(switch_core_port_allocator_t *alloc, int type, switch_port_t port)
 {
 	switch_memory_pool_t *pool = NULL;
 	switch_sockaddr_t *local_addr = NULL;
@@ -126,8 +126,8 @@ static switch_bool_t test_port(switch_core_port_allocator_t *alloc, int family, 
 		return SWITCH_FALSE;
 	}
 
-	if (switch_sockaddr_info_get(&local_addr, alloc->ip, SWITCH_UNSPEC, port, 0, pool) == SWITCH_STATUS_SUCCESS) {
-		if (switch_socket_create(&sock, family, type, 0, pool) == SWITCH_STATUS_SUCCESS) {
+	if (switch_sockaddr_new(&local_addr, alloc->ip, port, pool) == SWITCH_STATUS_SUCCESS) {
+		if (switch_socket_create(&sock, switch_sockaddr_get_family(local_addr), type, 0, pool) == SWITCH_STATUS_SUCCESS) {
 			if (switch_socket_bind(sock, local_addr) == SWITCH_STATUS_SUCCESS) {
 				r = SWITCH_TRUE;
 			}
@@ -150,12 +150,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	switch_mutex_lock(alloc->mutex);
 	srand((unsigned) ((unsigned) (intptr_t) port_ptr + (unsigned) (intptr_t) switch_thread_self() + switch_micro_time_now()));
 
-	while (alloc->track_used < alloc->track_len) {
+	while (alloc->track_len && alloc->track_used < alloc->track_len) {
 		uint32_t index;
 		uint32_t tries = 0;
 
 		/* randomly pick a port */
-		index = rand() % alloc->track_len;
+		index = switch_rand() % alloc->track_len;
 
 		/* if it is used walk up the list to find a free one */
 		while (alloc->track[index] && tries < alloc->track_len) {
@@ -179,12 +179,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 			}
 
 			if ((alloc->flags & SPF_ROBUST_UDP)) {
-				r = test_port(alloc, AF_INET, SOCK_DGRAM, port);
+				r = test_port(alloc, SOCK_DGRAM, port);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "UDP port robustness check for port %d %s\n", port, r ? "pass" : "fail");
 			}
 
 			if ((alloc->flags & SPF_ROBUST_TCP)) {
-				r = test_port(alloc, AF_INET, SOCK_STREAM, port);
+				r = test_port(alloc, SOCK_STREAM, port);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TCP port robustness check for port %d %s\n", port, r ? "pass" : "fail");
 			}
 

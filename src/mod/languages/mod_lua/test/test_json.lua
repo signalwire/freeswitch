@@ -108,5 +108,11 @@ freeswitch.consoleLog("INFO", ret .. "\n")
 ret = json:execute2(json:encode(cmd))
 freeswitch.consoleLog("INFO", ret .. "\n")
 
+sn = json:encode({s = "1001", n = 1002})
+freeswitch.consoleLog("INFO", sn .. "\n")
+ret = json:decode(sn)
+assert(ret.s == "1001")
+assert(ret.n == 1002)
+
 -- assert(false)
 stream:write("+OK")

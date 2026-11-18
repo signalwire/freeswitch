@@ -36,6 +36,8 @@ static switch_mutex_t **ssl_mutexes;
 static switch_memory_pool_t *ssl_pool = NULL;
 static int ssl_count = 0;
 
+#if OPENSSL_VERSION_NUMBER <= 0x10100000
+
 static inline void switch_ssl_ssl_lock_callback(int mode, int type, char *file, int line)
 {
 	if (mode & CRYPTO_LOCK) {
@@ -46,10 +48,12 @@ static inline void switch_ssl_ssl_lock_callback(int mode, int type, char *file, 
 	}
 }
 
-static inline unsigned long switch_ssl_ssl_thread_id(void)
+static inline void switch_ssl_ssl_thread_id(CRYPTO_THREADID *id)
 {
-	return (unsigned long) switch_thread_self();
+	CRYPTO_THREADID_set_numeric(id, (unsigned long)switch_thread_self());
 }
+
+#endif
 
 SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
 {
@@ -69,8 +73,10 @@ SWITCH_DECLARE(void) switch_ssl_init_ssl_locks(void)
 			switch_assert(ssl_mutexes[i] != NULL);
 		}
 
-		CRYPTO_set_id_callback(switch_ssl_ssl_thread_id);
+#if OPENSSL_VERSION_NUMBER <= 0x10100000
+		CRYPTO_THREADID_set_callback(switch_ssl_ssl_thread_id);
 		CRYPTO_set_locking_callback((void (*)(int, int, const char*, int))switch_ssl_ssl_lock_callback);
+#endif
 	}
 
 	ssl_count++;
@@ -99,6 +105,10 @@ SWITCH_DECLARE(void) switch_ssl_destroy_ssl_locks(void)
 
 static const EVP_MD *get_evp_by_name(const char *name)
 {
+	if (zstr(name)) {
+		return NULL;
+	}
+
 	if (!strcasecmp(name, "md5")) return EVP_md5();
 	if (!strcasecmp(name, "sha1")) return EVP_sha1();
 	if (!strcasecmp(name, "sha-1")) return EVP_sha1();
@@ -175,6 +185,11 @@ SWITCH_DECLARE(int) switch_core_cert_extract_fingerprint(X509* x509, dtls_finger
 	unsigned int i, j;
 
 	evp = get_evp_by_name(fp->type);
+
+	if (!evp) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing or unsupported fingerprint hash type\n");
+		return -1;
+	}
 
 	if (X509_digest(x509, evp, fp->data, &fp->len) != 1 ||  fp->len <= 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "FP DIGEST ERR!\n");
@@ -275,11 +290,16 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 		}
 	}
 
+#ifdef CRYPTO_MEM_CHECK_ON
 	CRYPTO_mem_ctrl(CRYPTO_MEM_CHECK_ON);
+#endif
 
 	//bio_err=BIO_new_fp(stderr, BIO_NOCLOSE);
 
-	mkcert(&x509, &pkey, 4096, 0, 36500);
+	if (!mkcert(&x509, &pkey, 4096, 0, 36500)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Certificate generation failed\n");
+		goto end;
+	}
 
 	//RSA_print_fp(stdout, pkey->pkey.rsa, 0);
 	//X509_print_fp(stdout, x509);
@@ -324,6 +344,67 @@ SWITCH_DECLARE(int) switch_core_gen_certs(const char *prefix)
 	return(0);
 }
 
+SWITCH_DECLARE(switch_bool_t) switch_core_check_dtls_pem(const char *file)
+{
+	char *pem = NULL, *old_pem = NULL;
+	FILE *fp = NULL;
+	EVP_PKEY *pkey = NULL;
+	int bits = 0;
+
+	if (switch_is_file_path(file)) {
+		pem = strdup(file);
+	} else {
+		pem = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.certs_dir, SWITCH_PATH_SEPARATOR, file);
+	}
+
+	if (switch_file_exists(pem, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_safe_free(pem);
+
+		return SWITCH_FALSE;
+	}
+
+	fp = fopen(pem, "r");
+	if (!fp) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot open %s: %s\n", pem, strerror(errno));
+		goto rename_pem;
+	}
+
+	pkey = PEM_read_PrivateKey(fp, NULL, NULL, NULL);
+	fclose(fp);
+
+	if (!pkey) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot read key %s: %s\n", pem, ERR_error_string(ERR_get_error(), NULL));
+		goto rename_pem;
+	}
+
+	bits = EVP_PKEY_bits(pkey);
+	EVP_PKEY_free(pkey);
+
+	if (bits < 4096) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s cryptographic length is too short (%d), it will be regenerated\n", pem, bits);
+		goto rename_pem;
+	}
+
+	switch_safe_free(pem);
+
+	return SWITCH_TRUE;
+
+rename_pem:
+
+	old_pem = switch_mprintf("%s.old", pem);
+
+	if (rename(pem, old_pem) != -1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Renamed %s to %s\n", pem, old_pem);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not rename %s: %s\n", pem, strerror(errno));
+	}
+
+	switch_safe_free(old_pem);
+	switch_safe_free(pem);
+
+	return SWITCH_FALSE;
+}
+
 #if 0
 static void callback(int p, int n, void *arg)
 {
@@ -341,7 +422,9 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 {
 	X509 *x;
 	EVP_PKEY *pk;
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	RSA *rsa;
+#endif
 	X509_NAME *name=NULL;
 
 	switch_assert(pkeyp);
@@ -363,7 +446,26 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 		x = *x509p;
 	}
 
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	{
+		EVP_PKEY_CTX *ctx;
+
+		ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
+		/* Setup the key context */
+		if ((!ctx) || (EVP_PKEY_keygen_init(ctx) <= 0) || (EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, bits) <= 0)) {
+			abort();
+			goto err;
+		}
+
+		/* Generate key */
+		if (EVP_PKEY_generate(ctx, &pk) <= 0) {
+			abort();
+			goto err;
+		}
+
+		EVP_PKEY_CTX_free(ctx);
+	}
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000
 	rsa = RSA_new();
 	{
 		static const BN_ULONG ULONG_RSA_F4 = RSA_F4;
@@ -380,19 +482,26 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	rsa = RSA_generate_key(bits, RSA_F4, NULL, NULL);
 #endif
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000
 	if (!EVP_PKEY_assign_RSA(pk, rsa)) {
 		abort();
 	}
 
 	rsa = NULL;
+#endif
 
-	X509_set_version(x, 0);
+	X509_set_version(x, 2);
 	ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
 	X509_gmtime_adj(X509_get_notBefore(x), -(long)60*60*24*7);
 	X509_gmtime_adj(X509_get_notAfter(x), (long)60*60*24*days);
 	X509_set_pubkey(x, pk);
 
-	name = X509_get_subject_name(x);
+	/* OpenSSL 4 hands out the certificate's own name as const, so build one
+	 * here and set it instead of filling in the one inside the certificate.
+	 */
+	if ((name = X509_NAME_new()) == NULL) {
+		goto err;
+	}
 
 	/* This function creates and adds the entry, working out the
 	 * correct string type and performing checks on its length.
@@ -401,19 +510,29 @@ static int mkcert(X509 **x509p, EVP_PKEY **pkeyp, int bits, int serial, int days
 	X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, (unsigned char *)"US", -1, -1, 0);
 	X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, (unsigned char *)"FreeSWITCH", -1, -1, 0);
 
-
 	/* Its self signed so set the issuer name to be the same as the
- 	 * subject.
+	 * subject. Both calls copy the name, so ours is ours to free.
 	 */
+	X509_set_subject_name(x, name);
 	X509_set_issuer_name(x, name);
+	X509_NAME_free(name);
+	name = NULL;
 
-	if (!X509_sign(x, pk, EVP_sha1()))
+#if OPENSSL_VERSION_NUMBER >= 0x30000000
+	if (!X509_sign(x, pk, EVP_sha256())) {
+#else
+	if (!X509_sign(x, pk, EVP_sha1())) {
+#endif
 		goto err;
+	}
 
 	*x509p = x;
 	*pkeyp = pk;
+
 	return(1);
- err:
+err:
+	ERR_print_errors_fp(stdout);
+
 	return(0);
 }
 

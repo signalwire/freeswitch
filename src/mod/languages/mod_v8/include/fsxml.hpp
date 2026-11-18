@@ -53,7 +53,7 @@ private:
 
 	void Init();
 	void InitRootObject();
-	v8::Handle<v8::Value> GetJSObjFromXMLObj(const switch_xml_t xml, const v8::FunctionCallbackInfo<v8::Value>& info);
+	v8::Local<v8::Value> GetJSObjFromXMLObj(const switch_xml_t xml, const v8::FunctionCallbackInfo<v8::Value>& info);
 	void StoreObjectInHash(switch_xml_t xml, FSXML *obj);
 	FSXML *FindObjectInHash(switch_xml_t xml);
 	void DeleteObjectInHash(switch_xml_t xml);

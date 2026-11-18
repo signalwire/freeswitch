@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_user.h"
-#include "apr_private.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_user.h"
+#include "fspr_private.h"
 #ifdef HAVE_GRP_H
 #include <grp.h>
 #endif
@@ -28,15 +28,15 @@
 #include <unistd.h> /* for _POSIX_THREAD_SAFE_FUNCTIONS */
 #endif
 
-APR_DECLARE(apr_status_t) apr_gid_name_get(char **groupname, apr_gid_t groupid,
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_gid_name_get(char **groupname, fspr_gid_t groupid,
+                                           fspr_pool_t *p)
 {
     struct group *gr;
 
 #if APR_HAS_THREADS && defined(_POSIX_THREAD_SAFE_FUNCTIONS) && defined(HAVE_GETGRGID_R)
     struct group grp;
     char grbuf[512];
-    apr_status_t rv;
+    fspr_status_t rv;
 
     /* See comment in getpwnam_safe on error handling. */
     rv = getgrgid_r(groupid, &grp, grbuf, sizeof(grbuf), &gr);
@@ -52,19 +52,19 @@ APR_DECLARE(apr_status_t) apr_gid_name_get(char **groupname, apr_gid_t groupid,
         return errno ? errno : APR_ENOENT;
     }
 #endif
-    *groupname = apr_pstrdup(p, gr->gr_name);
+    *groupname = fspr_pstrdup(p, gr->gr_name);
     return APR_SUCCESS;
 }
   
-APR_DECLARE(apr_status_t) apr_gid_get(apr_gid_t *groupid, 
-                                      const char *groupname, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_gid_get(fspr_gid_t *groupid, 
+                                      const char *groupname, fspr_pool_t *p)
 {
     struct group *gr;
 
 #if APR_HAS_THREADS && defined(_POSIX_THREAD_SAFE_FUNCTIONS) && defined(HAVE_GETGRNAM_R)
     struct group grp;
     char grbuf[512];
-    apr_status_t rv;
+    fspr_status_t rv;
 
     /* See comment in getpwnam_safe on error handling. */
     rv = getgrnam_r(groupname, &grp, grbuf, sizeof(grbuf), &gr);

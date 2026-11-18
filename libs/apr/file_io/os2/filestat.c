@@ -16,14 +16,14 @@
 
 #define INCL_DOS
 #define INCL_DOSERRORS
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_lib.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_lib.h"
 #include <sys/time.h>
-#include "apr_strings.h"
+#include "fspr_strings.h"
 
 
-static void FS3_to_finfo(apr_finfo_t *finfo, FILESTATUS3 *fstatus)
+static void FS3_to_finfo(fspr_finfo_t *finfo, FILESTATUS3 *fstatus)
 {
     finfo->protection = (fstatus->attrFile & FILE_READONLY) ? 0x555 : 0x777;
 
@@ -39,11 +39,11 @@ static void FS3_to_finfo(apr_finfo_t *finfo, FILESTATUS3 *fstatus)
     finfo->device = 0;
     finfo->size = fstatus->cbFile;
     finfo->csize = fstatus->cbFileAlloc;
-    apr_os2_time_to_apr_time(&finfo->atime, fstatus->fdateLastAccess, 
+    fspr_os2_time_to_fspr_time(&finfo->atime, fstatus->fdateLastAccess, 
                              fstatus->ftimeLastAccess );
-    apr_os2_time_to_apr_time(&finfo->mtime, fstatus->fdateLastWrite,  
+    fspr_os2_time_to_fspr_time(&finfo->mtime, fstatus->fdateLastWrite,  
                              fstatus->ftimeLastWrite );
-    apr_os2_time_to_apr_time(&finfo->ctime, fstatus->fdateCreation,   
+    fspr_os2_time_to_fspr_time(&finfo->ctime, fstatus->fdateCreation,   
                              fstatus->ftimeCreation );
     finfo->valid = APR_FINFO_TYPE | APR_FINFO_PROT | APR_FINFO_SIZE
                  | APR_FINFO_CSIZE | APR_FINFO_MTIME 
@@ -52,7 +52,7 @@ static void FS3_to_finfo(apr_finfo_t *finfo, FILESTATUS3 *fstatus)
 
 
 
-static apr_status_t handle_type(apr_filetype_e *ftype, HFILE file)
+static fspr_status_t handle_type(fspr_filetype_e *ftype, HFILE file)
 {
     ULONG filetype, fileattr, rc;
 
@@ -86,15 +86,15 @@ static apr_status_t handle_type(apr_filetype_e *ftype, HFILE file)
 
 
 
-APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo, apr_int32_t wanted, 
-                                   apr_file_t *thefile)
+APR_DECLARE(fspr_status_t) fspr_file_info_get(fspr_finfo_t *finfo, fspr_int32_t wanted, 
+                                   fspr_file_t *thefile)
 {
     ULONG rc;
     FILESTATUS3 fstatus;
 
     if (thefile->isopen) {
         if (thefile->buffered) {
-            apr_status_t rv = apr_file_flush(thefile);
+            fspr_status_t rv = fspr_file_flush(thefile);
 
             if (rv != APR_SUCCESS) {
                 return rv;
@@ -124,14 +124,14 @@ APR_DECLARE(apr_status_t) apr_file_info_get(apr_finfo_t *finfo, apr_int32_t want
     return APR_FROM_OS_ERROR(rc);
 }
 
-APR_DECLARE(apr_status_t) apr_file_perms_set(const char *fname, apr_fileperms_t perms)
+APR_DECLARE(fspr_status_t) fspr_file_perms_set(const char *fname, fspr_fileperms_t perms)
 {
     return APR_ENOTIMPL;
 }
 
 
-APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
-                              apr_int32_t wanted, apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_stat(fspr_finfo_t *finfo, const char *fname,
+                              fspr_int32_t wanted, fspr_pool_t *cont)
 {
     ULONG rc;
     FILESTATUS3 fstatus;
@@ -153,18 +153,18 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
                               FILE_DIRECTORY|FILE_HIDDEN|FILE_SYSTEM|FILE_ARCHIVED,
                               &ffb, sizeof(ffb), &count, FIL_STANDARD);
             if (rc == 0 && count == 1) {
-                finfo->name = apr_pstrdup(cont, ffb.achName);
+                finfo->name = fspr_pstrdup(cont, ffb.achName);
                 finfo->valid |= APR_FINFO_NAME;
             }
         }
     } else if (rc == ERROR_INVALID_ACCESS) {
-        memset(finfo, 0, sizeof(apr_finfo_t));
+        memset(finfo, 0, sizeof(fspr_finfo_t));
         finfo->valid = APR_FINFO_TYPE | APR_FINFO_PROT;
         finfo->protection = 0666;
         finfo->filetype = APR_CHR;
 
         if (wanted & APR_FINFO_NAME) {
-            finfo->name = apr_pstrdup(cont, fname);
+            finfo->name = fspr_pstrdup(cont, fname);
             finfo->valid |= APR_FINFO_NAME;
         }
     } else {
@@ -176,10 +176,10 @@ APR_DECLARE(apr_status_t) apr_stat(apr_finfo_t *finfo, const char *fname,
 
 
 
-APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
-                                             apr_fileattrs_t attributes,
-                                             apr_fileattrs_t attr_mask,
-                                             apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_file_attrs_set(const char *fname,
+                                             fspr_fileattrs_t attributes,
+                                             fspr_fileattrs_t attr_mask,
+                                             fspr_pool_t *cont)
 {
     FILESTATUS3 fs3;
     ULONG rc;
@@ -221,9 +221,9 @@ APR_DECLARE(apr_status_t) apr_file_attrs_set(const char *fname,
 
 
 /* ### Somebody please write this! */
-APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
-                                              apr_time_t mtime,
-                                              apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_file_mtime_set(const char *fname,
+                                              fspr_time_t mtime,
+                                              fspr_pool_t *pool)
 {
     FILESTATUS3 fs3;
     ULONG rc;
@@ -233,7 +233,7 @@ APR_DECLARE(apr_status_t) apr_file_mtime_set(const char *fname,
         return APR_FROM_OS_ERROR(rc);
     }
 
-    apr_apr_time_to_os2_time(&fs3.fdateLastWrite, &fs3.ftimeLastWrite, mtime);
+    fspr_fspr_time_to_os2_time(&fs3.fdateLastWrite, &fs3.ftimeLastWrite, mtime);
 
     rc = DosSetPathInfo(fname, FIL_STANDARD, &fs3, sizeof(fs3), 0);
     return APR_FROM_OS_ERROR(rc);

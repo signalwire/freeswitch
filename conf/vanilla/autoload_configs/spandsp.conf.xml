@@ -28,6 +28,7 @@
     <fax-settings>
 	<param name="use-ecm"		value="true"/>
 	<param name="verbose"		value="false"/>
+	<!--param name="verbose-log-level"	value="INFO"/-->
 	<param name="disable-v17"	value="false"/>
 	<param name="ident"		value="SpanDSP Fax Ident"/>
 	<param name="header"		value="SpanDSP Fax Header"/>

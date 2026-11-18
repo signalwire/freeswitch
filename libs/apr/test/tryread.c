@@ -15,10 +15,10 @@
  */
 
 #include "testflock.h"
-#include "apr_pools.h"
-#include "apr_file_io.h"
-#include "apr_general.h"
-#include "apr.h"
+#include "fspr_pools.h"
+#include "fspr_file_io.h"
+#include "fspr_general.h"
+#include "fspr.h"
 
 #if APR_HAVE_STDLIB_H
 #include <stdlib.h>
@@ -26,19 +26,19 @@
 
 int main(int argc, const char * const *argv)
 {
-    apr_file_t *file;
-    apr_status_t status;
-    apr_pool_t *p;
+    fspr_file_t *file;
+    fspr_status_t status;
+    fspr_pool_t *p;
 
-    apr_initialize();
-    apr_pool_create(&p, NULL);
+    fspr_initialize();
+    fspr_pool_create(&p, NULL);
 
-    if (apr_file_open(&file, TESTFILE, APR_WRITE, APR_OS_DEFAULT, p) 
+    if (fspr_file_open(&file, TESTFILE, APR_WRITE, APR_OS_DEFAULT, p) 
         != APR_SUCCESS) {
         
         exit(UNEXPECTED_ERROR);
     }
-    status = apr_file_lock(file, APR_FLOCK_EXCLUSIVE | APR_FLOCK_NONBLOCK);
+    status = fspr_file_lock(file, APR_FLOCK_EXCLUSIVE | APR_FLOCK_NONBLOCK);
     if (status == APR_SUCCESS) {
         exit(SUCCESSFUL_READ);
     }

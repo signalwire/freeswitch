@@ -39,7 +39,11 @@ SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, c
 	lib = LoadLibraryEx(path, NULL, 0);
 
 	if (!lib) {
-		LoadLibraryEx(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+		lib = LoadLibraryEx(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	}
+
+	if (!lib) {
+		lib = LoadLibraryEx(path, NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	}
 
 	if (!lib) {
@@ -87,7 +91,9 @@ SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym
 void switch_dso_destroy(switch_dso_lib_t *lib)
 {
 	if (lib && *lib) {
+#ifndef HAVE_FAKE_DLCLOSE
 		dlclose(*lib);
+#endif
 		*lib = NULL;
 	}
 }

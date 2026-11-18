@@ -40,6 +40,9 @@ typedef int switch_CURLINFO;
 typedef int switch_CURLcode;
 typedef int switch_CURLoption;
 
+#define HAVE_SWITCH_CURL_MIME
+typedef void switch_curl_mime;
+
 SWITCH_DECLARE(switch_CURL *) switch_curl_easy_init(void);
 SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_perform(switch_CURL *handle);
 SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_getinfo(switch_CURL *curl, switch_CURLINFO info, ... );
@@ -50,7 +53,9 @@ SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_setopt(CURL *handle, switch_CUR
 SWITCH_DECLARE(const char *) switch_curl_easy_strerror(switch_CURLcode errornum );
 SWITCH_DECLARE(void) switch_curl_init(void);
 SWITCH_DECLARE(void) switch_curl_destroy(void);
-SWITCH_DECLARE(switch_status_t) switch_curl_process_form_post_params(switch_event_t *event, switch_CURL *curl_handle, struct curl_httppost **formpostp);
+SWITCH_DECLARE(switch_status_t) switch_curl_process_mime(switch_event_t *event, switch_CURL *curl_handle, switch_curl_mime **mimep);
+SWITCH_DECLARE(void) switch_curl_mime_free(switch_curl_mime **mimep);
+SWITCH_DECLARE(switch_CURLcode) switch_curl_easy_setopt_mime(switch_CURL *curl_handle, switch_curl_mime *mime);
 #define switch_curl_easy_setopt curl_easy_setopt
 
 SWITCH_END_EXTERN_C

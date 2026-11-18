@@ -98,6 +98,8 @@ static switch_status_t mod_logfile_openlogfile(logfile_profile_t *profile, switc
 
 	stat = switch_file_open(&afd, profile->logfile, flags, SWITCH_FPROT_OS_DEFAULT, module_pool);
 	if (stat != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "logfile %s open error, status=%d\n", profile->logfile, stat);
+
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -163,7 +165,9 @@ static switch_status_t mod_logfile_rotate(logfile_profile_t *profile)
 			if ((status = switch_file_rename(from_filename, to_filename, pool)) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error renaming log from %s to %s [%s]\n",
 								  from_filename, to_filename, strerror(errno));
-				goto end;
+				if (errno != ENOENT) {
+					goto end;
+				}
 			}
 		}
 
@@ -457,7 +461,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_logfile_load)
 		if ((profiles = switch_xml_child(cfg, "profiles"))) {
 			for (xprofile = switch_xml_child(profiles, "profile"); xprofile; xprofile = xprofile->next) {
 				if (load_profile(xprofile) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error loading profile.");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "error loading profile.\n");
 				}
 			}
 		}

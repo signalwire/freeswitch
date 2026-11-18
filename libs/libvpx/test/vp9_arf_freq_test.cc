@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include <memory>
+
+#include "gtest/gtest.h"
 
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
@@ -16,6 +18,7 @@
 #include "test/y4m_video_source.h"
 #include "test/yuv_video_source.h"
 #include "vp9/encoder/vp9_ratectrl.h"
+#include "vpx_config.h"
 
 namespace {
 
@@ -25,7 +28,7 @@ const int kBitrate = 500;
 #define ARF_NOT_SEEN 1000001
 #define ARF_SEEN_ONCE 1000000
 
-typedef struct {
+struct TestVideoParam {
   const char *filename;
   unsigned int width;
   unsigned int height;
@@ -35,12 +38,12 @@ typedef struct {
   vpx_img_fmt fmt;
   vpx_bit_depth_t bit_depth;
   unsigned int profile;
-} TestVideoParam;
+};
 
-typedef struct {
+struct TestEncodeParam {
   libvpx_test::TestMode mode;
   int cpu_used;
-} TestEncodeParam;
+};
 
 const TestVideoParam kTestVectors[] = {
   // artificially increase framerate to trigger default check
@@ -55,9 +58,12 @@ const TestVideoParam kTestVectors[] = {
 };
 
 const TestEncodeParam kEncodeVectors[] = {
+#if !CONFIG_REALTIME_ONLY
   { ::libvpx_test::kOnePassGood, 2 }, { ::libvpx_test::kOnePassGood, 5 },
   { ::libvpx_test::kTwoPassGood, 1 }, { ::libvpx_test::kTwoPassGood, 2 },
-  { ::libvpx_test::kTwoPassGood, 5 }, { ::libvpx_test::kRealTime, 5 },
+  { ::libvpx_test::kTwoPassGood, 5 },
+#endif
+  { ::libvpx_test::kRealTime, 5 },
 };
 
 const int kMinArfVectors[] = {
@@ -84,9 +90,9 @@ class ArfFreqTest
       : EncoderTest(GET_PARAM(0)), test_video_param_(GET_PARAM(1)),
         test_encode_param_(GET_PARAM(2)), min_arf_requested_(GET_PARAM(3)) {}
 
-  virtual ~ArfFreqTest() {}
+  ~ArfFreqTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(test_encode_param_.mode);
     if (test_encode_param_.mode != ::libvpx_test::kRealTime) {
@@ -102,7 +108,7 @@ class ArfFreqTest
     dec_cfg_.threads = 4;
   }
 
-  virtual void BeginPassHook(unsigned int) {
+  void BeginPassHook(unsigned int) override {
     min_run_ = ARF_NOT_SEEN;
     run_of_visible_frames_ = 0;
   }
@@ -124,7 +130,7 @@ class ArfFreqTest
     return frames;
   }
 
-  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
+  void FramePktHook(const vpx_codec_cx_pkt_t *pkt) override {
     if (pkt->kind != VPX_CODEC_CX_FRAME_PKT) return;
     const int frames = GetNumFramesInPkt(pkt);
     if (frames == 1) {
@@ -143,8 +149,8 @@ class ArfFreqTest
     }
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
     if (video->frame() == 0) {
       encoder->Control(VP9E_SET_FRAME_PARALLEL_DECODING, 1);
       encoder->Control(VP9E_SET_TILE_COLUMNS, 4);
@@ -190,7 +196,7 @@ TEST_P(ArfFreqTest, MinArfFreqTest) {
   init_flags_ = VPX_CODEC_USE_PSNR;
   if (cfg_.g_bit_depth > 8) init_flags_ |= VPX_CODEC_USE_HIGHBITDEPTH;
 
-  testing::internal::scoped_ptr<libvpx_test::VideoSource> video;
+  std::unique_ptr<libvpx_test::VideoSource> video;
   if (is_extension_y4m(test_video_param_.filename)) {
     video.reset(new libvpx_test::Y4mVideoSource(test_video_param_.filename, 0,
                                                 kFrames));
@@ -211,7 +217,7 @@ TEST_P(ArfFreqTest, MinArfFreqTest) {
   }
 }
 
-VP9_INSTANTIATE_TEST_CASE(ArfFreqTest, ::testing::ValuesIn(kTestVectors),
-                          ::testing::ValuesIn(kEncodeVectors),
-                          ::testing::ValuesIn(kMinArfVectors));
+VP9_INSTANTIATE_TEST_SUITE(ArfFreqTest, ::testing::ValuesIn(kTestVectors),
+                           ::testing::ValuesIn(kEncodeVectors),
+                           ::testing::ValuesIn(kMinArfVectors));
 }  // namespace

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ARGS_H_
-#define ARGS_H_
+#ifndef VPX_ARGS_H_
+#define VPX_ARGS_H_
 #include <stdio.h>
 
 #ifdef __cplusplus
@@ -28,8 +28,7 @@ struct arg_enum_list {
   const char *name;
   int val;
 };
-#define ARG_ENUM_LIST_END \
-  { 0 }
+#define ARG_ENUM_LIST_END { 0 }
 
 typedef struct arg_def {
   const char *short_name;
@@ -38,19 +37,16 @@ typedef struct arg_def {
   const char *desc;
   const struct arg_enum_list *enums;
 } arg_def_t;
-#define ARG_DEF(s, l, v, d) \
-  { s, l, v, d, NULL }
-#define ARG_DEF_ENUM(s, l, v, d, e) \
-  { s, l, v, d, e }
-#define ARG_DEF_LIST_END \
-  { 0 }
+#define ARG_DEF(s, l, v, d) { s, l, v, d, NULL }
+#define ARG_DEF_ENUM(s, l, v, d, e) { s, l, v, d, e }
+#define ARG_DEF_LIST_END { 0 }
 
-struct arg arg_init(char **argv);
 int arg_match(struct arg *arg_, const struct arg_def *def, char **argv);
 const char *arg_next(struct arg *arg);
 void arg_show_usage(FILE *fp, const struct arg_def *const *defs);
 char **argv_dup(int argc, const char **argv);
 
+// Note: arg_match() must be called before invoking these functions.
 unsigned int arg_parse_uint(const struct arg *arg);
 int arg_parse_int(const struct arg *arg);
 struct vpx_rational arg_parse_rational(const struct arg *arg);
@@ -60,4 +56,4 @@ int arg_parse_enum_or_int(const struct arg *arg);
 }  // extern "C"
 #endif
 
-#endif  // ARGS_H_
+#endif  // VPX_ARGS_H_

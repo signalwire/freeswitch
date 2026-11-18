@@ -33,6 +33,20 @@ static INLINE int read_bool(vpx_reader *r, int prob, BD_VALUE *value,
                             int *count, unsigned int *range) {
   const unsigned int split = (*range * prob + (256 - prob)) >> CHAR_BIT;
   const BD_VALUE bigsplit = (BD_VALUE)split << (BD_VALUE_SIZE - CHAR_BIT);
+#if CONFIG_BITSTREAM_DEBUG
+  const int queue_r = bitstream_queue_get_read();
+  const int frame_idx = bitstream_queue_get_frame_read();
+  int ref_result, ref_prob;
+  bitstream_queue_pop(&ref_result, &ref_prob);
+  if (prob != ref_prob) {
+    fprintf(stderr,
+            "\n *** [bit] prob error, frame_idx_r %d prob %d ref_prob %d "
+            "queue_r %d\n",
+            frame_idx, prob, ref_prob, queue_r);
+
+    assert(0);
+  }
+#endif
 
   if (*count < 0) {
     r->value = *value;
@@ -51,6 +65,20 @@ static INLINE int read_bool(vpx_reader *r, int prob, BD_VALUE *value,
       *value <<= shift;
       *count -= shift;
     }
+#if CONFIG_BITSTREAM_DEBUG
+    {
+      const int bit = 1;
+      if (bit != ref_result) {
+        fprintf(
+            stderr,
+            "\n *** [bit] result error, frame_idx_r %d bit %d ref_result %d "
+            "queue_r %d\n",
+            frame_idx, bit, ref_result, queue_r);
+
+        assert(0);
+      }
+    }
+#endif
     return 1;
   }
   *range = split;
@@ -60,6 +88,19 @@ static INLINE int read_bool(vpx_reader *r, int prob, BD_VALUE *value,
     *value <<= shift;
     *count -= shift;
   }
+#if CONFIG_BITSTREAM_DEBUG
+  {
+    const int bit = 0;
+    if (bit != ref_result) {
+      fprintf(stderr,
+              "\n *** [bit] result error, frame_idx_r %d bit %d ref_result %d "
+              "queue_r %d\n",
+              frame_idx, bit, ref_result, queue_r);
+
+      assert(0);
+    }
+  }
+#endif
   return 0;
 }
 
@@ -83,8 +124,8 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
   const vpx_prob(*coef_probs)[COEFF_CONTEXTS][UNCONSTRAINED_NODES] =
       fc->coef_probs[tx_size][type][ref];
   const vpx_prob *prob;
-  unsigned int(*coef_counts)[COEFF_CONTEXTS][UNCONSTRAINED_NODES + 1];
-  unsigned int(*eob_branch_count)[COEFF_CONTEXTS];
+  unsigned int (*coef_counts)[COEFF_CONTEXTS][UNCONSTRAINED_NODES + 1];
+  unsigned int (*eob_branch_count)[COEFF_CONTEXTS];
   uint8_t token_cache[32 * 32];
   const uint8_t *band_translate = get_band_translate(tx_size);
   const int dq_shift = (tx_size == TX_32X32);
@@ -92,17 +133,18 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
   int16_t dqv = dq[0];
   const uint8_t *const cat6_prob =
 #if CONFIG_VP9_HIGHBITDEPTH
-      (xd->bd == VPX_BITS_12)
-          ? vp9_cat6_prob_high12
-          : (xd->bd == VPX_BITS_10) ? vp9_cat6_prob_high12 + 2 :
+      (xd->bd == VPX_BITS_12)   ? vp9_cat6_prob_high12
+      : (xd->bd == VPX_BITS_10) ? vp9_cat6_prob_high12 + 2
+                                :
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-                                    vp9_cat6_prob;
+                                vp9_cat6_prob;
   const int cat6_bits =
 #if CONFIG_VP9_HIGHBITDEPTH
-      (xd->bd == VPX_BITS_12) ? 18
-                              : (xd->bd == VPX_BITS_10) ? 16 :
+      (xd->bd == VPX_BITS_12)   ? 18
+      : (xd->bd == VPX_BITS_10) ? 16
+                                :
 #endif  // CONFIG_VP9_HIGHBITDEPTH
-                                                        14;
+                                14;
   // Keep value, range, and count as locals.  The compiler produces better
   // results with the locals than using r directly.
   BD_VALUE value = r->value;
@@ -202,9 +244,9 @@ static int decode_coefs(const MACROBLOCKD *xd, PLANE_TYPE type,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #else
     if (read_bool(r, 128, &value, &count, &range)) {
-      dqcoeff[scan[c]] = -v;
+      dqcoeff[scan[c]] = (tran_low_t)-v;
     } else {
-      dqcoeff[scan[c]] = v;
+      dqcoeff[scan[c]] = (tran_low_t)v;
     }
 #endif  // CONFIG_COEFFICIENT_RANGE_CHECKING
     ++c;
@@ -230,9 +272,8 @@ static void get_ctx_shift(MACROBLOCKD *xd, int *ctx_shift_a, int *ctx_shift_l,
   }
 }
 
-int vp9_decode_block_tokens(TileWorkerData *twd, int plane,
-                            const scan_order *sc, int x, int y, TX_SIZE tx_size,
-                            int seg_id) {
+int vp9_decode_block_tokens(TileWorkerData *twd, int plane, const ScanOrder *sc,
+                            int x, int y, TX_SIZE tx_size, int seg_id) {
   vpx_reader *r = &twd->bit_reader;
   MACROBLOCKD *xd = &twd->xd;
   struct macroblockd_plane *const pd = &xd->plane[plane];

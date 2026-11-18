@@ -360,6 +360,12 @@ static int get_down2_steps(int in_length, int out_length) {
   while ((proj_in_length = get_down2_length(in_length, 1)) >= out_length) {
     ++steps;
     in_length = proj_in_length;
+    if (in_length == 1) {
+      // Special case: we break because any further calls to get_down2_length()
+      // with be with length == 1, which return 1, resulting in an infinite
+      // loop.
+      break;
+    }
   }
   return steps;
 }
@@ -424,11 +430,11 @@ void vp9_resize_plane(const uint8_t *const input, int height, int width,
                       int in_stride, uint8_t *output, int height2, int width2,
                       int out_stride) {
   int i;
-  uint8_t *intbuf = (uint8_t *)malloc(sizeof(uint8_t) * width2 * height);
+  uint8_t *intbuf = (uint8_t *)calloc(width2 * height, sizeof(*intbuf));
   uint8_t *tmpbuf =
-      (uint8_t *)malloc(sizeof(uint8_t) * (width < height ? height : width));
-  uint8_t *arrbuf = (uint8_t *)malloc(sizeof(uint8_t) * height);
-  uint8_t *arrbuf2 = (uint8_t *)malloc(sizeof(uint8_t) * height2);
+      (uint8_t *)calloc(width < height ? height : width, sizeof(*tmpbuf));
+  uint8_t *arrbuf = (uint8_t *)calloc(height, sizeof(*arrbuf));
+  uint8_t *arrbuf2 = (uint8_t *)calloc(height2, sizeof(*arrbuf2));
   if (intbuf == NULL || tmpbuf == NULL || arrbuf == NULL || arrbuf2 == NULL)
     goto Error;
   assert(width > 0);
@@ -506,10 +512,12 @@ static void highbd_interpolate(const uint16_t *const input, int inlength,
       sub_pel = (y >> (INTERP_PRECISION_BITS - SUBPEL_BITS)) & SUBPEL_MASK;
       filter = interp_filters[sub_pel];
       sum = 0;
-      for (k = 0; k < INTERP_TAPS; ++k)
+      for (k = 0; k < INTERP_TAPS; ++k) {
+        assert(int_pel - INTERP_TAPS / 2 + 1 + k < inlength);
         sum += filter[k] * input[(int_pel - INTERP_TAPS / 2 + 1 + k < 0
                                       ? 0
                                       : int_pel - INTERP_TAPS / 2 + 1 + k)];
+      }
       *optr++ = clip_pixel_highbd(ROUND_POWER_OF_TWO(sum, FILTER_BITS), bd);
     }
     // Middle part.
@@ -720,6 +728,10 @@ void vp9_highbd_resize_plane(const uint8_t *const input, int height, int width,
   uint16_t *arrbuf2 = (uint16_t *)malloc(sizeof(uint16_t) * height2);
   if (intbuf == NULL || tmpbuf == NULL || arrbuf == NULL || arrbuf2 == NULL)
     goto Error;
+  assert(width > 0);
+  assert(height > 0);
+  assert(width2 > 0);
+  assert(height2 > 0);
   for (i = 0; i < height; ++i) {
     highbd_resize_multistep(CONVERT_TO_SHORTPTR(input + in_stride * i), width,
                             intbuf + width2 * i, width2, tmpbuf, bd);
@@ -736,85 +748,5 @@ Error:
   free(tmpbuf);
   free(arrbuf);
   free(arrbuf2);
-}
-#endif  // CONFIG_VP9_HIGHBITDEPTH
-
-void vp9_resize_frame420(const uint8_t *const y, int y_stride,
-                         const uint8_t *const u, const uint8_t *const v,
-                         int uv_stride, int height, int width, uint8_t *oy,
-                         int oy_stride, uint8_t *ou, uint8_t *ov,
-                         int ouv_stride, int oheight, int owidth) {
-  vp9_resize_plane(y, height, width, y_stride, oy, oheight, owidth, oy_stride);
-  vp9_resize_plane(u, height / 2, width / 2, uv_stride, ou, oheight / 2,
-                   owidth / 2, ouv_stride);
-  vp9_resize_plane(v, height / 2, width / 2, uv_stride, ov, oheight / 2,
-                   owidth / 2, ouv_stride);
-}
-
-void vp9_resize_frame422(const uint8_t *const y, int y_stride,
-                         const uint8_t *const u, const uint8_t *const v,
-                         int uv_stride, int height, int width, uint8_t *oy,
-                         int oy_stride, uint8_t *ou, uint8_t *ov,
-                         int ouv_stride, int oheight, int owidth) {
-  vp9_resize_plane(y, height, width, y_stride, oy, oheight, owidth, oy_stride);
-  vp9_resize_plane(u, height, width / 2, uv_stride, ou, oheight, owidth / 2,
-                   ouv_stride);
-  vp9_resize_plane(v, height, width / 2, uv_stride, ov, oheight, owidth / 2,
-                   ouv_stride);
-}
-
-void vp9_resize_frame444(const uint8_t *const y, int y_stride,
-                         const uint8_t *const u, const uint8_t *const v,
-                         int uv_stride, int height, int width, uint8_t *oy,
-                         int oy_stride, uint8_t *ou, uint8_t *ov,
-                         int ouv_stride, int oheight, int owidth) {
-  vp9_resize_plane(y, height, width, y_stride, oy, oheight, owidth, oy_stride);
-  vp9_resize_plane(u, height, width, uv_stride, ou, oheight, owidth,
-                   ouv_stride);
-  vp9_resize_plane(v, height, width, uv_stride, ov, oheight, owidth,
-                   ouv_stride);
-}
-
-#if CONFIG_VP9_HIGHBITDEPTH
-void vp9_highbd_resize_frame420(const uint8_t *const y, int y_stride,
-                                const uint8_t *const u, const uint8_t *const v,
-                                int uv_stride, int height, int width,
-                                uint8_t *oy, int oy_stride, uint8_t *ou,
-                                uint8_t *ov, int ouv_stride, int oheight,
-                                int owidth, int bd) {
-  vp9_highbd_resize_plane(y, height, width, y_stride, oy, oheight, owidth,
-                          oy_stride, bd);
-  vp9_highbd_resize_plane(u, height / 2, width / 2, uv_stride, ou, oheight / 2,
-                          owidth / 2, ouv_stride, bd);
-  vp9_highbd_resize_plane(v, height / 2, width / 2, uv_stride, ov, oheight / 2,
-                          owidth / 2, ouv_stride, bd);
-}
-
-void vp9_highbd_resize_frame422(const uint8_t *const y, int y_stride,
-                                const uint8_t *const u, const uint8_t *const v,
-                                int uv_stride, int height, int width,
-                                uint8_t *oy, int oy_stride, uint8_t *ou,
-                                uint8_t *ov, int ouv_stride, int oheight,
-                                int owidth, int bd) {
-  vp9_highbd_resize_plane(y, height, width, y_stride, oy, oheight, owidth,
-                          oy_stride, bd);
-  vp9_highbd_resize_plane(u, height, width / 2, uv_stride, ou, oheight,
-                          owidth / 2, ouv_stride, bd);
-  vp9_highbd_resize_plane(v, height, width / 2, uv_stride, ov, oheight,
-                          owidth / 2, ouv_stride, bd);
-}
-
-void vp9_highbd_resize_frame444(const uint8_t *const y, int y_stride,
-                                const uint8_t *const u, const uint8_t *const v,
-                                int uv_stride, int height, int width,
-                                uint8_t *oy, int oy_stride, uint8_t *ou,
-                                uint8_t *ov, int ouv_stride, int oheight,
-                                int owidth, int bd) {
-  vp9_highbd_resize_plane(y, height, width, y_stride, oy, oheight, owidth,
-                          oy_stride, bd);
-  vp9_highbd_resize_plane(u, height, width, uv_stride, ou, oheight, owidth,
-                          ouv_stride, bd);
-  vp9_highbd_resize_plane(v, height, width, uv_stride, ov, oheight, owidth,
-                          ouv_stride, bd);
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH

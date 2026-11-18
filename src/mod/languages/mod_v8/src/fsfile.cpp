@@ -59,197 +59,197 @@ void *FSFile::Construct(const v8::FunctionCallbackInfo<Value>& info)
 
 JS_FILE_FUNCTION_IMPL(Close)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(CopyTo)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(Flush)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(List)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(MkDir)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(Open)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(Read)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(ReadAll)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(ReadLn)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(Remove)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(RenameTo)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(Seek)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(ToString)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(ToURL)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(Write)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(WriteAll)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_FUNCTION_IMPL(WriteLn)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropCanAppend)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropCanRead)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropCanReplace)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropCanWrite)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropCreationTime)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropExists)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropHasAutoFlush)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropHasRandomAccess)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropIsDirectory)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropIsFile)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropIsNative)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropIsOpen)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropLastModified)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropLength)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropMode)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropName)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropParent)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropPath)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropPosition)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_SET_PROPERTY_IMPL(SetPropPosition)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropSize)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 JS_FILE_GET_PROPERTY_IMPL(GetPropType)
 {
-	info.GetIsolate()->ThrowException(String::NewFromUtf8(info.GetIsolate(), "Not yet implemented"));
+	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "Not yet implemented"));
 }
 
 static const js_function_t file_proc[] = {

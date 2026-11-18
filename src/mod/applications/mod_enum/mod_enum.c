@@ -31,9 +31,6 @@
  */
 
 #include <switch.h>
-#ifdef _MSC_VER
-#define ssize_t int
-#endif
 #include <ldns/ldns.h>
 
 #define ENUM_MAXNAMESERVERS	10	/* max nameservers that will be used */
@@ -303,7 +300,6 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	char *argv[11] = { 0 };
 	int i, argc;
 	char *pack[4] = { 0 };
-	int packc;
 
 	char *p;
 	int order = 10;
@@ -351,7 +347,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 	}
 
 
-	if ((packc = switch_split(packstr, '!', pack))) {
+	if (switch_split(packstr, '!', pack)) {
 		regex = pack[1];
 		replace = pack[2];
 	} else {
@@ -366,7 +362,8 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 
 	if (service && regex && replace) {
 		switch_regex_t *re = NULL, *re2 = NULL;
-		int proceed = 0, ovector[30];
+		switch_regex_match_t *match_data = NULL, *match_data2 = NULL;
+		int proceed = 0;
 		char *substituted = NULL;
 		char *substituted_2 = NULL;
 		char *orig_uri;
@@ -375,17 +372,18 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 		int supported = 0;
 		uint32_t len = 0;
 
-		if ((proceed = switch_regex_perform(number, regex, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		if ((proceed = switch_regex_perform(number, regex, &re, &match_data))) {
 			if (strchr(regex, '(')) {
 				len = (uint32_t) (strlen(number) + strlen(replace) + 10) * proceed;
 				if (!(substituted = malloc(len))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+					switch_regex_match_safe_free(match_data);
 					switch_regex_safe_free(re);
 					goto end;
 				}
 				memset(substituted, 0, len);
 
-				switch_perform_substitution(re, proceed, replace, number, substituted, len, ovector);
+				switch_perform_substitution(match_data, replace, substituted, len);
 				orig_uri = substituted;
 			} else {
 				orig_uri = replace;
@@ -399,7 +397,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 					continue;
 				}
 
-				if ((proceed = switch_regex_perform(uri, route->regex, &re2, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+				if ((proceed = switch_regex_perform(uri, route->regex, &re2, &match_data2))) {
 					switch_event_t *event = NULL;
 
 					if (strchr(route->regex, '(')) {
@@ -407,6 +405,8 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 						if (!(substituted_2 = malloc(len))) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 							switch_safe_free(substituted);
+							switch_regex_match_safe_free(match_data);
+							switch_regex_match_safe_free(match_data2);
 							switch_regex_safe_free(re);
 							switch_regex_safe_free(re2);
 							switch_mutex_unlock(MUTEX);
@@ -414,7 +414,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 						}
 						memset(substituted_2, 0, len);
 
-						switch_perform_substitution(re2, proceed, route->replace, uri, substituted_2, len, ovector);
+						switch_perform_substitution(match_data2, route->replace, substituted_2, len);
 						uri = substituted_2;
 					} else {
 						uri = route->replace;
@@ -435,6 +435,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 				}
 				switch_safe_free(uri_expanded);
 				switch_safe_free(substituted_2);
+				switch_regex_match_safe_free(match_data2);
 				switch_regex_safe_free(re2);
 			}
 			switch_mutex_unlock(MUTEX);
@@ -444,6 +445,7 @@ static void parse_naptr(const ldns_rr *naptr, const char *number, enum_record_t 
 			}
 
 			switch_safe_free(substituted);
+			switch_regex_match_safe_free(match_data);
 			switch_regex_safe_free(re);
 		}
 	}
@@ -496,6 +498,10 @@ switch_status_t ldns_lookup(const char *number, const char *root, char *server_n
 	if (!added_server) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Nameservers specified, using host default\n");
 		/* create a new resolver from /etc/resolv.conf */
+		if (res) {
+			ldns_resolver_free(res);
+			res = NULL;
+		}
 		s = ldns_resolver_new_frm_file(&res, NULL);
 	}
 
@@ -670,7 +676,6 @@ SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 
 SWITCH_STANDARD_APP(enum_app_function)
 {
-	int argc = 0;
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *dest = NULL, *root = NULL;
@@ -688,7 +693,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 		return;
 	}
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		dest = argv[0];
 		root = argv[1];
 		if (enum_lookup(root, dest, &results, channel, session) == SWITCH_STATUS_SUCCESS) {
@@ -734,7 +739,6 @@ SWITCH_STANDARD_APP(enum_app_function)
 
 SWITCH_STANDARD_API(enum_api)
 {
-	int argc = 0;
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *dest = NULL, *root = NULL;
@@ -755,7 +759,7 @@ SWITCH_STANDARD_API(enum_api)
 		abort();
 	}
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		dest = argv[0];
 		root = argv[1];
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Looking up %s@%s\n", dest, root);
@@ -811,7 +815,6 @@ static void do_load(void)
 
 SWITCH_STANDARD_API(enum_function)
 {
-	int argc = 0;
 	char *argv[4] = { 0 };
 	enum_record_t *results, *rp;
 	char *mydata = NULL;
@@ -827,7 +830,7 @@ SWITCH_STANDARD_API(enum_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+	if (switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) {
 		dest = argv[0];
 		root = argv[1];
 		switch_assert(dest);

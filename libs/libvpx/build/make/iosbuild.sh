@@ -30,13 +30,9 @@ SCRIPT_DIR=$(dirname "$0")
 LIBVPX_SOURCE_DIR=$(cd ${SCRIPT_DIR}/../..; pwd)
 LIPO=$(xcrun -sdk iphoneos${SDK} -find lipo)
 ORIG_PWD="$(pwd)"
-ARM_TARGETS="arm64-darwin-gcc
-             armv7-darwin-gcc
-             armv7s-darwin-gcc"
-SIM_TARGETS="x86-iphonesimulator-gcc
-             x86_64-iphonesimulator-gcc"
-OSX_TARGETS="x86-darwin18-gcc
-             x86_64-darwin18-gcc"
+ARM_TARGETS="arm64-darwin-gcc"
+SIM_TARGETS="x86_64-iphonesimulator-gcc"
+OSX_TARGETS="x86_64-darwin16-gcc"
 TARGETS="${ARM_TARGETS} ${SIM_TARGETS}"
 
 # Configures for the target specified by $1, and invokes make with the dist
@@ -132,7 +128,8 @@ create_vpx_framework_config_shim() {
   done
 
   # Consume the last line of output from the loop: We don't want it.
-  sed -i '' -e '$d' "${config_file}"
+  sed -i.bak -e '$d' "${config_file}"
+  rm "${config_file}.bak"
 
   printf "#endif\n\n" >> "${config_file}"
   printf "#endif  // ${include_guard}" >> "${config_file}"
@@ -244,7 +241,7 @@ build_framework() {
 # Trap function. Cleans up the subtree used to build all targets contained in
 # $TARGETS.
 cleanup() {
-  local readonly res=$?
+  local res=$?
   cd "${ORIG_PWD}"
 
   if [ $res -ne 0 ]; then
@@ -271,7 +268,7 @@ cat << EOF
     --help: Display this message and exit.
     --enable-shared: Build a dynamic framework for use on iOS 8 or later.
     --extra-configure-args <args>: Extra args to pass when configuring libvpx.
-    --macosx: Uses darwin18 targets instead of iphonesimulator targets for x86
+    --macosx: Uses darwin16 targets instead of iphonesimulator targets for x86
               and x86_64. Allows linking to framework when builds target MacOSX
               instead of iOS.
     --preserve-build-output: Do not delete the build directory.
@@ -350,7 +347,7 @@ if [ "$ENABLE_SHARED" = "yes" ]; then
   IOS_VERSION_MIN="8.0"
 else
   IOS_VERSION_OPTIONS=""
-  IOS_VERSION_MIN="6.0"
+  IOS_VERSION_MIN="7.0"
 fi
 
 if [ "${VERBOSE}" = "yes" ]; then

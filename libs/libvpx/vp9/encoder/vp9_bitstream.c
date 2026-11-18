@@ -9,6 +9,7 @@
  */
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <limits.h>
 
@@ -18,6 +19,9 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/mem_ops.h"
 #include "vpx_ports/system_state.h"
+#if CONFIG_BITSTREAM_DEBUG
+#include "vpx_util/vpx_debug_util.h"
+#endif  // CONFIG_BITSTREAM_DEBUG
 
 #include "vp9/common/vp9_entropy.h"
 #include "vp9/common/vp9_entropymode.h"
@@ -39,8 +43,10 @@ static const struct vp9_token intra_mode_encodings[INTRA_MODES] = {
   { 0, 1 },  { 6, 3 },   { 28, 5 },  { 30, 5 }, { 58, 6 },
   { 59, 6 }, { 126, 7 }, { 127, 7 }, { 62, 6 }, { 2, 2 }
 };
-static const struct vp9_token switchable_interp_encodings[SWITCHABLE_FILTERS] =
-    { { 0, 1 }, { 2, 2 }, { 3, 2 } };
+static const struct vp9_token
+    switchable_interp_encodings[SWITCHABLE_FILTERS] = { { 0, 1 },
+                                                        { 2, 2 },
+                                                        { 3, 2 } };
 static const struct vp9_token partition_encodings[PARTITION_TYPES] = {
   { 0, 1 }, { 2, 2 }, { 6, 3 }, { 7, 3 }
 };
@@ -50,6 +56,7 @@ static const struct vp9_token inter_mode_encodings[INTER_MODES] = {
 
 static void write_intra_mode(vpx_writer *w, PREDICTION_MODE mode,
                              const vpx_prob *probs) {
+  assert(!is_inter_mode(mode));
   vp9_write_token(w, vp9_intra_mode_tree, probs, &intra_mode_encodings[mode]);
 }
 
@@ -86,7 +93,7 @@ static void write_selected_tx_size(const VP9_COMMON *cm,
   BLOCK_SIZE bsize = xd->mi[0]->sb_type;
   const TX_SIZE max_tx_size = max_txsize_lookup[bsize];
   const vpx_prob *const tx_probs =
-      get_tx_probs2(max_tx_size, xd, &cm->fc->tx_probs);
+      get_tx_probs(max_tx_size, get_tx_size_context(xd), &cm->fc->tx_probs);
   vpx_write(w, tx_size != TX_4X4, tx_probs[0]);
   if (tx_size != TX_4X4 && max_tx_size >= TX_16X16) {
     vpx_write(w, tx_size != TX_8X8, tx_probs[1]);
@@ -129,9 +136,9 @@ static void pack_mb_tokens(vpx_writer *w, TOKENEXTRA **tp,
   const TOKENEXTRA *p;
   const vp9_extra_bit *const extra_bits =
 #if CONFIG_VP9_HIGHBITDEPTH
-      (bit_depth == VPX_BITS_12)
-          ? vp9_extra_bits_high12
-          : (bit_depth == VPX_BITS_10) ? vp9_extra_bits_high10 : vp9_extra_bits;
+      (bit_depth == VPX_BITS_12)   ? vp9_extra_bits_high12
+      : (bit_depth == VPX_BITS_10) ? vp9_extra_bits_high10
+                                   : vp9_extra_bits;
 #else
       vp9_extra_bits;
   (void)bit_depth;
@@ -164,8 +171,8 @@ static void pack_mb_tokens(vpx_writer *w, TOKENEXTRA **tp,
         vpx_write_bit(w, p->extra & 1);
       } else {  // t >= TWO_TOKEN && t < EOB_TOKEN
         const struct vp9_token *const a = &vp9_coef_encodings[t];
-        const int v = a->value;
-        const int n = a->len;
+        int v = a->value;
+        int n = a->len;
         const int e = p->extra;
         vpx_write(w, 1, context_tree[2]);
         vp9_write_tree(w, vp9_coef_con_tree,
@@ -174,8 +181,8 @@ static void pack_mb_tokens(vpx_writer *w, TOKENEXTRA **tp,
         if (t >= CATEGORY1_TOKEN) {
           const vp9_extra_bit *const b = &extra_bits[t];
           const unsigned char *pb = b->prob;
-          int v = e >> 1;
-          int n = b->len;  // number of bits in v, assumed nonzero
+          v = e >> 1;
+          n = b->len;  // number of bits in v, assumed nonzero
           do {
             const int bb = (v >> --n) & 1;
             vpx_write(w, bb, *pb++);
@@ -217,7 +224,8 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *const xd,
     }
 
     if (is_compound) {
-      vpx_write(w, mi->ref_frame[0] == GOLDEN_FRAME,
+      const int idx = cm->ref_frame_sign_bias[cm->comp_fixed_ref];
+      vpx_write(w, mi->ref_frame[!idx] == cm->comp_var_ref[1],
                 vp9_get_pred_prob_comp_ref_p(cm, xd));
     } else {
       const int bit0 = mi->ref_frame[0] != LAST_FRAME;
@@ -230,11 +238,11 @@ static void write_ref_frames(const VP9_COMMON *cm, const MACROBLOCKD *const xd,
   }
 }
 
-static void pack_inter_mode_mvs(
-    VP9_COMP *cpi, const MACROBLOCKD *const xd,
-    const MB_MODE_INFO_EXT *const mbmi_ext, vpx_writer *w,
-    unsigned int *const max_mv_magnitude,
-    int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE]) {
+static void pack_inter_mode_mvs(VP9_COMP *cpi, const MACROBLOCKD *const xd,
+                                const MB_MODE_INFO_EXT *const mbmi_ext,
+                                vpx_writer *w,
+                                unsigned int *const max_mv_magnitude,
+                                int interp_filter_selected[][SWITCHABLE]) {
   VP9_COMMON *const cm = &cpi->common;
   const nmv_context *nmvc = &cm->fc->nmvc;
   const struct segmentation *const seg = &cm->seg;
@@ -367,11 +375,12 @@ static void write_mb_modes_kf(const VP9_COMMON *cm, const MACROBLOCKD *xd,
   write_intra_mode(w, mi->uv_mode, vp9_kf_uv_mode_prob[mi->mode]);
 }
 
-static void write_modes_b(
-    VP9_COMP *cpi, MACROBLOCKD *const xd, const TileInfo *const tile,
-    vpx_writer *w, TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
-    int mi_row, int mi_col, unsigned int *const max_mv_magnitude,
-    int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE]) {
+static void write_modes_b(VP9_COMP *cpi, MACROBLOCKD *const xd,
+                          const TileInfo *const tile, vpx_writer *w,
+                          TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
+                          int mi_row, int mi_col,
+                          unsigned int *const max_mv_magnitude,
+                          int interp_filter_selected[][SWITCHABLE]) {
   const VP9_COMMON *const cm = &cpi->common;
   const MB_MODE_INFO_EXT *const mbmi_ext =
       cpi->td.mb.mbmi_ext_base + (mi_row * cm->mi_cols + mi_col);
@@ -416,12 +425,12 @@ static void write_partition(const VP9_COMMON *const cm,
   }
 }
 
-static void write_modes_sb(
-    VP9_COMP *cpi, MACROBLOCKD *const xd, const TileInfo *const tile,
-    vpx_writer *w, TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
-    int mi_row, int mi_col, BLOCK_SIZE bsize,
-    unsigned int *const max_mv_magnitude,
-    int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE]) {
+static void write_modes_sb(VP9_COMP *cpi, MACROBLOCKD *const xd,
+                           const TileInfo *const tile, vpx_writer *w,
+                           TOKENEXTRA **tok, const TOKENEXTRA *const tok_end,
+                           int mi_row, int mi_col, BLOCK_SIZE bsize,
+                           unsigned int *const max_mv_magnitude,
+                           int interp_filter_selected[][SWITCHABLE]) {
   const VP9_COMMON *const cm = &cpi->common;
   const int bsl = b_width_log2_lookup[bsize];
   const int bs = (1 << bsl) / 4;
@@ -459,7 +468,8 @@ static void write_modes_sb(
           write_modes_b(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col + bs,
                         max_mv_magnitude, interp_filter_selected);
         break;
-      case PARTITION_SPLIT:
+      default:
+        assert(partition == PARTITION_SPLIT);
         write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col, subsize,
                        max_mv_magnitude, interp_filter_selected);
         write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row, mi_col + bs,
@@ -469,7 +479,6 @@ static void write_modes_sb(
         write_modes_sb(cpi, xd, tile, w, tok, tok_end, mi_row + bs, mi_col + bs,
                        subsize, max_mv_magnitude, interp_filter_selected);
         break;
-      default: assert(0);
     }
   }
 
@@ -479,11 +488,10 @@ static void write_modes_sb(
     update_partition_context(xd, mi_row, mi_col, subsize, bsize);
 }
 
-static void write_modes(
-    VP9_COMP *cpi, MACROBLOCKD *const xd, const TileInfo *const tile,
-    vpx_writer *w, int tile_row, int tile_col,
-    unsigned int *const max_mv_magnitude,
-    int interp_filter_selected[MAX_REF_FRAMES][SWITCHABLE]) {
+static void write_modes(VP9_COMP *cpi, MACROBLOCKD *const xd,
+                        const TileInfo *const tile, vpx_writer *w, int tile_row,
+                        int tile_col, unsigned int *const max_mv_magnitude,
+                        int interp_filter_selected[][SWITCHABLE]) {
   const VP9_COMMON *const cm = &cpi->common;
   int mi_row, mi_col, tile_sb_row;
   TOKENEXTRA *tok = NULL;
@@ -512,7 +520,7 @@ static void build_tree_distribution(VP9_COMP *cpi, TX_SIZE tx_size,
                                     vp9_coeff_stats *coef_branch_ct,
                                     vp9_coeff_probs_model *coef_probs) {
   vp9_coeff_count *coef_counts = cpi->td.rd_counts.coef_counts[tx_size];
-  unsigned int(*eob_branch_ct)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS] =
+  unsigned int (*eob_branch_ct)[REF_TYPES][COEF_BANDS][COEFF_CONTEXTS] =
       cpi->common.counts.eob_branch[tx_size];
   int i, j, k, l, m;
 
@@ -548,7 +556,7 @@ static void update_coef_probs_common(vpx_writer *const bc, VP9_COMP *cpi,
   switch (cpi->sf.use_fast_coef_updates) {
     case TWO_LOOP: {
       /* dry run to see if there is any update at all needed */
-      int savings = 0;
+      int64_t savings = 0;
       int update[2] = { 0, 0 };
       for (i = 0; i < PLANE_TYPES; ++i) {
         for (j = 0; j < REF_TYPES; ++j) {
@@ -557,7 +565,7 @@ static void update_coef_probs_common(vpx_writer *const bc, VP9_COMP *cpi,
               for (t = 0; t < entropy_nodes_update; ++t) {
                 vpx_prob newp = new_coef_probs[i][j][k][l][t];
                 const vpx_prob oldp = old_coef_probs[i][j][k][l][t];
-                int s;
+                int64_t s;
                 int u = 0;
                 if (t == PIVOT_NODE)
                   s = vp9_prob_diff_update_savings_search_model(
@@ -593,8 +601,7 @@ static void update_coef_probs_common(vpx_writer *const bc, VP9_COMP *cpi,
               for (t = 0; t < entropy_nodes_update; ++t) {
                 vpx_prob newp = new_coef_probs[i][j][k][l][t];
                 vpx_prob *oldp = old_coef_probs[i][j][k][l] + t;
-                const vpx_prob upd = DIFF_UPDATE_PROB;
-                int s;
+                int64_t s;
                 int u = 0;
                 if (t == PIVOT_NODE)
                   s = vp9_prob_diff_update_savings_search_model(
@@ -618,9 +625,10 @@ static void update_coef_probs_common(vpx_writer *const bc, VP9_COMP *cpi,
       return;
     }
 
-    case ONE_LOOP_REDUCED: {
+    default: {
       int updates = 0;
       int noupdates_before_first = 0;
+      assert(cpi->sf.use_fast_coef_updates == ONE_LOOP_REDUCED);
       for (i = 0; i < PLANE_TYPES; ++i) {
         for (j = 0; j < REF_TYPES; ++j) {
           for (k = 0; k < COEF_BANDS; ++k) {
@@ -629,7 +637,7 @@ static void update_coef_probs_common(vpx_writer *const bc, VP9_COMP *cpi,
               for (t = 0; t < entropy_nodes_update; ++t) {
                 vpx_prob newp = new_coef_probs[i][j][k][l][t];
                 vpx_prob *oldp = old_coef_probs[i][j][k][l] + t;
-                int s;
+                int64_t s;
                 int u = 0;
 
                 if (t == PIVOT_NODE) {
@@ -670,7 +678,6 @@ static void update_coef_probs_common(vpx_writer *const bc, VP9_COMP *cpi,
       }
       return;
     }
-    default: assert(0);
   }
 }
 
@@ -894,6 +901,19 @@ static void write_tile_info(const VP9_COMMON *const cm,
 }
 
 int vp9_get_refresh_mask(VP9_COMP *cpi) {
+  if (cpi->ext_ratectrl.ready &&
+      (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
+      cpi->ext_ratectrl.funcs.get_gop_decision != NULL) {
+    GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+    const int this_gf_index = gf_group->index;
+    const int update_ref_idx = gf_group->update_ref_idx[this_gf_index];
+
+    if (update_ref_idx != INVALID_IDX) {
+      return (1 << update_ref_idx);
+    } else {
+      return 0;
+    }
+  }
   if (vp9_preserve_existing_gf(cpi)) {
     // We have decided to preserve the previously existing golden frame as our
     // new ARF frame. However, in the short term we leave it in the GF slot and,
@@ -909,10 +929,24 @@ int vp9_get_refresh_mask(VP9_COMP *cpi) {
            (cpi->refresh_golden_frame << cpi->alt_fb_idx);
   } else {
     int arf_idx = cpi->alt_fb_idx;
-    if ((cpi->oxcf.pass == 2) && cpi->multi_arf_allowed) {
-      const GF_GROUP *const gf_group = &cpi->twopass.gf_group;
-      arf_idx = gf_group->arf_update_idx[gf_group->index];
+    GF_GROUP *const gf_group = &cpi->twopass.gf_group;
+
+    if (cpi->multi_layer_arf) {
+      for (arf_idx = 0; arf_idx < REF_FRAMES; ++arf_idx) {
+        if (arf_idx != cpi->alt_fb_idx && arf_idx != cpi->lst_fb_idx &&
+            arf_idx != cpi->gld_fb_idx) {
+          int idx;
+          for (idx = 0; idx < gf_group->stack_size; ++idx)
+            if (arf_idx == gf_group->arf_index_stack[idx]) break;
+          if (idx == gf_group->stack_size) break;
+        }
+      }
     }
+    cpi->twopass.gf_group.top_arf_idx = arf_idx;
+
+    if (cpi->use_svc && cpi->svc.use_set_ref_frame_config &&
+        cpi->svc.temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS)
+      return cpi->svc.update_buffer_slot[cpi->svc.spatial_layer_id];
     return (cpi->refresh_last_frame << cpi->lst_fb_idx) |
            (cpi->refresh_golden_frame << cpi->gld_fb_idx) |
            (cpi->refresh_alt_ref_frame << arf_idx);
@@ -924,12 +958,11 @@ static int encode_tile_worker(void *arg1, void *arg2) {
   VP9BitstreamWorkerData *data = (VP9BitstreamWorkerData *)arg2;
   MACROBLOCKD *const xd = &data->xd;
   const int tile_row = 0;
-  vpx_start_encode(&data->bit_writer, data->dest);
+  vpx_start_encode(&data->bit_writer, data->dest, data->dest_size);
   write_modes(cpi, xd, &cpi->tile_data[data->tile_idx].tile_info,
               &data->bit_writer, tile_row, data->tile_idx,
               &data->max_mv_magnitude, data->interp_filter_selected);
-  vpx_stop_encode(&data->bit_writer);
-  return 1;
+  return vpx_stop_encode(&data->bit_writer) == 0;
 }
 
 void vp9_bitstream_encode_tiles_buffer_dealloc(VP9_COMP *const cpi) {
@@ -943,36 +976,47 @@ void vp9_bitstream_encode_tiles_buffer_dealloc(VP9_COMP *const cpi) {
   }
 }
 
-static int encode_tiles_buffer_alloc(VP9_COMP *const cpi) {
+static size_t encode_tiles_buffer_alloc_size(const VP9_COMP *cpi) {
+  const VP9_COMMON *cm = &cpi->common;
+  const int image_bps =
+      (8 + 2 * (8 >> (cm->subsampling_x + cm->subsampling_y))) *
+      (1 + (cm->bit_depth > 8));
+  const int64_t size =
+      (int64_t)cpi->oxcf.width * cpi->oxcf.height * image_bps / 8;
+  return (size_t)size;
+}
+
+static void encode_tiles_buffer_alloc(VP9_COMP *const cpi,
+                                      size_t buffer_alloc_size) {
+  VP9_COMMON *const cm = &cpi->common;
   int i;
   const size_t worker_data_size =
       cpi->num_workers * sizeof(*cpi->vp9_bitstream_worker_data);
-  cpi->vp9_bitstream_worker_data = vpx_memalign(16, worker_data_size);
+  CHECK_MEM_ERROR(&cm->error, cpi->vp9_bitstream_worker_data,
+                  vpx_memalign(16, worker_data_size));
   memset(cpi->vp9_bitstream_worker_data, 0, worker_data_size);
-  if (!cpi->vp9_bitstream_worker_data) return 1;
   for (i = 1; i < cpi->num_workers; ++i) {
-    cpi->vp9_bitstream_worker_data[i].dest_size =
-        cpi->oxcf.width * cpi->oxcf.height;
-    cpi->vp9_bitstream_worker_data[i].dest =
-        vpx_malloc(cpi->vp9_bitstream_worker_data[i].dest_size);
-    if (!cpi->vp9_bitstream_worker_data[i].dest) return 1;
+    CHECK_MEM_ERROR(&cm->error, cpi->vp9_bitstream_worker_data[i].dest,
+                    vpx_malloc(buffer_alloc_size));
+    cpi->vp9_bitstream_worker_data[i].dest_size = buffer_alloc_size;
   }
-  return 0;
 }
 
-static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr) {
+static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr,
+                              size_t data_size) {
   const VPxWorkerInterface *const winterface = vpx_get_worker_interface();
   VP9_COMMON *const cm = &cpi->common;
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int num_workers = cpi->num_workers;
   size_t total_size = 0;
   int tile_col = 0;
+  int error = 0;
 
+  const size_t buffer_alloc_size = encode_tiles_buffer_alloc_size(cpi);
   if (!cpi->vp9_bitstream_worker_data ||
-      cpi->vp9_bitstream_worker_data[1].dest_size >
-          (cpi->oxcf.width * cpi->oxcf.height)) {
+      cpi->vp9_bitstream_worker_data[1].dest_size != buffer_alloc_size) {
     vp9_bitstream_encode_tiles_buffer_dealloc(cpi);
-    if (encode_tiles_buffer_alloc(cpi)) return 0;
+    encode_tiles_buffer_alloc(cpi, buffer_alloc_size);
   }
 
   while (tile_col < tile_cols) {
@@ -992,8 +1036,13 @@ static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr) {
       if (i == 0) {
         // If this worker happens to be for the last tile, then do not offset it
         // by 4 for the tile size.
-        data->dest =
-            data_ptr + total_size + (tile_col == tile_cols - 1 ? 0 : 4);
+        const size_t offset = total_size + (tile_col == tile_cols - 1 ? 0 : 4);
+        if (data_size < offset) {
+          vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                             "encode_tiles_mt: output buffer full");
+        }
+        data->dest = data_ptr + offset;
+        data->dest_size = data_size - offset;
       }
       worker->data1 = cpi;
       worker->data2 = data;
@@ -1014,7 +1063,11 @@ static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr) {
       uint32_t tile_size;
       int k;
 
-      if (!winterface->sync(worker)) return 0;
+      if (!winterface->sync(worker)) {
+        error = 1;
+        continue;
+      }
+
       tile_size = data->bit_writer.pos;
 
       // Aggregate per-thread bitstream stats.
@@ -1026,19 +1079,31 @@ static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr) {
 
       // Prefix the size of the tile on all but the last.
       if (tile_col != tile_cols || j < i - 1) {
+        if (data_size - total_size < 4) {
+          error = 1;
+          continue;
+        }
         mem_put_be32(data_ptr + total_size, tile_size);
         total_size += 4;
       }
       if (j > 0) {
+        if (data_size - total_size < tile_size) {
+          error = 1;
+          continue;
+        }
         memcpy(data_ptr + total_size, data->dest, tile_size);
       }
       total_size += tile_size;
+    }
+    if (error) {
+      vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                         "encode_tiles_mt: output buffer full");
     }
   }
   return total_size;
 }
 
-static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
+static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr, size_t data_size) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
   vpx_writer residual_bc;
@@ -1055,23 +1120,32 @@ static size_t encode_tiles(VP9_COMP *cpi, uint8_t *data_ptr) {
   // that it does not make the overall process worse in any case.
   if (cpi->oxcf.mode == REALTIME && cpi->num_workers > 1 && tile_rows == 1 &&
       tile_cols > 1) {
-    return encode_tiles_mt(cpi, data_ptr);
+    return encode_tiles_mt(cpi, data_ptr, data_size);
   }
 
   for (tile_row = 0; tile_row < tile_rows; tile_row++) {
     for (tile_col = 0; tile_col < tile_cols; tile_col++) {
       int tile_idx = tile_row * tile_cols + tile_col;
 
+      size_t offset;
       if (tile_col < tile_cols - 1 || tile_row < tile_rows - 1)
-        vpx_start_encode(&residual_bc, data_ptr + total_size + 4);
+        offset = total_size + 4;
       else
-        vpx_start_encode(&residual_bc, data_ptr + total_size);
+        offset = total_size;
+      if (data_size < offset) {
+        vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                           "encode_tiles: output buffer full");
+      }
+      vpx_start_encode(&residual_bc, data_ptr + offset, data_size - offset);
 
       write_modes(cpi, xd, &cpi->tile_data[tile_idx].tile_info, &residual_bc,
                   tile_row, tile_col, &cpi->max_mv_magnitude,
                   cpi->interp_filter_selected);
 
-      vpx_stop_encode(&residual_bc);
+      if (vpx_stop_encode(&residual_bc)) {
+        vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                           "encode_tiles: output buffer full");
+      }
       if (tile_col < tile_cols - 1 || tile_row < tile_rows - 1) {
         // size of this tile
         mem_put_be32(data_ptr + total_size, residual_bc.pos);
@@ -1117,11 +1191,7 @@ static void write_frame_size_with_refs(VP9_COMP *cpi,
         ((cpi->svc.number_temporal_layers > 1 &&
           cpi->oxcf.rc_mode == VPX_CBR) ||
          (cpi->svc.number_spatial_layers > 1 &&
-          cpi->svc.layer_context[cpi->svc.spatial_layer_id].is_key_frame) ||
-         (is_two_pass_svc(cpi) &&
-          cpi->svc.encode_empty_frame_state == ENCODING &&
-          cpi->svc.layer_context[0].frames_from_key_frame <
-              cpi->svc.number_temporal_layers + 1))) {
+          cpi->svc.layer_context[cpi->svc.spatial_layer_id].is_key_frame))) {
       found = 0;
     } else if (cfg != NULL) {
       found =
@@ -1153,8 +1223,10 @@ static void write_profile(BITSTREAM_PROFILE profile,
     case PROFILE_0: vpx_wb_write_literal(wb, 0, 2); break;
     case PROFILE_1: vpx_wb_write_literal(wb, 2, 2); break;
     case PROFILE_2: vpx_wb_write_literal(wb, 1, 2); break;
-    case PROFILE_3: vpx_wb_write_literal(wb, 6, 3); break;
-    default: assert(0);
+    default:
+      assert(profile == PROFILE_3);
+      vpx_wb_write_literal(wb, 6, 3);
+      break;
   }
 }
 
@@ -1178,6 +1250,7 @@ static void write_bitdepth_colorspace_sampling(
     }
   } else {
     assert(cm->profile == PROFILE_1 || cm->profile == PROFILE_3);
+    assert(cm->subsampling_x == 0 && cm->subsampling_y == 0);
     vpx_wb_write_bit(wb, 0);  // unused
   }
 }
@@ -1191,7 +1264,13 @@ static void write_uncompressed_header(VP9_COMP *cpi,
 
   write_profile(cm->profile, wb);
 
-  vpx_wb_write_bit(wb, 0);  // show_existing_frame
+  // If to use show existing frame.
+  vpx_wb_write_bit(wb, cm->show_existing_frame);
+  if (cm->show_existing_frame) {
+    vpx_wb_write_literal(wb, cpi->alt_fb_idx, 3);
+    return;
+  }
+
   vpx_wb_write_bit(wb, cm->frame_type);
   vpx_wb_write_bit(wb, cm->show_frame);
   vpx_wb_write_bit(wb, cm->error_resilient_mode);
@@ -1201,14 +1280,6 @@ static void write_uncompressed_header(VP9_COMP *cpi,
     write_bitdepth_colorspace_sampling(cm, wb);
     write_frame_size(cm, wb);
   } else {
-    // In spatial svc if it's not error_resilient_mode then we need to code all
-    // visible frames as invisible. But we need to keep the show_frame flag so
-    // that the publisher could know whether it is supposed to be visible.
-    // So we will code the show_frame flag as it is. Then code the intra_only
-    // bit here. This will make the bitstream incompatible. In the player we
-    // will change to show_frame flag to 0, then add an one byte frame with
-    // show_existing_frame flag which tells the decoder which frame we want to
-    // show.
     if (!cm->show_frame) vpx_wb_write_bit(wb, cm->intra_only);
 
     if (!cm->error_resilient_mode)
@@ -1257,14 +1328,15 @@ static void write_uncompressed_header(VP9_COMP *cpi,
   write_tile_info(cm, wb);
 }
 
-static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
+static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data,
+                                      size_t data_size) {
   VP9_COMMON *const cm = &cpi->common;
   MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
   FRAME_CONTEXT *const fc = cm->fc;
   FRAME_COUNTS *counts = cpi->td.counts;
   vpx_writer header_bc;
 
-  vpx_start_encode(&header_bc, data);
+  vpx_start_encode(&header_bc, data, data_size);
 
   if (xd->lossless)
     cm->tx_mode = ONLY_4X4;
@@ -1328,33 +1400,67 @@ static size_t write_compressed_header(VP9_COMP *cpi, uint8_t *data) {
                         &counts->mv);
   }
 
-  vpx_stop_encode(&header_bc);
-  assert(header_bc.pos <= 0xffff);
+  if (vpx_stop_encode(&header_bc)) {
+    vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                       "write_compressed_header: output buffer full");
+  }
 
   return header_bc.pos;
 }
 
-void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t *size) {
+void vp9_pack_bitstream(VP9_COMP *cpi, uint8_t *dest, size_t dest_size,
+                        size_t *size) {
+  VP9_COMMON *const cm = &cpi->common;
   uint8_t *data = dest;
-  size_t first_part_size, uncompressed_hdr_size;
-  struct vpx_write_bit_buffer wb = { data, 0 };
+  size_t data_size = dest_size;
+  size_t uncompressed_hdr_size, compressed_hdr_size;
+  struct vpx_write_bit_buffer wb;
   struct vpx_write_bit_buffer saved_wb;
 
+#if CONFIG_BITSTREAM_DEBUG
+  bitstream_queue_reset_write();
+#endif
+
+  vpx_wb_init(&wb, data, data_size);
   write_uncompressed_header(cpi, &wb);
+  if (vpx_wb_has_error(&wb)) {
+    vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                       "vp9_pack_bitstream: output buffer full");
+  }
+
+  // Skip the rest coding process if use show existing frame.
+  if (cm->show_existing_frame) {
+    uncompressed_hdr_size = vpx_wb_bytes_written(&wb);
+    data += uncompressed_hdr_size;
+    *size = data - dest;
+    return;
+  }
+
   saved_wb = wb;
-  vpx_wb_write_literal(&wb, 0, 16);  // don't know in advance first part. size
+  // don't know in advance compressed header size
+  vpx_wb_write_literal(&wb, 0, 16);
+  if (vpx_wb_has_error(&wb)) {
+    vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                       "vp9_pack_bitstream: output buffer full");
+  }
 
   uncompressed_hdr_size = vpx_wb_bytes_written(&wb);
   data += uncompressed_hdr_size;
+  data_size -= uncompressed_hdr_size;
 
   vpx_clear_system_state();
 
-  first_part_size = write_compressed_header(cpi, data);
-  data += first_part_size;
-  // TODO(jbb): Figure out what to do if first_part_size > 16 bits.
-  vpx_wb_write_literal(&saved_wb, (int)first_part_size, 16);
+  compressed_hdr_size = write_compressed_header(cpi, data, data_size);
+  data += compressed_hdr_size;
+  data_size -= compressed_hdr_size;
+  if (compressed_hdr_size > UINT16_MAX) {
+    vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                       "compressed_hdr_size > 16 bits");
+  }
+  vpx_wb_write_literal(&saved_wb, (int)compressed_hdr_size, 16);
+  assert(!vpx_wb_has_error(&saved_wb));
 
-  data += encode_tiles(cpi, data);
+  data += encode_tiles(cpi, data, data_size);
 
   *size = data - dest;
 }

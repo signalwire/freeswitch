@@ -11,20 +11,20 @@
 
 extern size_t next_power_of_2(size_t v)
 {
-    size_t prev;
-    size_t tmp = 1;
+	size_t prev;
+	size_t tmp = 1;
 
-    v++;
+	v++;
 
-    do {
-        prev = v;
-        v &= ~tmp;
-        tmp <<= 1;
-    } while (v != 0);
+	do {
+		prev = v;
+		v &= ~tmp;
+		tmp <<= 1;
+	} while (v != 0);
 
-    prev <<= 1;
+	prev <<= 1;
 
-    return prev;
+	return prev;
 }
 
 

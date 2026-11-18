@@ -22,9 +22,6 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine HAVE_DLFCN_H
 
-/* Define to 1 if you have the <execinfo.h> header file. */
-#cmakedefine HAVE_EXECINFO_H
-
 /* Define to 1 if you have the `gethostname' function. */
 #cmakedefine HAVE_GETHOSTNAME
 

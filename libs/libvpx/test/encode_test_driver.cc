@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <string>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #include "test/codec_factory.h"
@@ -51,7 +52,8 @@ void Encoder::InitEncoder(VideoSource *video) {
   }
 }
 
-void Encoder::EncodeFrame(VideoSource *video, const unsigned long frame_flags) {
+void Encoder::EncodeFrame(VideoSource *video,
+                          const vpx_enc_frame_flags_t frame_flags) {
   if (video->img()) {
     EncodeFrameInternal(*video, frame_flags);
   } else {
@@ -69,7 +71,7 @@ void Encoder::EncodeFrame(VideoSource *video, const unsigned long frame_flags) {
 }
 
 void Encoder::EncodeFrameInternal(const VideoSource &video,
-                                  const unsigned long frame_flags) {
+                                  const vpx_enc_frame_flags_t frame_flags) {
   vpx_codec_err_t res;
   const vpx_image_t *img = video.img();
 
@@ -90,7 +92,7 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
 
 void Encoder::Flush() {
   const vpx_codec_err_t res =
-      vpx_codec_encode(&encoder_, NULL, 0, 0, 0, deadline_);
+      vpx_codec_encode(&encoder_, nullptr, 0, 0, 0, deadline_);
   if (!encoder_.priv)
     ASSERT_EQ(VPX_CODEC_ERROR, res) << EncoderError();
   else
@@ -127,6 +129,8 @@ void EncoderTest::SetMode(TestMode mode) {
 static bool compare_img(const vpx_image_t *img1, const vpx_image_t *img2) {
   bool match = (img1->fmt == img2->fmt) && (img1->cs == img2->cs) &&
                (img1->d_w == img2->d_w) && (img1->d_h == img2->d_h);
+
+  if (!match) return false;
 
   const unsigned int width_y = img1->d_w;
   const unsigned int height_y = img1->d_h;
@@ -166,7 +170,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
   ASSERT_TRUE(passes_ == 1 || passes_ == 2);
   for (unsigned int pass = 0; pass < passes_; pass++) {
-    last_pts_ = 0;
+    vpx_codec_pts_t last_pts = 0;
 
     if (passes_ == 1) {
       cfg_.g_pass = VPX_RC_ONE_PASS;
@@ -177,9 +181,9 @@ void EncoderTest::RunLoop(VideoSource *video) {
     }
 
     BeginPassHook(pass);
-    testing::internal::scoped_ptr<Encoder> encoder(
+    std::unique_ptr<Encoder> encoder(
         codec_->CreateEncoder(cfg_, deadline_, init_flags_, &stats_));
-    ASSERT_TRUE(encoder.get() != NULL);
+    ASSERT_NE(encoder.get(), nullptr);
 
     ASSERT_NO_FATAL_FAILURE(video->Begin());
     encoder->InitEncoder(video);
@@ -191,11 +195,11 @@ void EncoderTest::RunLoop(VideoSource *video) {
     if (init_flags_ & VPX_CODEC_USE_OUTPUT_PARTITION) {
       dec_init_flags |= VPX_CODEC_USE_INPUT_FRAGMENTS;
     }
-    testing::internal::scoped_ptr<Decoder> decoder(
+    std::unique_ptr<Decoder> decoder(
         codec_->CreateDecoder(dec_cfg, dec_init_flags));
     bool again;
     for (again = true; again; video->Next()) {
-      again = (video->img() != NULL);
+      again = (video->img() != nullptr);
 
       PreEncodeFrameHook(video);
       PreEncodeFrameHook(video, encoder.get());
@@ -213,7 +217,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
         switch (pkt->kind) {
           case VPX_CODEC_CX_FRAME_PKT:
             has_cxdata = true;
-            if (decoder.get() != NULL && DoDecode()) {
+            if (decoder != nullptr && DoDecode()) {
+              PreDecodeFrameHook(video, decoder.get());
               vpx_codec_err_t res_dec = decoder->DecodeFrame(
                   (const uint8_t *)pkt->data.frame.buf, pkt->data.frame.sz);
 
@@ -221,8 +226,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
               has_dxdata = true;
             }
-            ASSERT_GE(pkt->data.frame.pts, last_pts_);
-            last_pts_ = pkt->data.frame.pts;
+            ASSERT_GE(pkt->data.frame.pts, last_pts);
+            last_pts = pkt->data.frame.pts;
             FramePktHook(pkt);
             break;
 
@@ -236,7 +241,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
       // Flush the decoder when there are no more fragments.
       if ((init_flags_ & VPX_CODEC_USE_OUTPUT_PARTITION) && has_dxdata) {
-        const vpx_codec_err_t res_dec = decoder->DecodeFrame(NULL, 0);
+        const vpx_codec_err_t res_dec = decoder->DecodeFrame(nullptr, 0);
         if (!HandleDecodeResult(res_dec, *video, decoder.get())) break;
       }
 

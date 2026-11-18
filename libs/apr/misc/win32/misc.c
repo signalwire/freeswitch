@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-#include "apr_private.h"
-#include "apr_arch_misc.h"
+#include "fspr_private.h"
+#include "fspr_arch_misc.h"
 #include "crtdbg.h"
-#include "apr_arch_file_io.h"
+#include "fspr_arch_file_io.h"
 #include "assert.h"
-#include "apr_lib.h"
+#include "fspr_lib.h"
 
-APR_DECLARE_DATA apr_oslevel_e apr_os_level = APR_WIN_UNK;
+APR_DECLARE_DATA fspr_oslevel_e fspr_os_level = APR_WIN_UNK;
 
-apr_status_t apr_get_oslevel(apr_oslevel_e *level)
+fspr_status_t fspr_get_oslevel(fspr_oslevel_e *level)
 {
-    if (apr_os_level == APR_WIN_UNK) 
+    if (fspr_os_level == APR_WIN_UNK) 
     {
         static OSVERSIONINFO oslev;
         oslev.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
@@ -36,7 +36,7 @@ apr_status_t apr_get_oslevel(apr_oslevel_e *level)
             static unsigned int servpack = 0;
             char *pservpack;
             if (pservpack = oslev.szCSDVersion) {
-                while (*pservpack && !apr_isdigit(*pservpack)) {
+                while (*pservpack && !fspr_isdigit(*pservpack)) {
                     pservpack++;
                 }
                 if (*pservpack)
@@ -44,63 +44,63 @@ apr_status_t apr_get_oslevel(apr_oslevel_e *level)
             }
 
             if (oslev.dwMajorVersion < 3) {
-                apr_os_level = APR_WIN_UNSUP;
+                fspr_os_level = APR_WIN_UNSUP;
             }
             else if (oslev.dwMajorVersion == 3) {
                 if (oslev.dwMajorVersion < 50) {
-                    apr_os_level = APR_WIN_UNSUP;
+                    fspr_os_level = APR_WIN_UNSUP;
                 }
                 else if (oslev.dwMajorVersion == 50) {
-                    apr_os_level = APR_WIN_NT_3_5;
+                    fspr_os_level = APR_WIN_NT_3_5;
                 }
                 else {
-                    apr_os_level = APR_WIN_NT_3_51;
+                    fspr_os_level = APR_WIN_NT_3_51;
                 }
             }
             else if (oslev.dwMajorVersion == 4) {
                 if (servpack < 2)
-                    apr_os_level = APR_WIN_NT_4;
+                    fspr_os_level = APR_WIN_NT_4;
                 else if (servpack <= 2)
-                    apr_os_level = APR_WIN_NT_4_SP2;
+                    fspr_os_level = APR_WIN_NT_4_SP2;
                 else if (servpack <= 3)
-                    apr_os_level = APR_WIN_NT_4_SP3;
+                    fspr_os_level = APR_WIN_NT_4_SP3;
                 else if (servpack <= 4)
-                    apr_os_level = APR_WIN_NT_4_SP4;
+                    fspr_os_level = APR_WIN_NT_4_SP4;
                 else if (servpack <= 5)
-                    apr_os_level = APR_WIN_NT_4_SP5;
+                    fspr_os_level = APR_WIN_NT_4_SP5;
                 else 
-                    apr_os_level = APR_WIN_NT_4_SP6;
+                    fspr_os_level = APR_WIN_NT_4_SP6;
             }
             else if (oslev.dwMajorVersion == 5) {
                 if (oslev.dwMinorVersion == 0) {
                     if (servpack == 0)
-                        apr_os_level = APR_WIN_2000;
+                        fspr_os_level = APR_WIN_2000;
                     else if (servpack == 1)
-                        apr_os_level = APR_WIN_2000_SP1;
+                        fspr_os_level = APR_WIN_2000_SP1;
                     else
-                        apr_os_level = APR_WIN_2000_SP2;
+                        fspr_os_level = APR_WIN_2000_SP2;
                 }
                 else if (oslev.dwMinorVersion == 2) {
-                    apr_os_level = APR_WIN_2003;                    
+                    fspr_os_level = APR_WIN_2003;                    
                 }
                 else {
                     if (servpack < 1)
-                        apr_os_level = APR_WIN_XP;
+                        fspr_os_level = APR_WIN_XP;
                     else if (servpack == 1)
-                        apr_os_level = APR_WIN_XP_SP1;
+                        fspr_os_level = APR_WIN_XP_SP1;
                     else
-                        apr_os_level = APR_WIN_XP_SP2;
+                        fspr_os_level = APR_WIN_XP_SP2;
                 }
             }
             else {
-                apr_os_level = APR_WIN_XP;
+                fspr_os_level = APR_WIN_XP;
             }
         }
 #ifndef WINNT
         else if (oslev.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) {
             char *prevision;
             if (prevision = oslev.szCSDVersion) {
-                while (*prevision && !apr_isupper(*prevision)) {
+                while (*prevision && !fspr_isupper(*prevision)) {
                      prevision++;
                 }
             }
@@ -108,18 +108,18 @@ apr_status_t apr_get_oslevel(apr_oslevel_e *level)
 
             if (oslev.dwMinorVersion < 10) {
                 if (*prevision < 'C')
-                    apr_os_level = APR_WIN_95;
+                    fspr_os_level = APR_WIN_95;
                 else
-                    apr_os_level = APR_WIN_95_OSR2;
+                    fspr_os_level = APR_WIN_95_OSR2;
             }
             else if (oslev.dwMinorVersion < 90) {
                 if (*prevision < 'A')
-                    apr_os_level = APR_WIN_98;
+                    fspr_os_level = APR_WIN_98;
                 else
-                    apr_os_level = APR_WIN_98_SE;
+                    fspr_os_level = APR_WIN_98_SE;
             }
             else {
-                apr_os_level = APR_WIN_ME;
+                fspr_os_level = APR_WIN_ME;
             }
         }
 #endif
@@ -127,21 +127,21 @@ apr_status_t apr_get_oslevel(apr_oslevel_e *level)
         else if (oslev.dwPlatformId == VER_PLATFORM_WIN32_CE) 
         {
             if (oslev.dwMajorVersion < 3) {
-                apr_os_level = APR_WIN_UNSUP;
+                fspr_os_level = APR_WIN_UNSUP;
             }
             else {
-                apr_os_level = APR_WIN_CE_3;
+                fspr_os_level = APR_WIN_CE_3;
             }
         }
 #endif
         else {
-            apr_os_level = APR_WIN_UNSUP;
+            fspr_os_level = APR_WIN_UNSUP;
         }
     }
 
-    *level = apr_os_level;
+    *level = fspr_os_level;
 
-    if (apr_os_level < APR_WIN_UNSUP) {
+    if (fspr_os_level < APR_WIN_UNSUP) {
         return APR_EGENERAL;
     }
 
@@ -158,7 +158,7 @@ static const char* const lateDllName[DLL_defined] = {
 static HMODULE lateDllHandle[DLL_defined] = {
      NULL,       NULL,       NULL,       NULL,     NULL,       NULL       };
 
-FARPROC apr_load_dll_func(apr_dlltoken_e fnLib, char* fnName, int ordinal)
+FARPROC fspr_load_dll_func(fspr_dlltoken_e fnLib, char* fnName, int ordinal)
 {
     if (!lateDllHandle[fnLib]) { 
         lateDllHandle[fnLib] = LoadLibrary(lateDllName[fnLib]);
@@ -171,9 +171,9 @@ FARPROC apr_load_dll_func(apr_dlltoken_e fnLib, char* fnName, int ordinal)
         return GetProcAddress(lateDllHandle[fnLib], fnName);
 }
 
-/* Declared in include/arch/win32/apr_dbg_win32_handles.h
+/* Declared in include/arch/win32/fspr_dbg_win32_handles.h
  */
-APR_DECLARE_NONSTD(HANDLE) apr_dbg_log(char* fn, HANDLE ha, char* fl, int ln, 
+APR_DECLARE_NONSTD(HANDLE) fspr_dbg_log(char* fn, HANDLE ha, char* fl, int ln, 
                                        int nh, /* HANDLE hv, char *dsc */...)
 {
     static DWORD tlsid = 0xFFFFFFFF;

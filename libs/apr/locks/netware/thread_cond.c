@@ -16,28 +16,28 @@
 
 #include <nks/errno.h>
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_strings.h"
-#include "apr_arch_thread_mutex.h"
-#include "apr_arch_thread_cond.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_strings.h"
+#include "fspr_arch_thread_mutex.h"
+#include "fspr_arch_thread_cond.h"
+#include "fspr_portable.h"
 
-static apr_status_t thread_cond_cleanup(void *data)
+static fspr_status_t thread_cond_cleanup(void *data)
 {
-    apr_thread_cond_t *cond = (apr_thread_cond_t *)data;
+    fspr_thread_cond_t *cond = (fspr_thread_cond_t *)data;
 
     NXCondFree(cond->cond);        
     return APR_SUCCESS;
 } 
 
-APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
-                                                 apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_create(fspr_thread_cond_t **cond,
+                                                 fspr_pool_t *pool)
 {
-    apr_thread_cond_t *new_cond = NULL;
+    fspr_thread_cond_t *new_cond = NULL;
 
-    new_cond = (apr_thread_cond_t *)apr_pcalloc(pool, sizeof(apr_thread_cond_t));
+    new_cond = (fspr_thread_cond_t *)fspr_pcalloc(pool, sizeof(fspr_thread_cond_t));
 	
 	if(new_cond ==NULL) {
         return APR_ENOMEM;
@@ -49,24 +49,24 @@ APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
     if(new_cond->cond == NULL)
         return APR_ENOMEM;
 
-    apr_pool_cleanup_register(new_cond->pool, new_cond, 
+    fspr_pool_cleanup_register(new_cond->pool, new_cond, 
                                 (void*)thread_cond_cleanup,
-                                apr_pool_cleanup_null);
+                                fspr_pool_cleanup_null);
    *cond = new_cond;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_wait(apr_thread_cond_t *cond,
-                                               apr_thread_mutex_t *mutex)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_wait(fspr_thread_cond_t *cond,
+                                               fspr_thread_mutex_t *mutex)
 {
     if (NXCondWait(cond->cond, mutex->mutex) != 0)
         return APR_EINTR;
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_timedwait(apr_thread_cond_t *cond,
-                                                    apr_thread_mutex_t *mutex,
-                                                    apr_interval_time_t timeout){
+APR_DECLARE(fspr_status_t) fspr_thread_cond_timedwait(fspr_thread_cond_t *cond,
+                                                    fspr_thread_mutex_t *mutex,
+                                                    fspr_interval_time_t timeout){
     if (NXCondTimedWait(cond->cond, mutex->mutex, 
         (timeout*1000)/NXGetSystemTick()) == NX_ETIMEDOUT) {
         return APR_TIMEUP;
@@ -74,23 +74,23 @@ APR_DECLARE(apr_status_t) apr_thread_cond_timedwait(apr_thread_cond_t *cond,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_signal(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_signal(fspr_thread_cond_t *cond)
 {
     NXCondSignal(cond->cond);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_broadcast(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_broadcast(fspr_thread_cond_t *cond)
 {
     NXCondBroadcast(cond->cond);
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_thread_cond_destroy(apr_thread_cond_t *cond)
+APR_DECLARE(fspr_status_t) fspr_thread_cond_destroy(fspr_thread_cond_t *cond)
 {
-    apr_status_t stat;
+    fspr_status_t stat;
     if ((stat = thread_cond_cleanup(cond)) == APR_SUCCESS) {
-        apr_pool_cleanup_kill(cond->pool, cond, thread_cond_cleanup);
+        fspr_pool_cleanup_kill(cond->pool, cond, thread_cond_cleanup);
         return APR_SUCCESS;
     }
     return stat;

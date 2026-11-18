@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
 
-APR_DECLARE(const char*) apr_os_default_encoding (apr_pool_t *pool)
+APR_DECLARE(const char*) fspr_os_default_encoding (fspr_pool_t *pool)
 {
-    return apr_psprintf(pool, "CP%u", (unsigned) GetACP());
+    return fspr_psprintf(pool, "CP%u", (unsigned) GetACP());
 }
 
 
-APR_DECLARE(const char*) apr_os_locale_encoding (apr_pool_t *pool)
+APR_DECLARE(const char*) fspr_os_locale_encoding (fspr_pool_t *pool)
 {
     LCID locale = GetThreadLocale();
     int len = GetLocaleInfo(locale, LOCALE_IDEFAULTANSICODEPAGE, NULL, 0);
-    char *cp = apr_palloc(pool, len + 2);
+    char *cp = fspr_palloc(pool, len + 2);
     if (0 < GetLocaleInfo(locale, LOCALE_IDEFAULTANSICODEPAGE, cp + 2, len))
     {
         /* Fix up the returned number to make a valid codepage name of
@@ -39,5 +39,5 @@ APR_DECLARE(const char*) apr_os_locale_encoding (apr_pool_t *pool)
         return cp;
     }
 
-    return apr_os_default_encoding(pool);
+    return fspr_os_default_encoding(pool);
 }

@@ -60,13 +60,13 @@
         </p>
         <blockquote>
           <pre>
-subpool = apr_create_subpool(pool);
+subpool = fspr_create_subpool(pool);
 for (i = 0; i < n; ++i) {
-  apr_pool_clear(subpool);
+  fspr_pool_clear(subpool);
 
   do_operation(..., subpool);
 }
-apr_pool_destroy(subpool);</pre>
+fspr_pool_destroy(subpool);</pre>
         </blockquote>
         <p>
           This pattern prevents the 'pool' from growing unbounded and

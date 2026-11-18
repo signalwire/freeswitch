@@ -698,6 +698,7 @@ SWITCH_LIMIT_RELEASE(mod_mongo_limit_release)
 			if (mod_mongo_increment(session, (const char *)p_key, -1, 0, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "Couldn't decrement %s\n", (const char *)p_key);
 				status = SWITCH_STATUS_FALSE;
+				free(hi);
 				break;
 			} else {
 				switch_core_hash_delete(pvt->resources, (const char *) p_key);

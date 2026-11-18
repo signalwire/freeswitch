@@ -31,6 +31,7 @@
  */
 
 #include <switch.h>
+#include <errno.h>
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 
@@ -228,8 +229,16 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_timerfd_runtime)
 
 	do {
 		r = epoll_wait(interval_poll_fd, e, sizeof(e) / sizeof(e[0]), 1000);
-		if (r < 0)
+		if (r < 0) {
+			/* if we had an interrupted system call due to process pause via SIGSTOP, do not exit the timer loop */
+			if (errno == EINTR) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "epoll_wait interrupted by SIGINT, continue...\n");
+				continue;
+			}
+
 			break;
+		}
+
 		for (i = 0; i < r; i++) {
 			it = e[i].data.ptr;
 			if ((e[i].events & EPOLLIN) &&

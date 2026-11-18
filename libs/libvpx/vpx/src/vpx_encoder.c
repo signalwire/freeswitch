@@ -14,13 +14,13 @@
  */
 #include <assert.h>
 #include <limits.h>
-#include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
-#include "vp8/common/blockd.h"
 #include "vpx_config.h"
+#include "vpx/vpx_encoder.h"
 #include "vpx/internal/vpx_codec_internal.h"
 
-#define SAVE_STATUS(ctx, var) (ctx ? (ctx->err = var) : var)
+#define SAVE_STATUS(ctx, var) ((ctx) ? ((ctx)->err = (var)) : (var))
 
 static vpx_codec_alg_priv_t *get_alg_priv(vpx_codec_ctx_t *ctx) {
   return (vpx_codec_alg_priv_t *)ctx->priv;
@@ -54,6 +54,10 @@ vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t *ctx,
     res = ctx->iface->init(ctx, NULL);
 
     if (res) {
+      // IMPORTANT: ctx->priv->err_detail must be null or point to a string
+      // that remains valid after ctx->priv is destroyed, such as a C string
+      // literal. This makes it safe to call vpx_codec_error_detail() after
+      // vpx_codec_enc_init_ver() failed.
       ctx->err_detail = ctx->priv ? ctx->priv->err_detail : NULL;
       vpx_codec_destroy(ctx);
     }
@@ -63,13 +67,14 @@ vpx_codec_err_t vpx_codec_enc_init_ver(vpx_codec_ctx_t *ctx,
 }
 
 vpx_codec_err_t vpx_codec_enc_init_multi_ver(
-    vpx_codec_ctx_t *ctx, vpx_codec_iface_t *iface, vpx_codec_enc_cfg_t *cfg,
-    int num_enc, vpx_codec_flags_t flags, vpx_rational_t *dsf, int ver) {
+    vpx_codec_ctx_t *ctx, vpx_codec_iface_t *iface,
+    const vpx_codec_enc_cfg_t *cfg, int num_enc, vpx_codec_flags_t flags,
+    const vpx_rational_t *dsf, int ver) {
   vpx_codec_err_t res = VPX_CODEC_OK;
 
   if (ver != VPX_ENCODER_ABI_VERSION)
     res = VPX_CODEC_ABI_MISMATCH;
-  else if (!ctx || !iface || !cfg || (num_enc > 16 || num_enc < 1))
+  else if (!ctx || !iface || !cfg || (num_enc > 16 || num_enc < 1) || !dsf)
     res = VPX_CODEC_INVALID_PARAM;
   else if (iface->abi_version != VPX_CODEC_INTERNAL_ABI_VERSION)
     res = VPX_CODEC_ABI_MISMATCH;
@@ -82,7 +87,10 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(
     res = VPX_CODEC_INCAPABLE;
   else {
     int i;
-    void *mem_loc = NULL;
+#if CONFIG_MULTI_RES_ENCODING
+    int mem_loc_owned = 0;
+#endif
+    void *mem_loc;
 
     if (iface->enc.mr_get_mem_loc == NULL) return VPX_CODEC_INCAPABLE;
 
@@ -98,20 +106,16 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(
           mr_cfg.mr_low_res_mode_info = mem_loc;
           mr_cfg.mr_total_resolutions = num_enc;
           mr_cfg.mr_encoder_id = num_enc - 1 - i;
-          mr_cfg.mr_down_sampling_factor.num = dsf->num;
-          mr_cfg.mr_down_sampling_factor.den = dsf->den;
-
-          /* Force Key-frame synchronization. Namely, encoder at higher
-           * resolution always use the same frame_type chosen by the
-           * lowest-resolution encoder.
-           */
-          if (mr_cfg.mr_encoder_id) cfg->kf_mode = VPX_KF_DISABLED;
+          mr_cfg.mr_down_sampling_factor = *dsf;
 
           ctx->iface = iface;
           ctx->name = iface->name;
           ctx->priv = NULL;
           ctx->init_flags = flags;
           ctx->config.enc = cfg;
+          // ctx takes ownership of mr_cfg.mr_low_res_mode_info if and only if
+          // this call succeeds. The first ctx entry in the array is
+          // responsible for freeing the memory.
           res = ctx->iface->init(ctx, &mr_cfg);
         }
 
@@ -129,13 +133,16 @@ vpx_codec_err_t vpx_codec_enc_init_multi_ver(
             i--;
           }
 #if CONFIG_MULTI_RES_ENCODING
-          assert(mem_loc);
-          free(((LOWER_RES_FRAME_INFO *)mem_loc)->mb_info);
-          free(mem_loc);
+          if (!mem_loc_owned) {
+            assert(mem_loc);
+            iface->enc.mr_free_mem_loc(mem_loc);
+          }
 #endif
           return SAVE_STATUS(ctx, res);
         }
-
+#if CONFIG_MULTI_RES_ENCODING
+        mem_loc_owned = 1;
+#endif
         ctx++;
         cfg++;
         dsf++;
@@ -151,52 +158,42 @@ vpx_codec_err_t vpx_codec_enc_config_default(vpx_codec_iface_t *iface,
                                              vpx_codec_enc_cfg_t *cfg,
                                              unsigned int usage) {
   vpx_codec_err_t res;
-  vpx_codec_enc_cfg_map_t *map;
-  int i;
 
-  if (!iface || !cfg || usage > INT_MAX)
+  if (!iface || !cfg || usage != 0)
     res = VPX_CODEC_INVALID_PARAM;
   else if (!(iface->caps & VPX_CODEC_CAP_ENCODER))
     res = VPX_CODEC_INCAPABLE;
   else {
-    res = VPX_CODEC_INVALID_PARAM;
-
-    for (i = 0; i < iface->enc.cfg_map_count; ++i) {
-      map = iface->enc.cfg_maps + i;
-      if (map->usage == (int)usage) {
-        *cfg = map->cfg;
-        cfg->g_usage = usage;
-        res = VPX_CODEC_OK;
-        break;
-      }
-    }
+    assert(iface->enc.cfg_map_count == 1);
+    *cfg = iface->enc.cfg_maps->cfg;
+    res = VPX_CODEC_OK;
   }
 
   return res;
 }
 
-#if ARCH_X86 || ARCH_X86_64
+#if VPX_ARCH_X86 || VPX_ARCH_X86_64
 /* On X86, disable the x87 unit's internal 80 bit precision for better
  * consistency with the SSE unit's 64 bit precision.
  */
 #include "vpx_ports/x86.h"
 #define FLOATING_POINT_INIT() \
   do {                        \
-    unsigned short x87_orig_mode = x87_set_double_precision();
+  unsigned short x87_orig_mode = x87_set_double_precision()
 #define FLOATING_POINT_RESTORE()       \
   x87_set_control_word(x87_orig_mode); \
   }                                    \
   while (0)
 
 #else
-static void FLOATING_POINT_INIT() {}
-static void FLOATING_POINT_RESTORE() {}
+static void FLOATING_POINT_INIT(void) {}
+static void FLOATING_POINT_RESTORE(void) {}
 #endif
 
 vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
                                  vpx_codec_pts_t pts, unsigned long duration,
                                  vpx_enc_frame_flags_t flags,
-                                 unsigned long deadline) {
+                                 vpx_enc_deadline_t deadline) {
   vpx_codec_err_t res = VPX_CODEC_OK;
 
   if (!ctx || (img && !duration))
@@ -205,6 +202,10 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
     res = VPX_CODEC_ERROR;
   else if (!(ctx->iface->caps & VPX_CODEC_CAP_ENCODER))
     res = VPX_CODEC_INCAPABLE;
+#if ULONG_MAX > UINT32_MAX
+  else if (duration > UINT32_MAX || deadline > UINT32_MAX)
+    res = VPX_CODEC_INVALID_PARAM;
+#endif
   else {
     unsigned int num_enc = ctx->priv->enc.total_encoders;
 
@@ -235,7 +236,10 @@ vpx_codec_err_t vpx_codec_encode(vpx_codec_ctx_t *ctx, const vpx_image_t *img,
         ctx--;
         if (img) img--;
       }
-      ctx++;
+      // Only restore ctx to &ctx[0] when the loop ran to completion. If an
+      // iteration failed, ctx already points at the failing element; advancing
+      // it would point past the array when the first iteration failed.
+      if (i < 0) ctx++;
     }
 
     FLOATING_POINT_RESTORE();

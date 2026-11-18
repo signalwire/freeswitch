@@ -169,7 +169,7 @@ package com.adobe.net
 		}
 
 		/**
-		 * Returns the prefered extension for the given mimetype.
+		 * Returns the preferred extension for the given mimetype.
 		 */
 		public function getExtension(mimetype:String):String
 		{

@@ -13,22 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "apr_private.h"
-#include "apr_file_io.h"
-#include "apr_strings.h"
-#include "apr_env.h"
+#include "fspr_private.h"
+#include "fspr_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_env.h"
 
 
 /* Try to open a temporary file in the temporary dir, write to it,
    and then close it. */
-static int test_tempdir(const char *temp_dir, apr_pool_t *p)
+static int test_tempdir(const char *temp_dir, fspr_pool_t *p)
 {
-    apr_file_t *dummy_file;
-    char *path = apr_pstrcat(p, temp_dir, "/apr-tmp.XXXXXX", NULL);
+    fspr_file_t *dummy_file;
+    char *path = fspr_pstrcat(p, temp_dir, "/apr-tmp.XXXXXX", NULL);
 
-    if (apr_file_mktemp(&dummy_file, path, 0, p) == APR_SUCCESS) {
-        if (apr_file_putc('!', dummy_file) == APR_SUCCESS) {
-            if (apr_file_close(dummy_file) == APR_SUCCESS) {
+    if (fspr_file_mktemp(&dummy_file, path, 0, p) == APR_SUCCESS) {
+        if (fspr_file_putc('!', dummy_file) == APR_SUCCESS) {
+            if (fspr_file_close(dummy_file) == APR_SUCCESS) {
                 return 1;
             }
         }
@@ -37,10 +37,10 @@ static int test_tempdir(const char *temp_dir, apr_pool_t *p)
 }
 
 
-APR_DECLARE(apr_status_t) apr_temp_dir_get(const char **temp_dir, 
-                                           apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_temp_dir_get(const char **temp_dir, 
+                                           fspr_pool_t *p)
 {
-    apr_status_t apr_err;
+    fspr_status_t fspr_err;
     const char *try_dirs[] = { "/tmp", "/usr/tmp", "/var/tmp" };
     const char *try_envs[] = { "TMP", "TEMP", "TMPDIR" };
     const char *dir;
@@ -69,9 +69,9 @@ APR_DECLARE(apr_status_t) apr_temp_dir_get(const char **temp_dir,
     /* Try the environment first. */
     for (i = 0; i < (sizeof(try_envs) / sizeof(const char *)); i++) {
         char *value;
-        apr_err = apr_env_get(&value, try_envs[i], p);
-        if ((apr_err == APR_SUCCESS) && value) {
-            apr_size_t len = strlen(value);
+        fspr_err = fspr_env_get(&value, try_envs[i], p);
+        if ((fspr_err == APR_SUCCESS) && value) {
+            fspr_size_t len = strlen(value);
             if (len && (len < APR_PATH_MAX) && test_tempdir(value, p)) {
                 dir = value;
                 goto end;
@@ -114,7 +114,7 @@ APR_DECLARE(apr_status_t) apr_temp_dir_get(const char **temp_dir,
 #endif
     
     /* Finally, try the current working directory. */
-    if (APR_SUCCESS == apr_filepath_get(&cwd, APR_FILEPATH_NATIVE, p)) {
+    if (APR_SUCCESS == fspr_filepath_get(&cwd, APR_FILEPATH_NATIVE, p)) {
         if (test_tempdir(cwd, p)) {
             dir = cwd;
 	    goto end;
@@ -125,6 +125,6 @@ APR_DECLARE(apr_status_t) apr_temp_dir_get(const char **temp_dir,
     return APR_EGENERAL;
 
 end:
-    *temp_dir = apr_pstrdup(p, dir);
+    *temp_dir = fspr_pstrdup(p, dir);
     return APR_SUCCESS;
 }

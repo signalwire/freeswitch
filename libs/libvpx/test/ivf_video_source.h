@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_IVF_VIDEO_SOURCE_H_
-#define TEST_IVF_VIDEO_SOURCE_H_
+#ifndef VPX_TEST_IVF_VIDEO_SOURCE_H_
+#define VPX_TEST_IVF_VIDEO_SOURCE_H_
 #include <cstdio>
 #include <cstdlib>
 #include <new>
@@ -16,7 +16,7 @@
 #include "test/video_source.h"
 
 namespace libvpx_test {
-const unsigned int kCodeBufferSize = 256 * 1024;
+const unsigned int kCodeBufferSize = 256 * 1024 * 1024;
 const unsigned int kIvfFileHdrSize = 32;
 const unsigned int kIvfFrameHdrSize = 12;
 
@@ -29,31 +29,40 @@ static unsigned int MemGetLe32(const uint8_t *mem) {
 class IVFVideoSource : public CompressedVideoSource {
  public:
   explicit IVFVideoSource(const std::string &file_name)
-      : file_name_(file_name), input_file_(NULL), compressed_frame_buf_(NULL),
-        frame_sz_(0), frame_(0), end_of_file_(false) {}
+      : file_name_(file_name), input_file_(nullptr),
+        compressed_frame_buf_(nullptr), frame_sz_(0), frame_(0),
+        end_of_file_(false) {}
 
-  virtual ~IVFVideoSource() {
+  ~IVFVideoSource() override {
     delete[] compressed_frame_buf_;
 
     if (input_file_) fclose(input_file_);
   }
 
-  virtual void Init() {
+  void Init() override {
     // Allocate a buffer for read in the compressed video frame.
     compressed_frame_buf_ = new uint8_t[libvpx_test::kCodeBufferSize];
-    ASSERT_TRUE(compressed_frame_buf_ != NULL)
-        << "Allocate frame buffer failed";
+    ASSERT_NE(compressed_frame_buf_, nullptr) << "Allocate frame buffer failed";
   }
 
-  virtual void Begin() {
+  void Begin() override {
     input_file_ = OpenTestDataFile(file_name_);
-    ASSERT_TRUE(input_file_ != NULL)
+    ASSERT_NE(input_file_, nullptr)
         << "Input file open failed. Filename: " << file_name_;
 
     // Read file header
     uint8_t file_hdr[kIvfFileHdrSize];
     ASSERT_EQ(kIvfFileHdrSize, fread(file_hdr, 1, kIvfFileHdrSize, input_file_))
         << "File header read failed.";
+    // The following two conditions are not asserted directly as some static
+    // analyzers (observed with clang-19) do not properly terminate execution
+    // when an eof or error is assumed after the previous fread().
+    if (ferror(input_file_)) {
+      FAIL() << "File header read failed.";
+    }
+    if (feof(input_file_)) {
+      FAIL() << "Unexpected eof.";
+    }
     // Check file header
     ASSERT_TRUE(file_hdr[0] == 'D' && file_hdr[1] == 'K' &&
                 file_hdr[2] == 'I' && file_hdr[3] == 'F')
@@ -62,13 +71,13 @@ class IVFVideoSource : public CompressedVideoSource {
     FillFrame();
   }
 
-  virtual void Next() {
+  void Next() override {
     ++frame_;
     FillFrame();
   }
 
   void FillFrame() {
-    ASSERT_TRUE(input_file_ != NULL);
+    ASSERT_NE(input_file_, nullptr);
     uint8_t frame_hdr[kIvfFrameHdrSize];
     // Check frame header and read a frame from input_file.
     if (fread(frame_hdr, 1, kIvfFrameHdrSize, input_file_) !=
@@ -86,11 +95,11 @@ class IVFVideoSource : public CompressedVideoSource {
     }
   }
 
-  virtual const uint8_t *cxdata() const {
-    return end_of_file_ ? NULL : compressed_frame_buf_;
+  const uint8_t *cxdata() const override {
+    return end_of_file_ ? nullptr : compressed_frame_buf_;
   }
-  virtual size_t frame_size() const { return frame_sz_; }
-  virtual unsigned int frame_number() const { return frame_; }
+  size_t frame_size() const override { return frame_sz_; }
+  unsigned int frame_number() const override { return frame_; }
 
  protected:
   std::string file_name_;
@@ -103,4 +112,4 @@ class IVFVideoSource : public CompressedVideoSource {
 
 }  // namespace libvpx_test
 
-#endif  // TEST_IVF_VIDEO_SOURCE_H_
+#endif  // VPX_TEST_IVF_VIDEO_SOURCE_H_

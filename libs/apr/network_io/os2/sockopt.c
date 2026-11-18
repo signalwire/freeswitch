@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "apr_arch_networkio.h"
-#include "apr_network_io.h"
-#include "apr_general.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
+#include "fspr_arch_networkio.h"
+#include "fspr_network_io.h"
+#include "fspr_general.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
 #include <errno.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -29,16 +29,16 @@
 #include <sys/so_ioctl.h>
 
 
-APR_DECLARE(apr_status_t) apr_socket_timeout_set(apr_socket_t *sock, 
-                                                 apr_interval_time_t t)
+APR_DECLARE(fspr_status_t) fspr_socket_timeout_set(fspr_socket_t *sock, 
+                                                 fspr_interval_time_t t)
 {
     sock->timeout = t;
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock, 
-                                             apr_int32_t opt, apr_int32_t on)
+APR_DECLARE(fspr_status_t) fspr_socket_opt_set(fspr_socket_t *sock, 
+                                             fspr_int32_t opt, fspr_int32_t on)
 {
     int one;
     struct linger li;
@@ -91,16 +91,16 @@ APR_DECLARE(apr_status_t) apr_socket_opt_set(apr_socket_t *sock,
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_timeout_get(apr_socket_t *sock, 
-                                                 apr_interval_time_t *t)
+APR_DECLARE(fspr_status_t) fspr_socket_timeout_get(fspr_socket_t *sock, 
+                                                 fspr_interval_time_t *t)
 {
     *t = sock->timeout;
     return APR_SUCCESS;
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_opt_get(apr_socket_t *sock, 
-                                             apr_int32_t opt, apr_int32_t *on)
+APR_DECLARE(fspr_status_t) fspr_socket_opt_get(fspr_socket_t *sock, 
+                                             fspr_int32_t opt, fspr_int32_t *on)
 {
     switch(opt) {
     default:
@@ -110,7 +110,7 @@ APR_DECLARE(apr_status_t) apr_socket_opt_get(apr_socket_t *sock,
 }
 
 
-APR_DECLARE(int) apr_socket_fd_get(apr_socket_t *sock)
+APR_DECLARE(int) fspr_socket_fd_get(fspr_socket_t *sock)
 {
 	if (sock) {
 		return sock->socketdes;
@@ -120,7 +120,7 @@ APR_DECLARE(int) apr_socket_fd_get(apr_socket_t *sock)
 }
 
 
-APR_DECLARE(apr_status_t) apr_socket_atmark(apr_socket_t *sock, int *atmark)
+APR_DECLARE(fspr_status_t) fspr_socket_atmark(fspr_socket_t *sock, int *atmark)
 {
     int oobmark;
 
@@ -134,8 +134,8 @@ APR_DECLARE(apr_status_t) apr_socket_atmark(apr_socket_t *sock, int *atmark)
 }
 
 
-APR_DECLARE(apr_status_t) apr_gethostname(char *buf, apr_int32_t len, 
-                                          apr_pool_t *cont)
+APR_DECLARE(fspr_status_t) fspr_gethostname(char *buf, fspr_int32_t len, 
+                                          fspr_pool_t *cont)
 {
     if (gethostname(buf, len) == -1) {
         buf[0] = '\0';

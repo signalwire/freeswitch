@@ -7,7 +7,6 @@
         <load module="mod_sndfile"/>
         <load module="mod_loopback"/>
         <load module="mod_dptools"/>
-        <load module="mod_ssml"/>
         <load module="mod_tone_stream"/>
         <load module="mod_conference"/>
         <load module="mod_commands"/>

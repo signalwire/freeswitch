@@ -1,0 +1,9 @@
+# This repository contains two commits with multiple authors.
+
+# By default, fsck will show errors for those commits.
+# Run the following command to ignore them:
+
+# git config --local include.path ../.gitconfig
+
+[fsck]
+	multipleAuthors=ignore

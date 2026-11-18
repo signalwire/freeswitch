@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_MD5_HELPER_H_
-#define TEST_MD5_HELPER_H_
+#ifndef VPX_TEST_MD5_HELPER_H_
+#define VPX_TEST_MD5_HELPER_H_
 
 #include "./md5_utils.h"
 #include "vpx/vpx_decoder.h"
@@ -47,7 +47,7 @@ class MD5 {
     MD5Update(&md5_, data, static_cast<uint32_t>(size));
   }
 
-  const char *Get(void) {
+  const char *Get() {
     static const char hex[16] = {
       '0', '1', '2', '3', '4', '5', '6', '7',
       '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
@@ -72,4 +72,4 @@ class MD5 {
 
 }  // namespace libvpx_test
 
-#endif  // TEST_MD5_HELPER_H_
+#endif  // VPX_TEST_MD5_HELPER_H_

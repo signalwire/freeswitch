@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_errno.h"
-#include "apr_arch_utf8.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_errno.h"
+#include "fspr_arch_utf8.h"
 
 /* Implement the design principal specified by RFC 2718 2.2.5 
  * Guidelines for new URL Schemes - within the APR.
@@ -58,18 +58,18 @@
  *                  W1 = 110110yyyyyyyyyy
  *                  W2 = 110111xxxxxxxxxx
  *
- * apr_conv_utf8_to_ucs2 out bytes:sizeof(in) * 1 <= Req <= sizeof(in) * 2
+ * fspr_conv_utf8_to_ucs2 out bytes:sizeof(in) * 1 <= Req <= sizeof(in) * 2
  *
- * apr_conv_ucs2_to_utf8 out words:sizeof(in) / 2 <= Req <= sizeof(in) * 3 / 2
+ * fspr_conv_ucs2_to_utf8 out words:sizeof(in) / 2 <= Req <= sizeof(in) * 3 / 2
  */
 
-APR_DECLARE(apr_status_t) apr_conv_utf8_to_ucs2(const char *in, 
-                                                apr_size_t *inbytes,
-                                                apr_wchar_t *out, 
-                                                apr_size_t *outwords)
+APR_DECLARE(fspr_status_t) fspr_conv_utf8_to_ucs2(const char *in, 
+                                                fspr_size_t *inbytes,
+                                                fspr_wchar_t *out, 
+                                                fspr_size_t *outwords)
 {
-    apr_int64_t newch, mask;
-    apr_size_t expect, eating;
+    fspr_int64_t newch, mask;
+    fspr_size_t expect, eating;
     int ch;
     
     while (*inbytes && *outwords) 
@@ -138,7 +138,7 @@ APR_DECLARE(apr_status_t) apr_conv_utf8_to_ucs2(const char *in,
                 /* Where the boolean (expect > 2) is true, we will need
                  * an extra word for the output.
                  */
-                if (*outwords < (apr_size_t)(expect > 2) + 1) 
+                if (*outwords < (fspr_size_t)(expect > 2) + 1) 
                     break; /* buffer full */
                 while (expect--)
                 {
@@ -156,14 +156,14 @@ APR_DECLARE(apr_status_t) apr_conv_utf8_to_ucs2(const char *in,
                 if (newch < 0x10000) 
                 {
                     --*outwords;
-                    *(out++) = (apr_wchar_t) newch;
+                    *(out++) = (fspr_wchar_t) newch;
                 }
                 else 
                 {
                     *outwords -= 2;
                     newch -= 0x10000;
-                    *(out++) = (apr_wchar_t) (0xD800 | (newch >> 10));
-                    *(out++) = (apr_wchar_t) (0xDC00 | (newch & 0x03FF));                    
+                    *(out++) = (fspr_wchar_t) (0xD800 | (newch >> 10));
+                    *(out++) = (fspr_wchar_t) (0xDC00 | (newch & 0x03FF));                    
                 }
             }
         }
@@ -174,13 +174,13 @@ APR_DECLARE(apr_status_t) apr_conv_utf8_to_ucs2(const char *in,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_conv_ucs2_to_utf8(const apr_wchar_t *in, 
-                                                apr_size_t *inwords,
+APR_DECLARE(fspr_status_t) fspr_conv_ucs2_to_utf8(const fspr_wchar_t *in, 
+                                                fspr_size_t *inwords,
                                                 char *out, 
-                                                apr_size_t *outbytes)
+                                                fspr_size_t *outbytes)
 {
-    apr_int64_t newch, require;
-    apr_size_t need;
+    fspr_int64_t newch, require;
+    fspr_size_t need;
     char *invout;
     int ch;
     

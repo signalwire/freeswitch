@@ -13,8 +13,8 @@
 
 SECTION .text
 
-;void vp8_short_inv_walsh4x4_sse2(short *input, short *output)
-global sym(vp8_short_inv_walsh4x4_sse2) PRIVATE
+;void vp8_short_inv_walsh4x4_sse2(short *input, short *mb_dqcoeff)
+globalsym(vp8_short_inv_walsh4x4_sse2)
 sym(vp8_short_inv_walsh4x4_sse2):
     push        rbp
     mov         rbp, rsp

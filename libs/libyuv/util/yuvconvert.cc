@@ -42,9 +42,9 @@ static __inline uint32_t Abs(int32_t v) {
 }
 
 // Parse PYUV format. ie name.1920x800_24Hz_P420.yuv
-bool ExtractResolutionFromFilename(const char* name,
-                                   int* width_ptr,
-                                   int* height_ptr) {
+static bool ExtractResolutionFromFilename(const char* name,
+                                          int* width_ptr,
+                                          int* height_ptr) {
   // Isolate the .width_height. section of the filename by searching for a
   // dot or underscore followed by a digit.
   for (int i = 0; name[i]; ++i) {
@@ -59,7 +59,7 @@ bool ExtractResolutionFromFilename(const char* name,
   return false;
 }
 
-void PrintHelp(const char* program) {
+static void PrintHelp(const char* program) {
   printf("%s [-options] src_argb.raw dst_yuv.raw\n", program);
   printf(
       " -s <width> <height> .... specify source resolution.  "
@@ -78,7 +78,7 @@ void PrintHelp(const char* program) {
   exit(0);
 }
 
-void ParseOptions(int argc, const char* argv[]) {
+static void ParseOptions(int argc, const char* argv[]) {
   if (argc <= 1) {
     PrintHelp(argv[0]);
   }
@@ -165,23 +165,23 @@ static int TileARGBScale(const uint8_t* src_argb,
                          int src_height,
                          uint8_t* dst_argb,
                          int dst_stride_argb,
-                         int dst_width,
-                         int dst_height,
+                         int destination_width,
+                         int destination_height,
                          libyuv::FilterMode filtering) {
-  for (int y = 0; y < dst_height; y += kTileY) {
-    for (int x = 0; x < dst_width; x += kTileX) {
+  for (int y = 0; y < destination_height; y += kTileY) {
+    for (int x = 0; x < destination_width; x += kTileX) {
       int clip_width = kTileX;
-      if (x + clip_width > dst_width) {
-        clip_width = dst_width - x;
+      if (x + clip_width > destination_width) {
+        clip_width = destination_width - x;
       }
       int clip_height = kTileY;
-      if (y + clip_height > dst_height) {
-        clip_height = dst_height - y;
+      if (y + clip_height > destination_height) {
+        clip_height = destination_height - y;
       }
       int r = libyuv::ARGBScaleClip(src_argb, src_stride_argb, src_width,
                                     src_height, dst_argb, dst_stride_argb,
-                                    dst_width, dst_height, x, y, clip_width,
-                                    clip_height, filtering);
+                                    destination_width, destination_height, x, y,
+                                    clip_width, clip_height, filtering);
       if (r) {
         return r;
       }
@@ -201,8 +201,12 @@ int main(int argc, const char* argv[]) {
   }
 
   // Open all files to convert to
-  FILE** file_rec = new FILE*[num_rec];
-  memset(file_rec, 0, num_rec * sizeof(FILE*));  // NOLINT
+  FILE** file_rec = static_cast<FILE**>(calloc(num_rec, sizeof(FILE*)));
+  if (file_rec == NULL) {
+    fprintf(stderr, "No memory available\n");
+    fclose(file_org);
+    exit(1);
+  }
   for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
     file_rec[cur_rec] = fopen(argv[fileindex_rec + cur_rec], "wb");
     if (file_rec[cur_rec] == NULL) {
@@ -211,7 +215,7 @@ int main(int argc, const char* argv[]) {
       for (int i = 0; i < cur_rec; ++i) {
         fclose(file_rec[i]);
       }
-      delete[] file_rec;
+      free(file_rec);
       exit(1);
     }
   }
@@ -243,19 +247,19 @@ int main(int argc, const char* argv[]) {
   fseek(file_org, num_skip_org * total_size, SEEK_SET);
 #endif
 
-  uint8_t* const ch_org = new uint8_t[org_size];
-  uint8_t* const ch_dst = new uint8_t[dst_size];
-  uint8_t* const ch_rec = new uint8_t[total_size];
-  if (ch_org == NULL || ch_rec == NULL) {
+  uint8_t* const ch_org = static_cast<uint8_t*>(malloc(org_size));
+  uint8_t* const ch_dst = static_cast<uint8_t*>(malloc(dst_size));
+  uint8_t* const ch_rec = static_cast<uint8_t*>(malloc(total_size));
+  if (ch_org == NULL || ch_dst == NULL || ch_rec == NULL) {
     fprintf(stderr, "No memory available\n");
     fclose(file_org);
     for (int i = 0; i < num_rec; ++i) {
       fclose(file_rec[i]);
     }
-    delete[] ch_org;
-    delete[] ch_dst;
-    delete[] ch_rec;
-    delete[] file_rec;
+    free(ch_org);
+    free(ch_dst);
+    free(ch_rec);
+    free(file_rec);
     exit(1);
   }
 
@@ -359,9 +363,9 @@ int main(int argc, const char* argv[]) {
   for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
     fclose(file_rec[cur_rec]);
   }
-  delete[] ch_org;
-  delete[] ch_dst;
-  delete[] ch_rec;
-  delete[] file_rec;
+  free(ch_org);
+  free(ch_dst);
+  free(ch_rec);
+  free(file_rec);
   return 0;
 }

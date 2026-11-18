@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef VPXENC_H_
-#define VPXENC_H_
+#ifndef VPX_VPXENC_H_
+#define VPX_VPXENC_H_
 
 #include "vpx/vpx_encoder.h"
 
@@ -28,6 +28,7 @@ typedef enum {
   I444,  // 4:4:4 8+ bit-depth
   I440,  // 4:4:0 8+ bit-depth
   YV12,  // 4:2:0 with uv flipped, only 8-bit depth
+  NV12,  // 4:2:0 with uv interleaved
 } ColorInputType;
 
 struct VpxInterface;
@@ -61,4 +62,4 @@ struct VpxEncoderConfig {
 }  // extern "C"
 #endif
 
-#endif  // VPXENC_H_
+#endif  // VPX_VPXENC_H_

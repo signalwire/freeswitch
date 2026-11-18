@@ -8,7 +8,7 @@ shift if $just_check;
 my $dir = shift || '.';
 my %names;
 
-my $prefix = 'apr_';
+my $prefix = 'fspr_';
 
 while (<DATA>) {
     chomp;
@@ -41,7 +41,7 @@ sub replace {
     while (<IN>) {
         for (m/[^_\"]*$prefix($pattern)\b/og) {
             $found++;
-            print "   $file:$. apr_$_ -> apr_$names{$_}\n";
+            print "   $file:$. fspr_$_ -> fspr_$names{$_}\n";
         }
         push @lines, $_ if $replace;
     }
@@ -66,41 +66,41 @@ sub replace {
 }
 
 __DATA__
-apr_time_t:
-apr_implode_gmt              apr_time_exp_gmt_get
+fspr_time_t:
+fspr_implode_gmt              fspr_time_exp_gmt_get
 
-apr_socket_t:
-apr_close_socket             apr_socket_close
-apr_create_socket            apr_socket_create
-apr_get_sockaddr             apr_socket_addr_get
-apr_get_socketdata           apr_socket_data_get
-apr_set_socketdata           apr_socket_data_set
-apr_shutdown                 apr_socket_shutdown
-apr_bind                     apr_socket_bind
-apr_listen                   apr_socket_listen
-apr_accept                   apr_socket_accept
-apr_connect                  apr_socket_connect
-apr_send                     apr_socket_send
-apr_sendv                    apr_socket_sendv
-apr_sendto                   apr_socket_sendto
-apr_recvfrom                 apr_socket_recvfrom
-apr_sendfile                 apr_socket_sendfile
-apr_recv                     apr_socket_recv
+fspr_socket_t:
+fspr_close_socket             fspr_socket_close
+fspr_create_socket            fspr_socket_create
+fspr_get_sockaddr             fspr_socket_addr_get
+fspr_get_socketdata           fspr_socket_data_get
+fspr_set_socketdata           fspr_socket_data_set
+fspr_shutdown                 fspr_socket_shutdown
+fspr_bind                     fspr_socket_bind
+fspr_listen                   fspr_socket_listen
+fspr_accept                   fspr_socket_accept
+fspr_connect                  fspr_socket_connect
+fspr_send                     fspr_socket_send
+fspr_sendv                    fspr_socket_sendv
+fspr_sendto                   fspr_socket_sendto
+fspr_recvfrom                 fspr_socket_recvfrom
+fspr_sendfile                 fspr_socket_sendfile
+fspr_recv                     fspr_socket_recv
 
-apr_filepath_*:
-apr_filename_of_pathname     apr_filepath_name_get
+fspr_filepath_*:
+fspr_filename_of_pathname     fspr_filepath_name_get
 
-apr_gid_t:
-apr_get_groupid              apr_gid_get
-apr_get_groupname            apr_gid_name_get
-apr_group_name_get           apr_gid_name_get
-apr_compare_groups           apr_gid_compare
+fspr_gid_t:
+fspr_get_groupid              fspr_gid_get
+fspr_get_groupname            fspr_gid_name_get
+fspr_group_name_get           fspr_gid_name_get
+fspr_compare_groups           fspr_gid_compare
 
-apr_uid_t:
-apr_get_home_directory       apr_uid_homepath_get
-apr_get_userid               apr_uid_get
-apr_current_userid           apr_uid_current
-apr_compare_users            apr_uid_compare
-apr_get_username             apr_uid_name_get
-apr_compare_users            apr_uid_compare
+fspr_uid_t:
+fspr_get_home_directory       fspr_uid_homepath_get
+fspr_get_userid               fspr_uid_get
+fspr_current_userid           fspr_uid_current
+fspr_compare_users            fspr_uid_compare
+fspr_get_username             fspr_uid_name_get
+fspr_compare_users            fspr_uid_compare
 

@@ -1,0 +1,14 @@
+<configuration name="signalwire.conf" description="SignalWire">
+  <settings>
+    <!-- on/off/file-path -->
+    <!--<param name="kslog" value="on"/>-->
+    <!--<param name="blade-bootstrap" value="blade://switchblade:2100"/>-->
+    <!--<param name="adoption-service" value="https://adopt.signalwire.com/adoption"/>-->
+    <!--<param name="stun-server" value="stun.freeswitch.org"/>-->
+    <!--<param name="caller-id-in-from" value="true"/>-->
+    <!--<authentication></authentication>-->
+    
+    <!-- override dialplan context for calls on connector -->
+    <!--<param name="override-context" value="signalwire"/-->
+  </settings>
+</configuration>

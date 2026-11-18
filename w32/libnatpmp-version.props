@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <libnatpmpVersion>20230423</libnatpmpVersion>
+    <libnatpmpBuildNumber>1</libnatpmpBuildNumber>
+  </PropertyGroup>
+  <PropertyGroup>
+    <libnatpmpVersionImported>true</libnatpmpVersionImported>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="libnatpmpVersion">
+      <Value>$(libnatpmpVersion)</Value>
+    </BuildMacro>
+    <BuildMacro Include="libnatpmpBuildNumber">
+      <Value>$(libnatpmpBuildNumber)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

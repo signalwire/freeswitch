@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_general.h"
-#include "apr_pools.h"
-#include "apr_signal.h"
+#include "fspr.h"
+#include "fspr_general.h"
+#include "fspr_pools.h"
+#include "fspr_signal.h"
 
-#include "apr_arch_misc.h"       /* for WSAHighByte / WSALowByte */
-#include "apr_arch_proc_mutex.h" /* for apr_proc_mutex_unix_setup_lock() */
-#include "apr_arch_internal_time.h"
+#include "fspr_arch_misc.h"       /* for WSAHighByte / WSALowByte */
+#include "fspr_arch_proc_mutex.h" /* for fspr_proc_mutex_unix_setup_lock() */
+#include "fspr_arch_internal_time.h"
 
 #ifdef USE_WINSOCK
 /*
@@ -108,7 +108,7 @@ static int RegisterAppWithWinSock (void *nlm_handle)
 
 
 
-APR_DECLARE(apr_status_t) apr_app_initialize(int *argc, 
+APR_DECLARE(fspr_status_t) fspr_app_initialize(int *argc, 
                                              const char * const * *argv, 
                                              const char * const * *env)
 {
@@ -117,12 +117,12 @@ APR_DECLARE(apr_status_t) apr_app_initialize(int *argc,
      * control manager into the process, and it's required to fix the char*
      * data passed in from win32 unicode into utf-8, win32's apr internal fmt.
      */
-    return apr_initialize();
+    return fspr_initialize();
 }
 
-APR_DECLARE(apr_status_t) apr_initialize(void)
+APR_DECLARE(fspr_status_t) fspr_initialize(void)
 {
-    apr_pool_t *pool;
+    fspr_pool_t *pool;
     int err;
     void *nlmhandle = getnlmhandle();
 
@@ -132,15 +132,15 @@ APR_DECLARE(apr_status_t) apr_initialize(void)
         return APR_SUCCESS;
     }
 
-    /* apr_pool_initialize() is being called from the library
+    /* fspr_pool_initialize() is being called from the library
         startup code since all of the memory resources belong 
         to the library rather than the application. */
     
-    if (apr_pool_create(&pool, NULL) != APR_SUCCESS) {
+    if (fspr_pool_create(&pool, NULL) != APR_SUCCESS) {
         return APR_ENOPOOL;
     }
 
-    apr_pool_tag(pool, "apr_initilialize");
+    fspr_pool_tag(pool, "fspr_initilialize");
 
 #ifdef USE_WINSOCK
     err = RegisterAppWithWinSock (nlmhandle);
@@ -150,12 +150,12 @@ APR_DECLARE(apr_status_t) apr_initialize(void)
     }
 #endif
 
-    apr_signal_init(pool);
+    fspr_signal_init(pool);
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE_NONSTD(void) apr_terminate(void)
+APR_DECLARE_NONSTD(void) fspr_terminate(void)
 {
     APP_DATA *app_data;
 
@@ -169,7 +169,7 @@ APR_DECLARE_NONSTD(void) apr_terminate(void)
         return;
     }
 
-    /* apr_pool_terminate() is being called from the 
+    /* fspr_pool_terminate() is being called from the 
         library shutdown code since the memory resources
         belong to the library rather than the application */
 
@@ -182,7 +182,7 @@ APR_DECLARE_NONSTD(void) apr_terminate(void)
 #endif
 }
 
-APR_DECLARE(void) apr_terminate2(void)
+APR_DECLARE(void) fspr_terminate2(void)
 {
-    apr_terminate();
+    fspr_terminate();
 }

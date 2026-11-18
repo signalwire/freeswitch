@@ -35,9 +35,9 @@ package com.adobe.net
 	import flash.net.URLLoader;
 
 	/**
-	* 	Class that provides a dynamic implimentation of the URLLoader class.
+	* 	Class that provides a dynamic implementation of the URLLoader class.
 	* 
-	* 	This class provides no API implimentations. However, since the class is
+	* 	This class provides no API implementations. However, since the class is
 	* 	declared as dynamic, it can be used in place of URLLoader, and allow
 	* 	you to dynamically attach properties to it (which URLLoader does not allow).
 	* 

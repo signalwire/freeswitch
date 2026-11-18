@@ -22,21 +22,24 @@
  * video codec algorithm.
  *
  * An application instantiates a specific codec instance by using
- * vpx_codec_init() and a pointer to the algorithm's interface structure:
+ * vpx_codec_dec_init() or vpx_codec_enc_init() and a pointer to the
+ * algorithm's interface structure:
  *     <pre>
  *     my_app.c:
  *       extern vpx_codec_iface_t my_codec;
  *       {
  *           vpx_codec_ctx_t algo;
- *           res = vpx_codec_init(&algo, &my_codec);
+ *           int threads = 4;
+ *           vpx_codec_dec_cfg_t cfg = { threads, 0, 0 };
+ *           res = vpx_codec_dec_init(&algo, &my_codec, &cfg, 0);
  *       }
  *     </pre>
  *
  * Once initialized, the instance is manged using other functions from
  * the vpx_codec_* family.
  */
-#ifndef VPX_VPX_CODEC_H_
-#define VPX_VPX_CODEC_H_
+#ifndef VPX_VPX_VPX_CODEC_H_
+#define VPX_VPX_VPX_CODEC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +50,7 @@ extern "C" {
 
 /*!\brief Decorator indicating a function is deprecated */
 #ifndef VPX_DEPRECATED
-#if defined(__GNUC__) && __GNUC__
+#if defined(__GNUC__)
 #define VPX_DEPRECATED __attribute__((deprecated))
 #elif defined(_MSC_VER)
 #define VPX_DEPRECATED
@@ -57,7 +60,7 @@ extern "C" {
 #endif /* VPX_DEPRECATED */
 
 #ifndef VPX_DECLSPEC_DEPRECATED
-#if defined(__GNUC__) && __GNUC__
+#if defined(__GNUC__)
 #define VPX_DECLSPEC_DEPRECATED /**< \copydoc #VPX_DEPRECATED */
 #elif defined(_MSC_VER)
 /*!\brief \copydoc #VPX_DEPRECATED */
@@ -241,11 +244,11 @@ typedef enum vpx_bit_depth {
  */
 int vpx_codec_version(void);
 #define VPX_VERSION_MAJOR(v) \
-  ((v >> 16) & 0xff) /**< extract major from packed version */
+  (((v) >> 16) & 0xff) /**< extract major from packed version */
 #define VPX_VERSION_MINOR(v) \
-  ((v >> 8) & 0xff) /**< extract minor from packed version */
+  (((v) >> 8) & 0xff) /**< extract minor from packed version */
 #define VPX_VERSION_PATCH(v) \
-  ((v >> 0) & 0xff) /**< extract patch from packed version */
+  (((v) >> 0) & 0xff) /**< extract patch from packed version */
 
 /*!\brief Return the version major number */
 #define vpx_codec_version_major() ((vpx_codec_version() >> 16) & 0xff)
@@ -315,19 +318,21 @@ const char *vpx_codec_err_to_string(vpx_codec_err_t err);
  * \param[in]    ctx     Pointer to this instance's context.
  *
  */
-const char *vpx_codec_error(vpx_codec_ctx_t *ctx);
+const char *vpx_codec_error(const vpx_codec_ctx_t *ctx);
 
 /*!\brief Retrieve detailed error information for codec context
  *
  * Returns a human readable string providing detailed information about
- * the last error.
+ * the last error. The returned string is only valid until the next
+ * vpx_codec_* function call (except vpx_codec_error and
+ * vpx_codec_error_detail) on the codec context.
  *
  * \param[in]    ctx     Pointer to this instance's context.
  *
  * \retval NULL
  *     No detailed information is available.
  */
-const char *vpx_codec_error_detail(vpx_codec_ctx_t *ctx);
+const char *vpx_codec_error_detail(const vpx_codec_ctx_t *ctx);
 
 /* REQUIRED FUNCTIONS
  *
@@ -342,9 +347,11 @@ const char *vpx_codec_error_detail(vpx_codec_ctx_t *ctx);
  * \param[in] ctx   Pointer to this instance's context
  *
  * \retval #VPX_CODEC_OK
- *     The codec algorithm initialized.
- * \retval #VPX_CODEC_MEM_ERROR
- *     Memory allocation failed.
+ *     The codec instance has been destroyed.
+ * \retval #VPX_CODEC_INVALID_PARAM
+ *     ctx is a null pointer.
+ * \retval #VPX_CODEC_ERROR
+ *     Codec context not initialized.
  */
 vpx_codec_err_t vpx_codec_destroy(vpx_codec_ctx_t *ctx);
 
@@ -465,4 +472,4 @@ vpx_codec_err_t vpx_codec_control_(vpx_codec_ctx_t *ctx, int ctrl_id, ...);
 #ifdef __cplusplus
 }
 #endif
-#endif  // VPX_VPX_CODEC_H_
+#endif  // VPX_VPX_VPX_CODEC_H_

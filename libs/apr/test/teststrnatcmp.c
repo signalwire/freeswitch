@@ -14,50 +14,50 @@
  * limitations under the License.
  */
 
-#include "apr_file_io.h"
-#include "apr_errno.h"
-#include "apr_strings.h"
+#include "fspr_file_io.h"
+#include "fspr_errno.h"
+#include "fspr_strings.h"
 #include "testutil.h"
 
 static void less0(abts_case *tc, void *data)
 {
-    int rv = apr_strnatcmp("a", "b");
+    int rv = fspr_strnatcmp("a", "b");
     ABTS_ASSERT(tc, "didn't compare simple strings properly", rv < 0);
 }
 
 static void str_equal(abts_case *tc, void *data)
 {
-    int rv = apr_strnatcmp("a", "a");
+    int rv = fspr_strnatcmp("a", "a");
     ABTS_ASSERT(tc, "didn't compare simple strings properly", rv == 0);
 }
 
 static void more0(abts_case *tc, void *data)
 {
-    int rv = apr_strnatcmp("b", "a");
+    int rv = fspr_strnatcmp("b", "a");
     ABTS_ASSERT(tc, "didn't compare simple strings properly", rv > 0);
 }
 
 static void less_ignore_case(abts_case *tc, void *data)
 {
-    int rv = apr_strnatcasecmp("a", "B");
+    int rv = fspr_strnatcasecmp("a", "B");
     ABTS_ASSERT(tc, "didn't compare simple strings properly", rv < 0);
 }
 
 static void str_equal_ignore_case(abts_case *tc, void *data)
 {
-    int rv = apr_strnatcasecmp("a", "A");
+    int rv = fspr_strnatcasecmp("a", "A");
     ABTS_ASSERT(tc, "didn't compare simple strings properly", rv == 0);
 }
 
 static void more_ignore_case(abts_case *tc, void *data)
 {
-    int rv = apr_strnatcasecmp("b", "A");
+    int rv = fspr_strnatcasecmp("b", "A");
     ABTS_ASSERT(tc, "didn't compare simple strings properly", rv > 0);
 }
 
 static void natcmp(abts_case *tc, void *data)
 {
-    int rv = apr_strnatcasecmp("a2", "a10");
+    int rv = fspr_strnatcasecmp("a2", "a10");
     ABTS_ASSERT(tc, "didn't compare simple strings properly", rv < 0);
 }
 

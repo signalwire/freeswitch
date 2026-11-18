@@ -8,12 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VPX_PORTS_BITOPS_H_
-#define VPX_PORTS_BITOPS_H_
+#ifndef VPX_VPX_PORTS_BITOPS_H_
+#define VPX_VPX_PORTS_BITOPS_H_
 
 #include <assert.h>
-
-#include "vpx_ports/msvc.h"
 
 #ifdef _MSC_VER
 #if defined(_M_X64) || defined(_M_IX86)
@@ -26,19 +24,31 @@
 extern "C" {
 #endif
 
-// These versions of get_msb() are only valid when n != 0 because all
-// of the optimized versions are undefined when n == 0:
+// These versions of get_lsb() and get_msb() are only valid when n != 0
+// because all of the optimized versions are undefined when n == 0:
 // https://gcc.gnu.org/onlinedocs/gcc/Other-Builtins.html
 
 // use GNU builtins where available.
 #if defined(__GNUC__) && \
     ((__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || __GNUC__ >= 4)
+static INLINE int get_lsb(unsigned int n) {
+  assert(n != 0);
+  return __builtin_ctz(n);
+}
+
 static INLINE int get_msb(unsigned int n) {
   assert(n != 0);
   return 31 ^ __builtin_clz(n);
 }
 #elif defined(USE_MSC_INTRINSICS)
+#pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
+
+static INLINE int get_lsb(unsigned int n) {
+  unsigned long first_set_bit;  // NOLINT(runtime/int)
+  _BitScanForward(&first_set_bit, n);
+  return first_set_bit;
+}
 
 static INLINE int get_msb(unsigned int n) {
   unsigned long first_set_bit;
@@ -48,6 +58,13 @@ static INLINE int get_msb(unsigned int n) {
 }
 #undef USE_MSC_INTRINSICS
 #else
+static INLINE int get_lsb(unsigned int n) {
+  int i;
+  assert(n != 0);
+  for (i = 0; i < 32 && !(n & 1); ++i) n >>= 1;
+  return i;
+}
+
 // Returns (int)floor(log2(n)). n must be > 0.
 static INLINE int get_msb(unsigned int n) {
   int log = 0;
@@ -72,4 +89,4 @@ static INLINE int get_msb(unsigned int n) {
 }  // extern "C"
 #endif
 
-#endif  // VPX_PORTS_BITOPS_H_
+#endif  // VPX_VPX_PORTS_BITOPS_H_

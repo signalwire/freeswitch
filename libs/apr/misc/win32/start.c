@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-#include "apr_private.h"
-#include "apr_general.h"
-#include "apr_pools.h"
-#include "apr_signal.h"
+#include "fspr_private.h"
+#include "fspr_general.h"
+#include "fspr_pools.h"
+#include "fspr_signal.h"
 #include "ShellAPI.h"
 
-#include "apr_arch_misc.h"       /* for WSAHighByte / WSALowByte */
+#include "fspr_arch_misc.h"       /* for WSAHighByte / WSALowByte */
 #include "wchar.h"
-#include "apr_arch_file_io.h"
+#include "fspr_arch_file_io.h"
 #include "crtdbg.h"
 #include "assert.h"
 
 /* This symbol is _private_, although it must be exported.
  */
-int APR_DECLARE_DATA apr_app_init_complete = 0;
+int APR_DECLARE_DATA fspr_app_init_complete = 0;
 
-/* Used by apr_app_initialize to reprocess the environment
+/* Used by fspr_app_initialize to reprocess the environment
  *
  * An internal apr function to convert a double-null terminated set
  * of single-null terminated strings from wide Unicode to narrow utf-8
@@ -40,10 +40,10 @@ int APR_DECLARE_DATA apr_app_init_complete = 0;
 static int warrsztoastr(const char * const * *retarr,
                         const wchar_t * arrsz, int args)
 {
-    const apr_wchar_t *wch;
-    apr_size_t totlen;
-    apr_size_t newlen;
-    apr_size_t wsize;
+    const fspr_wchar_t *wch;
+    fspr_size_t totlen;
+    fspr_size_t newlen;
+    fspr_size_t wsize;
     char **newarr;
     int arg;
 
@@ -66,7 +66,7 @@ static int warrsztoastr(const char * const * *retarr,
     newarr[0] = _malloc_dbg(newlen * sizeof(char),
                             _CRT_BLOCK, __FILE__, __LINE__);
 
-    (void)apr_conv_ucs2_to_utf8(arrsz, &wsize,
+    (void)fspr_conv_ucs2_to_utf8(arrsz, &wsize,
                                 newarr[0], &newlen);
 
     assert(newlen && !wsize);
@@ -91,11 +91,11 @@ static int warrsztoastr(const char * const * *retarr,
 /* Reprocess the arguments to main() for a completely apr-ized application
  */
 
-APR_DECLARE(apr_status_t) apr_app_initialize(int *argc,
+APR_DECLARE(fspr_status_t) fspr_app_initialize(int *argc,
                                              const char * const * *argv,
                                              const char * const * *env)
 {
-    apr_status_t rv = apr_initialize();
+    fspr_status_t rv = fspr_initialize();
 
     if (rv != APR_SUCCESS) {
         return rv;
@@ -104,22 +104,22 @@ APR_DECLARE(apr_status_t) apr_app_initialize(int *argc,
 #if APR_HAS_UNICODE_FS
     IF_WIN_OS_IS_UNICODE
     {
-        apr_wchar_t **wstrs;
-        apr_wchar_t *sysstr;
+        fspr_wchar_t **wstrs;
+        fspr_wchar_t *sysstr;
         int wstrc;
         int dupenv;
 
-        if (apr_app_init_complete) {
+        if (fspr_app_init_complete) {
             return rv;
         }
 
-        apr_app_init_complete = 1;
+        fspr_app_init_complete = 1;
 
         sysstr = GetCommandLineW();
         if (sysstr) {
             wstrs = CommandLineToArgvW(sysstr, &wstrc);
             if (wstrs) {
-                *argc = apr_wastrtoastr(argv, wstrs, wstrc);
+                *argc = fspr_wastrtoastr(argv, wstrs, wstrc);
                 GlobalFree(wstrs);
             }
         }
@@ -145,7 +145,7 @@ APR_DECLARE(apr_status_t) apr_app_initialize(int *argc,
          * Reset _wenviron for good measure.
          */
         if (_wenviron) {
-            apr_wchar_t **wenv = _wenviron;
+            fspr_wchar_t **wenv = _wenviron;
             _wenviron = NULL;
             free(wenv);
         }
@@ -158,35 +158,35 @@ APR_DECLARE(apr_status_t) apr_app_initialize(int *argc,
 static int initialized = 0;
 
 /* Provide to win32/thread.c */
-extern DWORD tls_apr_thread;
+extern DWORD tls_fspr_thread;
 
-APR_DECLARE(apr_status_t) apr_initialize(void)
+APR_DECLARE(fspr_status_t) fspr_initialize(void)
 {
-    apr_pool_t *pool;
-    apr_status_t status;
+    fspr_pool_t *pool;
+    fspr_status_t status;
     int iVersionRequested;
     WSADATA wsaData;
     int err;
-    apr_oslevel_e osver;
+    fspr_oslevel_e osver;
 
     if (initialized++) {
         return APR_SUCCESS;
     }
 
-    /* Initialize apr_os_level global */
-    if (apr_get_oslevel(&osver) != APR_SUCCESS) {
+    /* Initialize fspr_os_level global */
+    if (fspr_get_oslevel(&osver) != APR_SUCCESS) {
         return APR_EEXIST;
     }
 
-    tls_apr_thread = TlsAlloc();
-    if ((status = apr_pool_initialize()) != APR_SUCCESS)
+    tls_fspr_thread = TlsAlloc();
+    if ((status = fspr_pool_initialize()) != APR_SUCCESS)
         return status;
 
-    if (apr_pool_create(&pool, NULL) != APR_SUCCESS) {
+    if (fspr_pool_create(&pool, NULL) != APR_SUCCESS) {
         return APR_ENOPOOL;
     }
 
-    apr_pool_tag(pool, "apr_initialize");
+    fspr_pool_tag(pool, "fspr_initialize");
 
     iVersionRequested = MAKEWORD(WSAHighByte, WSALowByte);
     err = WSAStartup((WORD) iVersionRequested, &wsaData);
@@ -199,25 +199,25 @@ APR_DECLARE(apr_status_t) apr_initialize(void)
         return APR_EEXIST;
     }
 
-    apr_signal_init(pool);
+    fspr_signal_init(pool);
 
     return APR_SUCCESS;
 }
 
-APR_DECLARE_NONSTD(void) apr_terminate(void)
+APR_DECLARE_NONSTD(void) fspr_terminate(void)
 {
     initialized--;
     if (initialized) {
         return;
     }
-    apr_pool_terminate();
+    fspr_pool_terminate();
 
     WSACleanup();
 
-    TlsFree(tls_apr_thread);
+    TlsFree(tls_fspr_thread);
 }
 
-APR_DECLARE(void) apr_terminate2(void)
+APR_DECLARE(void) fspr_terminate2(void)
 {
-    apr_terminate();
+    fspr_terminate();
 }

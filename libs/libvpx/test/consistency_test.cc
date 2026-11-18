@@ -11,8 +11,9 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <tuple>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vpx_config.h"
 #if CONFIG_VP9_ENCODER
@@ -38,7 +39,7 @@ class ConsistencyTestBase : public ::testing::Test {
  public:
   ConsistencyTestBase(int width, int height) : width_(width), height_(height) {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     source_data_[0] = reinterpret_cast<uint8_t *>(
         vpx_memalign(kDataAlignment, kDataBufferSize));
     reference_data_[0] = reinterpret_cast<uint8_t *>(
@@ -51,27 +52,27 @@ class ConsistencyTestBase : public ::testing::Test {
   }
 
   static void ClearSsim() { memset(ssim_array_, 0, kDataBufferSize / 16); }
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     vpx_free(source_data_[0]);
-    source_data_[0] = NULL;
+    source_data_[0] = nullptr;
     vpx_free(reference_data_[0]);
-    reference_data_[0] = NULL;
+    reference_data_[0] = nullptr;
     vpx_free(source_data_[1]);
-    source_data_[1] = NULL;
+    source_data_[1] = nullptr;
     vpx_free(reference_data_[1]);
-    reference_data_[1] = NULL;
+    reference_data_[1] = nullptr;
 
     delete[] ssim_array_;
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   // Handle frames up to 640x480
   static const int kDataAlignment = 16;
   static const int kDataBufferSize = 640 * 480;
 
-  virtual void SetUp() {
+  void SetUp() override {
     source_stride_ = (width_ + 31) & ~31;
     reference_stride_ = width_ * 2;
     rnd_.Reset(ACMRandom::DeterministicSeed());
@@ -127,7 +128,7 @@ class ConsistencyTestBase : public ::testing::Test {
 };
 
 #if CONFIG_VP9_ENCODER
-typedef std::tr1::tuple<int, int> ConsistencyParam;
+using ConsistencyParam = std::tuple<int, int>;
 class ConsistencyVP9Test
     : public ConsistencyTestBase,
       public ::testing::WithParamInterface<ConsistencyParam> {
@@ -144,9 +145,9 @@ class ConsistencyVP9Test
 };
 #endif  // CONFIG_VP9_ENCODER
 
-uint8_t *ConsistencyTestBase::source_data_[2] = { NULL, NULL };
-uint8_t *ConsistencyTestBase::reference_data_[2] = { NULL, NULL };
-Ssimv *ConsistencyTestBase::ssim_array_ = NULL;
+uint8_t *ConsistencyTestBase::source_data_[2] = { nullptr, nullptr };
+uint8_t *ConsistencyTestBase::reference_data_[2] = { nullptr, nullptr };
+Ssimv *ConsistencyTestBase::ssim_array_ = nullptr;
 
 #if CONFIG_VP9_ENCODER
 TEST_P(ConsistencyVP9Test, ConsistencyIsZero) {
@@ -198,17 +199,17 @@ TEST_P(ConsistencyVP9Test, ConsistencyIsZero) {
 }
 #endif  // CONFIG_VP9_ENCODER
 
-using std::tr1::make_tuple;
+using std::make_tuple;
 
 //------------------------------------------------------------------------------
 // C functions
 
 #if CONFIG_VP9_ENCODER
-const ConsistencyParam c_vp9_tests[] = {
-  make_tuple(320, 240), make_tuple(318, 242), make_tuple(318, 238),
-};
-INSTANTIATE_TEST_CASE_P(C, ConsistencyVP9Test,
-                        ::testing::ValuesIn(c_vp9_tests));
+const ConsistencyParam c_vp9_tests[] = { make_tuple(320, 240),
+                                         make_tuple(318, 242),
+                                         make_tuple(318, 238) };
+INSTANTIATE_TEST_SUITE_P(C, ConsistencyVP9Test,
+                         ::testing::ValuesIn(c_vp9_tests));
 #endif
 
 }  // namespace

@@ -14,8 +14,8 @@
  * SOFTWARE.
  */
 
-#include "apr_private.h"
-#include "apr_arch_networkio.h"
+#include "fspr_private.h"
+#include "fspr_arch_networkio.h"
 
 #if APR_HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -39,7 +39,7 @@
 #endif
 
 #ifndef INT16SZ
-#define INT16SZ sizeof(apr_int16_t)
+#define INT16SZ sizeof(fspr_int16_t)
 #endif
 
 #ifndef INADDRSZ
@@ -76,7 +76,7 @@ static int	inet_pton6 __P((const char *src, unsigned char *dst));
  *	Paul Vixie, 1996.
  */
 int
-apr_inet_pton(int af, const char *src, void *dst)
+fspr_inet_pton(int af, const char *src, void *dst)
 {
 	switch (af) {
 	case AF_INET:

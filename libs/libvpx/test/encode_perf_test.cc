@@ -7,15 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <cstdio>
 #include <string>
-#include "third_party/googletest/src/include/gtest/gtest.h"
-#include "./vpx_config.h"
-#include "./vpx_version.h"
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 #include "test/util.h"
 #include "test/y4m_video_source.h"
+#include "vpx/vpx_codec.h"
 #include "vpx_ports/vpx_timer.h"
 
 namespace {
@@ -48,7 +48,7 @@ const EncodePerfTestVideo kVP9EncodePerfTestVectors[] = {
   EncodePerfTestVideo("niklas_1280_720_30.yuv", 1280, 720, 600, 470),
 };
 
-const int kEncodePerfTestSpeeds[] = { 5, 6, 7, 8 };
+const int kEncodePerfTestSpeeds[] = { 5, 6, 7, 8, 9 };
 const int kEncodePerfTestThreads[] = { 1, 2, 4 };
 
 #define NELEMENTS(x) (sizeof((x)) / sizeof((x)[0]))
@@ -61,9 +61,9 @@ class VP9EncodePerfTest
       : EncoderTest(GET_PARAM(0)), min_psnr_(kMaxPsnr), nframes_(0),
         encoding_mode_(GET_PARAM(1)), speed_(0), threads_(1) {}
 
-  virtual ~VP9EncodePerfTest() {}
+  ~VP9EncodePerfTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(encoding_mode_);
 
@@ -82,8 +82,8 @@ class VP9EncodePerfTest
     cfg_.g_threads = threads_;
   }
 
-  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
-                                  ::libvpx_test::Encoder *encoder) {
+  void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                          ::libvpx_test::Encoder *encoder) override {
     if (video->frame() == 0) {
       const int log2_tile_columns = 3;
       encoder->Control(VP8E_SET_CPUUSED, speed_);
@@ -93,19 +93,19 @@ class VP9EncodePerfTest
     }
   }
 
-  virtual void BeginPassHook(unsigned int /*pass*/) {
+  void BeginPassHook(unsigned int /*pass*/) override {
     min_psnr_ = kMaxPsnr;
     nframes_ = 0;
   }
 
-  virtual void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) {
+  void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) override {
     if (pkt->data.psnr.psnr[0] < min_psnr_) {
       min_psnr_ = pkt->data.psnr.psnr[0];
     }
   }
 
   // for performance reasons don't decode
-  virtual bool DoDecode() const { return false; }
+  bool DoDecode() const override { return false; }
 
   double min_psnr() const { return min_psnr_; }
 
@@ -169,7 +169,7 @@ TEST_P(VP9EncodePerfTest, PerfTest) {
 
         printf("{\n");
         printf("\t\"type\" : \"encode_perf_test\",\n");
-        printf("\t\"version\" : \"%s\",\n", VERSION_STRING_NOSP);
+        printf("\t\"version\" : \"%s\",\n", vpx_codec_version_str());
         printf("\t\"videoName\" : \"%s\",\n", display_name.c_str());
         printf("\t\"encodeTimeSecs\" : %f,\n", elapsed_secs);
         printf("\t\"totalFrames\" : %u,\n", frames);
@@ -183,6 +183,6 @@ TEST_P(VP9EncodePerfTest, PerfTest) {
   }
 }
 
-VP9_INSTANTIATE_TEST_CASE(VP9EncodePerfTest,
-                          ::testing::Values(::libvpx_test::kRealTime));
+VP9_INSTANTIATE_TEST_SUITE(VP9EncodePerfTest,
+                           ::testing::Values(::libvpx_test::kRealTime));
 }  // namespace

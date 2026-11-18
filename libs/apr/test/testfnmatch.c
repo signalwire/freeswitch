@@ -15,9 +15,9 @@
  */
 
 #include "testutil.h"
-#include "apr_file_info.h"
-#include "apr_fnmatch.h"
-#include "apr_tables.h"
+#include "fspr_file_info.h"
+#include "fspr_fnmatch.h"
+#include "fspr_tables.h"
 
 /* XXX NUM_FILES must be equal to the nummber of expected files with a
  * .txt extension in the data directory at the time testfnmatch
@@ -29,10 +29,10 @@ static void test_glob(abts_case *tc, void *data)
 {
     int i;
     char **list;
-    apr_array_header_t *result;
+    fspr_array_header_t *result;
     
     APR_ASSERT_SUCCESS(tc, "glob match against data/*.txt",
-                       apr_match_glob("data\\*.txt", &result, p));
+                       fspr_match_glob("data\\*.txt", &result, p));
 
     ABTS_INT_EQUAL(tc, NUM_FILES, result->nelts);
 
@@ -47,11 +47,11 @@ static void test_glob_currdir(abts_case *tc, void *data)
 {
     int i;
     char **list;
-    apr_array_header_t *result;
-    apr_filepath_set("data", p);
+    fspr_array_header_t *result;
+    fspr_filepath_set("data", p);
     
     APR_ASSERT_SUCCESS(tc, "glob match against *.txt with data as current",
-                       apr_match_glob("*.txt", &result, p));
+                       fspr_match_glob("*.txt", &result, p));
 
 
     ABTS_INT_EQUAL(tc, NUM_FILES, result->nelts);
@@ -61,7 +61,7 @@ static void test_glob_currdir(abts_case *tc, void *data)
         char *dot = strrchr(list[i], '.');
         ABTS_STR_EQUAL(tc, dot, ".txt");
     }
-    apr_filepath_set("..", p);
+    fspr_filepath_set("..", p);
 }
 
 abts_suite *testfnmatch(abts_suite *suite)

@@ -70,6 +70,7 @@ static struct {
 	int disable100continue;
 	int rotate;
 	long auth_scheme;
+	int timeout;
 	switch_memory_pool_t *pool;
 	switch_event_node_t *node;
 	int encode_values;
@@ -219,7 +220,7 @@ static void backup_cdr(cdr_data_t *data)
 					} while (!(x<0) && json_len > (wrote += x));
 					if (!(x<0)) do { x = write(fd, "\n", 1);
 						} while (!(x<0) && x<1);
-					close(fd); fd = -1;
+					close(fd);
 					if (x < 0) {
 						switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
 						if (0 > unlink(path))
@@ -285,7 +286,7 @@ static void process_cdr(cdr_data_t *data)
 				} while (!(x<0) && json_len > (wrote += x));
 				if (!(x<0)) do { x = write(fd, "\n", 1);
 					} while (!(x<0) && x<1);
-				close(fd); fd = -1;
+				close(fd);
 				if (x < 0) {
 					switch_log_printf(SWITCH_CHANNEL_UUID_LOG(data->uuid), SWITCH_LOG_ERROR, "Error writing [%s]\n",path);
 					if (0 > unlink(path))
@@ -361,8 +362,10 @@ static void process_cdr(cdr_data_t *data)
 			switch_curl_easy_setopt(curl_handle, CURLOPT_CAINFO, globals.ssl_cacert_file);
 		}
 
+		// tcp timeout
+		switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, globals.timeout);
+
 		/* these were used for testing, optionally they may be enabled if someone desires
-		   switch_curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, 120); // tcp timeout
 		   switch_curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1); // 302 recursion level
 		 */
 
@@ -470,15 +473,17 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 	json_text = cJSON_PrintUnformatted(json_cdr);
 
 	if (globals.url_count && globals.encode) {
-		switch_size_t need_bytes = strlen(json_text) * 3;
+		switch_size_t json_len = strlen(json_text);
+		switch_size_t need_bytes = json_len * 3 + 1;
 
 		json_text_escaped = malloc(need_bytes);
 		switch_assert(json_text_escaped);
 		memset(json_text_escaped, 0, need_bytes);
 		if (globals.encode == ENCODING_DEFAULT) {
-			switch_url_encode(json_text, json_text_escaped, need_bytes);
+			/* json_text may already hold %XX, so '%' is encoded rather than passed through. */
+			switch_url_encode_opt(json_text, json_text_escaped, need_bytes, SWITCH_TRUE);
 		} else {
-			switch_b64_encode((unsigned char *) json_text, need_bytes / 3, (unsigned char *) json_text_escaped, need_bytes);
+			switch_b64_encode((unsigned char *) json_text, json_len, (unsigned char *) json_text_escaped, need_bytes);
 		}
 	}
 
@@ -607,6 +612,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 				globals.log_http_and_disk = switch_true(val);
 			} else if (!strcasecmp(var, "log-errors-to-disk")) {
 				globals.log_errors_to_disk = !switch_false(val);
+			} else if (!strcasecmp(var, "timeout")) {
+				int tmp = atoi(val);
+				if (tmp >= 0) {
+					globals.timeout = tmp;
+				} else {
+					globals.timeout = 0;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't set a negative timeout!\n");
+				}
 			} else if (!strcasecmp(var, "delay") && !zstr(val)) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
@@ -710,6 +723,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_json_cdr_load)
 	if (globals.retries && !globals.delay) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retries set but delay 0 setting to 5 seconds\n");
 		globals.delay = 5;
+	}
+
+	if (globals.encode == ENCODING_DEFAULT && globals.encode_values == ENCODING_DEFAULT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						  "encode=true with encode-values=true: values stay percent-encoded after the body is "
+						  "decoded, so each value needs decoding too. Set encode-values=false to send them as-is.\n");
 	}
 
 	globals.retries++;

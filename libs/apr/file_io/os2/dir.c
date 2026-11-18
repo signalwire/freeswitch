@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_file_io.h"
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_file_io.h"
+#include "fspr_lib.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 #include <string.h>
 
-static apr_status_t dir_cleanup(void *thedir)
+static fspr_status_t dir_cleanup(void *thedir)
 {
-    apr_dir_t *dir = thedir;
-    return apr_dir_close(dir);
+    fspr_dir_t *dir = thedir;
+    return fspr_dir_close(dir);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_dir_open(apr_dir_t **new, const char *dirname, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dir_open(fspr_dir_t **new, const char *dirname, fspr_pool_t *pool)
 {
-    apr_dir_t *thedir = (apr_dir_t *)apr_palloc(pool, sizeof(apr_dir_t));
+    fspr_dir_t *thedir = (fspr_dir_t *)fspr_palloc(pool, sizeof(fspr_dir_t));
     
     if (thedir == NULL)
         return APR_ENOMEM;
     
     thedir->pool = pool;
-    thedir->dirname = apr_pstrdup(pool, dirname);
+    thedir->dirname = fspr_pstrdup(pool, dirname);
 
     if (thedir->dirname == NULL)
         return APR_ENOMEM;
@@ -45,13 +45,13 @@ APR_DECLARE(apr_status_t) apr_dir_open(apr_dir_t **new, const char *dirname, apr
     thedir->handle = 0;
     thedir->validentry = FALSE;
     *new = thedir;
-    apr_pool_cleanup_register(pool, thedir, dir_cleanup, apr_pool_cleanup_null);
+    fspr_pool_cleanup_register(pool, thedir, dir_cleanup, fspr_pool_cleanup_null);
     return APR_SUCCESS;
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_dir_close(apr_dir_t *thedir)
+APR_DECLARE(fspr_status_t) fspr_dir_close(fspr_dir_t *thedir)
 {
     int rv = 0;
     
@@ -68,15 +68,15 @@ APR_DECLARE(apr_status_t) apr_dir_close(apr_dir_t *thedir)
 
 
 
-APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
-                                       apr_dir_t *thedir)
+APR_DECLARE(fspr_status_t) fspr_dir_read(fspr_finfo_t *finfo, fspr_int32_t wanted,
+                                       fspr_dir_t *thedir)
 {
     int rv;
     ULONG entries = 1;
     
     if (thedir->handle == 0) {
         thedir->handle = HDIR_CREATE;
-        rv = DosFindFirst(apr_pstrcat(thedir->pool, thedir->dirname, "/*", NULL), &thedir->handle, 
+        rv = DosFindFirst(fspr_pstrcat(thedir->pool, thedir->dirname, "/*", NULL), &thedir->handle, 
                           FILE_ARCHIVED|FILE_DIRECTORY|FILE_SYSTEM|FILE_HIDDEN|FILE_READONLY, 
                           &thedir->entry, sizeof(thedir->entry), &entries, FIL_STANDARD);
     } else {
@@ -98,11 +98,11 @@ APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
         /* Only directories & regular files show up in directory listings */
         finfo->filetype = (thedir->entry.attrFile & FILE_DIRECTORY) ? APR_DIR : APR_REG;
 
-        apr_os2_time_to_apr_time(&finfo->mtime, thedir->entry.fdateLastWrite,
+        fspr_os2_time_to_fspr_time(&finfo->mtime, thedir->entry.fdateLastWrite,
                                  thedir->entry.ftimeLastWrite);
-        apr_os2_time_to_apr_time(&finfo->atime, thedir->entry.fdateLastAccess,
+        fspr_os2_time_to_fspr_time(&finfo->atime, thedir->entry.fdateLastAccess,
                                  thedir->entry.ftimeLastAccess);
-        apr_os2_time_to_apr_time(&finfo->ctime, thedir->entry.fdateCreation,
+        fspr_os2_time_to_fspr_time(&finfo->ctime, thedir->entry.fdateCreation,
                                  thedir->entry.ftimeCreation);
 
         finfo->name = thedir->entry.achName;
@@ -123,28 +123,28 @@ APR_DECLARE(apr_status_t) apr_dir_read(apr_finfo_t *finfo, apr_int32_t wanted,
 
 
 
-APR_DECLARE(apr_status_t) apr_dir_rewind(apr_dir_t *thedir)
+APR_DECLARE(fspr_status_t) fspr_dir_rewind(fspr_dir_t *thedir)
 {
-    return apr_dir_close(thedir);
+    return fspr_dir_close(thedir);
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_dir_make(const char *path, apr_fileperms_t perm, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dir_make(const char *path, fspr_fileperms_t perm, fspr_pool_t *pool)
 {
     return APR_FROM_OS_ERROR(DosCreateDir(path, NULL));
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_dir_remove(const char *path, apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_dir_remove(const char *path, fspr_pool_t *pool)
 {
     return APR_FROM_OS_ERROR(DosDeleteDir(path));
 }
 
 
 
-APR_DECLARE(apr_status_t) apr_os_dir_get(apr_os_dir_t **thedir, apr_dir_t *dir)
+APR_DECLARE(fspr_status_t) fspr_os_dir_get(fspr_os_dir_t **thedir, fspr_dir_t *dir)
 {
     if (dir == NULL) {
         return APR_ENODIR;
@@ -155,11 +155,11 @@ APR_DECLARE(apr_status_t) apr_os_dir_get(apr_os_dir_t **thedir, apr_dir_t *dir)
 
 
 
-APR_DECLARE(apr_status_t) apr_os_dir_put(apr_dir_t **dir, apr_os_dir_t *thedir,
-                                         apr_pool_t *pool)
+APR_DECLARE(fspr_status_t) fspr_os_dir_put(fspr_dir_t **dir, fspr_os_dir_t *thedir,
+                                         fspr_pool_t *pool)
 {
     if ((*dir) == NULL) {
-        (*dir) = (apr_dir_t *)apr_pcalloc(pool, sizeof(apr_dir_t));
+        (*dir) = (fspr_dir_t *)fspr_pcalloc(pool, sizeof(fspr_dir_t));
         (*dir)->pool = pool;
     }
     (*dir)->handle = *thedir;

@@ -74,7 +74,7 @@ package com.adobe.utils
 		*	@param Optional parameter indicating whether the search should be case
 		*	sensitive
 		* 
-		* 	@return A int that represents that month represented by the specifed
+		* 	@return A int that represents that month represented by the specified
 		*	short name.
 		*
 		* 	@langversion ActionScript 3.0
@@ -114,7 +114,7 @@ package com.adobe.utils
 		* 
 		* 	@param m A full month name.
 		* 
-		* 	@return A int that represents that month represented by the specifed
+		* 	@return A int that represents that month represented by the specified
 		*	full month name.
 		*
 		* 	@langversion ActionScript 3.0
@@ -154,7 +154,7 @@ package com.adobe.utils
 		* 
 		* 	@param m A short day name.
 		* 
-		* 	@return A int that represents that short day represented by the specifed
+		* 	@return A int that represents that short day represented by the specified
 		*	full month name.
 		*
 		* 	@langversion ActionScript 3.0
@@ -194,7 +194,7 @@ package com.adobe.utils
 		* 
 		* 	@param m A full day name.
 		* 
-		* 	@return A int that represents that full day represented by the specifed
+		* 	@return A int that represents that full day represented by the specified
 		*	full month name.
 		*
 		* 	@langversion ActionScript 3.0
@@ -675,7 +675,7 @@ package com.adobe.utils
 		}
 		
 		/**
-		 * Converts a date into just befor midnight.
+		 * Converts a date into just before midnight.
 		 */
 		public static function makeNight(d:Date):Date
 		{

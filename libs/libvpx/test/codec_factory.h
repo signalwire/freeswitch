@@ -7,8 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_CODEC_FACTORY_H_
-#define TEST_CODEC_FACTORY_H_
+#ifndef VPX_TEST_CODEC_FACTORY_H_
+#define VPX_TEST_CODEC_FACTORY_H_
+
+#include <tuple>
 
 #include "./vpx_config.h"
 #include "vpx/vpx_decoder.h"
@@ -38,7 +40,7 @@ class CodecFactory {
                                  const vpx_codec_flags_t flags) const = 0;
 
   virtual Encoder *CreateEncoder(vpx_codec_enc_cfg_t cfg,
-                                 unsigned long deadline,
+                                 vpx_enc_deadline_t deadline,
                                  const unsigned long init_flags,
                                  TwopassStatsStore *stats) const = 0;
 
@@ -53,23 +55,22 @@ class CodecFactory {
 template <class T1>
 class CodecTestWithParam
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1> > {};
+          std::tuple<const libvpx_test::CodecFactory *, T1> > {};
 
 template <class T1, class T2>
 class CodecTestWith2Params
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1, T2> > {};
+          std::tuple<const libvpx_test::CodecFactory *, T1, T2> > {};
 
 template <class T1, class T2, class T3>
 class CodecTestWith3Params
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1, T2, T3> > {};
+          std::tuple<const libvpx_test::CodecFactory *, T1, T2, T3> > {};
 
 template <class T1, class T2, class T3, class T4>
 class CodecTestWith4Params
     : public ::testing::TestWithParam<
-          std::tr1::tuple<const libvpx_test::CodecFactory *, T1, T2, T3, T4> > {
-};
+          std::tuple<const libvpx_test::CodecFactory *, T1, T2, T3, T4> > {};
 
 /*
  * VP8 Codec Definitions
@@ -83,27 +84,27 @@ class VP8Decoder : public Decoder {
       : Decoder(cfg, flag) {}
 
  protected:
-  virtual vpx_codec_iface_t *CodecInterface() const {
+  vpx_codec_iface_t *CodecInterface() const override {
 #if CONFIG_VP8_DECODER
     return &vpx_codec_vp8_dx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
 
 class VP8Encoder : public Encoder {
  public:
-  VP8Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
+  VP8Encoder(vpx_codec_enc_cfg_t cfg, vpx_enc_deadline_t deadline,
              const unsigned long init_flags, TwopassStatsStore *stats)
       : Encoder(cfg, deadline, init_flags, stats) {}
 
  protected:
-  virtual vpx_codec_iface_t *CodecInterface() const {
+  vpx_codec_iface_t *CodecInterface() const override {
 #if CONFIG_VP8_ENCODER
     return &vpx_codec_vp8_cx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
@@ -112,25 +113,24 @@ class VP8CodecFactory : public CodecFactory {
  public:
   VP8CodecFactory() : CodecFactory() {}
 
-  virtual Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg) const {
+  Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg) const override {
     return CreateDecoder(cfg, 0);
   }
 
-  virtual Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg,
-                                 const vpx_codec_flags_t flags) const {
+  Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg,
+                         const vpx_codec_flags_t flags) const override {
 #if CONFIG_VP8_DECODER
     return new VP8Decoder(cfg, flags);
 #else
     (void)cfg;
     (void)flags;
-    return NULL;
+    return nullptr;
 #endif
   }
 
-  virtual Encoder *CreateEncoder(vpx_codec_enc_cfg_t cfg,
-                                 unsigned long deadline,
-                                 const unsigned long init_flags,
-                                 TwopassStatsStore *stats) const {
+  Encoder *CreateEncoder(vpx_codec_enc_cfg_t cfg, vpx_enc_deadline_t deadline,
+                         const unsigned long init_flags,
+                         TwopassStatsStore *stats) const override {
 #if CONFIG_VP8_ENCODER
     return new VP8Encoder(cfg, deadline, init_flags, stats);
 #else
@@ -138,12 +138,12 @@ class VP8CodecFactory : public CodecFactory {
     (void)deadline;
     (void)init_flags;
     (void)stats;
-    return NULL;
+    return nullptr;
 #endif
   }
 
-  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
-                                               int usage) const {
+  vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
+                                       int usage) const override {
 #if CONFIG_VP8_ENCODER
     return vpx_codec_enc_config_default(&vpx_codec_vp8_cx_algo, cfg, usage);
 #else
@@ -156,15 +156,17 @@ class VP8CodecFactory : public CodecFactory {
 
 const libvpx_test::VP8CodecFactory kVP8;
 
-#define VP8_INSTANTIATE_TEST_CASE(test, ...)                                \
-  INSTANTIATE_TEST_CASE_P(                                                  \
+#define VP8_INSTANTIATE_TEST_SUITE(test, ...)                               \
+  INSTANTIATE_TEST_SUITE_P(                                                 \
       VP8, test,                                                            \
       ::testing::Combine(                                                   \
           ::testing::Values(static_cast<const libvpx_test::CodecFactory *>( \
               &libvpx_test::kVP8)),                                         \
           __VA_ARGS__))
 #else
-#define VP8_INSTANTIATE_TEST_CASE(test, ...)
+// static_assert() is used to avoid warnings about an extra ';' outside of a
+// function.
+#define VP8_INSTANTIATE_TEST_SUITE(test, ...) static_assert(CONFIG_VP8 == 0, "")
 #endif  // CONFIG_VP8
 
 /*
@@ -179,27 +181,27 @@ class VP9Decoder : public Decoder {
       : Decoder(cfg, flag) {}
 
  protected:
-  virtual vpx_codec_iface_t *CodecInterface() const {
+  vpx_codec_iface_t *CodecInterface() const override {
 #if CONFIG_VP9_DECODER
     return &vpx_codec_vp9_dx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
 
 class VP9Encoder : public Encoder {
  public:
-  VP9Encoder(vpx_codec_enc_cfg_t cfg, unsigned long deadline,
+  VP9Encoder(vpx_codec_enc_cfg_t cfg, vpx_enc_deadline_t deadline,
              const unsigned long init_flags, TwopassStatsStore *stats)
       : Encoder(cfg, deadline, init_flags, stats) {}
 
  protected:
-  virtual vpx_codec_iface_t *CodecInterface() const {
+  vpx_codec_iface_t *CodecInterface() const override {
 #if CONFIG_VP9_ENCODER
     return &vpx_codec_vp9_cx_algo;
 #else
-    return NULL;
+    return nullptr;
 #endif
   }
 };
@@ -208,25 +210,24 @@ class VP9CodecFactory : public CodecFactory {
  public:
   VP9CodecFactory() : CodecFactory() {}
 
-  virtual Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg) const {
+  Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg) const override {
     return CreateDecoder(cfg, 0);
   }
 
-  virtual Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg,
-                                 const vpx_codec_flags_t flags) const {
+  Decoder *CreateDecoder(vpx_codec_dec_cfg_t cfg,
+                         const vpx_codec_flags_t flags) const override {
 #if CONFIG_VP9_DECODER
     return new VP9Decoder(cfg, flags);
 #else
     (void)cfg;
     (void)flags;
-    return NULL;
+    return nullptr;
 #endif
   }
 
-  virtual Encoder *CreateEncoder(vpx_codec_enc_cfg_t cfg,
-                                 unsigned long deadline,
-                                 const unsigned long init_flags,
-                                 TwopassStatsStore *stats) const {
+  Encoder *CreateEncoder(vpx_codec_enc_cfg_t cfg, vpx_enc_deadline_t deadline,
+                         const unsigned long init_flags,
+                         TwopassStatsStore *stats) const override {
 #if CONFIG_VP9_ENCODER
     return new VP9Encoder(cfg, deadline, init_flags, stats);
 #else
@@ -234,12 +235,12 @@ class VP9CodecFactory : public CodecFactory {
     (void)deadline;
     (void)init_flags;
     (void)stats;
-    return NULL;
+    return nullptr;
 #endif
   }
 
-  virtual vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
-                                               int usage) const {
+  vpx_codec_err_t DefaultEncoderConfig(vpx_codec_enc_cfg_t *cfg,
+                                       int usage) const override {
 #if CONFIG_VP9_ENCODER
     return vpx_codec_enc_config_default(&vpx_codec_vp9_cx_algo, cfg, usage);
 #else
@@ -252,16 +253,18 @@ class VP9CodecFactory : public CodecFactory {
 
 const libvpx_test::VP9CodecFactory kVP9;
 
-#define VP9_INSTANTIATE_TEST_CASE(test, ...)                                \
-  INSTANTIATE_TEST_CASE_P(                                                  \
+#define VP9_INSTANTIATE_TEST_SUITE(test, ...)                               \
+  INSTANTIATE_TEST_SUITE_P(                                                 \
       VP9, test,                                                            \
       ::testing::Combine(                                                   \
           ::testing::Values(static_cast<const libvpx_test::CodecFactory *>( \
               &libvpx_test::kVP9)),                                         \
           __VA_ARGS__))
 #else
-#define VP9_INSTANTIATE_TEST_CASE(test, ...)
+// static_assert() is used to avoid warnings about an extra ';' outside of a
+// function.
+#define VP9_INSTANTIATE_TEST_SUITE(test, ...) static_assert(CONFIG_VP9 == 0, "")
 #endif  // CONFIG_VP9
 
 }  // namespace libvpx_test
-#endif  // TEST_CODEC_FACTORY_H_
+#endif  // VPX_TEST_CODEC_FACTORY_H_

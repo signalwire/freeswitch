@@ -79,6 +79,7 @@ $(1): $($(1:.$(VCPROJ_SFX)=).SRCS) vpx.$(VCPROJ_SFX)
             --ver=$$(CONFIG_VS_VERSION)\
             --proj-guid=$$($$(@:.$(VCPROJ_SFX)=).GUID)\
             --src-path-bare="$(SRC_PATH_BARE)" \
+            --as=$$(AS) \
             $$(if $$(CONFIG_STATIC_MSVCRT),--static-crt) \
             --out=$$@ $$(INTERNAL_CFLAGS) $$(CFLAGS) \
             $$(INTERNAL_LDFLAGS) $$(LDFLAGS) $$^
@@ -89,6 +90,13 @@ INSTALL-BINS-$(CONFIG_MSVS) += $(foreach p,$(VS_PLATFORMS),\
                                $(addprefix bin/$(p)/,$(TOOLS_BASENAME:.c=.exe)))
 $(foreach proj,$(call enabled,PROJECTS),\
     $(eval $(call vcproj_template,$(proj))))
+
+# Generate a list of all enabled sources, in particular for exporting to gyp
+# based build systems.
+tiny_ssim_srcs.txt:
+	@echo "    [CREATE] $@"
+	@echo $(tiny_ssim.SRCS) | xargs -n1 echo | LC_ALL=C sort -u > $@
+CLEAN-OBJS += tiny_ssim_srcs.txt
 
 #
 # Documentation Rules

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "apr_arch_file_io.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
-#include "apr_thread_mutex.h"
-#include "apr_arch_inherit.h"
+#include "fspr_arch_file_io.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
+#include "fspr_thread_mutex.h"
+#include "fspr_arch_inherit.h"
 
-static apr_status_t file_dup(apr_file_t **new_file, 
-                             apr_file_t *old_file, apr_pool_t *p,
+static fspr_status_t file_dup(fspr_file_t **new_file, 
+                             fspr_file_t *old_file, fspr_pool_t *p,
                              int which_dup)
 {
     int rv;
@@ -40,12 +40,12 @@ static apr_status_t file_dup(apr_file_t **new_file,
         return errno;
     
     if (which_dup == 1) {
-        (*new_file) = (apr_file_t *)apr_pcalloc(p, sizeof(apr_file_t));
+        (*new_file) = (fspr_file_t *)fspr_pcalloc(p, sizeof(fspr_file_t));
         (*new_file)->pool = p;
         (*new_file)->filedes = rv;
     }
 
-    (*new_file)->fname = apr_pstrdup(p, old_file->fname);
+    (*new_file)->fname = fspr_pstrdup(p, old_file->fname);
     (*new_file)->buffered = old_file->buffered;
 
     /* If the existing socket in a dup2 is already buffered, we
@@ -54,7 +54,7 @@ static apr_status_t file_dup(apr_file_t **new_file,
      */
 #if APR_HAS_THREADS
     if ((*new_file)->buffered && !(*new_file)->thlock && old_file->thlock) {
-        apr_thread_mutex_create(&((*new_file)->thlock),
+        fspr_thread_mutex_create(&((*new_file)->thlock),
                                 APR_THREAD_MUTEX_DEFAULT, p);
     }
 #endif
@@ -62,7 +62,7 @@ static apr_status_t file_dup(apr_file_t **new_file,
      * got one.
      */
     if ((*new_file)->buffered && !(*new_file)->buffer) {
-        (*new_file)->buffer = apr_palloc(p, APR_FILE_BUFSIZE);
+        (*new_file)->buffer = fspr_palloc(p, APR_FILE_BUFSIZE);
     }
 
     /* this is the way dup() works */
@@ -71,29 +71,29 @@ static apr_status_t file_dup(apr_file_t **new_file,
     /* make sure unget behavior is consistent */
     (*new_file)->ungetchar = old_file->ungetchar;
 
-    /* apr_file_dup2() retains the original cleanup, reflecting 
+    /* fspr_file_dup2() retains the original cleanup, reflecting 
      * the existing inherit and nocleanup flags.  This means, 
-     * that apr_file_dup2() cannot be called against an apr_file_t
-     * already closed with apr_file_close, because the expected
+     * that fspr_file_dup2() cannot be called against an fspr_file_t
+     * already closed with fspr_file_close, because the expected
      * cleanup was already killed.
      */
     if (which_dup == 2) {
         return APR_SUCCESS;
     }
 
-    /* apr_file_dup() retains all old_file flags with the exceptions
+    /* fspr_file_dup() retains all old_file flags with the exceptions
      * of APR_INHERIT and APR_FILE_NOCLEANUP.
-     * The user must call apr_file_inherit_set() on the dupped 
-     * apr_file_t when desired.
+     * The user must call fspr_file_inherit_set() on the dupped 
+     * fspr_file_t when desired.
      */
     (*new_file)->flags = old_file->flags
                        & ~(APR_INHERIT | APR_FILE_NOCLEANUP);
 
-    apr_pool_cleanup_register((*new_file)->pool, (void *)(*new_file),
-                              apr_unix_file_cleanup, 
-                              apr_unix_file_cleanup);
+    fspr_pool_cleanup_register((*new_file)->pool, (void *)(*new_file),
+                              fspr_unix_file_cleanup, 
+                              fspr_unix_file_cleanup);
 #ifndef WAITIO_USES_POLL
-    /* Start out with no pollset.  apr_wait_for_io_or_timeout() will
+    /* Start out with no pollset.  fspr_wait_for_io_or_timeout() will
      * initialize the pollset if needed.
      */
     (*new_file)->pollset = NULL;
@@ -101,27 +101,27 @@ static apr_status_t file_dup(apr_file_t **new_file,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_file_dup(apr_file_t **new_file,
-                                       apr_file_t *old_file, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_dup(fspr_file_t **new_file,
+                                       fspr_file_t *old_file, fspr_pool_t *p)
 {
     return file_dup(new_file, old_file, p, 1);
 }
 
-APR_DECLARE(apr_status_t) apr_file_dup2(apr_file_t *new_file,
-                                        apr_file_t *old_file, apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_dup2(fspr_file_t *new_file,
+                                        fspr_file_t *old_file, fspr_pool_t *p)
 {
     return file_dup(&new_file, old_file, p, 2);
 }
 
-APR_DECLARE(apr_status_t) apr_file_setaside(apr_file_t **new_file,
-                                            apr_file_t *old_file,
-                                            apr_pool_t *p)
+APR_DECLARE(fspr_status_t) fspr_file_setaside(fspr_file_t **new_file,
+                                            fspr_file_t *old_file,
+                                            fspr_pool_t *p)
 {
-    *new_file = (apr_file_t *)apr_palloc(p, sizeof(apr_file_t));
-    memcpy(*new_file, old_file, sizeof(apr_file_t));
+    *new_file = (fspr_file_t *)fspr_palloc(p, sizeof(fspr_file_t));
+    memcpy(*new_file, old_file, sizeof(fspr_file_t));
     (*new_file)->pool = p;
     if (old_file->buffered) {
-        (*new_file)->buffer = apr_palloc(p, APR_FILE_BUFSIZE);
+        (*new_file)->buffer = fspr_palloc(p, APR_FILE_BUFSIZE);
         if (old_file->direction == 1) {
             memcpy((*new_file)->buffer, old_file->buffer, old_file->bufpos);
         }
@@ -130,26 +130,26 @@ APR_DECLARE(apr_status_t) apr_file_setaside(apr_file_t **new_file,
         }
 #if APR_HAS_THREADS
         if (old_file->thlock) {
-            apr_thread_mutex_create(&((*new_file)->thlock),
+            fspr_thread_mutex_create(&((*new_file)->thlock),
                                     APR_THREAD_MUTEX_DEFAULT, p);
-            apr_thread_mutex_destroy(old_file->thlock);
+            fspr_thread_mutex_destroy(old_file->thlock);
         }
 #endif /* APR_HAS_THREADS */
     }
     if (old_file->fname) {
-        (*new_file)->fname = apr_pstrdup(p, old_file->fname);
+        (*new_file)->fname = fspr_pstrdup(p, old_file->fname);
     }
     if (!(old_file->flags & APR_FILE_NOCLEANUP)) {
-        apr_pool_cleanup_register(p, (void *)(*new_file), 
-                                  apr_unix_file_cleanup,
+        fspr_pool_cleanup_register(p, (void *)(*new_file), 
+                                  fspr_unix_file_cleanup,
                                   ((*new_file)->flags & APR_INHERIT)
-                                     ? apr_pool_cleanup_null
-                                     : apr_unix_file_cleanup);
+                                     ? fspr_pool_cleanup_null
+                                     : fspr_unix_file_cleanup);
     }
 
     old_file->filedes = -1;
-    apr_pool_cleanup_kill(old_file->pool, (void *)old_file,
-                          apr_unix_file_cleanup);
+    fspr_pool_cleanup_kill(old_file->pool, (void *)old_file,
+                          fspr_unix_file_cleanup);
 #ifndef WAITIO_USES_POLL
     (*new_file)->pollset = NULL;
 #endif

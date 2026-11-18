@@ -12,11 +12,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
+#include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "test/acm_random.h"
 #include "test/clear_system_state.h"
+#include "test/init_vpx_test.h"
 #include "test/md5_helper.h"
 #include "vpx/vpx_integer.h"
 #include "vpx_ports/mem.h"
@@ -26,8 +28,8 @@
 
 namespace {
 
-typedef void (*VpxPredFunc)(uint8_t *dst, ptrdiff_t y_stride,
-                            const uint8_t *above, const uint8_t *left);
+using VpxPredFunc = void (*)(uint8_t *dst, ptrdiff_t y_stride,
+                             const uint8_t *above, const uint8_t *left);
 
 const int kBPS = 32;
 const int kTotalPixels = 32 * kBPS;
@@ -48,11 +50,9 @@ struct IntraPredTestMem {
     for (int i = 0; i < kBPS; ++i) left[i] = rnd.Rand16() & mask;
     for (int i = -1; i < kBPS; ++i) above[i] = rnd.Rand16() & mask;
 
-    // some code assumes the top row has been extended:
-    // d45/d63 C-code, for instance, but not the assembly.
-    // TODO(jzern): this style of extension isn't strictly necessary.
+    // d45/d63 require the top row to be extended.
     ASSERT_LE(block_size, kBPS);
-    for (int i = block_size; i < 2 * kBPS; ++i) {
+    for (int i = block_size; i < 2 * block_size; ++i) {
       above[i] = above[block_size - 1];
     }
   }
@@ -63,7 +63,7 @@ struct IntraPredTestMem {
   DECLARE_ALIGNED(16, Pixel, above_mem[2 * kBPS + 16]);
 };
 
-typedef IntraPredTestMem<uint8_t> Vp9IntraPredTestMem;
+using Vp9IntraPredTestMem = IntraPredTestMem<uint8_t>;
 
 void CheckMd5Signature(const char name[], const char *const signatures[],
                        const void *data, size_t data_size, int elapsed_time,
@@ -85,7 +85,7 @@ void TestIntraPred(const char name[], VpxPredFunc const *pred_funcs,
   intra_pred_test_mem.Init(block_size, 8);
 
   for (int k = 0; k < kNumVp9IntraPredFuncs; ++k) {
-    if (pred_funcs[k] == NULL) continue;
+    if (pred_funcs[k] == nullptr) continue;
     memcpy(intra_pred_test_mem.src, intra_pred_test_mem.ref_src,
            sizeof(intra_pred_test_mem.src));
     vpx_usec_timer timer;
@@ -202,62 +202,68 @@ INTRA_PRED_TEST(C, TestIntraPred32, vpx_dc_predictor_32x32_c,
                 vpx_d153_predictor_32x32_c, vpx_d207_predictor_32x32_c,
                 vpx_d63_predictor_32x32_c, vpx_tm_predictor_32x32_c)
 
-#if HAVE_SSE2
+#if HAVE_SSE2 && HAVE_X86_ASM
 INTRA_PRED_TEST(SSE2, TestIntraPred4, vpx_dc_predictor_4x4_sse2,
                 vpx_dc_left_predictor_4x4_sse2, vpx_dc_top_predictor_4x4_sse2,
                 vpx_dc_128_predictor_4x4_sse2, vpx_v_predictor_4x4_sse2,
-                vpx_h_predictor_4x4_sse2, vpx_d45_predictor_4x4_sse2, NULL,
-                NULL, NULL, vpx_d207_predictor_4x4_sse2, NULL,
+                vpx_h_predictor_4x4_sse2, vpx_d45_predictor_4x4_sse2, nullptr,
+                nullptr, nullptr, vpx_d207_predictor_4x4_sse2, nullptr,
                 vpx_tm_predictor_4x4_sse2)
 
 INTRA_PRED_TEST(SSE2, TestIntraPred8, vpx_dc_predictor_8x8_sse2,
                 vpx_dc_left_predictor_8x8_sse2, vpx_dc_top_predictor_8x8_sse2,
                 vpx_dc_128_predictor_8x8_sse2, vpx_v_predictor_8x8_sse2,
-                vpx_h_predictor_8x8_sse2, vpx_d45_predictor_8x8_sse2, NULL,
-                NULL, NULL, NULL, NULL, vpx_tm_predictor_8x8_sse2)
+                vpx_h_predictor_8x8_sse2, vpx_d45_predictor_8x8_sse2, nullptr,
+                nullptr, nullptr, nullptr, nullptr, vpx_tm_predictor_8x8_sse2)
 
 INTRA_PRED_TEST(SSE2, TestIntraPred16, vpx_dc_predictor_16x16_sse2,
                 vpx_dc_left_predictor_16x16_sse2,
                 vpx_dc_top_predictor_16x16_sse2,
                 vpx_dc_128_predictor_16x16_sse2, vpx_v_predictor_16x16_sse2,
-                vpx_h_predictor_16x16_sse2, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_16x16_sse2)
+                vpx_h_predictor_16x16_sse2, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_tm_predictor_16x16_sse2)
 
 INTRA_PRED_TEST(SSE2, TestIntraPred32, vpx_dc_predictor_32x32_sse2,
                 vpx_dc_left_predictor_32x32_sse2,
                 vpx_dc_top_predictor_32x32_sse2,
                 vpx_dc_128_predictor_32x32_sse2, vpx_v_predictor_32x32_sse2,
-                vpx_h_predictor_32x32_sse2, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_32x32_sse2)
-#endif  // HAVE_SSE2
+                vpx_h_predictor_32x32_sse2, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_tm_predictor_32x32_sse2)
+#endif  // HAVE_SSE2 && HAVE_X86_ASM
 
-#if HAVE_SSSE3
-INTRA_PRED_TEST(SSSE3, TestIntraPred4, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                NULL, NULL, vpx_d153_predictor_4x4_ssse3, NULL,
-                vpx_d63_predictor_4x4_ssse3, NULL)
-INTRA_PRED_TEST(SSSE3, TestIntraPred8, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                NULL, NULL, vpx_d153_predictor_8x8_ssse3,
-                vpx_d207_predictor_8x8_ssse3, vpx_d63_predictor_8x8_ssse3, NULL)
-INTRA_PRED_TEST(SSSE3, TestIntraPred16, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_d45_predictor_16x16_ssse3, NULL, NULL,
-                vpx_d153_predictor_16x16_ssse3, vpx_d207_predictor_16x16_ssse3,
-                vpx_d63_predictor_16x16_ssse3, NULL)
-INTRA_PRED_TEST(SSSE3, TestIntraPred32, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_d45_predictor_32x32_ssse3, NULL, NULL,
-                vpx_d153_predictor_32x32_ssse3, vpx_d207_predictor_32x32_ssse3,
-                vpx_d63_predictor_32x32_ssse3, NULL)
-#endif  // HAVE_SSSE3
+#if HAVE_SSSE3 && HAVE_X86_ASM
+INTRA_PRED_TEST(SSSE3, TestIntraPred4, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr,
+                vpx_d153_predictor_4x4_ssse3, nullptr,
+                vpx_d63_predictor_4x4_ssse3, nullptr)
+INTRA_PRED_TEST(SSSE3, TestIntraPred8, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr,
+                vpx_d153_predictor_8x8_ssse3, vpx_d207_predictor_8x8_ssse3,
+                vpx_d63_predictor_8x8_ssse3, nullptr)
+INTRA_PRED_TEST(SSSE3, TestIntraPred16, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_d45_predictor_16x16_ssse3, nullptr,
+                nullptr, vpx_d153_predictor_16x16_ssse3,
+                vpx_d207_predictor_16x16_ssse3, vpx_d63_predictor_16x16_ssse3,
+                nullptr)
+INTRA_PRED_TEST(SSSE3, TestIntraPred32, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_d45_predictor_32x32_ssse3, nullptr,
+                nullptr, vpx_d153_predictor_32x32_ssse3,
+                vpx_d207_predictor_32x32_ssse3, vpx_d63_predictor_32x32_ssse3,
+                nullptr)
+#endif  // HAVE_SSSE3 && HAVE_X86_ASM
 
 #if HAVE_DSPR2
-INTRA_PRED_TEST(DSPR2, TestIntraPred4, vpx_dc_predictor_4x4_dspr2, NULL, NULL,
-                NULL, NULL, vpx_h_predictor_4x4_dspr2, NULL, NULL, NULL, NULL,
-                NULL, NULL, vpx_tm_predictor_4x4_dspr2)
-INTRA_PRED_TEST(DSPR2, TestIntraPred8, vpx_dc_predictor_8x8_dspr2, NULL, NULL,
-                NULL, NULL, vpx_h_predictor_8x8_dspr2, NULL, NULL, NULL, NULL,
-                NULL, NULL, vpx_tm_predictor_8x8_c)
-INTRA_PRED_TEST(DSPR2, TestIntraPred16, vpx_dc_predictor_16x16_dspr2, NULL,
-                NULL, NULL, NULL, vpx_h_predictor_16x16_dspr2, NULL, NULL, NULL,
-                NULL, NULL, NULL, NULL)
+INTRA_PRED_TEST(DSPR2, TestIntraPred4, vpx_dc_predictor_4x4_dspr2, nullptr,
+                nullptr, nullptr, nullptr, vpx_h_predictor_4x4_dspr2, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr,
+                vpx_tm_predictor_4x4_dspr2)
+INTRA_PRED_TEST(DSPR2, TestIntraPred8, vpx_dc_predictor_8x8_dspr2, nullptr,
+                nullptr, nullptr, nullptr, vpx_h_predictor_8x8_dspr2, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr,
+                vpx_tm_predictor_8x8_c)
+INTRA_PRED_TEST(DSPR2, TestIntraPred16, vpx_dc_predictor_16x16_dspr2, nullptr,
+                nullptr, nullptr, nullptr, vpx_h_predictor_16x16_dspr2, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr)
 #endif  // HAVE_DSPR2
 
 #if HAVE_NEON
@@ -265,88 +271,104 @@ INTRA_PRED_TEST(NEON, TestIntraPred4, vpx_dc_predictor_4x4_neon,
                 vpx_dc_left_predictor_4x4_neon, vpx_dc_top_predictor_4x4_neon,
                 vpx_dc_128_predictor_4x4_neon, vpx_v_predictor_4x4_neon,
                 vpx_h_predictor_4x4_neon, vpx_d45_predictor_4x4_neon,
-                vpx_d135_predictor_4x4_neon, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_4x4_neon)
+                vpx_d135_predictor_4x4_neon, vpx_d117_predictor_4x4_neon,
+                vpx_d153_predictor_4x4_neon, vpx_d207_predictor_4x4_neon,
+                vpx_d63_predictor_4x4_neon, vpx_tm_predictor_4x4_neon)
 INTRA_PRED_TEST(NEON, TestIntraPred8, vpx_dc_predictor_8x8_neon,
                 vpx_dc_left_predictor_8x8_neon, vpx_dc_top_predictor_8x8_neon,
                 vpx_dc_128_predictor_8x8_neon, vpx_v_predictor_8x8_neon,
                 vpx_h_predictor_8x8_neon, vpx_d45_predictor_8x8_neon,
-                vpx_d135_predictor_8x8_neon, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_8x8_neon)
+                vpx_d135_predictor_8x8_neon, vpx_d117_predictor_8x8_neon,
+                vpx_d153_predictor_8x8_neon, vpx_d207_predictor_8x8_neon,
+                vpx_d63_predictor_8x8_neon, vpx_tm_predictor_8x8_neon)
 INTRA_PRED_TEST(NEON, TestIntraPred16, vpx_dc_predictor_16x16_neon,
                 vpx_dc_left_predictor_16x16_neon,
                 vpx_dc_top_predictor_16x16_neon,
                 vpx_dc_128_predictor_16x16_neon, vpx_v_predictor_16x16_neon,
                 vpx_h_predictor_16x16_neon, vpx_d45_predictor_16x16_neon,
-                vpx_d135_predictor_16x16_neon, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_16x16_neon)
+                vpx_d135_predictor_16x16_neon, vpx_d117_predictor_16x16_neon,
+                vpx_d153_predictor_16x16_neon, vpx_d207_predictor_16x16_neon,
+                vpx_d63_predictor_16x16_neon, vpx_tm_predictor_16x16_neon)
 INTRA_PRED_TEST(NEON, TestIntraPred32, vpx_dc_predictor_32x32_neon,
                 vpx_dc_left_predictor_32x32_neon,
                 vpx_dc_top_predictor_32x32_neon,
                 vpx_dc_128_predictor_32x32_neon, vpx_v_predictor_32x32_neon,
                 vpx_h_predictor_32x32_neon, vpx_d45_predictor_32x32_neon,
-                vpx_d135_predictor_32x32_neon, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_32x32_neon)
+                vpx_d135_predictor_32x32_neon, vpx_d117_predictor_32x32_neon,
+                vpx_d153_predictor_32x32_neon, vpx_d207_predictor_32x32_neon,
+                vpx_d63_predictor_32x32_neon, vpx_tm_predictor_32x32_neon)
 #endif  // HAVE_NEON
 
 #if HAVE_MSA
 INTRA_PRED_TEST(MSA, TestIntraPred4, vpx_dc_predictor_4x4_msa,
                 vpx_dc_left_predictor_4x4_msa, vpx_dc_top_predictor_4x4_msa,
                 vpx_dc_128_predictor_4x4_msa, vpx_v_predictor_4x4_msa,
-                vpx_h_predictor_4x4_msa, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_4x4_msa)
+                vpx_h_predictor_4x4_msa, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_tm_predictor_4x4_msa)
 INTRA_PRED_TEST(MSA, TestIntraPred8, vpx_dc_predictor_8x8_msa,
                 vpx_dc_left_predictor_8x8_msa, vpx_dc_top_predictor_8x8_msa,
                 vpx_dc_128_predictor_8x8_msa, vpx_v_predictor_8x8_msa,
-                vpx_h_predictor_8x8_msa, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_8x8_msa)
+                vpx_h_predictor_8x8_msa, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_tm_predictor_8x8_msa)
 INTRA_PRED_TEST(MSA, TestIntraPred16, vpx_dc_predictor_16x16_msa,
                 vpx_dc_left_predictor_16x16_msa, vpx_dc_top_predictor_16x16_msa,
                 vpx_dc_128_predictor_16x16_msa, vpx_v_predictor_16x16_msa,
-                vpx_h_predictor_16x16_msa, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_16x16_msa)
+                vpx_h_predictor_16x16_msa, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_tm_predictor_16x16_msa)
 INTRA_PRED_TEST(MSA, TestIntraPred32, vpx_dc_predictor_32x32_msa,
                 vpx_dc_left_predictor_32x32_msa, vpx_dc_top_predictor_32x32_msa,
                 vpx_dc_128_predictor_32x32_msa, vpx_v_predictor_32x32_msa,
-                vpx_h_predictor_32x32_msa, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_32x32_msa)
+                vpx_h_predictor_32x32_msa, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, vpx_tm_predictor_32x32_msa)
 #endif  // HAVE_MSA
 
 #if HAVE_VSX
-INTRA_PRED_TEST(VSX, TestIntraPred4, NULL, NULL, NULL, NULL, NULL,
-                vpx_h_predictor_4x4_vsx, NULL, NULL, NULL, NULL, NULL, NULL,
-                vpx_tm_predictor_4x4_vsx)
+// TODO(crbug.com/webm/1522): Fix test failures.
+#if 0
+INTRA_PRED_TEST(VSX, TestIntraPred4, nullptr, nullptr, nullptr, nullptr,
+                nullptr, vpx_h_predictor_4x4_vsx, nullptr, nullptr, nullptr,
+                nullptr, nullptr, nullptr, vpx_tm_predictor_4x4_vsx)
 
-INTRA_PRED_TEST(VSX, TestIntraPred8, vpx_dc_predictor_8x8_vsx, NULL, NULL, NULL,
-                NULL, vpx_h_predictor_8x8_vsx, vpx_d45_predictor_8x8_vsx, NULL,
-                NULL, NULL, NULL, vpx_d63_predictor_8x8_vsx,
-                vpx_tm_predictor_8x8_vsx)
+INTRA_PRED_TEST(VSX, TestIntraPred8, vpx_dc_predictor_8x8_vsx, nullptr, nullptr,
+                nullptr, nullptr, vpx_h_predictor_8x8_vsx,
+                vpx_d45_predictor_8x8_vsx, nullptr, nullptr, nullptr, nullptr,
+                vpx_d63_predictor_8x8_vsx, vpx_tm_predictor_8x8_vsx)
+#endif
 
 INTRA_PRED_TEST(VSX, TestIntraPred16, vpx_dc_predictor_16x16_vsx,
                 vpx_dc_left_predictor_16x16_vsx, vpx_dc_top_predictor_16x16_vsx,
                 vpx_dc_128_predictor_16x16_vsx, vpx_v_predictor_16x16_vsx,
-                vpx_h_predictor_16x16_vsx, vpx_d45_predictor_16x16_vsx, NULL,
-                NULL, NULL, NULL, vpx_d63_predictor_16x16_vsx,
+                vpx_h_predictor_16x16_vsx, vpx_d45_predictor_16x16_vsx, nullptr,
+                nullptr, nullptr, nullptr, vpx_d63_predictor_16x16_vsx,
                 vpx_tm_predictor_16x16_vsx)
 
 INTRA_PRED_TEST(VSX, TestIntraPred32, vpx_dc_predictor_32x32_vsx,
                 vpx_dc_left_predictor_32x32_vsx, vpx_dc_top_predictor_32x32_vsx,
                 vpx_dc_128_predictor_32x32_vsx, vpx_v_predictor_32x32_vsx,
-                vpx_h_predictor_32x32_vsx, vpx_d45_predictor_32x32_vsx, NULL,
-                NULL, NULL, NULL, vpx_d63_predictor_32x32_vsx,
+                vpx_h_predictor_32x32_vsx, vpx_d45_predictor_32x32_vsx, nullptr,
+                nullptr, nullptr, nullptr, vpx_d63_predictor_32x32_vsx,
                 vpx_tm_predictor_32x32_vsx)
 #endif  // HAVE_VSX
+
+#if HAVE_LSX
+INTRA_PRED_TEST(LSX, TestIntraPred8, vpx_dc_predictor_8x8_lsx, nullptr, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, nullptr)
+INTRA_PRED_TEST(LSX, TestIntraPred16, vpx_dc_predictor_16x16_lsx, nullptr,
+                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                nullptr, nullptr, nullptr, nullptr)
+#endif  // HAVE_LSX
 
 // -----------------------------------------------------------------------------
 
 #if CONFIG_VP9_HIGHBITDEPTH
 namespace {
 
-typedef void (*VpxHighbdPredFunc)(uint16_t *dst, ptrdiff_t y_stride,
-                                  const uint16_t *above, const uint16_t *left,
-                                  int bd);
+using VpxHighbdPredFunc = void (*)(uint16_t *dst, ptrdiff_t y_stride,
+                                   const uint16_t *above, const uint16_t *left,
+                                   int bd);
 
-typedef IntraPredTestMem<uint16_t> Vp9HighbdIntraPredTestMem;
+using Vp9HighbdIntraPredTestMem = IntraPredTestMem<uint16_t>;
 
 void TestHighbdIntraPred(const char name[], VpxHighbdPredFunc const *pred_funcs,
                          const char *const signatures[], int block_size) {
@@ -358,7 +380,7 @@ void TestHighbdIntraPred(const char name[], VpxHighbdPredFunc const *pred_funcs,
   intra_pred_test_mem.Init(block_size, 12);
 
   for (int k = 0; k < kNumVp9IntraPredFuncs; ++k) {
-    if (pred_funcs[k] == NULL) continue;
+    if (pred_funcs[k] == nullptr) continue;
     memcpy(intra_pred_test_mem.src, intra_pred_test_mem.ref_src,
            sizeof(intra_pred_test_mem.src));
     vpx_usec_timer timer;
@@ -480,23 +502,22 @@ HIGHBD_INTRA_PRED_TEST(
     vpx_highbd_d63_predictor_32x32_c, vpx_highbd_tm_predictor_32x32_c)
 
 #if HAVE_SSE2
+#if HAVE_X86_ASM
 HIGHBD_INTRA_PRED_TEST(
     SSE2, TestHighbdIntraPred4, vpx_highbd_dc_predictor_4x4_sse2,
     vpx_highbd_dc_left_predictor_4x4_sse2, vpx_highbd_dc_top_predictor_4x4_sse2,
     vpx_highbd_dc_128_predictor_4x4_sse2, vpx_highbd_v_predictor_4x4_sse2,
-    vpx_highbd_h_predictor_4x4_sse2, NULL, vpx_highbd_d135_predictor_4x4_sse2,
-    vpx_highbd_d117_predictor_4x4_sse2, vpx_highbd_d153_predictor_4x4_sse2,
-    vpx_highbd_d207_predictor_4x4_sse2, vpx_highbd_d63_predictor_4x4_sse2,
-    vpx_highbd_tm_predictor_4x4_c)
+    vpx_highbd_h_predictor_4x4_sse2, nullptr,
+    vpx_highbd_d135_predictor_4x4_sse2, vpx_highbd_d117_predictor_4x4_sse2,
+    vpx_highbd_d153_predictor_4x4_sse2, vpx_highbd_d207_predictor_4x4_sse2,
+    vpx_highbd_d63_predictor_4x4_sse2, vpx_highbd_tm_predictor_4x4_sse2)
 
-HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred8,
-                       vpx_highbd_dc_predictor_8x8_sse2,
-                       vpx_highbd_dc_left_predictor_8x8_sse2,
-                       vpx_highbd_dc_top_predictor_8x8_sse2,
-                       vpx_highbd_dc_128_predictor_8x8_sse2,
-                       vpx_highbd_v_predictor_8x8_sse2,
-                       vpx_highbd_h_predictor_8x8_sse2, NULL, NULL, NULL, NULL,
-                       NULL, NULL, vpx_highbd_tm_predictor_8x8_sse2)
+HIGHBD_INTRA_PRED_TEST(
+    SSE2, TestHighbdIntraPred8, vpx_highbd_dc_predictor_8x8_sse2,
+    vpx_highbd_dc_left_predictor_8x8_sse2, vpx_highbd_dc_top_predictor_8x8_sse2,
+    vpx_highbd_dc_128_predictor_8x8_sse2, vpx_highbd_v_predictor_8x8_sse2,
+    vpx_highbd_h_predictor_8x8_sse2, nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, vpx_highbd_tm_predictor_8x8_sse2)
 
 HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred16,
                        vpx_highbd_dc_predictor_16x16_sse2,
@@ -504,8 +525,9 @@ HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred16,
                        vpx_highbd_dc_top_predictor_16x16_sse2,
                        vpx_highbd_dc_128_predictor_16x16_sse2,
                        vpx_highbd_v_predictor_16x16_sse2,
-                       vpx_highbd_h_predictor_16x16_sse2, NULL, NULL, NULL,
-                       NULL, NULL, NULL, vpx_highbd_tm_predictor_16x16_sse2)
+                       vpx_highbd_h_predictor_16x16_sse2, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr,
+                       vpx_highbd_tm_predictor_16x16_sse2)
 
 HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred32,
                        vpx_highbd_dc_predictor_32x32_sse2,
@@ -513,36 +535,89 @@ HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred32,
                        vpx_highbd_dc_top_predictor_32x32_sse2,
                        vpx_highbd_dc_128_predictor_32x32_sse2,
                        vpx_highbd_v_predictor_32x32_sse2,
-                       vpx_highbd_h_predictor_32x32_sse2, NULL, NULL, NULL,
-                       NULL, NULL, NULL, vpx_highbd_tm_predictor_32x32_sse2)
+                       vpx_highbd_h_predictor_32x32_sse2, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr,
+                       vpx_highbd_tm_predictor_32x32_sse2)
+#else   // !HAVE_X86_ASM
+HIGHBD_INTRA_PRED_TEST(
+    SSE2, TestHighbdIntraPred4, nullptr, vpx_highbd_dc_left_predictor_4x4_sse2,
+    vpx_highbd_dc_top_predictor_4x4_sse2, vpx_highbd_dc_128_predictor_4x4_sse2,
+    nullptr, vpx_highbd_h_predictor_4x4_sse2, nullptr,
+    vpx_highbd_d135_predictor_4x4_sse2, vpx_highbd_d117_predictor_4x4_sse2,
+    vpx_highbd_d153_predictor_4x4_sse2, vpx_highbd_d207_predictor_4x4_sse2,
+    vpx_highbd_d63_predictor_4x4_sse2, vpx_highbd_tm_predictor_4x4_c)
+
+HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred8, nullptr,
+                       vpx_highbd_dc_left_predictor_8x8_sse2,
+                       vpx_highbd_dc_top_predictor_8x8_sse2,
+                       vpx_highbd_dc_128_predictor_8x8_sse2, nullptr,
+                       vpx_highbd_h_predictor_8x8_sse2, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr, nullptr)
+
+HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred16, nullptr,
+                       vpx_highbd_dc_left_predictor_16x16_sse2,
+                       vpx_highbd_dc_top_predictor_16x16_sse2,
+                       vpx_highbd_dc_128_predictor_16x16_sse2, nullptr,
+                       vpx_highbd_h_predictor_16x16_sse2, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr, nullptr)
+
+HIGHBD_INTRA_PRED_TEST(SSE2, TestHighbdIntraPred32, nullptr,
+                       vpx_highbd_dc_left_predictor_32x32_sse2,
+                       vpx_highbd_dc_top_predictor_32x32_sse2,
+                       vpx_highbd_dc_128_predictor_32x32_sse2, nullptr,
+                       vpx_highbd_h_predictor_32x32_sse2, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr, nullptr)
+#endif  // HAVE_X86_ASM
 #endif  // HAVE_SSE2
 
 #if HAVE_SSSE3
-HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred4, NULL, NULL, NULL, NULL,
-                       NULL, NULL, vpx_highbd_d45_predictor_4x4_ssse3, NULL,
-                       NULL, NULL, NULL, NULL, NULL)
-HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred8, NULL, NULL, NULL, NULL,
-                       NULL, NULL, vpx_highbd_d45_predictor_8x8_ssse3,
+HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred4, nullptr, nullptr, nullptr,
+                       nullptr, nullptr, nullptr,
+                       vpx_highbd_d45_predictor_4x4_ssse3, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr)
+HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred8, nullptr, nullptr, nullptr,
+                       nullptr, nullptr, nullptr,
+                       vpx_highbd_d45_predictor_8x8_ssse3,
                        vpx_highbd_d135_predictor_8x8_ssse3,
                        vpx_highbd_d117_predictor_8x8_ssse3,
                        vpx_highbd_d153_predictor_8x8_ssse3,
                        vpx_highbd_d207_predictor_8x8_ssse3,
-                       vpx_highbd_d63_predictor_8x8_ssse3, NULL)
-HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred16, NULL, NULL, NULL, NULL,
-                       NULL, NULL, vpx_highbd_d45_predictor_16x16_ssse3,
+                       vpx_highbd_d63_predictor_8x8_ssse3, nullptr)
+HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred16, nullptr, nullptr, nullptr,
+                       nullptr, nullptr, nullptr,
+                       vpx_highbd_d45_predictor_16x16_ssse3,
                        vpx_highbd_d135_predictor_16x16_ssse3,
                        vpx_highbd_d117_predictor_16x16_ssse3,
                        vpx_highbd_d153_predictor_16x16_ssse3,
                        vpx_highbd_d207_predictor_16x16_ssse3,
-                       vpx_highbd_d63_predictor_16x16_ssse3, NULL)
-HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred32, NULL, NULL, NULL, NULL,
-                       NULL, NULL, vpx_highbd_d45_predictor_32x32_ssse3,
+                       vpx_highbd_d63_predictor_16x16_ssse3, nullptr)
+HIGHBD_INTRA_PRED_TEST(SSSE3, TestHighbdIntraPred32, nullptr, nullptr, nullptr,
+                       nullptr, nullptr, nullptr,
+                       vpx_highbd_d45_predictor_32x32_ssse3,
                        vpx_highbd_d135_predictor_32x32_ssse3,
                        vpx_highbd_d117_predictor_32x32_ssse3,
                        vpx_highbd_d153_predictor_32x32_ssse3,
                        vpx_highbd_d207_predictor_32x32_ssse3,
-                       vpx_highbd_d63_predictor_32x32_ssse3, NULL)
+                       vpx_highbd_d63_predictor_32x32_ssse3, nullptr)
 #endif  // HAVE_SSSE3
+
+#if HAVE_AVX2
+HIGHBD_INTRA_PRED_TEST(AVX2, TestHighbdIntraPred16, nullptr, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                       nullptr, vpx_highbd_d207_predictor_16x16_avx2,
+                       vpx_highbd_d63_predictor_16x16_avx2, nullptr)
+HIGHBD_INTRA_PRED_TEST(AVX2, TestHighbdIntraPred32, nullptr, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                       nullptr, vpx_highbd_d207_predictor_32x32_avx2,
+                       vpx_highbd_d63_predictor_32x32_avx2, nullptr)
+#endif  // HAVE_AVX2
+
+#if HAVE_AVX512
+HIGHBD_INTRA_PRED_TEST(AVX512, TestHighbdIntraPred32, nullptr, nullptr, nullptr,
+                       nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                       nullptr, vpx_highbd_d207_predictor_32x32_avx512,
+                       vpx_highbd_d63_predictor_32x32_avx512, nullptr)
+#endif  // HAVE_AVX512
 
 #if HAVE_NEON
 HIGHBD_INTRA_PRED_TEST(
@@ -550,37 +625,41 @@ HIGHBD_INTRA_PRED_TEST(
     vpx_highbd_dc_left_predictor_4x4_neon, vpx_highbd_dc_top_predictor_4x4_neon,
     vpx_highbd_dc_128_predictor_4x4_neon, vpx_highbd_v_predictor_4x4_neon,
     vpx_highbd_h_predictor_4x4_neon, vpx_highbd_d45_predictor_4x4_neon,
-    vpx_highbd_d135_predictor_4x4_neon, NULL, NULL, NULL, NULL,
-    vpx_highbd_tm_predictor_4x4_neon)
+    vpx_highbd_d135_predictor_4x4_neon, vpx_highbd_d117_predictor_4x4_neon,
+    vpx_highbd_d153_predictor_4x4_neon, vpx_highbd_d207_predictor_4x4_neon,
+    vpx_highbd_d63_predictor_4x4_neon, vpx_highbd_tm_predictor_4x4_neon)
 HIGHBD_INTRA_PRED_TEST(
     NEON, TestHighbdIntraPred8, vpx_highbd_dc_predictor_8x8_neon,
     vpx_highbd_dc_left_predictor_8x8_neon, vpx_highbd_dc_top_predictor_8x8_neon,
     vpx_highbd_dc_128_predictor_8x8_neon, vpx_highbd_v_predictor_8x8_neon,
     vpx_highbd_h_predictor_8x8_neon, vpx_highbd_d45_predictor_8x8_neon,
-    vpx_highbd_d135_predictor_8x8_neon, NULL, NULL, NULL, NULL,
-    vpx_highbd_tm_predictor_8x8_neon)
-HIGHBD_INTRA_PRED_TEST(NEON, TestHighbdIntraPred16,
-                       vpx_highbd_dc_predictor_16x16_neon,
-                       vpx_highbd_dc_left_predictor_16x16_neon,
-                       vpx_highbd_dc_top_predictor_16x16_neon,
-                       vpx_highbd_dc_128_predictor_16x16_neon,
-                       vpx_highbd_v_predictor_16x16_neon,
-                       vpx_highbd_h_predictor_16x16_neon,
-                       vpx_highbd_d45_predictor_16x16_neon,
-                       vpx_highbd_d135_predictor_16x16_neon, NULL, NULL, NULL,
-                       NULL, vpx_highbd_tm_predictor_16x16_neon)
-HIGHBD_INTRA_PRED_TEST(NEON, TestHighbdIntraPred32,
-                       vpx_highbd_dc_predictor_32x32_neon,
-                       vpx_highbd_dc_left_predictor_32x32_neon,
-                       vpx_highbd_dc_top_predictor_32x32_neon,
-                       vpx_highbd_dc_128_predictor_32x32_neon,
-                       vpx_highbd_v_predictor_32x32_neon,
-                       vpx_highbd_h_predictor_32x32_neon,
-                       vpx_highbd_d45_predictor_32x32_neon,
-                       vpx_highbd_d135_predictor_32x32_neon, NULL, NULL, NULL,
-                       NULL, vpx_highbd_tm_predictor_32x32_neon)
+    vpx_highbd_d135_predictor_8x8_neon, vpx_highbd_d117_predictor_8x8_neon,
+    vpx_highbd_d153_predictor_8x8_neon, vpx_highbd_d207_predictor_8x8_neon,
+    vpx_highbd_d63_predictor_8x8_neon, vpx_highbd_tm_predictor_8x8_neon)
+HIGHBD_INTRA_PRED_TEST(
+    NEON, TestHighbdIntraPred16, vpx_highbd_dc_predictor_16x16_neon,
+    vpx_highbd_dc_left_predictor_16x16_neon,
+    vpx_highbd_dc_top_predictor_16x16_neon,
+    vpx_highbd_dc_128_predictor_16x16_neon, vpx_highbd_v_predictor_16x16_neon,
+    vpx_highbd_h_predictor_16x16_neon, vpx_highbd_d45_predictor_16x16_neon,
+    vpx_highbd_d135_predictor_16x16_neon, vpx_highbd_d117_predictor_16x16_neon,
+    vpx_highbd_d153_predictor_16x16_neon, vpx_highbd_d207_predictor_16x16_neon,
+    vpx_highbd_d63_predictor_16x16_neon, vpx_highbd_tm_predictor_16x16_neon)
+HIGHBD_INTRA_PRED_TEST(
+    NEON, TestHighbdIntraPred32, vpx_highbd_dc_predictor_32x32_neon,
+    vpx_highbd_dc_left_predictor_32x32_neon,
+    vpx_highbd_dc_top_predictor_32x32_neon,
+    vpx_highbd_dc_128_predictor_32x32_neon, vpx_highbd_v_predictor_32x32_neon,
+    vpx_highbd_h_predictor_32x32_neon, vpx_highbd_d45_predictor_32x32_neon,
+    vpx_highbd_d135_predictor_32x32_neon, vpx_highbd_d117_predictor_32x32_neon,
+    vpx_highbd_d153_predictor_32x32_neon, vpx_highbd_d207_predictor_32x32_neon,
+    vpx_highbd_d63_predictor_32x32_neon, vpx_highbd_tm_predictor_32x32_neon)
 #endif  // HAVE_NEON
 
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
-#include "test/test_libvpx.cc"
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  ::libvpx_test::init_vpx_test();
+  return RUN_ALL_TESTS();
+}

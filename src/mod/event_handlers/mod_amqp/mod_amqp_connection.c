@@ -40,8 +40,14 @@
 
 void mod_amqp_connection_close(mod_amqp_connection_t *connection)
 {
-	amqp_connection_state_t old_state = connection->state;
+	amqp_connection_state_t old_state;
 	int status = 0;
+
+	if (!connection) {
+		return;
+	}
+
+	old_state = connection->state;
 
 	connection->state = NULL;
 
@@ -50,7 +56,8 @@ void mod_amqp_connection_close(mod_amqp_connection_t *connection)
 		mod_amqp_log_if_amqp_error(amqp_connection_close(old_state, AMQP_REPLY_SUCCESS), "Closing connection");
 
 		if ((status = amqp_destroy_connection(old_state))) {
-			const char *errstr = amqp_error_string2(-status);
+			const char *errstr = amqp_error_string2(status);
+			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error destroying amqp connection: %s\n", errstr);
 		}
 	}
@@ -116,6 +123,16 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 	amqp_status = -1;
 
 	while (connection_attempt && amqp_status){
+		if (connection_attempt->ssl_on == 1) {
+#if AMQP_VERSION_INT(AMQP_MAJOR_VERSION, AMQP_MINOR_VERSION) < AMQP_VERSION_INT(0, 13)
+			amqp_set_initialize_ssl_library(connection_attempt->ssl_on);
+#endif
+			if (!(socket = amqp_ssl_socket_new(newConnection))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not create SSL socket\n");
+				goto err;
+			}
+			amqp_ssl_socket_set_verify_peer(socket, connection_attempt->ssl_verify_peer);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Profile[%s] trying to connect to AMQP broker %s:%d\n",
 						  profile_name, connection_attempt->hostname, connection_attempt->port);
 
@@ -126,7 +143,9 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 		}
 	}
 
-	*active = connection_attempt;
+	if (active) {
+		*active = connection_attempt;
+	}
 
 	if (!connection_attempt) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Profile[%s] could not connect to any AMQP brokers\n", profile_name);
@@ -148,20 +167,26 @@ switch_status_t mod_amqp_connection_open(mod_amqp_connection_t *connections, mod
 										connection_attempt->password);
 
 	if (mod_amqp_log_if_amqp_error(status, "Logging in")) {
-		mod_amqp_connection_close(*active);
-		*active = NULL;
+		if (active) {
+			mod_amqp_connection_close(*active);
+			*active = NULL;
+		}
 		goto err;
 	}
 
 	// Open a channel (1). This is fairly standard
 	amqp_channel_open(newConnection, 1);
 	if (mod_amqp_log_if_amqp_error(amqp_get_rpc_reply(newConnection), "Opening channel")) {
-		mod_amqp_connection_close(*active);
-		*active = NULL;
+		if (active) {
+			mod_amqp_connection_close(*active);
+			*active = NULL;
+		}
 		goto err;
 	}
 
-	(*active)->state = newConnection;
+	if (active) {
+		(*active)->state = newConnection;
+	}
 
 	if (oldConnection) {
 		amqp_destroy_connection(oldConnection);
@@ -183,9 +208,15 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 	char *name = (char *) switch_xml_attr_soft(cfg, "name");
 	char *hostname = NULL, *virtualhost = NULL, *username = NULL, *password = NULL;
 	unsigned int port = 0, heartbeat = 0;
+	amqp_boolean_t ssl_on = 0;
+	amqp_boolean_t ssl_verify_peer = 1;
 
 	if (zstr(name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection missing name attribute\n%s\n", switch_xml_toxml(cfg, 1));
+		char *str_tmp = switch_xml_toxml(cfg, 1);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Connection missing name attribute\n%s\n", str_tmp);
+		switch_safe_free(str_tmp);
+
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -225,6 +256,10 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 			if (interval && interval > 0) {
 				heartbeat = interval;
 			}
+		} else if (!strncmp(var, "ssl_on", 3) && switch_true(val) == SWITCH_TRUE) {
+			ssl_on = 1;
+		} else if (!strncmp(var, "ssl_verify_peer", 15) && switch_true(val) == SWITCH_FALSE) {
+			ssl_verify_peer = 0;
 		}
 	}
 
@@ -234,8 +269,11 @@ switch_status_t mod_amqp_connection_create(mod_amqp_connection_t **conn, switch_
 	new_con->password = password ? password : "guest";
 	new_con->port = port ? port : 5672;
 	new_con->heartbeat = heartbeat ? heartbeat : 0;
+	new_con->ssl_on = ssl_on;
+	new_con->ssl_verify_peer = ssl_verify_peer;
 
 	*conn = new_con;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

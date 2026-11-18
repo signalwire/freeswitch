@@ -11,37 +11,37 @@
 #include "./vpx_config.h"
 #include "./vp8_rtcd.h"
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "test/buffer.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "vpx/vpx_integer.h"
 
-typedef void (*IdctFunc)(int16_t *input, unsigned char *pred_ptr,
-                         int pred_stride, unsigned char *dst_ptr,
-                         int dst_stride);
+using IdctFunc = void (*)(int16_t *input, unsigned char *pred_ptr,
+                          int pred_stride, unsigned char *dst_ptr,
+                          int dst_stride);
 namespace {
 
 using libvpx_test::Buffer;
 
 class IDCTTest : public ::testing::TestWithParam<IdctFunc> {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     UUT = GetParam();
 
     input = new Buffer<int16_t>(4, 4, 0);
-    ASSERT_TRUE(input != NULL);
+    ASSERT_NE(input, nullptr);
     ASSERT_TRUE(input->Init());
     predict = new Buffer<uint8_t>(4, 4, 3);
-    ASSERT_TRUE(predict != NULL);
+    ASSERT_NE(predict, nullptr);
     ASSERT_TRUE(predict->Init());
     output = new Buffer<uint8_t>(4, 4, 3);
-    ASSERT_TRUE(output != NULL);
+    ASSERT_NE(output, nullptr);
     ASSERT_TRUE(output->Init());
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     delete input;
     delete predict;
     delete output;
@@ -72,6 +72,7 @@ TEST_P(IDCTTest, TestAllZeros) {
 
 TEST_P(IDCTTest, TestAllOnes) {
   input->Set(0);
+  ASSERT_NE(input->TopLeftPixel(), nullptr);
   // When the first element is '4' it will fill the output buffer with '1'.
   input->TopLeftPixel()[0] = 4;
   predict->Set(0);
@@ -89,6 +90,7 @@ TEST_P(IDCTTest, TestAddOne) {
   // Set the transform output to '1' and make sure it gets added to the
   // prediction buffer.
   input->Set(0);
+  ASSERT_NE(input->TopLeftPixel(), nullptr);
   input->TopLeftPixel()[0] = 4;
   output->Set(0);
 
@@ -153,25 +155,26 @@ TEST_P(IDCTTest, TestWithData) {
   ASSERT_TRUE(output->CheckPadding());
 }
 
-INSTANTIATE_TEST_CASE_P(C, IDCTTest, ::testing::Values(vp8_short_idct4x4llm_c));
+INSTANTIATE_TEST_SUITE_P(C, IDCTTest,
+                         ::testing::Values(vp8_short_idct4x4llm_c));
 
 #if HAVE_NEON
-INSTANTIATE_TEST_CASE_P(NEON, IDCTTest,
-                        ::testing::Values(vp8_short_idct4x4llm_neon));
+INSTANTIATE_TEST_SUITE_P(NEON, IDCTTest,
+                         ::testing::Values(vp8_short_idct4x4llm_neon));
 #endif  // HAVE_NEON
 
-#if HAVE_MMX
-INSTANTIATE_TEST_CASE_P(MMX, IDCTTest,
-                        ::testing::Values(vp8_short_idct4x4llm_mmx));
-#endif  // HAVE_MMX
+#if HAVE_MMX && HAVE_X86_ASM
+INSTANTIATE_TEST_SUITE_P(MMX, IDCTTest,
+                         ::testing::Values(vp8_short_idct4x4llm_mmx));
+#endif  // HAVE_MMX && HAVE_X86_ASM
 
 #if HAVE_MSA
-INSTANTIATE_TEST_CASE_P(MSA, IDCTTest,
-                        ::testing::Values(vp8_short_idct4x4llm_msa));
+INSTANTIATE_TEST_SUITE_P(MSA, IDCTTest,
+                         ::testing::Values(vp8_short_idct4x4llm_msa));
 #endif  // HAVE_MSA
 
 #if HAVE_MMI
-INSTANTIATE_TEST_CASE_P(MMI, IDCTTest,
-                        ::testing::Values(vp8_short_idct4x4llm_mmi));
+INSTANTIATE_TEST_SUITE_P(MMI, IDCTTest,
+                         ::testing::Values(vp8_short_idct4x4llm_mmi));
 #endif  // HAVE_MMI
-}
+}  // namespace

@@ -28,25 +28,27 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(SolutionDir)\w32\pthreads.props" Condition=" '$(PthreadsVersionImported)' == '' " />
   <Import Project="..\..\..\..\w32\openssl.props" />
+  <Import Project="$(SolutionDir)\w32\libks.props" Condition=" '$(libksPropsImported)' == '' " />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
@@ -73,7 +75,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);.\;.\mcast</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;_DEBUG;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>6053;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -90,7 +92,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);.\;.\mcast</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;_DEBUG;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>6053;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -105,7 +107,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);.\;.\mcast</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>6053;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -122,7 +124,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);$(ProjectDir)..\..\..\..\libs\pthreads-w32-2-9-1;.\;.\mcast</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\include;%(AdditionalIncludeDirectories);.\;.\mcast</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_TIMESPEC_DEFINED;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableSpecificWarnings>6053;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
@@ -135,22 +137,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="mod_verto.c" />
-    <ClCompile Include="ws.c">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6386;4267;4244;6031;6340;6246;6011;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
     <ClCompile Include="mcast\mcast.c" />
     <ClCompile Include="mcast\mcast_cpp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\w32\Library\FreeSwitchCore.2017.vcxproj">
       <Project>{202d7a4e-760d-4d0e-afa1-d7459ced30ff}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\libs\win32\pthread\pthread.2017.vcxproj">
-      <Project>{df018947-0fff-4eb3-bdee-441dc81da7a4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>

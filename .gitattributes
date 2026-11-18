@@ -6,7 +6,6 @@
 *.c text eol=lf
 *.cxx text eol=lf
 *.cpp text eol=lf
-/libs/sofia-sip/libsofia-sip-ua/sip/sip_bad_mask text eol=lf
 *.txt text eol=lf
 *.exe -diff binary executable windows dfsg-nonfree debian-ignore
 *.wav -diff binary sound

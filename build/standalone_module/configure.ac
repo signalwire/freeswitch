@@ -45,6 +45,17 @@ SWITCH_VERSION_MAJOR=`echo $version|cut -d. -f1`
 SWITCH_VERSION_MINOR=`echo $version|cut -d. -f2`
 SWITCH_VERSION_MICRO=`echo $version|cut -d. -f3`
 
+#  Enable clang address sanitizer bit build
+AC_ARG_ENABLE(address_sanitizer,
+  [AC_HELP_STRING([--enable-address-sanitizer],[build with address sanitizer])],
+  [enable_address_sanitizer="$enable_address_sanitizer"],
+  [enable_address_sanitizer="no"])
+
+if test "${enable_address_sanitizer}" = "yes"; then
+  FREESWITCH_CFLAGS="$FREESWITCH_CFLAGS -fsanitize=address -fno-omit-frame-pointer -fstack-protector-strong"
+  FREESWITCH_LDFLAGS="$FREESWITCH_LDFLAGS -fsanitize=address"
+fi
+
 AC_SUBST(SWITCH_VERSION_MAJOR, [$SWITCH_VERSION_MAJOR])
 AC_SUBST(SWITCH_VERSION_MINOR, [$SWITCH_VERSION_MINOR])
 AC_SUBST(SWITCH_VERSION_MICRO, [$SWITCH_VERSION_MICRO])

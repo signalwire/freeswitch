@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "test/codec_factory.h"
 #include "test/decode_test_driver.h"
@@ -26,7 +26,7 @@ vpx_codec_err_t Decoder::PeekStream(const uint8_t *cxdata, size_t size,
 }
 
 vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size) {
-  return DecodeFrame(cxdata, size, NULL);
+  return DecodeFrame(cxdata, size, nullptr);
 }
 
 vpx_codec_err_t Decoder::DecodeFrame(const uint8_t *cxdata, size_t size,
@@ -52,9 +52,10 @@ void DecoderTest::HandlePeekResult(Decoder *const decoder,
     /* Vp8's implementation of PeekStream returns an error if the frame you
      * pass it is not a keyframe, so we only expect VPX_CODEC_OK on the first
      * frame, which must be a keyframe. */
-    if (video->frame_number() == 0)
+    if (video->frame_number() == 0) {
       ASSERT_EQ(VPX_CODEC_OK, res_peek)
           << "Peek return failed: " << vpx_codec_err_to_string(res_peek);
+    }
   } else {
     /* The Vp9 implementation of PeekStream returns an error only if the
      * data passed to it isn't a valid Vp9 chunk. */
@@ -66,7 +67,7 @@ void DecoderTest::HandlePeekResult(Decoder *const decoder,
 void DecoderTest::RunLoop(CompressedVideoSource *video,
                           const vpx_codec_dec_cfg_t &dec_cfg) {
   Decoder *const decoder = codec_->CreateDecoder(dec_cfg, flags_);
-  ASSERT_TRUE(decoder != NULL);
+  ASSERT_NE(decoder, nullptr);
   bool end_of_file = false;
 
   // Decode frames.
@@ -77,7 +78,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
     vpx_codec_stream_info_t stream_info;
     stream_info.sz = sizeof(stream_info);
 
-    if (video->cxdata() != NULL) {
+    if (video->cxdata() != nullptr) {
       const vpx_codec_err_t res_peek = decoder->PeekStream(
           video->cxdata(), video->frame_size(), &stream_info);
       HandlePeekResult(decoder, video, res_peek);
@@ -88,16 +89,16 @@ void DecoderTest::RunLoop(CompressedVideoSource *video,
       if (!HandleDecodeResult(res_dec, *video, decoder)) break;
     } else {
       // Signal end of the file to the decoder.
-      const vpx_codec_err_t res_dec = decoder->DecodeFrame(NULL, 0);
+      const vpx_codec_err_t res_dec = decoder->DecodeFrame(nullptr, 0);
       ASSERT_EQ(VPX_CODEC_OK, res_dec) << decoder->DecodeError();
       end_of_file = true;
     }
 
     DxDataIterator dec_iter = decoder->GetDxData();
-    const vpx_image_t *img = NULL;
+    const vpx_image_t *img = nullptr;
 
     // Get decompressed data
-    while ((img = dec_iter.Next())) {
+    while (!::testing::Test::HasFailure() && (img = dec_iter.Next())) {
       DecompressedFrameHook(*img, video->frame_number());
     }
   }
@@ -110,7 +111,7 @@ void DecoderTest::RunLoop(CompressedVideoSource *video) {
 }
 
 void DecoderTest::set_cfg(const vpx_codec_dec_cfg_t &dec_cfg) {
-  memcpy(&cfg_, &dec_cfg, sizeof(cfg_));
+  cfg_ = dec_cfg;
 }
 
 void DecoderTest::set_flags(const vpx_codec_flags_t flags) { flags_ = flags; }

@@ -15,59 +15,59 @@
  */
 
 #include "testutil.h"
-#include "apr_errno.h"
-#include "apr_general.h"
-#include "apr_user.h"
+#include "fspr_errno.h"
+#include "fspr_general.h"
+#include "fspr_user.h"
 
 #if APR_HAS_USER
 static void uid_current(abts_case *tc, void *data)
 {
-    apr_uid_t uid;
-    apr_gid_t gid;
+    fspr_uid_t uid;
+    fspr_gid_t gid;
 
-    APR_ASSERT_SUCCESS(tc, "apr_uid_current failed",
-                       apr_uid_current(&uid, &gid, p));
+    APR_ASSERT_SUCCESS(tc, "fspr_uid_current failed",
+                       fspr_uid_current(&uid, &gid, p));
 }
 
 static void username(abts_case *tc, void *data)
 {
-    apr_uid_t uid;
-    apr_gid_t gid;
-    apr_uid_t retreived_uid;
-    apr_gid_t retreived_gid;
+    fspr_uid_t uid;
+    fspr_gid_t gid;
+    fspr_uid_t retreived_uid;
+    fspr_gid_t retreived_gid;
     char *uname = NULL;
 
-    APR_ASSERT_SUCCESS(tc, "apr_uid_current failed",
-                       apr_uid_current(&uid, &gid, p));
+    APR_ASSERT_SUCCESS(tc, "fspr_uid_current failed",
+                       fspr_uid_current(&uid, &gid, p));
    
-    APR_ASSERT_SUCCESS(tc, "apr_uid_name_get failed",
-                       apr_uid_name_get(&uname, uid, p));
+    APR_ASSERT_SUCCESS(tc, "fspr_uid_name_get failed",
+                       fspr_uid_name_get(&uname, uid, p));
     ABTS_PTR_NOTNULL(tc, uname);
 
-    APR_ASSERT_SUCCESS(tc, "apr_uid_get failed",
-                       apr_uid_get(&retreived_uid, &retreived_gid, uname, p));
+    APR_ASSERT_SUCCESS(tc, "fspr_uid_get failed",
+                       fspr_uid_get(&retreived_uid, &retreived_gid, uname, p));
 
-    APR_ASSERT_SUCCESS(tc, "apr_uid_compare failed",
-                       apr_uid_compare(uid, retreived_uid));
+    APR_ASSERT_SUCCESS(tc, "fspr_uid_compare failed",
+                       fspr_uid_compare(uid, retreived_uid));
 #ifdef WIN32
     /* ### this fudge was added for Win32 but makes the test return NotImpl
      * on Unix if run as root, when !gid is also true. */
     if (!gid || !retreived_gid) {
         /* The function had no way to recover the gid (this would have been
-         * an ENOTIMPL if apr_uid_ functions didn't try to double-up and
-         * also return apr_gid_t values, which was bogus.
+         * an ENOTIMPL if fspr_uid_ functions didn't try to double-up and
+         * also return fspr_gid_t values, which was bogus.
          */
         if (!gid) {
-            ABTS_NOT_IMPL(tc, "Groups from apr_uid_current");
+            ABTS_NOT_IMPL(tc, "Groups from fspr_uid_current");
         }
         else {
-            ABTS_NOT_IMPL(tc, "Groups from apr_uid_get");
+            ABTS_NOT_IMPL(tc, "Groups from fspr_uid_get");
         }        
     }
     else {
 #endif
-        APR_ASSERT_SUCCESS(tc, "apr_gid_compare failed",
-                           apr_gid_compare(gid, retreived_gid));
+        APR_ASSERT_SUCCESS(tc, "fspr_gid_compare failed",
+                           fspr_gid_compare(gid, retreived_gid));
 #ifdef WIN32
     }
 #endif
@@ -75,67 +75,67 @@ static void username(abts_case *tc, void *data)
 
 static void groupname(abts_case *tc, void *data)
 {
-    apr_uid_t uid;
-    apr_gid_t gid;
-    apr_gid_t retreived_gid;
+    fspr_uid_t uid;
+    fspr_gid_t gid;
+    fspr_gid_t retreived_gid;
     char *gname = NULL;
 
-    APR_ASSERT_SUCCESS(tc, "apr_uid_current failed",
-                       apr_uid_current(&uid, &gid, p));
+    APR_ASSERT_SUCCESS(tc, "fspr_uid_current failed",
+                       fspr_uid_current(&uid, &gid, p));
 
-    APR_ASSERT_SUCCESS(tc, "apr_gid_name_get failed",
-                       apr_gid_name_get(&gname, gid, p));
+    APR_ASSERT_SUCCESS(tc, "fspr_gid_name_get failed",
+                       fspr_gid_name_get(&gname, gid, p));
     ABTS_PTR_NOTNULL(tc, gname);
 
-    APR_ASSERT_SUCCESS(tc, "apr_gid_get failed",
-                       apr_gid_get(&retreived_gid, gname, p));
+    APR_ASSERT_SUCCESS(tc, "fspr_gid_get failed",
+                       fspr_gid_get(&retreived_gid, gname, p));
 
-    APR_ASSERT_SUCCESS(tc, "apr_gid_compare failed",
-                       apr_gid_compare(gid, retreived_gid));
+    APR_ASSERT_SUCCESS(tc, "fspr_gid_compare failed",
+                       fspr_gid_compare(gid, retreived_gid));
 }
 
 #ifndef WIN32
 
 static void fail_userinfo(abts_case *tc, void *data)
 {
-    apr_uid_t uid;
-    apr_gid_t gid;
-    apr_status_t rv;
+    fspr_uid_t uid;
+    fspr_gid_t gid;
+    fspr_status_t rv;
     char *tmp;
 
     errno = 0;
     gid = uid = 9999999;
     tmp = NULL;
-    rv = apr_uid_name_get(&tmp, uid, p);
-    ABTS_ASSERT(tc, "apr_uid_name_get should fail or "
+    rv = fspr_uid_name_get(&tmp, uid, p);
+    ABTS_ASSERT(tc, "fspr_uid_name_get should fail or "
                 "return a user name",
                 rv != APR_SUCCESS || tmp != NULL);
 
     errno = 0;
     tmp = NULL;
-    rv = apr_gid_name_get(&tmp, gid, p);
-    ABTS_ASSERT(tc, "apr_gid_name_get should fail or "
+    rv = fspr_gid_name_get(&tmp, gid, p);
+    ABTS_ASSERT(tc, "fspr_gid_name_get should fail or "
                 "return a group name",
                 rv != APR_SUCCESS || tmp != NULL);
 
     gid = 424242;
     errno = 0;
-    rv = apr_gid_get(&gid, "I_AM_NOT_A_GROUP", p);
-    ABTS_ASSERT(tc, "apr_gid_get should fail or "
+    rv = fspr_gid_get(&gid, "I_AM_NOT_A_GROUP", p);
+    ABTS_ASSERT(tc, "fspr_gid_get should fail or "
                 "set a group number",
                 rv != APR_SUCCESS || gid == 424242);
 
     gid = uid = 424242;
     errno = 0;
-    rv = apr_uid_get(&uid, &gid, "I_AM_NOT_A_USER", p);
-    ABTS_ASSERT(tc, "apr_gid_get should fail or "
+    rv = fspr_uid_get(&uid, &gid, "I_AM_NOT_A_USER", p);
+    ABTS_ASSERT(tc, "fspr_gid_get should fail or "
                 "set a user and group number",
                 rv != APR_SUCCESS || uid == 424242 || gid == 4242442);
 
     errno = 0;
     tmp = NULL;
-    rv = apr_uid_homepath_get(&tmp, "I_AM_NOT_A_USER", p);
-    ABTS_ASSERT(tc, "apr_uid_homepath_get should fail or "
+    rv = fspr_uid_homepath_get(&tmp, "I_AM_NOT_A_USER", p);
+    ABTS_ASSERT(tc, "fspr_uid_homepath_get should fail or "
                 "set a path name",
                 rv != APR_SUCCESS || tmp != NULL);
 }

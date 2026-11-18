@@ -680,8 +680,8 @@ static int vxprintf(void (*func) (void *, const char *, int),	/* Consumer of tex
 		case etSQLESCAPE2:
 		case etSQLESCAPE4:
 		case etSQLESCAPE3:{
-				int i, j, n, ch, isnull;
-				int needQuote;
+				size_t i, j, n, ch;
+				int needQuote, isnull;
 				char *escarg = va_arg(ap, char *);
 				isnull = escarg == 0;
 				if (isnull)

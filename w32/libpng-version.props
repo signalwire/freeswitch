@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <!-- Release tag in freeswitch/windows-deps: libpng-v$(libpngVersion)_$(libpngBuildNumber) -->
+    <libpngVersion>1.6.58</libpngVersion>
+    <libpngBuildNumber>1</libpngBuildNumber>
+  </PropertyGroup>
+  <PropertyGroup>
+    <libpngVersionImported>true</libpngVersionImported>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="libpngVersion">
+      <Value>$(libpngVersion)</Value>
+    </BuildMacro>
+    <BuildMacro Include="libpngBuildNumber">
+      <Value>$(libpngBuildNumber)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

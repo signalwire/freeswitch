@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<document type="freeswitch/xml">
+  <X-PRE-PROCESS cmd="set" data="local_ip_v4=127.0.0.1"/>
+  <X-PRE-PROCESS cmd="set" data="domain=127.0.0.1"/>
+
+  <section name="configuration" description="Configuration">
+
+    <configuration name="modules.conf" description="Modules">
+      <modules>
+        <load module="mod_console"/>
+        <load module="mod_loopback"/>
+        <load module="mod_dptools"/>
+        <load module="mod_dialplan_xml"/>
+        <load module="mod_sndfile"/>
+        <load module="mod_verto"/>
+      </modules>
+    </configuration>
+
+    <configuration name="switch.conf" description="Core Configuration">
+      <settings>
+        <param name="colorize-console" value="false"/>
+        <param name="loglevel" value="debug"/>
+        <param name="rtp-start-port" value="16384"/>
+        <param name="rtp-end-port" value="16484"/>
+      </settings>
+    </configuration>
+
+    <configuration name="console.conf" description="Console Logger">
+      <mappings>
+        <map name="all" value="console,debug,info,notice,warning,err,crit,alert"/>
+      </mappings>
+      <settings>
+        <param name="colorize" value="false"/>
+        <param name="loglevel" value="debug"/>
+      </settings>
+    </configuration>
+
+    <configuration name="timezones.conf" description="Timezones">
+      <timezones>
+        <zone name="GMT" value="GMT0"/>
+      </timezones>
+    </configuration>
+
+    <X-PRE-PROCESS cmd="include" data="verto.conf.xml"/>
+
+  </section>
+</document>

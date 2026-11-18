@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "apr.h"
-#include "apr_private.h"
-#include "apr_strings.h"
-#include "apr_portable.h"
+#include "fspr.h"
+#include "fspr_private.h"
+#include "fspr_strings.h"
+#include "fspr_portable.h"
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
@@ -33,7 +33,7 @@
  * unpacked.
  */
 
-APR_DECLARE(const char*) apr_os_default_encoding (apr_pool_t *pool)
+APR_DECLARE(const char*) fspr_os_default_encoding (fspr_pool_t *pool)
 {
 #ifdef __MVS__
 #    ifdef __CODESET__
@@ -63,7 +63,7 @@ APR_DECLARE(const char*) apr_os_default_encoding (apr_pool_t *pool)
 }
 
 
-APR_DECLARE(const char*) apr_os_locale_encoding (apr_pool_t *pool)
+APR_DECLARE(const char*) fspr_os_locale_encoding (fspr_pool_t *pool)
 {
 #if defined(HAVE_NL_LANGINFO) && defined(CODESET)
     const char *charset;
@@ -72,12 +72,12 @@ APR_DECLARE(const char*) apr_os_locale_encoding (apr_pool_t *pool)
     if (charset && *charset) {
 #ifdef _OSD_POSIX /* Bug workaround - delete as soon as fixed in OSD_POSIX */
         /* Some versions of OSD_POSIX return nl_langinfo(CODESET)="^[nN]" */
-        /* Ignore the bogus information and use apr_os_default_encoding() */
+        /* Ignore the bogus information and use fspr_os_default_encoding() */
         if (charset[0] != '^')
 #endif
         return charset;
     }
 #endif
 
-    return apr_os_default_encoding(pool);
+    return fspr_os_default_encoding(pool);
 }

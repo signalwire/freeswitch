@@ -31,21 +31,21 @@
  * SUCH DAMAGE.
  */
 
-#include "apr_arch_misc.h"
-#include "apr_strings.h"
-#include "apr_lib.h"
+#include "fspr_arch_misc.h"
+#include "fspr_strings.h"
+#include "fspr_lib.h"
 
 #define EMSG    ""
 
-APR_DECLARE(apr_status_t) apr_getopt_init(apr_getopt_t **os, apr_pool_t *cont,
+APR_DECLARE(fspr_status_t) fspr_getopt_init(fspr_getopt_t **os, fspr_pool_t *cont,
                                       int argc, const char *const *argv)
 {
     void *argv_buff;
 
-    *os = apr_palloc(cont, sizeof(apr_getopt_t));
+    *os = fspr_palloc(cont, sizeof(fspr_getopt_t));
     (*os)->cont = cont;
     (*os)->reset = 0;
-    (*os)->errfn = (apr_getopt_err_fn_t*)(fprintf);
+    (*os)->errfn = (fspr_getopt_err_fn_t*)(fprintf);
     (*os)->errarg = (void*)(stderr);
 
     (*os)->place = EMSG;
@@ -55,7 +55,7 @@ APR_DECLARE(apr_status_t) apr_getopt_init(apr_getopt_t **os, apr_pool_t *cont,
        that's the primary purpose of this function.  But people might
        want to use this function with arrays other than the main argv,
        and we shouldn't touch the caller's data.  So we copy. */
-    argv_buff = apr_palloc(cont, (argc + 1) * sizeof(const char *));
+    argv_buff = fspr_palloc(cont, (argc + 1) * sizeof(const char *));
     memcpy(argv_buff, argv, argc * sizeof(const char *));
     (*os)->argv = argv_buff;
     (*os)->argv[argc] = NULL;
@@ -68,7 +68,7 @@ APR_DECLARE(apr_status_t) apr_getopt_init(apr_getopt_t **os, apr_pool_t *cont,
     return APR_SUCCESS;
 }
 
-APR_DECLARE(apr_status_t) apr_getopt(apr_getopt_t *os, const char *opts, 
+APR_DECLARE(fspr_status_t) fspr_getopt(fspr_getopt_t *os, const char *opts, 
                                      char *optch, const char **optarg)
 {
     const char *oli;  /* option letter list index */
@@ -101,7 +101,7 @@ APR_DECLARE(apr_status_t) apr_getopt(apr_getopt_t *os, const char *opts,
             ++os->ind;
         if (os->errfn && *opts != ':') {
             (os->errfn)(os->errarg, "%s: illegal option -- %c\n",
-                        apr_filepath_name_get(*os->argv), os->opt);
+                        fspr_filepath_name_get(*os->argv), os->opt);
         }
         *optch = os->opt;
         return (APR_BADCH);
@@ -123,7 +123,7 @@ APR_DECLARE(apr_status_t) apr_getopt(apr_getopt_t *os, const char *opts,
             if (os->errfn) {
                 (os->errfn)(os->errarg, 
                             "%s: option requires an argument -- %c\n",
-                            apr_filepath_name_get(*os->argv), os->opt);
+                            fspr_filepath_name_get(*os->argv), os->opt);
             }
             *optch = os->opt;
             return (APR_BADCH);
@@ -155,7 +155,7 @@ static void reverse(const char **argv, int start, int len)
  * non-option arguments, os->skip_end is where we stopped, and os->ind
  * is where we are now.
  */
-static void permute(apr_getopt_t *os)
+static void permute(fspr_getopt_t *os)
 {
     int len1 = os->skip_end - os->skip_start;
     int len2 = os->ind - os->skip_end;
@@ -178,27 +178,27 @@ static void permute(apr_getopt_t *os)
 }
 
 /* Helper function to print out an error involving a long option */
-static apr_status_t serr(apr_getopt_t *os, const char *err, const char *str,
-                         apr_status_t status)
+static fspr_status_t serr(fspr_getopt_t *os, const char *err, const char *str,
+                         fspr_status_t status)
 {
     if (os->errfn)
         (os->errfn)(os->errarg, "%s: %s: %s\n", 
-                    apr_filepath_name_get(*os->argv), err, str);
+                    fspr_filepath_name_get(*os->argv), err, str);
     return status;
 }
 
 /* Helper function to print out an error involving a short option */
-static apr_status_t cerr(apr_getopt_t *os, const char *err, int ch,
-                         apr_status_t status)
+static fspr_status_t cerr(fspr_getopt_t *os, const char *err, int ch,
+                         fspr_status_t status)
 {
     if (os->errfn)
         (os->errfn)(os->errarg, "%s: %s: %c\n", 
-                    apr_filepath_name_get(*os->argv), err, ch);
+                    fspr_filepath_name_get(*os->argv), err, ch);
     return status;
 }
 
-APR_DECLARE(apr_status_t) apr_getopt_long(apr_getopt_t *os,
-                                          const apr_getopt_option_t *opts,
+APR_DECLARE(fspr_status_t) fspr_getopt_long(fspr_getopt_t *os,
+                                          const fspr_getopt_option_t *opts,
                                           int *optch, const char **optarg)
 {
     const char *p;
@@ -232,7 +232,7 @@ APR_DECLARE(apr_status_t) apr_getopt_long(apr_getopt_t *os,
         p = os->argv[os->ind++] + 1;
         if (*p == '-' && p[1] != '\0') {        /* Long option */
             /* Search for the long option name in the caller's table. */
-            apr_size_t len = 0;
+            fspr_size_t len = 0;
 
             p++;
             for (i = 0; ; i++) {

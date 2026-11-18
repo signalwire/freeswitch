@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" InitialTargets="GitVersion" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <GitSkipCache>true</GitSkipCache>
+  </PropertyGroup>
   <ImportGroup Label="PropertySheets">
     <Import Project="basedir.props" Condition=" '$(BaseDirImported)' == ''"/>
+    <Import Project="Setup\GitInfo\GitInfo.targets" />
   </ImportGroup>
 
   <PropertyGroup>
@@ -11,6 +15,10 @@
   <UsingTask TaskName="SwitchVersionTask" 
              TaskFactory="CodeTaskFactory"  
              AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+             <ParameterGroup>
+                <commits Required="true" />
+                <revision Required="true" />
+             </ParameterGroup>
              <Task>  
                 <Reference Include="Microsoft.Build" />
                 <Reference Include="Microsoft.Build.Framework" />
@@ -24,6 +32,10 @@ using Microsoft.Build.Framework;
 
     public class SwitchVersionTask : Microsoft.Build.Utilities.Task
     {
+        [Required]
+        public string revision { get; set; }
+        public string commits { get; set; }
+
         private string basedir;
         private string TemplatePath;
         private string DestinationPath;
@@ -31,6 +43,9 @@ using Microsoft.Build.Framework;
         public override bool Execute()
         {
             basedir = Path.GetFullPath(@"$(BaseDir)");
+
+            int commit_count = 0;
+            Int32.TryParse(commits, out commit_count);
 
             Log.LogMessage(MessageImportance.High,
                   "Parsing FreeSWITCH version.");                    
@@ -49,9 +64,26 @@ using Microsoft.Build.Framework;
                    string[] tokens = value.Split('-');
                    value = tokens[0];
                }        
-               v.Add(m.Groups[1].Value.Trim(), value.Trim());
-               Log.LogMessage(MessageImportance.High,
-                    m.Groups[1].Value + " = '" + value.Trim() + "'");                    
+               var name = m.Groups[1].Value.Trim();
+               value = value.Trim();
+
+               if (name.StartsWith("SWITCH_VERSION_REVISION")) {
+                   if (string.IsNullOrWhiteSpace(value)) {
+                       value = revision;
+                   }
+
+                   if (name != "SWITCH_VERSION_REVISION_HUMAN") {
+                       value = "~" + value;
+                   
+                       if (commit_count > 0) {
+                           value = "-dev-"+ commits + value;
+                       } else {
+                           value = "-release" + value;
+                       }
+                   }
+               }
+               v.Add(name, value);
+               Log.LogMessage(MessageImportance.High, name + " = '" + value + "'");
             }
             
             //---------------------------------------------------------            
@@ -93,7 +125,7 @@ using Microsoft.Build.Framework;
   </UsingTask>  
 
   <Target Name="SwitchVersionTarget" BeforeTargets="CustomBuild;Build">  
-      <SwitchVersionTask>         
+      <SwitchVersionTask commits="$(GitCommits)" revision="$(GitCommit)">
       </SwitchVersionTask>         
   </Target> 
 

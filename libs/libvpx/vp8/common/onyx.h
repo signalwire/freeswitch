@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VP8_COMMON_ONYX_H_
-#define VP8_COMMON_ONYX_H_
+#ifndef VPX_VP8_COMMON_ONYX_H_
+#define VPX_VP8_COMMON_ONYX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,13 +25,6 @@ extern "C" {
 struct VP8_COMP;
 
 /* Create/destroy static data structures. */
-
-typedef enum {
-  NORMAL = 0,
-  FOURFIVE = 1,
-  THREEFIVE = 2,
-  ONETWO = 3
-} VPX_SCALING;
 
 typedef enum {
   USAGE_LOCAL_FILE_PLAYBACK = 0x0,
@@ -58,19 +51,19 @@ typedef enum {
 #include <assert.h>
 static INLINE void Scale2Ratio(int mode, int *hr, int *hs) {
   switch (mode) {
-    case NORMAL:
+    case VP8E_NORMAL:
       *hr = 1;
       *hs = 1;
       break;
-    case FOURFIVE:
+    case VP8E_FOURFIVE:
       *hr = 4;
       *hs = 5;
       break;
-    case THREEFIVE:
+    case VP8E_THREEFIVE:
       *hr = 3;
       *hs = 5;
       break;
-    case ONETWO:
+    case VP8E_ONETWO:
       *hr = 1;
       *hs = 2;
       break;
@@ -90,7 +83,14 @@ typedef struct {
   int Width;
   int Height;
   struct vpx_rational timebase;
-  unsigned int target_bandwidth; /* kilobits per second */
+  /* In either kilobits per second or bits per second, depending on which
+   * copy of oxcf this is in.
+   * - ctx->oxcf.target_bandwidth is in kilobits per second. See
+   *   set_vp8e_config().
+   * - ctx->cpi->oxcf.target_bandwidth in is bits per second. See
+   *   vp8_change_config().
+   */
+  unsigned int target_bandwidth;
 
   /* Parameter used for applying denoiser.
    * For temporal denoiser: noise_sensitivity = 0 means off,
@@ -221,6 +221,7 @@ typedef struct {
 
   /* Temporal scaling parameters */
   unsigned int number_of_layers;
+  /* kilobits per second */
   unsigned int target_bitrate[VPX_TS_MAX_PERIODICITY];
   unsigned int rate_decimator[VPX_TS_MAX_PERIODICITY];
   unsigned int periodicity;
@@ -241,44 +242,44 @@ typedef struct {
 #endif
 } VP8_CONFIG;
 
-void vp8_initialize();
+void vp8_initialize(void);
 
-struct VP8_COMP *vp8_create_compressor(VP8_CONFIG *oxcf);
+struct VP8_COMP *vp8_create_compressor(const VP8_CONFIG *oxcf);
 void vp8_remove_compressor(struct VP8_COMP **comp);
 
 void vp8_init_config(struct VP8_COMP *onyx, VP8_CONFIG *oxcf);
-void vp8_change_config(struct VP8_COMP *onyx, VP8_CONFIG *oxcf);
+void vp8_change_config(struct VP8_COMP *cpi, const VP8_CONFIG *oxcf);
 
-int vp8_receive_raw_frame(struct VP8_COMP *comp, unsigned int frame_flags,
+int vp8_receive_raw_frame(struct VP8_COMP *cpi, unsigned int frame_flags,
                           YV12_BUFFER_CONFIG *sd, int64_t time_stamp,
-                          int64_t end_time_stamp);
-int vp8_get_compressed_data(struct VP8_COMP *comp, unsigned int *frame_flags,
+                          int64_t end_time);
+int vp8_get_compressed_data(struct VP8_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, unsigned char *dest,
                             unsigned char *dest_end, int64_t *time_stamp,
                             int64_t *time_end, int flush);
-int vp8_get_preview_raw_frame(struct VP8_COMP *comp, YV12_BUFFER_CONFIG *dest,
+int vp8_get_preview_raw_frame(struct VP8_COMP *cpi, YV12_BUFFER_CONFIG *dest,
                               vp8_ppflags_t *flags);
 
-int vp8_use_as_reference(struct VP8_COMP *comp, int ref_frame_flags);
-int vp8_update_reference(struct VP8_COMP *comp, int ref_frame_flags);
-int vp8_get_reference(struct VP8_COMP *comp,
+int vp8_use_as_reference(struct VP8_COMP *cpi, int ref_frame_flags);
+int vp8_update_reference(struct VP8_COMP *cpi, int ref_frame_flags);
+int vp8_get_reference(struct VP8_COMP *cpi,
                       enum vpx_ref_frame_type ref_frame_flag,
                       YV12_BUFFER_CONFIG *sd);
-int vp8_set_reference(struct VP8_COMP *comp,
+int vp8_set_reference(struct VP8_COMP *cpi,
                       enum vpx_ref_frame_type ref_frame_flag,
                       YV12_BUFFER_CONFIG *sd);
-int vp8_update_entropy(struct VP8_COMP *comp, int update);
-int vp8_set_roimap(struct VP8_COMP *comp, unsigned char *map, unsigned int rows,
+int vp8_update_entropy(struct VP8_COMP *cpi, int update);
+int vp8_set_roimap(struct VP8_COMP *cpi, unsigned char *map, unsigned int rows,
                    unsigned int cols, int delta_q[4], int delta_lf[4],
                    unsigned int threshold[4]);
-int vp8_set_active_map(struct VP8_COMP *comp, unsigned char *map,
+int vp8_set_active_map(struct VP8_COMP *cpi, unsigned char *map,
                        unsigned int rows, unsigned int cols);
-int vp8_set_internal_size(struct VP8_COMP *comp, VPX_SCALING horiz_mode,
-                          VPX_SCALING vert_mode);
-int vp8_get_quantizer(struct VP8_COMP *c);
+int vp8_set_internal_size(struct VP8_COMP *cpi, VPX_SCALING_MODE horiz_mode,
+                          VPX_SCALING_MODE vert_mode);
+int vp8_get_quantizer(struct VP8_COMP *cpi);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // VP8_COMMON_ONYX_H_
+#endif  // VPX_VP8_COMMON_ONYX_H_

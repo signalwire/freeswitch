@@ -64,7 +64,7 @@ package com.adobe.net
 	 * URI syntax (e.g. custom query syntax or special handling of
 	 * non-hierarchical URI's), this class can be fully subclassed.  If you
 	 * intended to subclass URI, please see the source code for complete
-	 * documation on protected members and protected fuctions.</p>
+	 * documentation on protected members and protected functions.</p>
 	 * 
 	 * @langversion ActionScript 3.0
 	 * @playerversion Flash 9.0 
@@ -203,7 +203,7 @@ package com.adobe.net
 		
 		
 		/**
-		 * @private Private initializiation.
+		 * @private Private initialization.
 		 */
 		protected function initialize() : void
 		{
@@ -332,7 +332,7 @@ package com.adobe.net
 		 * well formed.  Sometimes characters that should have been escaped
 		 * are not, and those situations would break a regexp pattern.  This
 		 * function attempts to be smart about what it is parsing based on
-		 * location of characters relative to eachother.  This function has
+		 * location of characters relative to each other.  This function has
 		 * been proven through real-world use to parse the vast majority
 		 * of URI's correctly.
 		 *
@@ -835,7 +835,7 @@ package com.adobe.net
 		 * to be properly escaped and unescaped, it must be split into its
 		 * component parts.  This accessor escapes/unescapes the entire query
 		 * part without regard for it's component parts.  This has the
-		 * possibliity of leaving the query string in an ambiguious state in
+		 * possibliity of leaving the query string in an ambiguous state in
 		 * regards to its syntax.  If the contents of the query part are
 		 * important, it is recommended that get/setQueryValue() or
 		 * get/setQueryByMap() are used instead.</p>
@@ -2340,7 +2340,7 @@ package com.adobe.net
 		 * <p>This function is intended to be a helper function.
 		 * It is not all-knowning and will probably make mistakes
 		 * when attempting to parse a string of unknown origin.  If
-		 * your applicaiton is receiving input from the user, your
+		 * your application is receiving input from the user, your
 		 * application should already have a good idea what the user
 		 * should  be entering, and your application should be
 		 * pre-processing the user's input to make sure it is well formed
@@ -2354,7 +2354,7 @@ package com.adobe.net
 		 * on a URI that was created from unknownToURI() may not match
 		 * the input string due to the difference in escaping.</p>
 		 *
-		 * @param unknown	a potental URI string that should be parsed
+		 * @param unknown	a potential URI string that should be parsed
 		 * and loaded into this object.
 		 * @param defaultScheme	if it is determined that the passed string
 		 * looks like a URI, but it is missing the scheme part, this
