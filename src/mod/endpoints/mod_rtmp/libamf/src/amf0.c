@@ -5,6 +5,13 @@
 #include "io.h"
 #include "types.h"
 
+/*
+  The container readers below are mutually recursive, and the trees they build
+  are also walked recursively to free, size, write and clone them, so bounding
+  depth at read time is what keeps all of those paths off an unbounded stack.
+*/
+static amf0_data * amf0_data_read_depth(read_proc_t read_proc, void * user_data, unsigned int depth);
+
 /* function common to all array types */
 static void amf0_list_init(amf0_list * list) {
     if (list != NULL) {
@@ -231,7 +238,7 @@ static amf0_data * amf0_string_read(read_proc_t read_proc, void * user_data) {
 }
 
 /* read an object */
-static amf0_data * amf0_object_read(read_proc_t read_proc, void * user_data) {
+static amf0_data * amf0_object_read(read_proc_t read_proc, void * user_data, unsigned int depth) {
     amf0_data * data = amf0_object_new();
     if (data != NULL) {
         amf0_data * name;
@@ -239,7 +246,7 @@ static amf0_data * amf0_object_read(read_proc_t read_proc, void * user_data) {
         while (1) {
             name = amf0_string_read(read_proc, user_data);
             if (name != NULL) {
-                element = amf0_data_read(read_proc, user_data);
+                element = amf0_data_read_depth(read_proc, user_data, depth + 1);
                 if (element != NULL) {
                     if (amf0_object_add(data, (char *)amf0_string_get_uint8_ts(name), element) == NULL) {
                         amf0_data_free(name);
@@ -266,7 +273,7 @@ static amf0_data * amf0_object_read(read_proc_t read_proc, void * user_data) {
 }
 
 /* read an associative array */
-static amf0_data * amf0_associative_array_read(read_proc_t read_proc, void * user_data) {
+static amf0_data * amf0_associative_array_read(read_proc_t read_proc, void * user_data, unsigned int depth) {
     amf0_data * data = amf0_associative_array_new();
     if (data != NULL) {
         amf0_data * name;
@@ -277,7 +284,7 @@ static amf0_data * amf0_associative_array_read(read_proc_t read_proc, void * use
             while(1) {
                 name = amf0_string_read(read_proc, user_data);
                 if (name != NULL) {
-                    element = amf0_data_read(read_proc, user_data);
+                    element = amf0_data_read_depth(read_proc, user_data, depth + 1);
                     if (element != NULL) {
                         if (amf0_associative_array_add(data, (char *)amf0_string_get_uint8_ts(name), element) == NULL) {
                             amf0_data_free(name);
@@ -309,7 +316,7 @@ static amf0_data * amf0_associative_array_read(read_proc_t read_proc, void * use
 }
 
 /* read an array */
-static amf0_data * amf0_array_read(read_proc_t read_proc, void * user_data) {
+static amf0_data * amf0_array_read(read_proc_t read_proc, void * user_data, unsigned int depth) {
     size_t i;
     amf0_data * element;
     amf0_data * data = amf0_array_new();
@@ -319,7 +326,7 @@ static amf0_data * amf0_array_read(read_proc_t read_proc, void * user_data) {
             array_size = swap_uint32(array_size);
 
             for (i = 0; i < array_size; ++i) {
-                element = amf0_data_read(read_proc, user_data);
+                element = amf0_data_read_depth(read_proc, user_data, depth + 1);
 
                 if (element != NULL) {
                     if (amf0_array_push(data, element) == NULL) {
@@ -355,10 +362,23 @@ static amf0_data * amf0_date_read(read_proc_t read_proc, void * user_data) {
     }
 }
 
-/* load AMF data from stream */
-amf0_data * amf0_data_read(read_proc_t read_proc, void * user_data) {
+/*
+  Read one value nested inside `depth` enclosing containers. Every recursion arm
+  funnels back through here, so one check covers any mix of them.
+*/
+static amf0_data * amf0_data_read_depth(read_proc_t read_proc, void * user_data, unsigned int depth) {
     uint8_t type;
+
     if (read_proc(&type, sizeof(uint8_t), user_data) == sizeof(uint8_t)) {
+        /*
+          Consume the marker before refusing, so a message nested exactly to the
+          cap still reads cleanly: what gets dropped there is the innermost
+          container's terminator, and leaving its byte in the stream would
+          misalign everything after it.
+        */
+        if (depth >= AMF0_MAX_NESTING_DEPTH) {
+            return NULL;
+        }
         switch (type) {
             case AMF0_TYPE_NUMBER:
                 return amf0_number_read(read_proc, user_data);
@@ -367,16 +387,16 @@ amf0_data * amf0_data_read(read_proc_t read_proc, void * user_data) {
             case AMF0_TYPE_STRING:
                 return amf0_string_read(read_proc, user_data);
             case AMF0_TYPE_OBJECT:
-                return amf0_object_read(read_proc, user_data);
+                return amf0_object_read(read_proc, user_data, depth);
             case AMF0_TYPE_NULL:
                 return amf0_null_new();
             case AMF0_TYPE_UNDEFINED:
                 return amf0_undefined_new();
             /*case AMF0_TYPE_REFERENCE:*/
             case AMF0_TYPE_ECMA_ARRAY:
-                return amf0_associative_array_read(read_proc, user_data);
+                return amf0_associative_array_read(read_proc, user_data, depth);
             case AMF0_TYPE_STRICT_ARRAY:
-                return amf0_array_read(read_proc, user_data);
+                return amf0_array_read(read_proc, user_data, depth);
             case AMF0_TYPE_DATE:
                 return amf0_date_read(read_proc, user_data);
             /*case AMF0_TYPE_SIMPLEOBJECT:*/
@@ -389,6 +409,11 @@ amf0_data * amf0_data_read(read_proc_t read_proc, void * user_data) {
         }
     }
     return NULL;
+}
+
+/* load AMF data from stream */
+amf0_data * amf0_data_read(read_proc_t read_proc, void * user_data) {
+    return amf0_data_read_depth(read_proc, user_data, 0);
 }
 
 /* determines the size of the given AMF data */
