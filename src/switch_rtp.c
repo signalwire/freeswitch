@@ -37,14 +37,6 @@
 #endif
 #include <switch_stun.h>
 #include <fspr_network_io.h>
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef PACKAGE_BUGREPORT
-#undef VERSION
-#undef PACKAGE
-#undef inline
 #include <srtp2/srtp.h>
 #include <switch_ssl.h>
 #include <switch_jitterbuffer.h>
@@ -92,6 +84,11 @@ static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
 static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in);
+
+/* libsrtp's NSS backend opens an NSS context per cipher, and NSS is fully shut down when the
+ * last one closes. This idle session keeps ciphers, and with them NSS, alive for as long as
+ * SRTP is initialized. */
+static srtp_t srtp_keepalive = NULL;
 
 typedef char switch_rtp_hdr_size_check_t[sizeof(switch_rtp_hdr_t) == 12 ? 1 : -1];
 
@@ -1608,7 +1605,22 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	{
 		srtp_err_status_t stat = srtp_init();
 		if (stat == srtp_err_status_ok) { 
+			srtp_policy_t policy;
+			unsigned char key[SRTP_AES_ICM_128_KEY_LEN_WSALT] = { 0 };
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SRTP (%s) initialized.\n", srtp_get_version_string());
+
+			/* The session never protects anything, so the key does not matter. */
+			memset(&policy, 0, sizeof(policy));
+			srtp_crypto_policy_set_rtp_default(&policy.rtp);
+			srtp_crypto_policy_set_rtcp_default(&policy.rtcp);
+			policy.ssrc.type = ssrc_any_inbound;
+			policy.key = key;
+
+			if ((stat = srtp_create(&srtp_keepalive, &policy))) {
+				srtp_keepalive = NULL;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error creating the idle SRTP session (%d).\n", stat);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing SRTP (%d).\n", stat);
 		}
@@ -2652,9 +2664,14 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	switch_mutex_unlock(port_lock);
 
 #ifdef ENABLE_SRTP
+	if (srtp_keepalive) {
+		srtp_dealloc(srtp_keepalive);
+		srtp_keepalive = NULL;
+	}
 	srtp_shutdown();
 #endif
 	switch_rtp_dtls_destroy();
+	global_init = 0;
 }
 
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port)
