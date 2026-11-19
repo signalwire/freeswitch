@@ -1477,6 +1477,48 @@ static switch_bool_t sofia_has_dial_separator(const char *s)
 }
 
 
+/* One WARNING line when an in-dialog request a call sent ends with a final status of 300 or
+ * more, from the far end or from sofia-sip itself (a transaction timeout's 408, a transport
+ * error's 503): a BYE, REFER or INFO, or a re-INVITE or UPDATE on an answered call. Nothing
+ * else logs these at the default levels with the call and the method. The uuid comes from
+ * uuid_str, which sofia_on_hangup() keeps when it clears the uuid pointer, because a BYE is
+ * answered only once its channel is down. */
+static void sofia_log_in_dialog_failure(nua_event_t event, int status, char const *phrase,
+										sofia_private_t *sofia_private, sip_t const *sip)
+{
+	const char *method = NULL;
+
+	if (status < 300 || !sofia_private) {
+		return;
+	}
+
+	switch (event) {
+	case nua_r_bye:
+		method = "BYE";
+		break;
+	case nua_r_refer:
+		method = "REFER";
+		break;
+	case nua_r_info:
+		method = "INFO";
+		break;
+	case nua_r_invite:
+		method = "re-INVITE";
+		break;
+	case nua_r_update:
+		method = "UPDATE";
+		break;
+	default:
+		return;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "sofia: %s for call %s (Call-ID %s) answered %d %s\n",
+					  method,
+					  !zstr_buf(sofia_private->uuid_str) ? sofia_private->uuid_str : "unknown",
+					  (sip && sip->sip_call_id && !zstr(sip->sip_call_id->i_id)) ? sip->sip_call_id->i_id : "unknown",
+					  status, zstr(phrase) ? "" : phrase);
+}
+
 //sofia_dispatch_event_t *de
 static void our_sofia_event_callback(nua_event_t event,
 						  int status,
@@ -1493,6 +1535,15 @@ static void our_sofia_event_callback(nua_event_t event,
 	int check_destroy = 1;
 
 	profile->last_sip_event = switch_time_now();
+
+	/* A BYE is answered once its channel is down or gone, and the callback then returns before
+	 * any of its cases, so the in-dialog requests that need no channel state are logged here,
+	 * for a call's handle only (the same guard as below, and no gateway). */
+	if ((event == nua_r_bye || event == nua_r_refer || event == nua_r_info) && sofia_private &&
+		sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private &&
+		zstr(sofia_private->gateway_name)) {
+		sofia_log_in_dialog_failure(event, status, phrase, sofia_private, sip);
+	}
 
 	/* sofia_private will be == &mod_sofia_globals.keep_private whenever a request is done with a new handle that has to be
 	  freed whenever the request is done */
@@ -1533,6 +1584,11 @@ static void our_sofia_event_callback(nua_event_t event,
 				if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
 					tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
 					switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
+				}
+
+				/* A re-INVITE or UPDATE: only an answered call's is in-dialog. */
+				if ((event == nua_r_invite || event == nua_r_update) && switch_channel_test_flag(channel, CF_ANSWERED)) {
+					sofia_log_in_dialog_failure(event, status, phrase, sofia_private, sip);
 				}
 
 				if (tech_pvt->gateway_name) {
