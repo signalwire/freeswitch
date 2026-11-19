@@ -262,8 +262,6 @@ if test "x${cross_compiling}" = "xyes"; then
 		ac_cv_file__dev_ptmx=yes
 		# libjs
 		export ac_cv_va_copy=yes
-		# srtp
-		export ac_cv_file__dev_urandom=yes
 		# rpl_malloc
 		export ac_cv_func_realloc_0_nonnull=yes
 		export ac_cv_func_malloc_0_nonnull=yes
@@ -605,11 +603,6 @@ done
 if test x"${LUA_LIBS}" = x"" ; then
    LUA_LIBS="-llua"
 fi
-
-AC_ARG_ENABLE(srtp,
-[AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
-
-AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
 
 have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
@@ -1347,6 +1340,7 @@ PKG_CHECK_MODULES([CURL], [libcurl >= 7.19])
 PKG_CHECK_MODULES([PCRE2], [libpcre2-8 >=  10.00])
 PKG_CHECK_MODULES([SPEEX], [speex >= 1.2rc1 speexdsp >= 1.2rc1])
 PKG_CHECK_MODULES([MINIUPNPC], [miniupnpc >= 2.1])
+PKG_CHECK_MODULES([SRTP], [libsrtp2 >= 2.1.0])
 
 AC_CHECK_HEADER([natpmp.h], [], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
 AC_CHECK_LIB([natpmp], [initnatpmp], [NATPMP_LIBS=-lnatpmp], [AC_MSG_ERROR([no usable libnatpmp; please install libnatpmp devel package or equivalent])])
@@ -2272,7 +2266,6 @@ ac_configure_args="$ac_configure_args --with-modinstdir=${modulesdir} CONFIGURE_
 #	--localstatedir='$localstatedir' --datadir='$datadir'"
 
 # Run configure in all the subdirs
-AC_CONFIG_SUBDIRS([libs/srtp])
 if test "$use_system_apr" != "yes"; then
    AC_CONFIG_SUBDIRS([libs/apr])
 fi

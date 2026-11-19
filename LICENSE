@@ -1536,11 +1536,6 @@ Files: src/include/switch_profile.h
 Copyright: 2009,2010, Sangoma Technologies
 License: BSD-3-clause
 
-Files: libs/srtp/*
-Copyright: 2001-2006, Cisco Systems, Inc.
- 2005 Ingate Systems AB
-License: BSD-3-clause
-
 Files: libs/libsndfile/src/ima_oki_adpcm.h
 Copyright: 2007 <robs@users.sourceforge.net>
  2007-2009 Erik de Castro Lopo <erikd@mega-nerd.com>

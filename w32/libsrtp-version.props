@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <libsrtpVersion>2.8.1</libsrtpVersion>
+    <libsrtpBuildNumber>1</libsrtpBuildNumber>
+  </PropertyGroup>
+  <PropertyGroup>
+    <libsrtpVersionImported>true</libsrtpVersionImported>
+  </PropertyGroup>
+  <PropertyGroup />
+  <ItemDefinitionGroup />
+  <ItemGroup>
+    <BuildMacro Include="libsrtpVersion">
+      <Value>$(libsrtpVersion)</Value>
+    </BuildMacro>
+    <BuildMacro Include="libsrtpBuildNumber">
+      <Value>$(libsrtpBuildNumber)</Value>
+    </BuildMacro>
+  </ItemGroup>
+</Project>

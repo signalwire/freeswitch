@@ -114,12 +114,11 @@ install-recursive: install-libLTLIBRARIES install-binPROGRAMS
 
 CORE_CFLAGS  = $(AM_LIBAPR_CFLAGS) $(AM_LIBAPR_CPPFLAGS)
 CORE_CFLAGS += $(AM_LIBAPU_CPPFLAGS)
-CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/include
+CORE_CFLAGS += $(SRTP_CFLAGS)
 if ENABLE_LIBYUV
 CORE_CFLAGS += -I$(switch_srcdir)/libs/libyuv/include
 CORE_CFLAGS += -DSWITCH_HAVE_YUV
 endif
-CORE_CFLAGS += -I$(switch_srcdir)/libs/srtp/crypto/include -Ilibs/srtp/crypto/include
 CORE_CFLAGS += $(SPANDSP_CFLAGS)
 if ENABLE_LIBVPX
 CORE_CFLAGS += -DSWITCH_HAVE_VPX
@@ -135,11 +134,6 @@ if SYSTEM_APR
 CORE_LIBS += $(AM_LIBAPR_LINKLIBTOOL)
 else
 CORE_LIBS += libs/apr/libapr-1.la
-endif
-
-if ENABLE_SRTP
-CORE_CFLAGS += -DENABLE_SRTP
-CORE_LIBS += libs/srtp/libsrtp.la
 endif
 
 MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
@@ -279,7 +273,7 @@ endif
 lib_LTLIBRARIES	         = libfreeswitch.la
 libfreeswitch_la_CFLAGS  = $(CORE_CFLAGS) $(SQLITE_CFLAGS) $(GUMBO_CFLAGS) $(FVAD_CFLAGS) $(FREETYPE_CFLAGS) $(CURL_CFLAGS) $(PCRE2_CFLAGS) $(SPEEX_CFLAGS) $(MINIUPNPC_CFLAGS) $(LIBEDIT_CFLAGS) $(openssl_CFLAGS) $(SOFIA_SIP_CFLAGS) $(AM_CFLAGS) $(TPL_CFLAGS)
 libfreeswitch_la_LDFLAGS = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_LDFLAGS) -no-undefined
-libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE2_LIBS) $(SPEEX_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(LIBEDIT_LIBS) $(SYSTEMD_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS) $(SOFIA_SIP_LIBS)
+libfreeswitch_la_LIBADD  = $(CORE_LIBS) $(APR_LIBS) $(SQLITE_LIBS) $(GUMBO_LIBS) $(FVAD_LIBS) $(FREETYPE_LIBS) $(CURL_LIBS) $(PCRE2_LIBS) $(SPEEX_LIBS) $(MINIUPNPC_LIBS) $(NATPMP_LIBS) $(SRTP_LIBS) $(LIBEDIT_LIBS) $(SYSTEMD_LIBS) $(openssl_LIBS) $(PLATFORM_CORE_LIBS) $(TPL_LIBS) $(SPANDSP_LIBS) $(SOFIA_SIP_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 
 if HAVE_PNG
@@ -606,21 +600,6 @@ libs/apr/Makefile: libs/apr/Makefile.in libs/apr/config.status libs/apr libs/apr
 libs/apr/libapr-1.la: libs/apr/Makefile libs/apr/.update
 	@if [ $(MAKELEVEL) = 0 -o -z "`echo "$(MAKEARGS)" | grep  "j"`" ] ; then touch $(switch_srcdir)/src/include/switch.h; cd libs/apr && $(MAKE) $(MFLAGS) && touch libapr-1.la; fi
 
-SRTP_SRC =	libs/srtp/srtp/srtp.c libs/srtp/crypto/cipher/cipher.c libs/srtp/crypto/cipher/null_cipher.c \
-		libs/srtp/crypto/cipher/aes.c libs/srtp/crypto/cipher/aes_icm.c \
-		libs/srtp/crypto/hash/null_auth.c libs/srtp/crypto/hash/sha1.c \
-		libs/srtp/crypto/hash/hmac.c libs/srtp/crypto/hash/auth.c \
-		libs/srtp/crypto/math/datatypes.c \
-		libs/srtp/crypto/kernel/crypto_kernel.c libs/srtp/crypto/kernel/alloc.c \
-		libs/srtp/crypto/kernel/key.c libs/srtp/crypto/kernel/err.c \
-		libs/srtp/crypto/replay/rdb.c libs/srtp/crypto/replay/rdbx.c \
-		libs/srtp/crypto/cipher/cipher_test_cases.c libs/srtp/crypto/hash/auth_test_cases.c
-
-libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update $(SRTP_SRC)
-	touch $(switch_srcdir)/src/include/switch.h
-	@cd libs/srtp && $(MAKE)
-	@$(TOUCH_TARGET)
-
 ##
 ## helper targets
 ##
@@ -744,7 +723,6 @@ pristine:
 
 update-clean: clean python3-reconf
 	cd libs/esl && $(MAKE) clean
-	cd libs/srtp && $(MAKE) clean
 
 swigall: src/include/switch_swigable_cpp.h
 	@echo reswigging all
@@ -763,11 +741,6 @@ reconf:
 	rm config.cache
 	sh ./config.status --recheck
 	sh ./config.status
-
-srtp-reconf:
-	cd libs/srtp && $(MAKE) clean
-	cd libs/srtp && sh ./config.status --recheck
-	cd libs/srtp && sh ./config.status
 
 cluecon:
 	@clear

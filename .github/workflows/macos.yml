@@ -53,6 +53,7 @@ jobs:
             sofia-sip \
             speex \
             speexdsp \
+            srtp \
             sqlite \
           && \
           brew list --pinned | awk '{system("brew unpin " $1)}' && \

@@ -13,11 +13,6 @@ sdp_connection_t *sdp_media_connections(sdp_media_t const *m)
 	return NULL;
 }
 
-#ifdef _MSC_VER
-#define longlong __int64
-#include <strtoull.c>
-#endif
-
 /* For Emacs:
  * Local Variables:
  * mode:c

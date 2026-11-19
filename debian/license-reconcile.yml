@@ -13,9 +13,6 @@ Rules:
    Copyright: Nokia Corporation
    License: LGPL-2.1+
   -
-   Glob: libs/srtp/update.sh
-   Copyright: Ingate Systems AB
-  -
    Glob: src/g711.c
    Matches: Copyright\s\(C\)\s2006\sSteve\sUnderwood
    Matches: \spublic\sdomain\sfor\sthe\sbenefit\sof\sall\smankind
