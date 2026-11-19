@@ -137,6 +137,7 @@ BuildRequires: pcre2-devel
 BuildRequires: speex-devel 
 BuildRequires: miniupnpc-devel >= 2.1
 BuildRequires: libnatpmp-devel
+BuildRequires: libsrtp-devel >= 2.1.0
 BuildRequires: sqlite-devel >= 3.6.20
 BuildRequires: libtiff-devel
 BuildRequires: libedit-devel
@@ -153,6 +154,7 @@ Requires: pcre2
 Requires: speex
 Requires: miniupnpc >= 2.1
 Requires: libnatpmp
+Requires: libsrtp >= 2.1.0
 Requires: sqlite >= 3.6.20
 Requires: libtiff
 Requires: libedit

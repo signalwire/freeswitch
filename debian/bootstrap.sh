@@ -305,6 +305,7 @@ Build-Depends:
  libtiff5-dev,
  libminiupnpc-dev (>= 2.1),
  libnatpmp-dev,
+ libsrtp2-dev (>= 2.1.0),
  wget, pkg-config,
  yasm,
 # core codecs

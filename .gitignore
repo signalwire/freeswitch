@@ -299,6 +299,8 @@ libs/miniupnpc-*/
 libs/miniupnpc-*.zip
 libs/libnatpmp-*/
 libs/libnatpmp-*.zip
+libs/libsrtp-*/
+libs/libsrtp-*.zip
 libs/SharpZipLib.*/
 libs/SharpZipLib.*.nupkg
 libs/nasm-*/

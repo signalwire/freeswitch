@@ -45,7 +45,7 @@
 #undef VERSION
 #undef PACKAGE
 #undef inline
-#include <srtp.h>
+#include <srtp2/srtp.h>
 #include <switch_ssl.h>
 #include <switch_jitterbuffer.h>
 
