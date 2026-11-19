@@ -40,7 +40,7 @@ jobs:
             ldns \
             libks \
             libnatpmp \
-            libpq@18 \
+            libpq \
             libsndfile \
             libtool \
             lua \
@@ -62,7 +62,7 @@ jobs:
           && \
           brew link --force --overwrite \
             ffmpeg@7 \
-            libpq@18 \
+            libpq \
             ruby@3.4
 
       - name: Bootstrap FreeSWITCH
