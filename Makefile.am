@@ -136,10 +136,6 @@ else
 CORE_LIBS += libs/apr/libapr-1.la
 endif
 
-if ENABLE_SRTP
-CORE_CFLAGS += -DENABLE_SRTP
-endif
-
 MOD_LINK      = $(switch_srcdir)/libfreeswitch.la
 CLEANFILES    = src/include/switch_version.h src/include/switch_swigable_cpp.h
 BUILT_SOURCES = src/mod/modules.inc src/include/switch_version.h src/include/switch_swigable_cpp.h 

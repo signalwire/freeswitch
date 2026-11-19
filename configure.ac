@@ -604,11 +604,6 @@ if test x"${LUA_LIBS}" = x"" ; then
    LUA_LIBS="-llua"
 fi
 
-AC_ARG_ENABLE(srtp,
-[AC_HELP_STRING([--disable-srtp],[build without srtp support])],[enable_srtp="$enableval"],[enable_srtp="yes"])
-
-AM_CONDITIONAL([ENABLE_SRTP],[test "${enable_srtp}" = "yes"])
-
 have_openal=no
 AC_CHECK_LIB(openal, alcLoopbackOpenDeviceSOFT, [have_openal="yes"])
 AM_CONDITIONAL([HAVE_OPENAL],[test "${have_openal}" = "yes"])
