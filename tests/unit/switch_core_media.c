@@ -27,6 +27,27 @@
 #include <switch.h>
 #include <test/switch_test.h>
 
+/* The null endpoint doesn't create a media handle for audio-only calls, so create one to negotiate SDP on */
+static switch_status_t add_media_handle(switch_core_session_t *session)
+{
+	switch_core_media_params_t *mparams = switch_core_session_alloc(session, sizeof(*mparams));
+	switch_media_handle_t *smh = NULL;
+
+	mparams->inbound_codec_string = "PCMU";
+	mparams->outbound_codec_string = "PCMU";
+	mparams->sipip = "127.0.0.1";
+	mparams->rtpip = "127.0.0.1";
+
+	if (switch_media_handle_create(&smh, session, mparams) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_media_handle_set_media_flag(smh, SCMF_RUNNING);
+	switch_core_media_prepare_codecs(session, SWITCH_TRUE);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 FST_CORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN(switch_core_media)
@@ -135,6 +156,88 @@ FST_CORE_BEGIN("./conf")
 			if (session) {
 				switch_channel_hangup(switch_core_session_get_channel(session), SWITCH_CAUSE_NORMAL_CLEARING);
 				switch_core_session_rwunlock(session);
+			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(test_keep_partner_audio_flow_on_answer)
+		{
+			/* An outbound leg's a=inactive answer is copied onto its partner's audio send mode, and nothing
+			   restores it when that leg later re-INVITEs sendrecv. rtp_keep_partner_audio_flow_on_answer on
+			   the outbound leg leaves the partner's direction alone. Both null legs are already answered
+			   here; that's fine because the copy doesn't depend on either leg's answer state, so the same
+			   path runs when the A-leg is still early. */
+			const char *sendrecv_offer =
+				"v=0\r\n"
+				"o=- 1 1 IN IP4 127.0.0.1\r\n"
+				"s=-\r\n"
+				"c=IN IP4 127.0.0.1\r\n"
+				"t=0 0\r\n"
+				"m=audio 4000 RTP/AVP 0\r\n"
+				"a=rtpmap:0 PCMU/8000\r\n"
+				"a=sendrecv\r\n";
+			const char *inactive_answer =
+				"v=0\r\n"
+				"o=- 2 2 IN IP4 127.0.0.1\r\n"
+				"s=-\r\n"
+				"c=IN IP4 127.0.0.1\r\n"
+				"t=0 0\r\n"
+				"m=audio 4002 RTP/AVP 0\r\n"
+				"a=rtpmap:0 PCMU/8000\r\n"
+				"a=inactive\r\n";
+			int keep;
+
+			for (keep = 0; keep <= 1; keep++) {
+				switch_core_session_t *aleg = NULL, *bleg = NULL;
+				switch_channel_t *bchan;
+				switch_call_cause_t cause;
+				uint8_t proceed = 1;
+
+				switch_ivr_originate(NULL, &aleg, &cause, "null/+15553334444", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+				switch_ivr_originate(NULL, &bleg, &cause, "null/+15553335555", 2, NULL, NULL, NULL, NULL, NULL, SOF_NONE, NULL, NULL);
+				if (!aleg || !bleg) {
+					fst_fail("failed to originate sessions");
+					goto keep_partner_done;
+				}
+
+				if (add_media_handle(aleg) != SWITCH_STATUS_SUCCESS || add_media_handle(bleg) != SWITCH_STATUS_SUCCESS) {
+					fst_fail("failed to create media handles");
+					goto keep_partner_done;
+				}
+
+				/* Make aleg the partner of the outbound bleg, as originate does for a bridge */
+				bchan = switch_core_session_get_channel(bleg);
+				switch_channel_set_variable(bchan, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(aleg));
+				/* The null legs are already answered, so keep hold handling out of the way */
+				switch_channel_set_variable(bchan, "rtp_disable_hold", "true");
+				if (keep) {
+					switch_channel_set_variable(bchan, "rtp_keep_partner_audio_flow_on_answer", "true");
+				}
+
+				/* aleg first negotiates sendrecv with its own caller, as an inbound call does */
+				switch_core_media_negotiate_sdp(aleg, sendrecv_offer, &proceed, SDP_OFFER);
+				fst_xcheck(switch_core_session_media_flow(aleg, SWITCH_MEDIA_TYPE_AUDIO) == SWITCH_MEDIA_FLOW_SENDRECV,
+					"aleg starts sendrecv");
+
+				switch_core_media_negotiate_sdp(bleg, inactive_answer, &proceed, SDP_ANSWER);
+
+				if (keep) {
+					fst_xcheck(switch_core_session_media_flow(aleg, SWITCH_MEDIA_TYPE_AUDIO) == SWITCH_MEDIA_FLOW_SENDRECV,
+						"aleg stays sendrecv with rtp_keep_partner_audio_flow_on_answer");
+				} else {
+					fst_xcheck(switch_core_session_media_flow(aleg, SWITCH_MEDIA_TYPE_AUDIO) == SWITCH_MEDIA_FLOW_INACTIVE,
+						"aleg takes bleg's inactive answer by default");
+				}
+
+			keep_partner_done:
+				if (bleg) {
+					switch_channel_hangup(switch_core_session_get_channel(bleg), SWITCH_CAUSE_NORMAL_CLEARING);
+					switch_core_session_rwunlock(bleg);
+				}
+				if (aleg) {
+					switch_channel_hangup(switch_core_session_get_channel(aleg), SWITCH_CAUSE_NORMAL_CLEARING);
+					switch_core_session_rwunlock(aleg);
+				}
 			}
 		}
 		FST_TEST_END()
