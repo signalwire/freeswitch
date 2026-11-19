@@ -2306,40 +2306,31 @@ void *SWITCH_THREAD_FUNC conference_video_muxing_write_thread_run(switch_thread_
 
 			loops++;
 
-			if ((switch_size_t)pop != 1) {
-				frame = (switch_frame_t *) pop;
-				if (switch_test_flag(frame, SFF_ENCODED)) {
-					switch_core_session_write_encoded_video_frame(member->session, frame, 0, 0);
-				} else {
-					switch_core_session_write_video_frame(member->session, frame, SWITCH_IO_FLAG_NONE, 0);
-				}
+			frame = (switch_frame_t *) pop;
+			if (switch_test_flag(frame, SFF_ENCODED)) {
+				switch_core_session_write_encoded_video_frame(member->session, frame, 0, 0);
+			} else {
+				switch_core_session_write_video_frame(member->session, frame, SWITCH_IO_FLAG_NONE, 0);
+			}
 
-				if (!switch_test_flag(frame, SFF_ENCODED) || frame->m) {
-					switch_time_t now = switch_time_now();
+			if (!switch_test_flag(frame, SFF_ENCODED) || frame->m) {
+				switch_time_t now = switch_time_now();
 
-					if (last) {
-						int delta = (int)(now - last);
-						if (delta > member->conference->video_fps.ms * 5000) {
-							switch_core_session_request_video_refresh(member->session);
-						}
+				if (last) {
+					int delta = (int)(now - last);
+					if (delta > member->conference->video_fps.ms * 5000) {
+						switch_core_session_request_video_refresh(member->session);
 					}
-
-					last = now;
 				}
-				
-				switch_frame_buffer_free(member->fb, &frame);
+
+				last = now;
 			}
+
+			switch_frame_buffer_free(member->fb, &frame);
 		}
 	}
 
-	while (switch_frame_buffer_trypop(member->fb, &pop) == SWITCH_STATUS_SUCCESS) {
-		if (pop) {
-			if ((switch_size_t)pop != 1) {
-				frame = (switch_frame_t *) pop;
-				switch_frame_buffer_free(member->fb, &frame);
-			}
-		}
-	}
+	switch_frame_buffer_flush(member->fb);
 
 	switch_thread_rwlock_unlock(member->rwlock);
 
