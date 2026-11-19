@@ -959,6 +959,40 @@ switch_mutex_unlock(obj->flag_mutex);
 #define sofia_clear_pflag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->pflags[flag] = 0; switch_mutex_unlock(obj->flag_mutex);
 #define sofia_clear_pflag(obj, flag) (obj)->pflags[flag] = 0
 
+/* A profile's and its gateways' call counters (ib_calls, ob_calls,
+ * ib_failed_calls, ob_failed_calls) are shared by every call on the profile
+ * and changed from each call's own thread, so they change and are read under
+ * the profile's flag_mutex, as profile->inuse does. A gateway passes its
+ * profile's flag_mutex. */
+static inline void sofia_count_call(switch_mutex_t *mutex, uint32_t *counter)
+{
+	switch_mutex_lock(mutex);
+	(*counter)++;
+	switch_mutex_unlock(mutex);
+}
+
+static inline uint32_t sofia_read_call_count(switch_mutex_t *mutex, const uint32_t *counter)
+{
+	uint32_t count;
+
+	switch_mutex_lock(mutex);
+	count = *counter;
+	switch_mutex_unlock(mutex);
+
+	return count;
+}
+
+static inline void sofia_reset_call_counts(switch_mutex_t *mutex, uint32_t *ib_calls, uint32_t *ob_calls,
+										   uint32_t *ib_failed_calls, uint32_t *ob_failed_calls)
+{
+	switch_mutex_lock(mutex);
+	*ib_calls = 0;
+	*ob_calls = 0;
+	*ib_failed_calls = 0;
+	*ob_failed_calls = 0;
+	switch_mutex_unlock(mutex);
+}
+
 
 
 #define sofia_set_flag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
