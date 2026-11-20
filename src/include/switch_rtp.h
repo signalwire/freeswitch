@@ -289,6 +289,15 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_udptl_mode(switch_rtp_t *rtp_session)
 SWITCH_DECLARE(void) switch_rtp_reset(switch_rtp_t *rtp_session);
 
 /*!
+  \brief Lock/unlock the ICE mutex of an RTP session from outside switch_rtp.c.
+  Callers that mutate the ICE candidate tables (switch_core_media's clear_ice)
+  must hold this, otherwise the RTP receive thread can walk a half-cleared
+  candidate array. The mutex is recursive.
+*/
+SWITCH_DECLARE(void) switch_rtp_ice_lock(switch_rtp_t *rtp_session);
+SWITCH_DECLARE(void) switch_rtp_ice_unlock(switch_rtp_t *rtp_session);
+
+/*!
   \brief Assign a local address to the RTP session
   \param rtp_session an RTP session to assign the local address to
   \param host the ip or fqhn of the local address
