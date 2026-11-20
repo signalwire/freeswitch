@@ -1332,8 +1332,8 @@ void sofia_update_callee_id(switch_core_session_t *session, sofia_profile_t *pro
 	name_dup = strdup(name);
 	number_dup = strdup(number);
 	switch_assert(name_dup && number_dup);
-	name = switch_sanitize_number(name_dup);
-	number = switch_sanitize_number(number_dup);
+	name = switch_var_clean_string(switch_clean_string(switch_sanitize_number(name_dup)));
+	number = switch_var_clean_string(switch_clean_string(switch_sanitize_number(number_dup)));
 
 	if (switch_channel_inbound_display(channel)) {
 
@@ -1469,7 +1469,12 @@ static void sofia_handle_sip_r_refer(nua_t *nua, sofia_profile_t *profile, nua_h
 	}
 }
 
-
+/* Whether s holds anything switch_ivr_originate() splits a dial string on: ',' between peers,
+   '|' between failover groups, ':_:' between enterprise legs. */
+static switch_bool_t sofia_has_dial_separator(const char *s)
+{
+	return !zstr(s) && (strpbrk(s, ",|") || strstr(s, SWITCH_ENT_ORIGINATE_DELIM)) ? SWITCH_TRUE : SWITCH_FALSE;
+}
 
 
 //sofia_dispatch_event_t *de
@@ -1922,6 +1927,16 @@ static void our_sofia_event_callback(nua_event_t event,
 
 			}
 
+			/* The target and its user part are published below as a dial string and a part of one */
+			if (sofia_has_dial_separator(refer_to) || sofia_has_dial_separator(ref_to_user)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								  "Profile [%s] rejected a REFER whose Refer-To [%s] holds a dial string separator\n", profile->name, switch_str_nil(refer_to));
+				nua_respond(nh, 400, "Bad Refer-To", NUTAG_WITH_THIS_MSG(de->data->e_msg), TAG_END());
+				switch_safe_free(method);
+				switch_safe_free(full_url);
+				break;
+			}
+
 			if (!method) {
 				method = strdup("INVITE");
 				switch_assert(method);
@@ -2041,6 +2056,7 @@ static void our_sofia_event_callback(nua_event_t event,
 
 
 				sofia_glue_execute_sql_now(profile, &sql, SWITCH_TRUE);
+				switch_safe_free(contact_str);
 
 				sip_to_tag(nua_handle_get_home(nh), sip->sip_to, to_tag);
 			}
@@ -5611,6 +5627,12 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_EXTENDED_INFO_PARSING);
+						}
+					} else if (!strcasecmp(var, "enable-info-api-request")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_ENABLE_INFO_API_REQUEST);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_ENABLE_INFO_API_REQUEST);
 						}
 					} else if (!strcasecmp(var, "nonce-ttl") && !zstr(val)) {
 						profile->nonce_ttl = atoi(val);
@@ -9952,9 +9974,41 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					return;
 
 				} else if (!strcasecmp(sip->sip_content_type->c_subtype, "api-request")) {
-					char *cmd = strdup(sip->sip_payload->pl_data);
+					char *cmd;
 					char *arg;
+					char network_ip[80] = "";
+					int network_port = 0;
+					size_t log_len;
 					switch_stream_handle_t stream = { 0 };
+
+					/* leaves the buffer empty when the message carries no address info */
+					sofia_glue_get_addr(de->data->e_msg, network_ip, sizeof(network_ip), &network_port);
+
+					/* Both log lines below print the body's first line only, capped: the body comes
+					   from the request, has no length bound, and may hold line breaks. */
+					log_len = strcspn(sip->sip_payload->pl_data, "\r\n");
+					if (log_len > 256) {
+						log_len = 256;
+					}
+
+					if (!sofia_test_pflag(profile, PFLAG_ENABLE_INFO_API_REQUEST)) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+										  "Profile [%s] rejected an INFO from %s:%d requesting a FreeSWITCH API command [%.*s]. "
+										  "Set enable-info-api-request=true on the profile to permit it.\n",
+										  profile->name, network_ip, network_port, (int) log_len, sip->sip_payload->pl_data);
+
+						nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS_MSG(de->data->e_msg),
+									TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+									TAG_END());
+
+						return;
+					}
+
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO,
+									  "Profile [%s] running a FreeSWITCH API command requested by an INFO from %s:%d [%.*s]\n",
+									  profile->name, network_ip, network_port, (int) log_len, sip->sip_payload->pl_data);
+
+					cmd = strdup(sip->sip_payload->pl_data);
 
 					switch_assert(cmd);
 					SWITCH_STANDARD_STREAM(stream);

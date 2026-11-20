@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "./vp9_rtcd.h"
 #include "test/acm_random.h"
 #include "test/buffer.h"
 #include "test/register_state_check.h"
+#include "vpx_config.h"
 #include "vpx_ports/vpx_timer.h"
 
 namespace {
@@ -21,7 +22,7 @@ namespace {
 using ::libvpx_test::ACMRandom;
 using ::libvpx_test::Buffer;
 
-typedef void (*YUVTemporalFilterFunc)(
+using YUVTemporalFilterFunc = void (*)(
     const uint8_t *y_src, int y_src_stride, const uint8_t *y_pre,
     int y_pre_stride, const uint8_t *u_src, const uint8_t *v_src,
     int uv_src_stride, const uint8_t *u_pre, const uint8_t *v_pre,
@@ -290,7 +291,7 @@ void ApplyReferenceFilter(
 class YUVTemporalFilterTest
     : public ::testing::TestWithParam<TemporalFilterWithBd> {
  public:
-  virtual void SetUp() {
+  void SetUp() override {
     filter_func_ = GetParam().temporal_filter;
     bd_ = GetParam().bd;
     use_highbd_ = (bd_ != 8);
@@ -694,6 +695,18 @@ INSTANTIATE_TEST_SUITE_P(
         TemporalFilterWithBd(&wrap_vp9_highbd_apply_temporal_filter_sse4_1_12,
                              12)));
 #endif  // HAVE_SSE4_1
+#if HAVE_NEON
+WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_neon, 10)
+WRAP_HIGHBD_FUNC(vp9_highbd_apply_temporal_filter_neon, 12)
+
+INSTANTIATE_TEST_SUITE_P(
+    NEON, YUVTemporalFilterTest,
+    ::testing::Values(
+        TemporalFilterWithBd(&wrap_vp9_highbd_apply_temporal_filter_neon_10,
+                             10),
+        TemporalFilterWithBd(&wrap_vp9_highbd_apply_temporal_filter_neon_12,
+                             12)));
+#endif  // HAVE_NEON
 #else
 INSTANTIATE_TEST_SUITE_P(
     C, YUVTemporalFilterTest,
@@ -704,5 +717,11 @@ INSTANTIATE_TEST_SUITE_P(SSE4_1, YUVTemporalFilterTest,
                          ::testing::Values(TemporalFilterWithBd(
                              &vp9_apply_temporal_filter_sse4_1, 8)));
 #endif  // HAVE_SSE4_1
+#if HAVE_NEON
+INSTANTIATE_TEST_SUITE_P(NEON, YUVTemporalFilterTest,
+                         ::testing::Values(TemporalFilterWithBd(
+                             &vp9_apply_temporal_filter_neon, 8)));
+#endif  // HAVE_NEON
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+
 }  // namespace

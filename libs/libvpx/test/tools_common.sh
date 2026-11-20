@@ -133,7 +133,7 @@ vpx_config_option_enabled() {
   vpx_config_option="${1}"
   vpx_config_file="${LIBVPX_CONFIG_PATH}/vpx_config.h"
   config_line=$(grep "${vpx_config_option}" "${vpx_config_file}")
-  if echo "${config_line}" | egrep -q '1$'; then
+  if echo "${config_line}" | grep -E -q '1$'; then
     echo yes
   fi
 }
@@ -222,7 +222,7 @@ filter_strings() {
 
   if [ -n "${filter}" ]; then
     for s in ${strings}; do
-      if echo "${s}" | egrep -q ${exclude} "${filter}" > /dev/null 2>&1; then
+      if echo "${s}" | grep -E -q ${exclude} "${filter}" > /dev/null 2>&1; then
         filtered_strings="${filtered_strings} ${s}"
       fi
     done
@@ -280,7 +280,12 @@ run_tests() {
     test_end "${test}"
   done
 
-  local tested_config="$(test_configuration_target) @ $(current_hash)"
+  # C vs SIMD tests are run for x86 32-bit, 64-bit and ARM platform
+  if [ "${test_name}" = "vp9_c_vs_simd_encode" ]; then
+    local tested_config="$(current_hash)"
+  else
+    local tested_config="$(test_configuration_target) @ $(current_hash)"
+  fi
   echo "${test_name}: Done, all tests pass for ${tested_config}."
 }
 

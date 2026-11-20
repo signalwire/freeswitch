@@ -8,10 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <stdio.h>
+
 #include "vp9/encoder/vp9_ext_ratectrl.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/common/vp9_common.h"
 #include "vpx_dsp/psnr.h"
+#include "vpx/vpx_codec.h"
+#include "vpx/vpx_ext_ratectrl.h"
+#include "vpx/vpx_tpl.h"
 
 vpx_codec_err_t vp9_extrc_init(EXT_RATECTRL *ext_ratectrl) {
   if (ext_ratectrl == NULL) {
@@ -46,6 +52,14 @@ vpx_codec_err_t vp9_extrc_create(vpx_rc_funcs_t funcs,
   if (rc_firstpass_stats->frame_stats == NULL) {
     return VPX_CODEC_MEM_ERROR;
   }
+  if (funcs.rate_ctrl_log_path != NULL) {
+    ext_ratectrl->log_file = fopen(funcs.rate_ctrl_log_path, "w");
+    if (!ext_ratectrl->log_file) {
+      return VPX_CODEC_ERROR;
+    }
+  } else {
+    ext_ratectrl->log_file = NULL;
+  }
   ext_ratectrl->ready = 1;
   return VPX_CODEC_OK;
 }
@@ -55,6 +69,9 @@ vpx_codec_err_t vp9_extrc_delete(EXT_RATECTRL *ext_ratectrl) {
     return VPX_CODEC_INVALID_PARAM;
   }
   if (ext_ratectrl->ready) {
+    if (ext_ratectrl->log_file) {
+      fclose(ext_ratectrl->log_file);
+    }
     vpx_rc_status_t rc_status =
         ext_ratectrl->funcs.delete_model(ext_ratectrl->model);
     if (rc_status == VPX_RC_ERROR) {
@@ -92,6 +109,7 @@ static void gen_rc_firstpass_stats(const FIRSTPASS_STATS *stats,
   rc_frame_stats->mv_in_out_count = stats->mv_in_out_count;
   rc_frame_stats->duration = stats->duration;
   rc_frame_stats->count = stats->count;
+  rc_frame_stats->new_mv_count = stats->new_mv_count;
 }
 
 vpx_codec_err_t vp9_extrc_send_firstpass_stats(
@@ -118,6 +136,21 @@ vpx_codec_err_t vp9_extrc_send_firstpass_stats(
   return VPX_CODEC_OK;
 }
 
+vpx_codec_err_t vp9_extrc_send_tpl_stats(EXT_RATECTRL *ext_ratectrl,
+                                         const VpxTplGopStats *tpl_gop_stats) {
+  if (ext_ratectrl == NULL) {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+  if (ext_ratectrl->ready && ext_ratectrl->funcs.send_tpl_gop_stats != NULL) {
+    vpx_rc_status_t rc_status = ext_ratectrl->funcs.send_tpl_gop_stats(
+        ext_ratectrl->model, tpl_gop_stats);
+    if (rc_status == VPX_RC_ERROR) {
+      return VPX_CODEC_ERROR;
+    }
+  }
+  return VPX_CODEC_OK;
+}
+
 static int extrc_get_frame_type(FRAME_UPDATE_TYPE update_type) {
   // TODO(angiebird): Add unit test to make sure this function behaves like
   // get_frame_type_from_update_type()
@@ -131,32 +164,35 @@ static int extrc_get_frame_type(FRAME_UPDATE_TYPE update_type) {
     default:
       fprintf(stderr, "Unsupported update_type %d\n", update_type);
       abort();
-      return 1;
   }
 }
 
 vpx_codec_err_t vp9_extrc_get_encodeframe_decision(
-    EXT_RATECTRL *ext_ratectrl, int show_index, int coding_index, int gop_index,
-    FRAME_UPDATE_TYPE update_type,
-    RefCntBuffer *ref_frame_bufs[MAX_INTER_REF_FRAMES], int ref_frame_flags,
+    EXT_RATECTRL *ext_ratectrl, int gop_index,
     vpx_rc_encodeframe_decision_t *encode_frame_decision) {
+  assert(ext_ratectrl != NULL);
+  assert(ext_ratectrl->ready && (ext_ratectrl->funcs.rc_type & VPX_RC_QP) != 0);
+
+  vpx_rc_status_t rc_status = ext_ratectrl->funcs.get_encodeframe_decision(
+      ext_ratectrl->model, gop_index, encode_frame_decision);
+  if (rc_status == VPX_RC_ERROR) {
+    return VPX_CODEC_ERROR;
+  }
+  return VPX_CODEC_OK;
+}
+
+vpx_codec_err_t vp9_extrc_update_encodeframe_result(
+    EXT_RATECTRL *ext_ratectrl, int64_t bit_count, int actual_encoding_qindex) {
   if (ext_ratectrl == NULL) {
     return VPX_CODEC_INVALID_PARAM;
   }
   if (ext_ratectrl->ready) {
     vpx_rc_status_t rc_status;
-    vpx_rc_encodeframe_info_t encode_frame_info;
-    encode_frame_info.show_index = show_index;
-    encode_frame_info.coding_index = coding_index;
-    encode_frame_info.gop_index = gop_index;
-    encode_frame_info.frame_type = extrc_get_frame_type(update_type);
-
-    vp9_get_ref_frame_info(update_type, ref_frame_flags, ref_frame_bufs,
-                           encode_frame_info.ref_frame_coding_indexes,
-                           encode_frame_info.ref_frame_valid_list);
-
-    rc_status = ext_ratectrl->funcs.get_encodeframe_decision(
-        ext_ratectrl->model, &encode_frame_info, encode_frame_decision);
+    vpx_rc_encodeframe_result_t encode_frame_result;
+    encode_frame_result.bit_count = bit_count;
+    encode_frame_result.actual_encoding_qindex = actual_encoding_qindex;
+    rc_status = ext_ratectrl->funcs.update_encodeframe_result(
+        ext_ratectrl->model, &encode_frame_result);
     if (rc_status == VPX_RC_ERROR) {
       return VPX_CODEC_ERROR;
     }
@@ -164,37 +200,58 @@ vpx_codec_err_t vp9_extrc_get_encodeframe_decision(
   return VPX_CODEC_OK;
 }
 
-vpx_codec_err_t vp9_extrc_update_encodeframe_result(
-    EXT_RATECTRL *ext_ratectrl, int64_t bit_count,
-    const YV12_BUFFER_CONFIG *source_frame,
-    const YV12_BUFFER_CONFIG *coded_frame, uint32_t bit_depth,
-    uint32_t input_bit_depth, const int actual_encoding_qindex) {
-  if (ext_ratectrl == NULL) {
+vpx_codec_err_t vp9_extrc_get_gop_decision(
+    EXT_RATECTRL *ext_ratectrl, vpx_rc_gop_decision_t *gop_decision) {
+  vpx_rc_status_t rc_status;
+  if (ext_ratectrl == NULL || !ext_ratectrl->ready ||
+      (ext_ratectrl->funcs.rc_type & VPX_RC_GOP) == 0) {
     return VPX_CODEC_INVALID_PARAM;
   }
-  if (ext_ratectrl->ready) {
-    PSNR_STATS psnr;
-    vpx_rc_status_t rc_status;
-    vpx_rc_encodeframe_result_t encode_frame_result;
-    encode_frame_result.bit_count = bit_count;
-    encode_frame_result.pixel_count =
-        source_frame->y_crop_width * source_frame->y_crop_height +
-        2 * source_frame->uv_crop_width * source_frame->uv_crop_height;
-    encode_frame_result.actual_encoding_qindex = actual_encoding_qindex;
-#if CONFIG_VP9_HIGHBITDEPTH
-    vpx_calc_highbd_psnr(source_frame, coded_frame, &psnr, bit_depth,
-                         input_bit_depth);
-#else
-    (void)bit_depth;
-    (void)input_bit_depth;
-    vpx_calc_psnr(source_frame, coded_frame, &psnr);
-#endif
-    encode_frame_result.sse = psnr.sse[0];
-    rc_status = ext_ratectrl->funcs.update_encodeframe_result(
-        ext_ratectrl->model, &encode_frame_result);
-    if (rc_status == VPX_RC_ERROR) {
-      return VPX_CODEC_ERROR;
-    }
+  rc_status =
+      ext_ratectrl->funcs.get_gop_decision(ext_ratectrl->model, gop_decision);
+  if (rc_status == VPX_RC_ERROR) {
+    return VPX_CODEC_ERROR;
+  }
+  return VPX_CODEC_OK;
+}
+
+vpx_codec_err_t vp9_extrc_get_key_frame_decision(
+    EXT_RATECTRL *ext_ratectrl,
+    vpx_rc_key_frame_decision_t *key_frame_decision) {
+  if (ext_ratectrl == NULL || !ext_ratectrl->ready ||
+      (ext_ratectrl->funcs.rc_type & VPX_RC_GOP) == 0) {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+  vpx_rc_status_t rc_status = ext_ratectrl->funcs.get_key_frame_decision(
+      ext_ratectrl->model, key_frame_decision);
+  return rc_status == VPX_RC_OK ? VPX_CODEC_OK : VPX_CODEC_ERROR;
+}
+
+vpx_codec_err_t vp9_extrc_get_frame_rdmult(
+    EXT_RATECTRL *ext_ratectrl, int show_index, int coding_index, int gop_index,
+    FRAME_UPDATE_TYPE update_type, int gop_size, int use_alt_ref,
+    RefCntBuffer *ref_frame_bufs[MAX_INTER_REF_FRAMES], int ref_frame_flags,
+    int *rdmult) {
+  vpx_rc_status_t rc_status;
+  vpx_rc_encodeframe_info_t encode_frame_info;
+  if (ext_ratectrl == NULL || !ext_ratectrl->ready ||
+      (ext_ratectrl->funcs.rc_type & VPX_RC_RDMULT) == 0) {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+  encode_frame_info.show_index = show_index;
+  encode_frame_info.coding_index = coding_index;
+  encode_frame_info.gop_index = gop_index;
+  encode_frame_info.frame_type = extrc_get_frame_type(update_type);
+  encode_frame_info.gop_size = gop_size;
+  encode_frame_info.use_alt_ref = use_alt_ref;
+
+  vp9_get_ref_frame_info(update_type, ref_frame_flags, ref_frame_bufs,
+                         encode_frame_info.ref_frame_coding_indexes,
+                         encode_frame_info.ref_frame_valid_list);
+  rc_status = ext_ratectrl->funcs.get_frame_rdmult(ext_ratectrl->model,
+                                                   &encode_frame_info, rdmult);
+  if (rc_status == VPX_RC_ERROR) {
+    return VPX_CODEC_ERROR;
   }
   return VPX_CODEC_OK;
 }

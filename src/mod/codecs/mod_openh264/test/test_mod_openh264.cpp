@@ -43,6 +43,26 @@ static fctcl_init_t my_cl_options[] = {
 	FCTCL_INIT_NULL /* Sentinel */
 };
 
+/* Feed one RTP payload to the decoder the way the media layer does: a fresh frame per packet,
+ * the marker on the last packet of a picture and the timestamp advancing per picture. */
+static switch_status_t decode_rtp_payload(switch_codec_t *codec, switch_frame_t *frame, void *data, uint32_t datalen, switch_bool_t m)
+{
+	switch_status_t status;
+
+	frame->data = data;
+	frame->datalen = datalen;
+	frame->m = m;
+	frame->flags = 0;
+	frame->img = NULL;
+	frame->seq++;
+
+	status = switch_core_codec_decode_video(codec, frame);
+
+	if (m) frame->timestamp += 3000;
+
+	return status;
+}
+
 FST_CORE_BEGIN("conf")
 {
 	fctcl_install(my_cl_options);
@@ -207,11 +227,113 @@ FST_CORE_BEGIN("conf")
 		FST_TEST_END()
 
 
+		/* RTP payloads shorter than the headers their NAL type implies are rejected by the depacketizer,
+		 * while FU-A fragments with an empty payload, which RFC 6184 allows, are accepted. Without a
+		 * picture to return the decoder reports SWITCH_STATUS_MORE_DATA, so a dropped packet shows as
+		 * the key frame request it raises. */
+		FST_TEST_BEGIN(decoder_short_packet_test)
+		{
+			switch_status_t status;
+			switch_codec_t codec = { 0 };
+			switch_codec_settings_t codec_settings = {{ 0 }};
+			switch_frame_t frame = { 0 };
+			/* each packet buffer is exactly the length it claims */
+			uint8_t fu_a_indicator_only[] = { 0x7c };
+			uint8_t fu_a_start_empty[] = { 0x7c, 0x85 };
+			uint8_t fu_a_middle_empty[] = { 0x7c, 0x05 };
+			uint8_t fu_a_end_empty[] = { 0x7c, 0x45 };
+			uint8_t fu_a_start[] = { 0x7c, 0x85, 0x01, 0x02 };
+			uint8_t fu_a_end[] = { 0x7c, 0x45, 0x03, 0x04 };
+			uint8_t stap_a_indicator_only[] = { 0x78 };
+			uint8_t stap_a_half_size[] = { 0x78, 0x00 };
+			uint8_t single_nalu_header_only[] = { 0x65 };
+
+			switch_set_string(codec_settings.video.config_profile_name, "test-decoder-1");
+
+			status = switch_core_codec_init(&codec,
+							   "H264",
+							   NULL,
+							   NULL,
+							   0,
+							   0,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+							   &codec_settings, fst_pool);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+
+			frame.payload = 96;
+			frame.timestamp = 3000;
+
+			/* an empty payload adds nothing */
+			status = decode_rtp_payload(&codec, &frame, fu_a_indicator_only, 0, SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(frame.img == NULL);
+
+			/* an FU-A without the FU header is dropped and a key frame requested */
+			status = decode_rtp_payload(&codec, &frame, fu_a_indicator_only, sizeof(fu_a_indicator_only), SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+			fst_check(frame.img == NULL);
+			status = decode_rtp_payload(&codec, &frame, fu_a_indicator_only, sizeof(fu_a_indicator_only), SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+			fst_check(frame.img == NULL);
+
+			/* an FU-A start fragment with an empty payload is accepted */
+			status = decode_rtp_payload(&codec, &frame, fu_a_start_empty, sizeof(fu_a_start_empty), SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(!switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+			fst_check(frame.img == NULL);
+
+			/* a fragment without the FU header in the middle of a reassembly is dropped, then empty middle and end fragments complete one */
+			status = decode_rtp_payload(&codec, &frame, fu_a_start, sizeof(fu_a_start), SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			status = decode_rtp_payload(&codec, &frame, fu_a_indicator_only, sizeof(fu_a_indicator_only), SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+			status = decode_rtp_payload(&codec, &frame, fu_a_start, sizeof(fu_a_start), SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(!switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+			status = decode_rtp_payload(&codec, &frame, fu_a_middle_empty, sizeof(fu_a_middle_empty), SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(!switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+			status = decode_rtp_payload(&codec, &frame, fu_a_end_empty, sizeof(fu_a_end_empty), SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(frame.img == NULL);
+
+			/* an end fragment whose start fragment was lost is dropped */
+			status = decode_rtp_payload(&codec, &frame, fu_a_end, sizeof(fu_a_end), SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+			fst_check(frame.img == NULL);
+
+			/* an empty packet carrying the marker closes the picture: the fragment started before it is
+			 * handed to the decoder, so a later end fragment has no start to attach to */
+			status = decode_rtp_payload(&codec, &frame, fu_a_start, sizeof(fu_a_start), SWITCH_FALSE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			status = decode_rtp_payload(&codec, &frame, fu_a_indicator_only, 0, SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(frame.img == NULL);
+			status = decode_rtp_payload(&codec, &frame, fu_a_end, sizeof(fu_a_end), SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(switch_test_flag(&frame, SFF_WAIT_KEY_FRAME));
+
+			/* a STAP-A with no room for a NALU size, and a single NALU of only a header, are accepted */
+			status = decode_rtp_payload(&codec, &frame, stap_a_indicator_only, sizeof(stap_a_indicator_only), SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			status = decode_rtp_payload(&codec, &frame, stap_a_half_size, sizeof(stap_a_half_size), SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			status = decode_rtp_payload(&codec, &frame, single_nalu_header_only, sizeof(single_nalu_header_only), SWITCH_TRUE);
+			fst_check(status == SWITCH_STATUS_MORE_DATA);
+			fst_check(frame.img == NULL);
+
+			switch_core_codec_destroy(&codec);
+		}
+		FST_TEST_END()
+
 		FST_TEARDOWN_BEGIN()
 		{
-			const char *err = NULL;
+			/* the module stays loaded across the tests, FST_MODULE_END unloads it after the last one */
 			switch_sleep(1000000);
-			fst_check(switch_loadable_module_unload_module(SWITCH_GLOBAL_dirs.mod_dir, (char *)"mod_openh264", SWITCH_TRUE, &err) == SWITCH_STATUS_SUCCESS);
 		}
 		FST_TEARDOWN_END()
 	}

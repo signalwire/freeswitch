@@ -131,10 +131,13 @@ BuildRequires: curl-devel >= 7.19
 BuildRequires: gcc-c++
 BuildRequires: libtool >= 1.5.17
 BuildRequires: openssl-devel >= 1.0.1e
-BuildRequires: sofia-sip-devel >= 1.13.18
+BuildRequires: sofia-sip-devel >= 1.13.19
 BuildRequires: spandsp4-devel >= 3.1.1
 BuildRequires: pcre2-devel 
 BuildRequires: speex-devel 
+BuildRequires: miniupnpc-devel >= 2.1
+BuildRequires: libnatpmp-devel
+BuildRequires: libsrtp-devel >= 2.1.0
 BuildRequires: sqlite-devel >= 3.6.20
 BuildRequires: libtiff-devel
 BuildRequires: libedit-devel
@@ -149,6 +152,9 @@ BuildRequires: libsndfile-devel
 Requires: curl >= 7.19
 Requires: pcre2
 Requires: speex
+Requires: miniupnpc >= 2.1
+Requires: libnatpmp
+Requires: libsrtp >= 2.1.0
 Requires: sqlite >= 3.6.20
 Requires: libtiff
 Requires: libedit

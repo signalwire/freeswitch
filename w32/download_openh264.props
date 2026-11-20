@@ -33,7 +33,7 @@
 
   <Target Name="openh264DownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
       <DownloadPackageTask
-           package="http://ciscobinary.openh264.org/openh264-1.8.0-win64.dll.bz2"
+           package="http://ciscobinary.openh264.org/openh264-2.7.0-win64.dll.bz2"
            expectfileordirectory="$(BaseDir)$(Platform)\$(SolutionConfiguration)\openh264.dll"
            outputfolder=""
            outputfilename="openh264.dll.bz2"

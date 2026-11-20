@@ -37,16 +37,7 @@
 #endif
 #include <switch_stun.h>
 #include <fspr_network_io.h>
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef PACKAGE_BUGREPORT
-#undef VERSION
-#undef PACKAGE
-#undef inline
-#include <srtp.h>
-#include <srtp_priv.h>
+#include <srtp2/srtp.h>
 #include <switch_ssl.h>
 #include <switch_jitterbuffer.h>
 
@@ -94,7 +85,12 @@ static switch_port_t END_PORT = RTP_END_PORT;
 static switch_mutex_t *port_lock = NULL;
 static switch_size_t do_flush(switch_rtp_t *rtp_session, int force, switch_size_t bytes_in);
 
-typedef srtp_hdr_t rtp_hdr_t;
+/* libsrtp's NSS backend opens an NSS context per cipher, and NSS is fully shut down when the
+ * last one closes. This idle session keeps ciphers, and with them NSS, alive for as long as
+ * SRTP is initialized. */
+static srtp_t srtp_keepalive = NULL;
+
+typedef char switch_rtp_hdr_size_check_t[sizeof(switch_rtp_hdr_t) == 12 ? 1 : -1];
 
 
 #ifdef _MSC_VER
@@ -103,13 +99,12 @@ typedef srtp_hdr_t rtp_hdr_t;
 
 #ifdef _MSC_VER
 #pragma pack()
-#define ENABLE_SRTP
 #endif
 
 static switch_hash_t *alloc_hash = NULL;
 
 typedef struct {
-	srtp_hdr_t header;
+	switch_rtp_hdr_t header;
 	char body[SWITCH_RTP_MAX_BUF_LEN+4+sizeof(char *)];
 	switch_rtp_hdr_ext_t *ext;
 	char *ebody;
@@ -419,7 +414,7 @@ struct switch_rtp {
 	switch_dtls_t *dtls;
 	switch_dtls_t *rtcp_dtls;
 
-	rtp_hdr_t last_rtp_hdr;
+	switch_rtp_hdr_t last_rtp_hdr;
 
 	uint16_t seq;
 	uint32_t ssrc;
@@ -1565,7 +1560,6 @@ static void handle_ice(switch_rtp_t *rtp_session, switch_rtp_ice_t *ice, void *d
 }
 
 
-#ifdef ENABLE_SRTP
 SWITCH_DECLARE(void) switch_srtp_err_to_txt(srtp_err_status_t stat, char **msg)
 {
 	if (stat == srtp_err_status_replay_fail) *msg="replay check failed";
@@ -1597,7 +1591,6 @@ SWITCH_DECLARE(void) switch_srtp_err_to_txt(srtp_err_status_t stat, char **msg)
 	else if (stat == srtp_err_status_pkt_idx_adv) *msg="packet index advanced, reset needed";
 	else *msg="";
 }
-#endif
 
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
@@ -1605,16 +1598,29 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 		return;
 	}
 	switch_core_hash_init(&alloc_hash);
-#ifdef ENABLE_SRTP
 	{
 		srtp_err_status_t stat = srtp_init();
 		if (stat == srtp_err_status_ok) { 
+			srtp_policy_t policy;
+			unsigned char key[SRTP_AES_ICM_128_KEY_LEN_WSALT] = { 0 };
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SRTP (%s) initialized.\n", srtp_get_version_string());
+
+			/* The session never protects anything, so the key does not matter. */
+			memset(&policy, 0, sizeof(policy));
+			srtp_crypto_policy_set_rtp_default(&policy.rtp);
+			srtp_crypto_policy_set_rtcp_default(&policy.rtcp);
+			policy.ssrc.type = ssrc_any_inbound;
+			policy.key = key;
+
+			if ((stat = srtp_create(&srtp_keepalive, &policy))) {
+				srtp_keepalive = NULL;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error creating the idle SRTP session (%d).\n", stat);
+			}
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing SRTP (%d).\n", stat);
 		}
 	}
-#endif
 	switch_mutex_init(&port_lock, SWITCH_MUTEX_NESTED, pool);
 	switch_rtp_dtls_init();
 	global_init = 1;
@@ -1886,7 +1892,7 @@ static void rtcp_generate_sender_info(switch_rtp_t *rtp_session, struct switch_r
 
 	sr->ts = htonl(rtp_session->last_write_ts);
 	sr->pc = htonl(rtp_session->stats.outbound.packet_count);
-	sr->oc = htonl(rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(srtp_hdr_t));
+	sr->oc = htonl(rtp_session->stats.outbound.raw_bytes - rtp_session->stats.outbound.packet_count * sizeof(switch_rtp_hdr_t));
 
 	switch_time_exp_gmt(&now_hr,now);
 	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG10,"Sending an RTCP packet[%04d-%02d-%02d %02d:%02d:%02d.%d] lsr[%u] msw[%u] lsw[%u] stats_ssrc[%u] packet_count[%u] OC[%u]\n",
@@ -1981,7 +1987,7 @@ static void rtcp_generate_report_block(switch_rtp_t *rtp_session, struct switch_
 static void rtcp_stats_init(switch_rtp_t *rtp_session)
 {
 	switch_rtcp_numbers_t * stats = &rtp_session->stats.rtcp;
-	srtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
+	switch_rtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 	stats->ssrc = ntohl(hdr->ssrc);
 	stats->last_rpt_ts = rtp_session->write_timer.samplecount;
@@ -2032,7 +2038,7 @@ static void rtcp_stats_init(switch_rtp_t *rtp_session)
 static int rtcp_stats(switch_rtp_t *rtp_session)
 {
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
-	srtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
+	switch_rtp_hdr_t * hdr = &rtp_session->last_rtp_hdr;
 	switch_rtcp_numbers_t * stats = &rtp_session->stats.rtcp;
 	uint32_t packet_spacing_diff = 0, pkt_tsdiff, pkt_extended_seq;
 	uint16_t pkt_seq, seq_diff, max_seq;
@@ -2548,7 +2554,6 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 
 
 
-#ifdef ENABLE_SRTP
 		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 			int stat = 0;
@@ -2569,7 +2574,6 @@ static int check_rtcp_and_ice(switch_rtp_t *rtp_session)
 			}
 		}
 		switch_mutex_unlock(rtp_session->ice_mutex);
-#endif
 
 		//#define DEBUG_EXTRA
 #ifdef DEBUG_EXTRA
@@ -2652,10 +2656,13 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	switch_core_hash_destroy(&alloc_hash);
 	switch_mutex_unlock(port_lock);
 
-#ifdef ENABLE_SRTP
-	srtp_crypto_kernel_shutdown();
-#endif
+	if (srtp_keepalive) {
+		srtp_dealloc(srtp_keepalive);
+		srtp_keepalive = NULL;
+	}
+	srtp_shutdown();
 	switch_rtp_dtls_destroy();
+	global_init = 0;
 }
 
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port)
@@ -3860,7 +3867,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 	}
 
 
-#ifdef ENABLE_SRTP
 	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 		int x;
 
@@ -3886,7 +3892,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_del_dtls(switch_rtp_t *rtp_session, d
 			}
 		}
 	}
-#endif
 
  done:
 
@@ -4171,10 +4176,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_dtls(switch_rtp_t *rtp_session, d
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_session, switch_rtp_crypto_direction_t direction, uint32_t index, switch_secure_settings_t *ssec)
 {
-#ifndef ENABLE_SRTP
-	switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_CRIT, "SRTP NOT SUPPORTED IN THIS BUILD!\n");
-	return SWITCH_STATUS_FALSE;
-#else
 
 	switch_rtp_crypto_key_t *crypto_key;
 	srtp_policy_t *policy;
@@ -4399,8 +4400,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 		while (key_material && (mki_idx < *key_material_n)) {
 
-			if (key_material->mki_size < 1) {
-				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "MKI bad key size at MKI %d\n", mki_idx);
+			if (key_material->mki_size < 1 || key_material->mki_size > SRTP_MAX_MKI_LEN) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_ERROR, "MKI bad key size %u at MKI %d (allowed 1..%d)\n",
+								  key_material->mki_size, mki_idx, SRTP_MAX_MKI_LEN);
+
 				return SWITCH_STATUS_FALSE;
 			}
 
@@ -4410,7 +4413,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 			}
 
 			/* Setup MKI. */
-			mki->mki_id = switch_core_alloc(rtp_session->pool, sizeof(key_material->mki_size));
+			mki->mki_id = switch_core_alloc(rtp_session->pool, key_material->mki_size);
 			if (!mki->mki_id) {
 				return SWITCH_STATUS_FALSE;
 			}
@@ -4420,7 +4423,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 				return SWITCH_STATUS_FALSE;
 			}
 
-			memcpy(mki->mki_id, &key_material->mki_id, key_material->mki_size);
+			/* The id lives in an unsigned int: copy no more than its width, bytes past it stay zero. */
+			memcpy(mki->mki_id, &key_material->mki_id,
+				   key_material->mki_size < sizeof(key_material->mki_id) ? key_material->mki_size : sizeof(key_material->mki_id));
 			mki->mki_size = key_material->mki_size;
 			memcpy(mki->key, key_material->raw_key, keysalt_len);
 
@@ -4508,7 +4513,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 
 
 	return SWITCH_STATUS_SUCCESS;
-#endif
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval)
@@ -5345,9 +5349,7 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 {
 	void *pop;
 	switch_socket_t *sock;
-#ifdef ENABLE_SRTP
 	int x;
-#endif
 
 	if (!rtp_session || !*rtp_session || !(*rtp_session)->ready) {
 		return;
@@ -5439,7 +5441,6 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		switch_socket_close(sock);
 	}
 
-#ifdef ENABLE_SRTP
 	if ((*rtp_session)->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 		for(x = 0; x < 2; x++) {
 			if ((*rtp_session)->send_ctx[x]) {
@@ -5459,7 +5460,6 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		}
 		(*rtp_session)->flags[SWITCH_RTP_FLAG_SECURE_RECV] = 0;
 	}
-#endif
 
 	if ((*rtp_session)->timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->timer);
@@ -6636,7 +6636,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			if (rtp_session->has_rtcp) {
 				*flags |= SFF_RTCP;
 
-#ifdef ENABLE_SRTP
 				if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV]) {
 					int sbytes = (int) *bytes;
 					srtp_err_status_t stat = 0;
@@ -6656,7 +6655,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 
 					*bytes = sbytes;
 				}
-#endif
 				switch_mutex_unlock(rtp_session->ice_mutex);
 				return SWITCH_STATUS_SUCCESS;
 			}
@@ -6786,7 +6784,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	if (*bytes) {
 		if (!rtp_session->flags[SWITCH_RTP_FLAG_PROXY_MEDIA] && !rtp_session->flags[SWITCH_RTP_FLAG_UDPTL]) {
 
-#ifdef ENABLE_SRTP
 			switch_mutex_lock(rtp_session->ice_mutex);
 			if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->has_rtp &&
 				(check_recv_payload(rtp_session) ||
@@ -6863,7 +6860,6 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				*bytes = sbytes;
 			}
 			switch_mutex_unlock(rtp_session->ice_mutex);
-#endif
 		}
 
 
@@ -7641,7 +7637,6 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 		}
 	}
 
-#ifdef ENABLE_SRTP
 	if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && rtp_session->rtcp_recv_msg_p->header.version == 2) {
 		//if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_RECV] && (!rtp_session->ice.ice_user || rtp_session->rtcp_recv_msg_p->header.version == 2)) {
 		int sbytes = (int) *bytes;
@@ -7664,7 +7659,6 @@ static switch_status_t read_rtcp_packet(switch_rtp_t *rtp_session, switch_size_t
 		*bytes = sbytes;
 
 	}
-#endif
 
 	switch_mutex_unlock(rtp_session->ice_mutex);
 
@@ -8124,7 +8118,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 									switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_ENABLE_RTCP)) {
 									other_rtp_session->rtcp_send_msg = rtp_session->rtcp_recv_msg;
 
-#ifdef ENABLE_SRTP
 									switch_mutex_lock(other_rtp_session->ice_mutex);
 									if (switch_rtp_test_flag(other_rtp_session, SWITCH_RTP_FLAG_SECURE_SEND)) {
 										int stat = 0;
@@ -8142,7 +8135,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 										rtcp_bytes = sbytes;
 									}
 									switch_mutex_unlock(other_rtp_session->ice_mutex);
-#endif
 
 									if (switch_socket_sendto(other_rtp_session->rtcp_sock_output, other_rtp_session->rtcp_remote_addr, 0,
 															 (const char*)&other_rtp_session->rtcp_send_msg, &rtcp_bytes ) != SWITCH_STATUS_SUCCESS) {
@@ -9099,7 +9091,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			switch_swap_linear((int16_t *)send_msg->body, (int) datalen);
 		}
 
-#ifdef ENABLE_SRTP
 		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 			int sbytes = (int) bytes;
@@ -9139,7 +9130,6 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			bytes = sbytes;
 		}
 		switch_mutex_unlock(rtp_session->ice_mutex);
-#endif
 
 		now = switch_micro_time_now();
 #ifdef RTP_DEBUG_WRITE_DELTA
@@ -9345,7 +9335,7 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 	uint32_t len, ts = 0;
 	switch_payload_t payload = 0;
 	rtp_msg_t *send_msg = NULL;
-	srtp_hdr_t local_header;
+	switch_rtp_hdr_t local_header;
 	int r = 0;
 	switch_status_t status;
 
@@ -9626,7 +9616,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 	WRITE_INC(rtp_session);
 
 	if (process_encryption) {
-#ifdef ENABLE_SRTP
 		switch_mutex_lock(rtp_session->ice_mutex);
 		if (rtp_session->flags[SWITCH_RTP_FLAG_SECURE_SEND]) {
 
@@ -9661,13 +9650,10 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_write_raw(switch_rtp_t *rtp_session, 
 			*bytes = sbytes;
 		}
 		switch_mutex_unlock(rtp_session->ice_mutex);
-#endif
 	}
 
 	status = switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, data, bytes);
-#if defined(ENABLE_SRTP)
  end:
-#endif
 
 	WRITE_DEC(rtp_session);
 

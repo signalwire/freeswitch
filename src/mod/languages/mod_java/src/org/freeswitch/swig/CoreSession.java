@@ -148,7 +148,11 @@ public class CoreSession {
   }
 
   public void hangup(String cause) {
-    freeswitchJNI.CoreSession_hangup(swigCPtr, this, cause);
+    freeswitchJNI.CoreSession_hangup__SWIG_0(swigCPtr, this, cause);
+  }
+
+  public void hangup() {
+    freeswitchJNI.CoreSession_hangup__SWIG_1(swigCPtr, this);
   }
 
   public void hangupState() {
@@ -181,7 +185,15 @@ public class CoreSession {
   }
 
   public void sayPhrase(String phrase_name, String phrase_data, String phrase_lang) {
-    freeswitchJNI.CoreSession_sayPhrase(swigCPtr, this, phrase_name, phrase_data, phrase_lang);
+    freeswitchJNI.CoreSession_sayPhrase__SWIG_0(swigCPtr, this, phrase_name, phrase_data, phrase_lang);
+  }
+
+  public void sayPhrase(String phrase_name, String phrase_data) {
+    freeswitchJNI.CoreSession_sayPhrase__SWIG_1(swigCPtr, this, phrase_name, phrase_data);
+  }
+
+  public void sayPhrase(String phrase_name) {
+    freeswitchJNI.CoreSession_sayPhrase__SWIG_2(swigCPtr, this, phrase_name);
   }
 
   public String hangupCause() {

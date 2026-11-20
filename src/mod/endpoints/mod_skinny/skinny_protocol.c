@@ -110,7 +110,8 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 	char *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	request = calloc(1,SKINNY_MESSAGE_MAXSIZE);
+	/* One zero byte past the largest message, so fixed-width string fields always terminate inside the allocation */
+	request = calloc(1, SKINNY_MESSAGE_MAXSIZE + 1);
 
 	if (!request) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory.\n");
@@ -152,10 +153,10 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 
 		if(mlen) {
 			bytes += mlen;
+			ptr += mlen;
 
 			if(bytes >= SKINNY_MESSAGE_FIELD_SIZE) {
 				do_sleep = 0;
-				ptr += mlen;
 				memcpy(request, mbuf, bytes);
 #ifdef SKINNY_MEGA_DEBUG
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
@@ -169,9 +170,9 @@ switch_status_t skinny_read_packet(listener_t *listener, skinny_message_t **req)
 					switch_safe_free(request);
 					return SWITCH_STATUS_FALSE;
 				}
-				if(request->length + 2*SKINNY_MESSAGE_FIELD_SIZE > SKINNY_MESSAGE_MAXSIZE) {
+				if(request->length > SKINNY_MESSAGE_MAXSIZE - 2*SKINNY_MESSAGE_FIELD_SIZE) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-							"Skinny client sent too huge data. Got %d which is above threshold %d.\n",
+							"Skinny client sent too huge data. Got %u which is above threshold %d.\n",
 							request->length, SKINNY_MESSAGE_MAXSIZE - 2*SKINNY_MESSAGE_FIELD_SIZE);
 					switch_safe_free(request);
 					return SWITCH_STATUS_FALSE;

@@ -259,9 +259,9 @@ void vp8_setup_key_frame(VP8_COMP *cpi) {
   /* Make sure we initialize separate contexts for altref,gold, and normal.
    * TODO shouldn't need 3 different copies of structure to do this!
    */
-  memcpy(&cpi->lfc_a, &cpi->common.fc, sizeof(cpi->common.fc));
-  memcpy(&cpi->lfc_g, &cpi->common.fc, sizeof(cpi->common.fc));
-  memcpy(&cpi->lfc_n, &cpi->common.fc, sizeof(cpi->common.fc));
+  cpi->lfc_a = cpi->common.fc;
+  cpi->lfc_g = cpi->common.fc;
+  cpi->lfc_n = cpi->common.fc;
 
   cpi->common.filter_level = cpi->common.base_qindex * 3 / 8;
 
@@ -329,6 +329,11 @@ static void calc_iframe_target_size(VP8_COMP *cpi) {
     if (cpi->oxcf.number_of_layers == 1) {
       kf_boost =
           VPXMAX(initial_boost, (int)round(2 * cpi->output_framerate - 16));
+      // cpi->output_framerate may be as large as 10M. Keep kf_boost small
+      // enough to allow for integer math when multiplying by values in
+      // kf_boost_qadjustment[].
+      const int kMaxKfBoost = 2000;
+      if (kf_boost > kMaxKfBoost) kf_boost = kMaxKfBoost;
     } else {
       /* Initial factor: set target size to: |3.0 * per_frame_bandwidth|. */
       kf_boost = initial_boost;
@@ -346,7 +351,8 @@ static void calc_iframe_target_size(VP8_COMP *cpi) {
     /* Minimal target size is |2* per_frame_bandwidth|. */
     if (kf_boost < 16) kf_boost = 16;
 
-    target = ((16 + kf_boost) * cpi->per_frame_bandwidth) >> 4;
+    target = ((uint64_t)(16 + kf_boost) * cpi->per_frame_bandwidth) >> 4;
+    target = VPXMIN(INT_MAX, target);
   }
 
   if (cpi->oxcf.rc_max_intra_bitrate_pct) {
@@ -388,7 +394,7 @@ static void calc_gf_params(VP8_COMP *cpi) {
       (cpi->oxcf.fixed_q < 0) ? cpi->last_q[INTER_FRAME] : cpi->oxcf.fixed_q;
   int Boost = 0;
 
-  int gf_frame_useage = 0; /* Golden frame useage since last GF */
+  int gf_frame_usage = 0; /* Golden frame usage since last GF */
   int tot_mbs = cpi->recent_ref_frame_usage[INTRA_FRAME] +
                 cpi->recent_ref_frame_usage[LAST_FRAME] +
                 cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
@@ -398,12 +404,12 @@ static void calc_gf_params(VP8_COMP *cpi) {
                       (cpi->common.mb_rows * cpi->common.mb_cols);
 
   if (tot_mbs) {
-    gf_frame_useage = (cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
-                       cpi->recent_ref_frame_usage[ALTREF_FRAME]) *
-                      100 / tot_mbs;
+    gf_frame_usage = (cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
+                      cpi->recent_ref_frame_usage[ALTREF_FRAME]) *
+                     100 / tot_mbs;
   }
 
-  if (pct_gf_active > gf_frame_useage) gf_frame_useage = pct_gf_active;
+  if (pct_gf_active > gf_frame_usage) gf_frame_usage = pct_gf_active;
 
   /* Not two pass */
   if (cpi->pass != 2) {
@@ -467,7 +473,7 @@ static void calc_gf_params(VP8_COMP *cpi) {
       /* Adjust boost based upon ambient Q */
       Boost = GFQ_ADJUSTMENT;
 
-      /* Adjust based upon most recently measure intra useage */
+      /* Adjust based upon most recently measure intra usage */
       Boost = Boost *
               gf_intra_usage_adjustment[(cpi->this_frame_percent_intra < 15)
                                             ? cpi->this_frame_percent_intra
@@ -475,7 +481,7 @@ static void calc_gf_params(VP8_COMP *cpi) {
               100;
 
       /* Adjust gf boost based upon GF usage since last GF */
-      Boost = Boost * gf_adjust_table[gf_frame_useage] / 100;
+      Boost = Boost * gf_adjust_table[gf_frame_usage] / 100;
 #endif
     }
 
@@ -516,8 +522,8 @@ static void calc_gf_params(VP8_COMP *cpi) {
 
       if (cpi->last_boost >= 1500) cpi->frames_till_gf_update_due++;
 
-      if (gf_interval_table[gf_frame_useage] > cpi->frames_till_gf_update_due) {
-        cpi->frames_till_gf_update_due = gf_interval_table[gf_frame_useage];
+      if (gf_interval_table[gf_frame_usage] > cpi->frames_till_gf_update_due) {
+        cpi->frames_till_gf_update_due = gf_interval_table[gf_frame_usage];
       }
 
       if (cpi->frames_till_gf_update_due > cpi->max_gf_interval) {
@@ -637,11 +643,10 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
         /* % Adjustment limited to the range 1% to 10% */
         Adjustment = (cpi->last_boost - 100) >> 5;
 
-        if (Adjustment < 1) {
-          Adjustment = 1;
-        } else if (Adjustment > 10) {
+        if (Adjustment > 10) {
           Adjustment = 10;
         }
+        assert(Adjustment >= 1);
 
         /* Convert to bits */
         Adjustment = (cpi->this_frame_target * Adjustment) / 100;
@@ -718,7 +723,8 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
         }
 
         /* lower the target bandwidth for this frame. */
-        cpi->this_frame_target -= (cpi->this_frame_target * percent_low) / 200;
+        cpi->this_frame_target -=
+            (int)(((int64_t)cpi->this_frame_target * percent_low) / 200);
 
         /* Are we using allowing control of active_worst_allowed_q
          * according to buffer level.
@@ -789,8 +795,12 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
               (int)((cpi->buffer_level - cpi->oxcf.optimal_buffer_level) /
                     one_percent_bits);
         } else if (cpi->bits_off_target > cpi->oxcf.optimal_buffer_level) {
-          percent_high =
-              (int)((100 * cpi->bits_off_target) / (cpi->total_byte_count * 8));
+          if (cpi->total_byte_count > 0) {
+            percent_high = (int)((100 * cpi->bits_off_target) /
+                                 (cpi->total_byte_count * 8));
+          } else {
+            percent_high = cpi->oxcf.over_shoot_pct;
+          }
         }
 
         if (percent_high > cpi->oxcf.over_shoot_pct) {
@@ -895,7 +905,7 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
       int Q = (cpi->oxcf.fixed_q < 0) ? cpi->last_q[INTER_FRAME]
                                       : cpi->oxcf.fixed_q;
 
-      int gf_frame_useage = 0; /* Golden frame useage since last GF */
+      int gf_frame_usage = 0; /* Golden frame usage since last GF */
       int tot_mbs = cpi->recent_ref_frame_usage[INTRA_FRAME] +
                     cpi->recent_ref_frame_usage[LAST_FRAME] +
                     cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
@@ -905,20 +915,20 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
                           (cpi->common.mb_rows * cpi->common.mb_cols);
 
       if (tot_mbs) {
-        gf_frame_useage = (cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
-                           cpi->recent_ref_frame_usage[ALTREF_FRAME]) *
-                          100 / tot_mbs;
+        gf_frame_usage = (cpi->recent_ref_frame_usage[GOLDEN_FRAME] +
+                          cpi->recent_ref_frame_usage[ALTREF_FRAME]) *
+                         100 / tot_mbs;
       }
 
-      if (pct_gf_active > gf_frame_useage) gf_frame_useage = pct_gf_active;
+      if (pct_gf_active > gf_frame_usage) gf_frame_usage = pct_gf_active;
 
       /* Is a fixed manual GF frequency being used */
       if (cpi->auto_gold) {
-        /* For one pass throw a GF if recent frame intra useage is
-         * low or the GF useage is high
+        /* For one pass throw a GF if recent frame intra usage is
+         * low or the GF usage is high
          */
         if ((cpi->pass == 0) &&
-            (cpi->this_frame_percent_intra < 15 || gf_frame_useage >= 5)) {
+            (cpi->this_frame_percent_intra < 15 || gf_frame_usage >= 5)) {
           cpi->common.refresh_golden_frame = 1;
 
           /* Two pass GF descision */
@@ -933,10 +943,10 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
           if (0) {
               FILE *f;
 
-              f = fopen("gf_useaget.stt", "a");
+              f = fopen("gf_usaget.stt", "a");
               fprintf(f, " %8ld %10ld %10ld %10ld %10ld\n",
                       cpi->common.current_video_frame,  cpi->gfu_boost,
-                      GFQ_ADJUSTMENT, cpi->gfu_boost, gf_frame_useage);
+                      GFQ_ADJUSTMENT, cpi->gfu_boost, gf_frame_usage);
               fclose(f);
           }
 
@@ -974,7 +984,9 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
               int Boost = cpi->last_boost;
               int frames_in_section = cpi->frames_till_gf_update_due + 1;
               int allocation_chunks = (frames_in_section * 100) + (Boost - 100);
-              int bits_in_section = cpi->inter_frame_target * frames_in_section;
+              int bits_in_section =
+                  (int)VPXMIN(INT_MAX, (int64_t)cpi->inter_frame_target *
+                                           frames_in_section);
 
               /* Normalize Altboost and allocations chunck down to
                * prevent overflow
@@ -1188,10 +1200,13 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
     /* Calculate required scaling factor based on target frame size and
      * size of frame produced using previous Q
      */
-    if (target_bits_per_frame >= (INT_MAX >> BPER_MB_NORMBITS)) {
-      /* Case where we would overflow int */
-      target_bits_per_mb = (target_bits_per_frame / cpi->common.MBs)
-                           << BPER_MB_NORMBITS;
+    if (target_bits_per_frame > (INT_MAX >> BPER_MB_NORMBITS)) {
+      int temp = target_bits_per_frame / cpi->common.MBs;
+      if (temp > (INT_MAX >> BPER_MB_NORMBITS)) {
+        target_bits_per_mb = INT_MAX;
+      } else {
+        target_bits_per_mb = temp << BPER_MB_NORMBITS;
+      }
     } else {
       target_bits_per_mb =
           (target_bits_per_frame << BPER_MB_NORMBITS) / cpi->common.MBs;
@@ -1532,9 +1547,13 @@ int vp8_drop_encodedframe_overshoot(VP8_COMP *cpi, int Q) {
       // undershoots significantly, and then we end up dropping every other
       // frame because the QP/rate_correction_factor may have been too low
       // before the drop and then takes too long to come up.
-      if (target_size >= (INT_MAX >> BPER_MB_NORMBITS)) {
-        target_bits_per_mb = (target_size / cpi->common.MBs)
-                             << BPER_MB_NORMBITS;
+      if (target_size > (INT_MAX >> BPER_MB_NORMBITS)) {
+        int temp = target_size / cpi->common.MBs;
+        if (temp > (INT_MAX >> BPER_MB_NORMBITS)) {
+          target_bits_per_mb = INT_MAX;
+        } else {
+          target_bits_per_mb = temp << BPER_MB_NORMBITS;
+        }
       } else {
         target_bits_per_mb =
             (target_size << BPER_MB_NORMBITS) / cpi->common.MBs;

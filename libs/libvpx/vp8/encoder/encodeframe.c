@@ -7,36 +7,35 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <limits.h>
+#include <stdio.h>
 
 #include "vpx_config.h"
-#include "vp8_rtcd.h"
-#include "./vpx_dsp_rtcd.h"
-#include "bitstream.h"
-#include "encodemb.h"
-#include "encodemv.h"
-#if CONFIG_MULTITHREAD
-#include "ethreading.h"
-#endif
+
 #include "vp8/common/common.h"
-#include "onyx_int.h"
-#include "vp8/common/extend.h"
 #include "vp8/common/entropymode.h"
-#include "vp8/common/quant_common.h"
-#include "segmentation.h"
-#include "vp8/common/setupintrarecon.h"
-#include "encodeintra.h"
-#include "vp8/common/reconinter.h"
-#include "rdopt.h"
-#include "pickinter.h"
-#include "vp8/common/findnearmv.h"
-#include <stdio.h>
-#include <limits.h>
+#include "vp8/common/extend.h"
 #include "vp8/common/invtrans.h"
+#include "vp8/common/quant_common.h"
+#include "vp8/common/reconinter.h"
+#include "vp8/common/setupintrarecon.h"
+#include "vp8/common/threading.h"
+#include "vp8/encoder/bitstream.h"
+#include "vp8/encoder/encodeframe.h"
+#include "vp8/encoder/encodeintra.h"
+#include "vp8/encoder/encodemb.h"
+#include "vp8/encoder/onyx_int.h"
+#include "vp8/encoder/pickinter.h"
+#include "vp8/encoder/rdopt.h"
+#include "vp8_rtcd.h"
+#include "vpx/internal/vpx_codec_internal.h"
+#include "vpx_dsp_rtcd.h"
+#include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/vpx_timer.h"
-#if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
-#include "bitstream.h"
+
+#if CONFIG_MULTITHREAD
+#include "vp8/encoder/ethreading.h"
 #endif
-#include "encodeframe.h"
 
 extern void vp8_stuff_mb(VP8_COMP *cpi, MACROBLOCK *x, TOKENEXTRA **t);
 static void adjust_act_zbin(VP8_COMP *cpi, MACROBLOCK *x);
@@ -97,8 +96,7 @@ static unsigned int mb_activity_measure(MACROBLOCK *x, int mb_row, int mb_col) {
   unsigned int mb_activity;
 
   if (ALT_ACT_MEASURE) {
-    int use_dc_pred = (mb_col || mb_row) && (!mb_col || !mb_row);
-
+    int use_dc_pred = (mb_col > 1 && mb_row > 1);
     /* Or use an alternative. */
     mb_activity = vp8_encode_intra(x, use_dc_pred);
   } else {
@@ -123,7 +121,7 @@ static void calc_av_activity(VP8_COMP *cpi, int64_t activity_sum) {
     unsigned int tmp;
 
     /* Create a list to sort to */
-    CHECK_MEM_ERROR(sortlist,
+    CHECK_MEM_ERROR(&cpi->common.error, sortlist,
                     vpx_calloc(sizeof(unsigned int), cpi->common.MBs));
 
     /* Copy map to sort list */
@@ -445,13 +443,21 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
     x->active_ptr = cpi->active_map + map_index + mb_col;
 
     if (cm->frame_type == KEY_FRAME) {
-      *totalrate += vp8cx_encode_intra_macroblock(cpi, x, tp);
+      const int intra_rate_cost = vp8cx_encode_intra_macroblock(cpi, x, tp);
+      if (INT_MAX - *totalrate > intra_rate_cost)
+        *totalrate += intra_rate_cost;
+      else
+        *totalrate = INT_MAX;
 #ifdef MODE_STATS
       y_modes[xd->mbmi.mode]++;
 #endif
     } else {
-      *totalrate += vp8cx_encode_inter_macroblock(
+      const int inter_rate_cost = vp8cx_encode_inter_macroblock(
           cpi, x, tp, recon_yoffset, recon_uvoffset, mb_row, mb_col);
+      if (INT_MAX - *totalrate > inter_rate_cost)
+        *totalrate += inter_rate_cost;
+      else
+        *totalrate = INT_MAX;
 
 #ifdef MODE_STATS
       inter_y_modes[xd->mbmi.mode]++;
@@ -607,6 +613,7 @@ static void init_encode_frame_mb_context(VP8_COMP *cpi) {
 
   x->mvc = cm->fc.mvc;
 
+  xd->above_context = cm->above_context;
   memset(cm->above_context, 0, sizeof(ENTROPY_CONTEXT_PLANES) * cm->mb_cols);
 
   /* Special case treatment when GF and ARF are not sensible options
@@ -740,8 +747,10 @@ void vp8_encode_frame(VP8_COMP *cpi) {
 #endif
 
   {
+#if CONFIG_INTERNAL_STATS
     struct vpx_usec_timer emr_timer;
     vpx_usec_timer_start(&emr_timer);
+#endif
 
 #if CONFIG_MULTITHREAD
     if (vpx_atomic_load_acquire(&cpi->b_multi_threaded)) {
@@ -750,11 +759,20 @@ void vp8_encode_frame(VP8_COMP *cpi) {
       vp8cx_init_mbrthread_data(cpi, x, cpi->mb_row_ei,
                                 cpi->encoding_thread_count);
 
+      if (cpi->mt_current_mb_col_size != cm->mb_rows) {
+        vpx_free(cpi->mt_current_mb_col);
+        cpi->mt_current_mb_col = NULL;
+        cpi->mt_current_mb_col_size = 0;
+        CHECK_MEM_ERROR(
+            &cpi->common.error, cpi->mt_current_mb_col,
+            vpx_malloc(sizeof(*cpi->mt_current_mb_col) * cm->mb_rows));
+        cpi->mt_current_mb_col_size = cm->mb_rows;
+      }
       for (i = 0; i < cm->mb_rows; ++i)
         vpx_atomic_store_release(&cpi->mt_current_mb_col[i], -1);
 
       for (i = 0; i < cpi->encoding_thread_count; ++i) {
-        sem_post(&cpi->h_event_start_encoding[i]);
+        vp8_sem_post(&cpi->h_event_start_encoding[i]);
       }
 
       for (mb_row = 0; mb_row < cm->mb_rows;
@@ -787,7 +805,7 @@ void vp8_encode_frame(VP8_COMP *cpi) {
       }
       /* Wait for all the threads to finish. */
       for (i = 0; i < cpi->encoding_thread_count; ++i) {
-        sem_wait(&cpi->h_event_end_encoding[i]);
+        vp8_sem_wait(&cpi->h_event_end_encoding[i]);
       }
 
       for (mb_row = 0; mb_row < cm->mb_rows; ++mb_row) {
@@ -810,7 +828,13 @@ void vp8_encode_frame(VP8_COMP *cpi) {
       for (i = 0; i < cpi->encoding_thread_count; ++i) {
         int mode_count;
         int c_idx;
-        totalrate += cpi->mb_row_ei[i].totalrate;
+        /* Saturate like encode_mb_row(); per-thread totalrate is already
+         * clamped to INT_MAX individually, so their sum can overflow. */
+        const int thread_rate = cpi->mb_row_ei[i].totalrate;
+        if (INT_MAX - totalrate > thread_rate)
+          totalrate += thread_rate;
+        else
+          totalrate = INT_MAX;
 
         cpi->mb.skip_true_count += cpi->mb_row_ei[i].mb.skip_true_count;
 
@@ -878,8 +902,10 @@ void vp8_encode_frame(VP8_COMP *cpi) {
     }
 #endif
 
+#if CONFIG_INTERNAL_STATS
     vpx_usec_timer_mark(&emr_timer);
     cpi->time_encode_mb_row += vpx_usec_timer_elapsed(&emr_timer);
+#endif
   }
 
   // Work out the segment probabilities if segmentation is enabled

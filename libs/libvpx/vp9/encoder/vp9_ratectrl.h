@@ -211,6 +211,10 @@ typedef struct {
   // Flag to constrain golden frame interval on key frame frequency for 1 pass
   // VBR.
   int constrain_gf_key_freq_onepass_vbr;
+
+  // The index of the current GOP. Start from zero.
+  // When a key frame is inserted, it resets to zero.
+  int gop_global_index;
 } RATE_CONTROL;
 
 struct VP9_COMP;
@@ -342,9 +346,13 @@ int vp9_encodedframe_overshoot(struct VP9_COMP *cpi, int frame_size, int *q);
 
 void vp9_configure_buffer_updates(struct VP9_COMP *cpi, int gf_group_index);
 
-void vp9_estimate_qp_gop(struct VP9_COMP *cpi);
-
 void vp9_compute_frame_low_motion(struct VP9_COMP *const cpi);
+
+void vp9_update_buffer_level_svc_preencode(struct VP9_COMP *cpi);
+
+int vp9_rc_pick_q_and_bounds_two_pass(const struct VP9_COMP *cpi,
+                                      int *bottom_index, int *top_index,
+                                      int gf_group_index);
 
 #ifdef __cplusplus
 }  // extern "C"

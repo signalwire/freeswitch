@@ -7,10 +7,14 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <assert.h>
+#include <limits.h>
+#include <stdlib.h>
 
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 
+#include "vpx_ports/compiler_attributes.h"
 #include "vpx_ports/mem.h"
 #include "vpx/vpx_integer.h"
 
@@ -156,7 +160,7 @@ static void var_filter_block2d_bil_second_pass(
       const uint8_t *second_pred) {                                          \
     uint16_t fdata3[(H + 1) * W];                                            \
     uint8_t temp2[H * W];                                                    \
-    DECLARE_ALIGNED(16, uint8_t, temp3[H * W]);                              \
+    DECLARE_ALIGNED(32, uint8_t, temp3[H * W]);                              \
                                                                              \
     var_filter_block2d_bil_first_pass(src_ptr, fdata3, src_stride, 1, H + 1, \
                                       W, bilinear_filters[x_offset]);        \
@@ -180,7 +184,7 @@ static void var_filter_block2d_bil_second_pass(
   }
 
 /* Identical to the variance call except it does not calculate the
- * sse - sum^2 / w*h and returns sse in addtion to modifying the passed in
+ * sse - sum^2 / w*h and returns sse in addition to modifying the passed in
  * variable.
  */
 #define MSE(W, H)                                                        \
@@ -236,6 +240,20 @@ void vpx_comp_avg_pred_c(uint8_t *comp_pred, const uint8_t *pred, int width,
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
+// Note this function uses unsigned integer math in calculating the sum squared
+// error to avoid reports of signed integer overflow should a (fuzzing) test
+// use input values that are outside of the valid range for 12-bit content. The
+// additional annotation is necessary as an overflow will still be reported
+// with the integer/unsigned-integer-overflow (not undefined) sanitizer.
+// This function assumes `abs(value) <= UINT16_MAX`, as the only overflow
+// that's expected is from casting negative signed integer values to unsigned
+// and squaring the result.
+static VPX_NO_UNSIGNED_OVERFLOW_CHECK uint32_t square_value(int value) {
+  assert(abs(value) <= UINT16_MAX);
+  const uint32_t unsigned_value = (uint32_t)value;
+  return unsigned_value * unsigned_value;
+}
+
 static void highbd_variance64(const uint8_t *src8_ptr, int src_stride,
                               const uint8_t *ref8_ptr, int ref_stride, int w,
                               int h, uint64_t *sse, int64_t *sum) {
@@ -250,7 +268,7 @@ static void highbd_variance64(const uint8_t *src8_ptr, int src_stride,
     for (j = 0; j < w; ++j) {
       const int diff = src_ptr[j] - ref_ptr[j];
       *sum += diff;
-      *sse += diff * diff;
+      *sse += square_value(diff);
     }
     src_ptr += src_stride;
     ref_ptr += ref_stride;
@@ -549,9 +567,9 @@ HIGHBD_MSE(16, 8)
 HIGHBD_MSE(8, 16)
 HIGHBD_MSE(8, 8)
 
-void vpx_highbd_comp_avg_pred(uint16_t *comp_pred, const uint16_t *pred,
-                              int width, int height, const uint16_t *ref,
-                              int ref_stride) {
+void vpx_highbd_comp_avg_pred_c(uint16_t *comp_pred, const uint16_t *pred,
+                                int width, int height, const uint16_t *ref,
+                                int ref_stride) {
   int i, j;
   for (i = 0; i < height; ++i) {
     for (j = 0; j < width; ++j) {

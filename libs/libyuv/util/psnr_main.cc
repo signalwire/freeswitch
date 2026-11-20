@@ -65,9 +65,9 @@ int num_threads = 0;
 #endif
 
 // Parse PYUV format. ie name.1920x800_24Hz_P420.yuv
-bool ExtractResolutionFromFilename(const char* name,
-                                   int* width_ptr,
-                                   int* height_ptr) {
+static bool ExtractResolutionFromFilename(const char* name,
+                                          int* width_ptr,
+                                          int* height_ptr) {
   // Isolate the .width_height. section of the filename by searching for a
   // dot or underscore followed by a digit.
   for (int i = 0; name[i]; ++i) {
@@ -105,25 +105,12 @@ bool ExtractResolutionFromFilename(const char* name,
   return false;
 }
 
-// Scale Y channel from 16..240 to 0..255.
-// This can be useful when comparing codecs that are inconsistant about Y
-uint8_t ScaleY(uint8_t y) {
-  int ny = (y - 16) * 256 / 224;
-  if (ny < 0) {
-    ny = 0;
-  }
-  if (ny > 255) {
-    ny = 255;
-  }
-  return static_cast<uint8_t>(ny);
-}
-
 // MSE = Mean Square Error
-double GetMSE(double sse, double size) {
+static double GetMSE(double sse, double size) {
   return sse / size;
 }
 
-void PrintHelp(const char* program) {
+static void PrintHelp(const char* program) {
   printf("%s [-options] org_seq rec_seq [rec_seq2.. etc]\n", program);
 #ifdef HAVE_JPEG
   printf("jpeg or raw YUV 420 supported.\n");
@@ -151,7 +138,7 @@ void PrintHelp(const char* program) {
   exit(0);
 }
 
-void ParseOptions(int argc, const char* argv[]) {
+static void ParseOptions(int argc, const char* argv[]) {
   if (argc <= 1) {
     PrintHelp(argv[0]);
   }
@@ -240,21 +227,21 @@ void ParseOptions(int argc, const char* argv[]) {
   }
 }
 
-bool UpdateMetrics(uint8_t* ch_org,
-                   uint8_t* ch_rec,
-                   const int y_size,
-                   const int uv_size,
-                   const size_t total_size,
-                   int number_of_frames,
-                   metric* cur_distortion_psnr,
-                   metric* distorted_frame,
-                   bool do_psnr) {
+static bool UpdateMetrics(uint8_t* ch_org,
+                          uint8_t* ch_rec,
+                          const int y_size,
+                          const int uv_size,
+                          const size_t total_size,
+                          int number_of_frames,
+                          metric* cur_distortion_psnr,
+                          metric* distorted_frame,
+                          bool compute_psnr) {
   const int uv_offset = (do_swap_uv ? uv_size : 0);
   const uint8_t* const u_org = ch_org + y_size + uv_offset;
   const uint8_t* const u_rec = ch_rec + y_size;
   const uint8_t* const v_org = ch_org + y_size + (uv_size - uv_offset);
   const uint8_t* const v_rec = ch_rec + y_size + uv_size;
-  if (do_psnr) {
+  if (compute_psnr) {
 #ifdef HAVE_JPEG
     double y_err = static_cast<double>(
         libyuv::ComputeSumSquareError(ch_org, ch_rec, y_size));
@@ -342,9 +329,12 @@ int main(int argc, const char* argv[]) {
     exit(1);
   }
 
+  if (num_rec <= 0) {
+    fclose(file_org);
+    exit(1);
+  }
   // Open all files to compare to
-  FILE** file_rec = new FILE*[num_rec];
-  memset(file_rec, 0, num_rec * sizeof(FILE*));  // NOLINT
+  FILE** file_rec = new FILE*[num_rec]();
   for (int cur_rec = 0; cur_rec < num_rec; ++cur_rec) {
     file_rec[cur_rec] = fopen(argv[fileindex_rec + cur_rec], "rb");
     if (file_rec[cur_rec] == NULL) {

@@ -217,7 +217,7 @@ void JSBase::Register(Isolate *isolate, const js_class_definition_t *desc)
 	// Add properties to the object
 	for (int i = 0;; i++) {
 		if (!desc->properties[i].get) break;
-		function->InstanceTemplate()->SetAccessor(js_new_string(isolate, desc->properties[i].name), desc->properties[i].get, desc->properties[i].set);
+		function->InstanceTemplate()->SetNativeDataProperty(js_new_string(isolate, desc->properties[i].name), desc->properties[i].get, desc->properties[i].set);
 	}
 
 #if defined(V8_MAJOR_VERSION) && V8_MAJOR_VERSION >=5
@@ -287,7 +287,7 @@ Local<Function> JSBase::GetFunctionFromArg(Isolate *isolate, const Local<Value>&
 	}
 }
 
-void JSBase::DefaultSetProperty(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
+void JSBase::DefaultSetProperty(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
 {
 	info.GetIsolate()->ThrowException(js_new_string(info.GetIsolate(), "this property cannot be changed!"));
 }

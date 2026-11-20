@@ -205,7 +205,7 @@ static inline v8::Local<v8::StackFrame> js_stack_frame(v8::Local<v8::StackTrace>
 
 /* Macro for easy V8 "get property" callback definition */
 #define JS_GET_PROPERTY_DEF(method_name, class_name) \
-	static void method_name(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info)\
+	static void method_name(v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info)\
 	{\
 		JS_CHECK_SCRIPT_STATE();\
 		class_name *obj = JSBase::GetInstance<class_name>(info.Holder());\
@@ -220,11 +220,11 @@ static inline v8::Local<v8::StackFrame> js_stack_frame(v8::Local<v8::StackTrace>
 			info.GetReturnValue().Set(false);\
 		}\
 	}\
-	void method_name##Impl(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info)
+	void method_name##Impl(v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info)
 
 /* Macro for easy V8 "set property" callback definition */
 #define JS_SET_PROPERTY_DEF(method_name, class_name) \
-	static void method_name(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)\
+	static void method_name(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)\
 	{\
 		JS_CHECK_SCRIPT_STATE();\
 		class_name *obj = JSBase::GetInstance<class_name>(info.Holder());\
@@ -239,20 +239,20 @@ static inline v8::Local<v8::StackFrame> js_stack_frame(v8::Local<v8::StackTrace>
 			/* A property setter's ReturnValue is void; V8 7+ rejects Set() on it. */\
 		}\
 	}\
-	void method_name##Impl(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
+	void method_name##Impl(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
 
 /* Macro for easy V8 "function" callback definition */
 #define JS_FUNCTION_DEF(method_name, class_name) \
 	static void method_name(const v8::FunctionCallbackInfo<v8::Value>& info)\
 	{\
 		JS_CHECK_SCRIPT_STATE();\
-		class_name *obj = JSBase::GetInstance<class_name>(info.Holder());\
+		class_name *obj = JSBase::GetInstance<class_name>(info.This());\
 		if (obj) {\
 			obj->method_name##Impl(info);\
 		} else {\
 			int line;\
 			char *file = JSMain::GetStackInfo(info.GetIsolate(), &line);\
-			JsUtf8Value str(info.Holder());\
+			JsUtf8Value str(info.This());\
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, "mod_v8", line, NULL, SWITCH_LOG_DEBUG, "No valid internal data available for %s when calling %s\n", *str ? *str : "[unknown]", #class_name "::" #method_name "()");\
 			free(file);\
 			info.GetReturnValue().Set(false);\
@@ -261,18 +261,18 @@ static inline v8::Local<v8::StackFrame> js_stack_frame(v8::Local<v8::StackTrace>
 	void method_name##Impl(const v8::FunctionCallbackInfo<v8::Value>& info)
 
 /* Macros for V8 callback implementations */
-#define JS_GET_PROPERTY_IMPL(method_name, class_name) void class_name::method_name##Impl(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info)
-#define JS_SET_PROPERTY_IMPL(method_name, class_name) void class_name::method_name##Impl(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
+#define JS_GET_PROPERTY_IMPL(method_name, class_name) void class_name::method_name##Impl(v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info)
+#define JS_SET_PROPERTY_IMPL(method_name, class_name) void class_name::method_name##Impl(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
 #define JS_FUNCTION_IMPL(method_name, class_name) void class_name::method_name##Impl(const v8::FunctionCallbackInfo<v8::Value>& info)
 
 /* Macros for V8 callback definitions (class static version) */
-#define JS_GET_PROPERTY_DEF_STATIC(method_name) static void method_name(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info)
-#define JS_SET_PROPERTY_DEF_STATIC(method_name) static void method_name(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
+#define JS_GET_PROPERTY_DEF_STATIC(method_name) static void method_name(v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info)
+#define JS_SET_PROPERTY_DEF_STATIC(method_name) static void method_name(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
 #define JS_FUNCTION_DEF_STATIC(method_name) static void method_name(const v8::FunctionCallbackInfo<v8::Value>& info)
 
 /* Macros for V8 callback implementations (class static version) */
-#define JS_GET_PROPERTY_IMPL_STATIC(method_name, class_name) void class_name::method_name(v8::Local<v8::String> property, const v8::PropertyCallbackInfo<v8::Value>& info)
-#define JS_SET_PROPERTY_IMPL_STATIC(method_name, class_name) void class_name::method_name(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
+#define JS_GET_PROPERTY_IMPL_STATIC(method_name, class_name) void class_name::method_name(v8::Local<v8::Name> property, const v8::PropertyCallbackInfo<v8::Value>& info)
+#define JS_SET_PROPERTY_IMPL_STATIC(method_name, class_name) void class_name::method_name(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info)
 #define JS_FUNCTION_IMPL_STATIC(method_name, class_name) void class_name::method_name(const v8::FunctionCallbackInfo<v8::Value>& info)
 
 /* Macro for basic script state check (to know if the script is being terminated), should be called before calling any callback actual code */
@@ -321,8 +321,8 @@ typedef struct {
 /* JS Property definition */
 typedef struct {
 	const char *name;						/* Name of the property */
-	v8::AccessorGetterCallback get;			/* The property getter */
-	v8::AccessorSetterCallback set;			/* The property setter */
+	v8::AccessorNameGetterCallback get;			/* The property getter */
+	v8::AccessorNameSetterCallback set;			/* The property setter */
 } js_property_t;
 
 /* JS Class definition */
@@ -395,13 +395,18 @@ public:
 	template <typename T> static T *GetInstance(const v8::FunctionCallbackInfo<v8::Value>& info)
 	{
 		v8::HandleScope scope(info.GetIsolate());
-		return GetInstance<T>(info.Holder());
+		return GetInstance<T>(info.This());
 	}
 
 	/* Get a JSBase instance from a JavaScript object */
 	template <typename T> static T *GetInstance(const v8::Local<v8::Object>& self)
 	{
-		v8::Local<v8::Value> val = self->GetInternalField(0);
+		/* Scripts can hand any object in here (as a receiver or an argument); only ours carry field 0 */
+		if (self.IsEmpty() || self->InternalFieldCount() < 1) {
+			return NULL;
+		}
+
+		v8::Local<v8::Value> val = self->GetInternalField(0).As<v8::Value>();
 
 		if (!val.IsEmpty() && val->IsExternal()) {
 			v8::Local<v8::External> wrap = v8::Local<v8::External>::Cast(val);
@@ -416,7 +421,7 @@ public:
 	static v8::Local<v8::Function> GetFunctionFromArg(v8::Isolate *isolate, const v8::Local<v8::Value>& arg);
 
 	/* Default JS setter callback, to be used for read only values */
-	static void DefaultSetProperty(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info);
+	static void DefaultSetProperty(v8::Local<v8::Name> property, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info);
 
 	/* Get the name of the JavaScript class - must be overridden by the actual implementation */
 	virtual std::string GetJSClassName() = 0;

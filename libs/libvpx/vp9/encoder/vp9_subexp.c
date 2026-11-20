@@ -64,18 +64,16 @@ static int remap_prob(int v, int m) {
     228, 229, 17,  230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
     18,  242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 19,
   };
-
-  assert(m > 0);
-
   v--;
   m--;
+  assert(m >= 0);
   if ((m << 1) <= MAX_PROB)
     i = recenter_nonneg(v, m) - 1;
   else
     i = recenter_nonneg(MAX_PROB - 1 - v, MAX_PROB - 1 - m) - 1;
 
   assert(i >= 0 && (size_t)i < sizeof(map_table));
-  if (i >= 0 && (size_t)i < sizeof(map_table)) i = map_table[i];
+  i = map_table[i];
   return i;
 }
 

@@ -348,7 +348,7 @@ JS_EVENT_FUNCTION_IMPL_STATIC(Fire)
 {
 	JS_CHECK_SCRIPT_STATE();
 	HandleScope handle_scope(info.GetIsolate());
-	FSEvent *obj = JSBase::GetInstance<FSEvent>(info.Holder());
+	FSEvent *obj = JSBase::GetInstance<FSEvent>(info.This());
 
 	if (obj && obj->_event) {
 		switch_event_fire(&obj->_event);
@@ -393,7 +393,7 @@ JS_EVENT_FUNCTION_IMPL_STATIC(Destroy)
 {
 	JS_CHECK_SCRIPT_STATE();
 	HandleScope handle_scope(info.GetIsolate());
-	FSEvent *obj = JSBase::GetInstance<FSEvent>(info.Holder());
+	FSEvent *obj = JSBase::GetInstance<FSEvent>(info.This());
 
 	if (obj) {
 		delete obj;

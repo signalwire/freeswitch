@@ -2375,9 +2375,16 @@ switch_status_t skinny_handle_register_available_lines_message(listener_t *liste
 switch_status_t skinny_handle_data_message(listener_t *listener, skinny_message_t *request)
 {
 	switch_event_t *event = NULL;
-	char *tmp = NULL;
+
 	skinny_check_data_length(request, sizeof(request->data.data));
-	skinny_check_data_length(request, sizeof(request->data.data) + request->data.data.data_length - 1);
+
+	if (request->data.data.data_length > request->length - 4 - offsetof(struct data_message, data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+				"Received Skinny Message %s (type=%x,length=%u) with data length %u past its end.\n",
+				skinny_message_type2str(request->type), request->type, request->length, request->data.data.data_length);
+
+		return SWITCH_STATUS_FALSE;
+	}
 
 	/* skinny::device_to_user event */
 	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_DEVICE_TO_USER);
@@ -2388,15 +2395,7 @@ switch_status_t skinny_handle_data_message(listener_t *listener, skinny_message_
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Call-Id", "%d", request->data.data.call_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Transaction-Id", "%d", request->data.data.transaction_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Data-Length", "%d", request->data.data.data_length);
-
-	tmp = malloc(request->data.data.data_length + 1);
-	memcpy(tmp, request->data.data.data, request->data.data.data_length);
-
-	/* Ensure that the body is null-terminated */
-	tmp[request->data.data.data_length] = '\0';
-	switch_event_add_body(event, "%s", tmp);
-
-	switch_safe_free(tmp);
+	switch_event_add_body(event, "%.*s", (int)request->data.data.data_length, request->data.data.data);
 
 	switch_event_fire(&event);
 
@@ -2446,9 +2445,16 @@ switch_status_t skinny_handle_feature_stat_request(listener_t *listener, skinny_
 switch_status_t skinny_handle_extended_data_message(listener_t *listener, skinny_message_t *request)
 {
 	switch_event_t *event = NULL;
-	char *tmp = NULL;
+
 	skinny_check_data_length(request, sizeof(request->data.extended_data));
-	skinny_check_data_length(request, sizeof(request->data.extended_data)+request->data.extended_data.data_length-1);
+
+	if (request->data.extended_data.data_length > request->length - 4 - offsetof(struct extended_data_message, data)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+				"Received Skinny Message %s (type=%x,length=%u) with data length %u past its end.\n",
+				skinny_message_type2str(request->type), request->type, request->length, request->data.extended_data.data_length);
+
+		return SWITCH_STATUS_FALSE;
+	}
 
 	/* skinny::device_to_user event */
 	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_DEVICE_TO_USER);
@@ -2464,15 +2470,8 @@ switch_status_t skinny_handle_extended_data_message(listener_t *listener, skinny
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Conference-Id", "%d", request->data.extended_data.conference_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-App-Instance-Id", "%d", request->data.extended_data.app_instance_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Skinny-DeviceToUser-Routing-Id", "%d", request->data.extended_data.routing_id);
+	switch_event_add_body(event, "%.*s", (int)request->data.extended_data.data_length, request->data.extended_data.data);
 
-	tmp = malloc(request->data.data.data_length + 1);
-	memcpy(tmp, request->data.data.data, request->data.data.data_length);
-
-	/* Ensure that the body is null-terminated */
-	tmp[request->data.data.data_length] = '\0';
-	switch_event_add_body(event, "%s", tmp);
-
-	switch_safe_free(tmp);
 	switch_event_fire(&event);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -2569,6 +2568,11 @@ switch_status_t skinny_handle_updatecapabilities(listener_t *listener, skinny_me
 	skinny_check_data_length(request, sizeof(request->data.upd_cap.audio_cap_count));
 
 	n = request->data.upd_cap.audio_cap_count;
+	if (n == 0) {
+		skinny_log_l_msg(listener, SWITCH_LOG_ERROR, "Device sent no audio capabilities.\n");
+
+		return SWITCH_STATUS_FALSE;
+	}
 	if (n > SKINNY_MAX_CAPABILITIES) {
 		n = SKINNY_MAX_CAPABILITIES;
 	}
@@ -2626,17 +2630,11 @@ switch_status_t skinny_handle_server_req_message(listener_t *listener, skinny_me
 switch_status_t skinny_handle_xml_alarm(listener_t *listener, skinny_message_t *request)
 {
 	switch_event_t *event = NULL;
-	char *tmp = NULL;
 
-	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Received XML alarm (length=%d).\n", request->length);
+	skinny_log_l(listener, SWITCH_LOG_DEBUG, "Received XML alarm (length=%u).\n", request->length);
 	/* skinny::xml_alarm event */
 	skinny_device_event(listener, &event, SWITCH_EVENT_CUSTOM, SKINNY_EVENT_XML_ALARM);
-	/* Ensure that the body is null-terminated */
-	tmp = malloc(request->length - 4 + 1);
-	memcpy(tmp, request->data.as_char, request->length - 4);
-	tmp[request->length - 4] = '\0';
-	switch_event_add_body(event, "%s", tmp);
-	switch_safe_free(tmp);
+	switch_event_add_body(event, "%.*s", (int)(request->length - 4), request->data.as_char);
 	switch_event_fire(&event);
 
 	return SWITCH_STATUS_SUCCESS;

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="libsrtp-version.props" Condition=" '$(libsrtpVersionImported)' == '' "/>
+    <Import Project="downloadpackage.task" Condition=" '$(downloadpackagetask_Imported)' == '' " />
+    <!-- srtp2.lib is a STATIC library built with OpenSSL crypto: it references
+         OpenSSL, so the consumer links the OpenSSL package too. -->
+    <Import Project="openssl.props" Condition=" '$(OpensslPropsImported)' == '' "/>
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros">
+    <libsrtpLibDir>$(BaseDir)libs\libsrtp-$(libsrtpVersion)_$(libsrtpBuildNumber)</libsrtpLibDir>
+  </PropertyGroup>
+
+  <!--
+       Download Target.
+       Name must be unique.
+       By design, targets are executed only once per project.
+
+       Usage:
+
+       package: URI
+
+       expectfileordirectory: Skips the download and extraction if exists
+
+       outputfolder: Folder to store a downloaded file.
+                     By default "$(BaseDir)libs", if empty
+
+       outputfilename: If not empty, overrides filename from URI.
+                       .exe files don't get extracted
+
+       extractto: Folder to extract an archive to
+   -->
+
+  <Target Name="libsrtpBinariesDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/libsrtp-v$(libsrtpVersion)_$(libsrtpBuildNumber)/libsrtp-$(libsrtpVersion)_$(libsrtpBuildNumber)-binaries-$(Platform.ToLower())-$(Configuration.ToLower()).zip"
+           expectfileordirectory="$(libsrtpLibDir)\binaries\$(Platform)\$(Configuration)\srtp2.lib"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+  <Target Name="libsrtpHeadersDownloadTarget" BeforeTargets="CustomBuild" DependsOnTargets="7za">
+      <DownloadPackageTask
+           package="https://github.com/freeswitch/windows-deps/releases/download/libsrtp-v$(libsrtpVersion)_$(libsrtpBuildNumber)/libsrtp-$(libsrtpVersion)_$(libsrtpBuildNumber)-headers.zip"
+           expectfileordirectory="$(libsrtpLibDir)\include\srtp2\srtp.h"
+           outputfolder=""
+           outputfilename=""
+           extractto="$(BaseDir)libs\"
+      />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- FreeSWITCH includes <srtp2/srtp.h>. -->
+      <AdditionalIncludeDirectories>$(libsrtpLibDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(libsrtpLibDir)\binaries\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>srtp2.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

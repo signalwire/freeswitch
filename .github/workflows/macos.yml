@@ -39,10 +39,12 @@ jobs:
             jpeg \
             ldns \
             libks \
-            libpq@18 \
+            libnatpmp \
+            libpq \
             libsndfile \
             libtool \
             lua \
+            miniupnpc \
             opus \
             ossp-uuid \
             pcre2 \
@@ -51,6 +53,7 @@ jobs:
             sofia-sip \
             speex \
             speexdsp \
+            srtp \
             sqlite \
           && \
           brew list --pinned | awk '{system("brew unpin " $1)}' && \
@@ -59,7 +62,7 @@ jobs:
           && \
           brew link --force --overwrite \
             ffmpeg@7 \
-            libpq@18 \
+            libpq \
             ruby@3.4
 
       - name: Bootstrap FreeSWITCH

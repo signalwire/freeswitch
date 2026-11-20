@@ -339,7 +339,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					if (all) break;
 				}
 
-				if (field && strchr(expression, '(')) {
+				if (field && match_data && strchr(expression, '(')) {
 					char var[256];
 					switch_snprintf(var, sizeof(var), "DP_REGEX_MATCH_%d", total);
 
@@ -352,7 +352,14 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					switch_regex_safe_free(save_re);
 
 					save_expression = strdup(expression);
-					save_field_data = strdup(field_data);
+					/* match_data points into the subject string it matched, so field_expanded moves with it */
+					if (field_expanded) {
+						save_field_data = field_expanded;
+						field_expanded = NULL;
+					} else {
+						save_field_data = strdup(field_data);
+					}
+
 					save_re = re;
 					save_match_data = match_data;
 					save_proceed = proceed;
@@ -379,9 +386,8 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 				}
 			}
 
-			switch_safe_free(field_expanded);
-			if (expression == expression_expanded) expression = NULL;
-			switch_safe_free(expression_expanded);
+			/* field_expanded and expression_expanded stay allocated: after a break out of the loop,
+			 * re and match_data still refer to them. The next condition or done frees them. */
 		} else {
 			if ((xexpression = switch_xml_child(xcond, "expression"))) {
 				expression = switch_str_nil(xexpression->txt);
@@ -449,6 +455,9 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 		}
 
 		if (save_re) {
+			switch_safe_free(field_expanded);
+			switch_safe_free(expression_expanded);
+
 			re = save_re;
 			match_data = save_match_data;
 			save_re = NULL;
@@ -532,7 +541,7 @@ static int parse_exten(switch_core_session_t *session, switch_caller_profile_t *
 					data = (char *) switch_xml_attr_soft(xaction, "data");
 				}
 
-				if (field && expression && strchr(expression, '(')) {
+				if (field && expression && match_data && strchr(expression, '(')) {
 					len = (uint32_t) (strlen(data) + strlen(field_data) + 10) * proceed;
 					if (!(substituted = malloc(len))) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "Memory Error!\n");

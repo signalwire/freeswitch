@@ -83,31 +83,33 @@
     val_lh_m;                                                    \
   })
 
-#define LW(psrc)                                                 \
-  ({                                                             \
-    const uint8_t *psrc_lw_m = (const uint8_t *)(psrc);          \
-    uint32_t val_lw_m;                                           \
-                                                                 \
-    __asm__ __volatile__("lwr %[val_lw_m], 0(%[psrc_lw_m]) \n\t" \
-                         "lwl %[val_lw_m], 3(%[psrc_lw_m]) \n\t" \
-                         : [val_lw_m] "=&r"(val_lw_m)            \
-                         : [psrc_lw_m] "r"(psrc_lw_m));          \
-                                                                 \
-    val_lw_m;                                                    \
+#define LW(psrc)                                        \
+  ({                                                    \
+    const uint8_t *psrc_lw_m = (const uint8_t *)(psrc); \
+    uint32_t val_lw_m;                                  \
+                                                        \
+    __asm__ __volatile__(                               \
+        "lwr %[val_lw_m], 0(%[psrc_lw_m]) \n\t"         \
+        "lwl %[val_lw_m], 3(%[psrc_lw_m]) \n\t"         \
+        : [val_lw_m] "=&r"(val_lw_m)                    \
+        : [psrc_lw_m] "r"(psrc_lw_m));                  \
+                                                        \
+    val_lw_m;                                           \
   })
 
 #if (__mips == 64)
-#define LD(psrc)                                                 \
-  ({                                                             \
-    const uint8_t *psrc_ld_m = (const uint8_t *)(psrc);          \
-    uint64_t val_ld_m = 0;                                       \
-                                                                 \
-    __asm__ __volatile__("ldr %[val_ld_m], 0(%[psrc_ld_m]) \n\t" \
-                         "ldl %[val_ld_m], 7(%[psrc_ld_m]) \n\t" \
-                         : [val_ld_m] "=&r"(val_ld_m)            \
-                         : [psrc_ld_m] "r"(psrc_ld_m));          \
-                                                                 \
-    val_ld_m;                                                    \
+#define LD(psrc)                                        \
+  ({                                                    \
+    const uint8_t *psrc_ld_m = (const uint8_t *)(psrc); \
+    uint64_t val_ld_m = 0;                              \
+                                                        \
+    __asm__ __volatile__(                               \
+        "ldr %[val_ld_m], 0(%[psrc_ld_m]) \n\t"         \
+        "ldl %[val_ld_m], 7(%[psrc_ld_m]) \n\t"         \
+        : [val_ld_m] "=&r"(val_ld_m)                    \
+        : [psrc_ld_m] "r"(psrc_ld_m));                  \
+                                                        \
+    val_ld_m;                                           \
   })
 #else  // !(__mips == 64)
 #define LD(psrc)                                                  \
@@ -154,7 +156,7 @@
     uint8_t *pdst_sd_m = (uint8_t *)(pdst);                     \
     uint32_t val0_sd_m, val1_sd_m;                              \
                                                                 \
-    val0_sd_m = (uint32_t)((val)&0x00000000FFFFFFFF);           \
+    val0_sd_m = (uint32_t)((val) & 0x00000000FFFFFFFF);         \
     val1_sd_m = (uint32_t)(((val) >> 32) & 0x00000000FFFFFFFF); \
                                                                 \
     SW(val0_sd_m, pdst_sd_m);                                   \
@@ -479,17 +481,17 @@
                  with rounding is calculated and written to 'out0'
 */
 #define AVER_UB2(RTYPE, in0, in1, in2, in3, out0, out1)   \
-  {                                                       \
+  do {                                                    \
     out0 = (RTYPE)__msa_aver_u_b((v16u8)in0, (v16u8)in1); \
     out1 = (RTYPE)__msa_aver_u_b((v16u8)in2, (v16u8)in3); \
-  }
+  } while (0)
 #define AVER_UB2_UB(...) AVER_UB2(v16u8, __VA_ARGS__)
 
 #define AVER_UB4(RTYPE, in0, in1, in2, in3, in4, in5, in6, in7, out0, out1, \
                  out2, out3)                                                \
   {                                                                         \
-    AVER_UB2(RTYPE, in0, in1, in2, in3, out0, out1)                         \
-    AVER_UB2(RTYPE, in4, in5, in6, in7, out2, out3)                         \
+    AVER_UB2(RTYPE, in0, in1, in2, in3, out0, out1);                        \
+    AVER_UB2(RTYPE, in4, in5, in6, in7, out2, out3);                        \
   }
 #define AVER_UB4_UB(...) AVER_UB4(v16u8, __VA_ARGS__)
 
@@ -772,16 +774,16 @@
    Details     : 4 signed word elements of 'in' vector are added together and
                  the resulting integer sum is returned
 */
-#define HADD_SW_S32(in)                            \
-  ({                                               \
-    v2i64 res0_m, res1_m;                          \
-    int32_t sum_m;                                 \
-                                                   \
-    res0_m = __msa_hadd_s_d((v4i32)in, (v4i32)in); \
-    res1_m = __msa_splati_d(res0_m, 1);            \
-    res0_m = res0_m + res1_m;                      \
-    sum_m = __msa_copy_s_w((v4i32)res0_m, 0);      \
-    sum_m;                                         \
+#define HADD_SW_S32(in)                                               \
+  ({                                                                  \
+    v2i64 hadd_sw_s32_res0_m, hadd_sw_s32_res1_m;                     \
+    int32_t hadd_sw_s32_sum_m;                                        \
+                                                                      \
+    hadd_sw_s32_res0_m = __msa_hadd_s_d((v4i32)in, (v4i32)in);        \
+    hadd_sw_s32_res1_m = __msa_splati_d(hadd_sw_s32_res0_m, 1);       \
+    hadd_sw_s32_res0_m = hadd_sw_s32_res0_m + hadd_sw_s32_res1_m;     \
+    hadd_sw_s32_sum_m = __msa_copy_s_w((v4i32)hadd_sw_s32_res0_m, 0); \
+    hadd_sw_s32_sum_m;                                                \
   })
 
 /* Description : Horizontal addition of 4 unsigned word elements
@@ -791,16 +793,16 @@
    Details     : 4 unsigned word elements of 'in' vector are added together and
                  the resulting integer sum is returned
 */
-#define HADD_UW_U32(in)                               \
-  ({                                                  \
-    v2u64 res0_m, res1_m;                             \
-    uint32_t sum_m;                                   \
-                                                      \
-    res0_m = __msa_hadd_u_d((v4u32)in, (v4u32)in);    \
-    res1_m = (v2u64)__msa_splati_d((v2i64)res0_m, 1); \
-    res0_m += res1_m;                                 \
-    sum_m = __msa_copy_u_w((v4i32)res0_m, 0);         \
-    sum_m;                                            \
+#define HADD_UW_U32(in)                                                       \
+  ({                                                                          \
+    v2u64 hadd_uw_u32_res0_m, hadd_uw_u32_res1_m;                             \
+    uint32_t hadd_uw_u32_sum_m;                                               \
+                                                                              \
+    hadd_uw_u32_res0_m = __msa_hadd_u_d((v4u32)in, (v4u32)in);                \
+    hadd_uw_u32_res1_m = (v2u64)__msa_splati_d((v2i64)hadd_uw_u32_res0_m, 1); \
+    hadd_uw_u32_res0_m += hadd_uw_u32_res1_m;                                 \
+    hadd_uw_u32_sum_m = __msa_copy_u_w((v4i32)hadd_uw_u32_res0_m, 0);         \
+    hadd_uw_u32_sum_m;                                                        \
   })
 
 /* Description : Horizontal addition of 8 unsigned halfword elements
@@ -810,14 +812,14 @@
    Details     : 8 unsigned halfword elements of 'in' vector are added
                  together and the resulting integer sum is returned
 */
-#define HADD_UH_U32(in)                           \
-  ({                                              \
-    v4u32 res_m;                                  \
-    uint32_t sum_m;                               \
-                                                  \
-    res_m = __msa_hadd_u_w((v8u16)in, (v8u16)in); \
-    sum_m = HADD_UW_U32(res_m);                   \
-    sum_m;                                        \
+#define HADD_UH_U32(in)                                       \
+  ({                                                          \
+    v4u32 hadd_uh_u32_res_m;                                  \
+    uint32_t hadd_uh_u32_sum_m;                               \
+                                                              \
+    hadd_uh_u32_res_m = __msa_hadd_u_w((v8u16)in, (v8u16)in); \
+    hadd_uh_u32_sum_m = HADD_UW_U32(hadd_uh_u32_res_m);       \
+    hadd_uh_u32_sum_m;                                        \
   })
 
 /* Description : Horizontal addition of unsigned byte vector elements
@@ -1461,15 +1463,15 @@
                  'shift' is a vector.
 */
 #define SRAR_W2(RTYPE, in0, in1, shift)                  \
-  {                                                      \
+  do {                                                   \
     in0 = (RTYPE)__msa_srar_w((v4i32)in0, (v4i32)shift); \
     in1 = (RTYPE)__msa_srar_w((v4i32)in1, (v4i32)shift); \
-  }
+  } while (0)
 
 #define SRAR_W4(RTYPE, in0, in1, in2, in3, shift) \
   {                                               \
-    SRAR_W2(RTYPE, in0, in1, shift)               \
-    SRAR_W2(RTYPE, in2, in3, shift)               \
+    SRAR_W2(RTYPE, in0, in1, shift);              \
+    SRAR_W2(RTYPE, in2, in3, shift);              \
   }
 #define SRAR_W4_SW(...) SRAR_W4(v4i32, __VA_ARGS__)
 

@@ -376,16 +376,6 @@ opal
 /sofia-sip/win32/Makefile.in
 /sounds/
 /sphinxbase-*/
-/srtp/aes_tables
-/srtp/config_in.h
-/srtp/crypto/include/config.h
-/srtp/crypto/include/stamp-h1
-/srtp/crypto/Makefile
-/srtp/doc/Makefile
-/srtp/Makefile
-/srtp/Makefile.in
-/srtp/test/Makefile
-/srtp/test/Makefile.in
 /tiff-*/build/Makefile
 /tiff-*/build/Makefile.in
 /tiff-*/tools/tiffcrop
@@ -533,7 +523,6 @@ opal
 broadvoice/config/compile
 ilbc/config/compile
 libg722_1/config/compile
-srtp/build/compile
 /pcre-*/
 /speex-*/
 /speexdsp-*/
@@ -545,7 +534,6 @@ srtp/build/compile
 apr/configure
 libyuv/Makefile
 libyuv/convert
-srtp/configure
 tiff-4.0.2/configure
 zlib-*/
 zlib-*

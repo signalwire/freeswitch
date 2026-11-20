@@ -74,6 +74,8 @@ Build options:
   --cpu=CPU                   optimize for a specific cpu rather than a family
   --extra-cflags=ECFLAGS      add ECFLAGS to CFLAGS [$CFLAGS]
   --extra-cxxflags=ECXXFLAGS  add ECXXFLAGS to CXXFLAGS [$CXXFLAGS]
+  --use-profile=PROFILE_FILE
+                              Use PROFILE_FILE for PGO
   ${toggle_extra_warnings}    emit harmless warnings (always non-fatal)
   ${toggle_werror}            treat warnings as errors, if possible
                               (not available with all compilers)
@@ -81,6 +83,7 @@ Build options:
   ${toggle_pic}               turn on/off Position Independent Code
   ${toggle_ccache}            turn on/off compiler cache
   ${toggle_debug}             enable/disable debug mode
+  ${toggle_profile}           enable/disable profiling
   ${toggle_gprof}             enable/disable gprof profiling instrumentation
   ${toggle_gcov}              enable/disable gcov coverage instrumentation
   ${toggle_thumb}             enable/disable building arm assembly in thumb mode
@@ -429,6 +432,42 @@ check_gcc_machine_options() {
   fi
 }
 
+check_neon_sve_bridge_compiles() {
+  if enabled sve; then
+    check_cc -march=armv8.2-a+dotprod+i8mm+sve <<EOF
+#ifndef __ARM_NEON_SVE_BRIDGE
+#error 1
+#endif
+#include <arm_sve.h>
+#include <arm_neon_sve_bridge.h>
+EOF
+    compile_result=$?
+    if [ ${compile_result} -eq 0 ]; then
+      # Check whether the compiler can compile SVE functions that require
+      # backup/restore of SVE registers according to AAPCS. Clang for Windows
+      # used to fail this, see
+      # https://github.com/llvm/llvm-project/issues/80009.
+      check_cc -march=armv8.2-a+dotprod+i8mm+sve <<EOF
+#include <arm_sve.h>
+void other(void);
+svfloat32_t func(svfloat32_t a) {
+  other();
+  return a;
+}
+EOF
+      compile_result=$?
+    fi
+
+    if [ ${compile_result} -ne 0 ]; then
+      log_echo "  disabling sve: arm_neon_sve_bridge.h not supported by compiler"
+      log_echo "  disabling sve2: arm_neon_sve_bridge.h not supported by compiler"
+      disable_feature sve
+      disable_feature sve2
+      RTCD_OPTIONS="${RTCD_OPTIONS}--disable-sve --disable-sve2 "
+    fi
+  fi
+}
+
 check_gcc_avx512_compiles() {
   if disabled gcc; then
     return
@@ -442,13 +481,11 @@ void f(void) {
 }
 EOF
   compile_result=$?
-#
-#  if [ ${compile_result} -ne 0 ]; then
-#    log_echo "    disabling avx512: not supported by compiler"
-#    disable_feature avx512
-#    RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx512 "
-#  fi
-#*/
+  if [ ${compile_result} -ne 0 ]; then
+    log_echo "    disabling avx512: not supported by compiler"
+    disable_feature avx512
+    RTCD_OPTIONS="${RTCD_OPTIONS}--disable-avx512 "
+  fi
 }
 
 check_inline_asm() {
@@ -511,7 +548,6 @@ AR=${AR}
 LD=${LD}
 AS=${AS}
 STRIP=${STRIP}
-NM=${NM}
 
 CFLAGS  = ${CFLAGS}
 CXXFLAGS  = ${CXXFLAGS}
@@ -523,6 +559,7 @@ AS_SFX    = ${AS_SFX:-.asm}
 EXE_SFX   = ${EXE_SFX}
 VCPROJ_SFX = ${VCPROJ_SFX}
 RTCD_OPTIONS = ${RTCD_OPTIONS}
+LIBWEBM_CXXFLAGS = ${LIBWEBM_CXXFLAGS}
 LIBYUV_CXXFLAGS = ${LIBYUV_CXXFLAGS}
 EOF
 
@@ -611,6 +648,9 @@ process_common_cmdline() {
         ;;
       --extra-cxxflags=*)
         extra_cxxflags="${optval}"
+        ;;
+      --use-profile=*)
+        pgo_file=${optval}
         ;;
       --enable-?*|--disable-?*)
         eval `echo "$opt" | sed 's/--/action=/;s/-/ option=/;s/-/_/g'`
@@ -708,7 +748,6 @@ setup_gnu_toolchain() {
   LD=${LD:-${CROSS}${link_with_cc:-ld}}
   AS=${AS:-${CROSS}as}
   STRIP=${STRIP:-${CROSS}strip}
-  NM=${NM:-${CROSS}nm}
   AS_SFX=.S
   EXE_SFX=
 }
@@ -793,7 +832,7 @@ process_common_toolchain() {
         tgt_isa=x86_64
         tgt_os=`echo $gcctarget | sed 's/.*\(darwin1[0-9]\).*/\1/'`
         ;;
-      *darwin2[0-1]*)
+      *darwin2[0-5]*)
         tgt_isa=`uname -m`
         tgt_os=`echo $gcctarget | sed 's/.*\(darwin2[0-9]\).*/\1/'`
         ;;
@@ -844,6 +883,10 @@ process_common_toolchain() {
 
   # Enable the architecture family
   case ${tgt_isa} in
+    arm64 | armv8)
+      enable_feature arm
+      enable_feature aarch64
+      ;;
     arm*)
       enable_feature arm
       ;;
@@ -860,8 +903,14 @@ process_common_toolchain() {
       ;;
   esac
 
-  # PIC is probably what we want when building shared libs
+  # Position independent code (PIC) is probably what we want when building
+  # shared libs or position independent executable (PIE) targets.
   enabled shared && soft_enable pic
+  check_cpp << EOF || soft_enable pic
+#if !(__pie__ || __PIE__)
+#error Neither __pie__ or __PIE__ are set
+#endif
+EOF
 
   # Minimum iOS version for all target platforms (darwin and iphonesimulator).
   # Shared library framework builds are only possible on iOS 8 and later.
@@ -942,7 +991,7 @@ process_common_toolchain() {
       add_cflags  "-mmacosx-version-min=10.15"
       add_ldflags "-mmacosx-version-min=10.15"
       ;;
-    *-darwin2[0-1]-*)
+    *-darwin2[0-5]-*)
       add_cflags  "-arch ${toolchain%%-*}"
       add_ldflags "-arch ${toolchain%%-*}"
       ;;
@@ -967,27 +1016,30 @@ process_common_toolchain() {
       ;;
   esac
 
-  # Process ARM architecture variants
+  # Process architecture variants
   case ${toolchain} in
     arm*)
-      # on arm, isa versions are supersets
-      case ${tgt_isa} in
-        arm64|armv8)
-          soft_enable neon
+      case ${toolchain} in
+        armv7*-darwin*)
+          # Runtime cpu detection is not defined for these targets.
+          enabled runtime_cpu_detect && disable_feature runtime_cpu_detect
           ;;
-        armv7|armv7s)
-          soft_enable neon
-          # Only enable neon_asm when neon is also enabled.
-          enabled neon && soft_enable neon_asm
-          # If someone tries to force it through, die.
-          if disabled neon && enabled neon_asm; then
-            die "Disabling neon while keeping neon-asm is not supported"
-          fi
+        *)
+          soft_enable runtime_cpu_detect
           ;;
       esac
 
-      asm_conversion_cmd="cat"
+      if [ ${tgt_isa} = "armv7" ] || [ ${tgt_isa} = "armv7s" ]; then
+        soft_enable neon
+        # Only enable neon_asm when neon is also enabled.
+        enabled neon && soft_enable neon_asm
+        # If someone tries to force it through, die.
+        if disabled neon && enabled neon_asm; then
+          die "Disabling neon while keeping neon-asm is not supported"
+        fi
+      fi
 
+      asm_conversion_cmd="cat"
       case ${tgt_cc} in
         gcc)
           link_with_cc=gcc
@@ -1068,8 +1120,11 @@ EOF
                     enable_feature win_arm64_neon_h_workaround
               else
                 # If a probe is not possible, assume this is the pure Windows
-                # SDK and so the workaround is necessary.
-                enable_feature win_arm64_neon_h_workaround
+                # SDK and so the workaround is necessary when using Visual
+                # Studio < 2019.
+                if [ ${tgt_cc##vs} -lt 16 ]; then
+                  enable_feature win_arm64_neon_h_workaround
+                fi
               fi
             fi
           fi
@@ -1080,7 +1135,6 @@ EOF
           AS=armasm
           LD="${source_path}/build/make/armlink_adapter.sh"
           STRIP=arm-none-linux-gnueabi-strip
-          NM=arm-none-linux-gnueabi-nm
           tune_cflags="--cpu="
           tune_asflags="--cpu="
           if [ -z "${tune_cpu}" ]; then
@@ -1117,6 +1171,14 @@ EOF
           echo "See build/make/Android.mk for details."
           check_add_ldflags -static
           soft_enable unit_tests
+          case "$AS" in
+            *clang)
+              # The GNU Assembler was removed in the r24 version of the NDK.
+              # clang's internal assembler works, but `-c` is necessary to
+              # avoid linking.
+              add_asflags -c
+              ;;
+          esac
           ;;
 
         darwin)
@@ -1127,8 +1189,6 @@ EOF
             AR="$(${XCRUN_FIND} ar)"
             AS="$(${XCRUN_FIND} as)"
             STRIP="$(${XCRUN_FIND} strip)"
-            NM="$(${XCRUN_FIND} nm)"
-            RANLIB="$(${XCRUN_FIND} ranlib)"
             AS_SFX=.S
             LD="${CXX:-$(${XCRUN_FIND} ld)}"
 
@@ -1169,7 +1229,8 @@ EOF
                 ;;
             esac
 
-            if [ "$(show_darwin_sdk_major_version iphoneos)" -gt 8 ]; then
+            if [ "$(show_darwin_sdk_major_version iphoneos)" -gt 8 ] \
+               && [ "$(show_xcode_version | cut -d. -f1)" -lt 16 ]; then
               check_add_cflags -fembed-bitcode
               check_add_asflags -fembed-bitcode
               check_add_ldflags -fembed-bitcode
@@ -1203,6 +1264,38 @@ EOF
           fi
           ;;
       esac
+
+      # AArch64 ISA extensions are treated as supersets.
+      if [ ${tgt_isa} = "arm64" ] || [ ${tgt_isa} = "armv8" ]; then
+        aarch64_arch_flag_neon="arch=armv8-a"
+        aarch64_arch_flag_neon_dotprod="arch=armv8.2-a+dotprod"
+        aarch64_arch_flag_neon_i8mm="arch=armv8.2-a+dotprod+i8mm"
+        aarch64_arch_flag_sve="arch=armv8.2-a+dotprod+i8mm+sve"
+        aarch64_arch_flag_sve2="arch=armv9-a+sve2"
+        for ext in ${ARCH_EXT_LIST_AARCH64}; do
+          if [ "$disable_exts" = "yes" ]; then
+            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-${ext} "
+            soft_disable $ext
+          else
+            # Check the compiler supports the -march flag for the extension.
+            # This needs to happen after toolchain/OS inspection so we handle
+            # $CROSS etc correctly when checking for flags, else these will
+            # always fail.
+            flag="$(eval echo \$"aarch64_arch_flag_${ext}")"
+            check_gcc_machine_option "${flag}" "${ext}"
+            if ! enabled $ext; then
+              # Disable higher order extensions to simplify dependencies.
+              disable_exts="yes"
+              RTCD_OPTIONS="${RTCD_OPTIONS}--disable-${ext} "
+              soft_disable $ext
+            fi
+          fi
+        done
+        if enabled sve; then
+          check_neon_sve_bridge_compiles
+        fi
+      fi
+
       ;;
     mips*)
       link_with_cc=gcc
@@ -1270,6 +1363,7 @@ EOF
       fi
       ;;
     x86*)
+      soft_enable x86_asm
       case  ${tgt_os} in
         android)
           soft_enable realtime_only
@@ -1288,6 +1382,10 @@ EOF
           AS=${AS:-nasm}
           add_ldflags -Zhigh-mem
           ;;
+        darwin*)
+          enabled x86 && darwin_arch="-arch i386" || darwin_arch="-arch x86_64"
+          add_cflags  ${darwin_arch}
+          add_ldflags ${darwin_arch}
       esac
 
       AS="${alt_as:-${AS:-auto}}"
@@ -1410,9 +1508,6 @@ EOF
           ;;
         darwin*)
           add_asflags -f macho${bits}
-          enabled x86 && darwin_arch="-arch i386" || darwin_arch="-arch x86_64"
-          add_cflags  ${darwin_arch}
-          add_ldflags ${darwin_arch}
           # -mdynamic-no-pic is still a bit of voodoo -- it was required at
           # one time, but does not seem to be now, and it breaks some of the
           # code that still relies on inline assembly.
@@ -1459,6 +1554,14 @@ EOF
       ;;
   esac
 
+  # Enable PGO
+  if [ -n "${pgo_file}" ]; then
+   check_add_cflags -fprofile-use=${pgo_file} || \
+     die "-fprofile-use is not supported by compiler"
+   check_add_ldflags -fprofile-use=${pgo_file} || \
+     die "-fprofile-use is not supported by linker"
+  fi
+
   # Try to enable CPU specific tuning
   if [ -n "${tune_cpu}" ]; then
     if [ -n "${tune_cflags}" ]; then
@@ -1479,6 +1582,9 @@ EOF
   else
     check_add_cflags -DNDEBUG
   fi
+  enabled profile &&
+    check_add_cflags -fprofile-generate &&
+    check_add_ldflags -fprofile-generate
 
   enabled gprof && check_add_cflags -pg && check_add_ldflags -pg
   enabled gcov &&
@@ -1497,10 +1603,6 @@ EOF
   # shared objects
   enabled gcc && enabled pic && check_add_cflags -fPIC
 
-  # Work around longjmp interception on glibc >= 2.11, to improve binary
-  # compatibility. See http://code.google.com/p/webm/issues/detail?id=166
-  enabled linux && check_add_cflags -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0
-
   # Check for strip utility variant
   ${STRIP} -V 2>/dev/null | grep GNU >/dev/null && enable_feature gnu_strip
 
@@ -1513,7 +1615,7 @@ EOF
 
     # Try to find which inline keywords are supported
     check_cc <<EOF && INLINE="inline"
-static inline function() {}
+static inline int function(void) {}
 EOF
 
   # Almost every platform uses pthreads.
@@ -1523,6 +1625,7 @@ EOF
         ;;
       *-android-gcc)
         # bionic includes basic pthread functionality, obviating -lpthread.
+        soft_enable pthread_setname_np
         ;;
       *)
         check_header pthread.h && check_lib -lpthread <<EOF && add_extralibs -lpthread || disable_feature pthread_h
@@ -1531,6 +1634,15 @@ EOF
 void *thread_check (void *);
 void *thread_check (void *obj){ return obj;};
 int main(void) { pthread_t thread_id; return pthread_create(&thread_id, NULL, thread_check, NULL); }
+EOF
+
+        enabled pthread_h && check_lib -lpthread <<EOF && enable_feature pthread_setname_np
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
+#include <pthread.h>
+int main(void) { return &pthread_setname_np != 0; }
 EOF
         ;;
     esac

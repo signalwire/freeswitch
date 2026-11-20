@@ -73,6 +73,10 @@ sub vpx_config($) {
 }
 
 sub specialize {
+  if (@_ <= 1) {
+    die "'specialize' must be called with a function name and at least one ",
+        "architecture ('C' is implied): \n@_\n";
+  }
   my $fn=$_[0];
   shift;
   foreach my $opt (@_) {
@@ -209,6 +213,16 @@ sub filter {
 sub common_top() {
   my $include_guard = uc($opts{sym})."_H_";
   print <<EOF;
+/*
+ *  Copyright (c) 2017 The WebM project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree. An additional intellectual property rights grant can be found
+ *  in the file PATENTS.  All contributing project authors may
+ *  be found in the AUTHORS file in the root of the source tree.
+ */
+
 // This file is generated. Do not edit.
 #ifndef ${include_guard}
 #define ${include_guard}
@@ -238,13 +252,14 @@ EOF
 }
 
 sub common_bottom() {
+  my $include_guard = uc($opts{sym})."_H_";
   print <<EOF;
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif
+#endif  // ${include_guard}
 EOF
 }
 
@@ -438,19 +453,35 @@ EOF
   common_bottom;
 }
 
+# List of architectures in low-to-high preference order.
+my @PRIORITY_ARCH = qw/
+  c
+  mmx sse sse2 sse3 ssse3 sse4_1 sse4_2 avx avx2 avx512
+  arm_crc32 neon neon_dotprod neon_i8mm sve sve2
+  rvv
+  vsx
+  dspr2 msa
+/;
+my %PRIORITY_INDEX;
+for (my $i = 0; $i < @PRIORITY_ARCH; $i++) {
+  $PRIORITY_INDEX{$PRIORITY_ARCH[$i]} = $i;
+}
+
 #
 # Main Driver
 #
 
 &require("c");
-&require(keys %required);
+&require(sort { $PRIORITY_INDEX{$a} <=> $PRIORITY_INDEX{$b} } keys %required);
 if ($opts{arch} eq 'x86') {
   @ALL_ARCHS = filter(qw/mmx sse sse2 sse3 ssse3 sse4_1 avx avx2 avx512/);
   x86;
 } elsif ($opts{arch} eq 'x86_64') {
   @ALL_ARCHS = filter(qw/mmx sse sse2 sse3 ssse3 sse4_1 avx avx2 avx512/);
-  @REQUIRES = filter(qw/mmx sse sse2/);
-  &require(@REQUIRES);
+  if (keys %required == 0) {
+    @REQUIRES = filter(qw/mmx sse sse2/);
+    &require(@REQUIRES);
+  }
   x86;
 } elsif ($opts{arch} eq 'mips32' || $opts{arch} eq 'mips64') {
   my $have_dspr2 = 0;
@@ -487,8 +518,11 @@ if ($opts{arch} eq 'x86') {
   @ALL_ARCHS = filter(qw/neon_asm neon/);
   arm;
 } elsif ($opts{arch} eq 'armv8' || $opts{arch} eq 'arm64' ) {
-  @ALL_ARCHS = filter(qw/neon/);
-  &require("neon");
+  @ALL_ARCHS = filter(qw/neon neon_dotprod neon_i8mm sve sve2/);
+  if (keys %required == 0) {
+    @REQUIRES = filter(qw/neon/);
+    &require(@REQUIRES);
+  }
   arm;
 } elsif ($opts{arch} =~ /^ppc/ ) {
   @ALL_ARCHS = filter(qw/vsx/);

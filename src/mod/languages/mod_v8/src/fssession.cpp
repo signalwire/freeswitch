@@ -1836,7 +1836,7 @@ JS_SESSION_FUNCTION_IMPL(Bridge)
 
 			cb_state.jss_a = this;
 			cb_state.jss_b = jss_b;
-			cb_state.session_obj_a.Reset(info.GetIsolate(), info.Holder());
+			cb_state.session_obj_a.Reset(info.GetIsolate(), info.This());
 			cb_state.session_obj_b.Reset(info.GetIsolate(), obj_b);
 			cb_state.session_state = this;
 			cb_state.context.Reset(info.GetIsolate(), info.GetIsolate()->GetCurrentContext());

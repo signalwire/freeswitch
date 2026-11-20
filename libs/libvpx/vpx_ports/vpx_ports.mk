@@ -14,7 +14,6 @@ PORTS_SRCS-yes += vpx_ports.mk
 PORTS_SRCS-yes += bitops.h
 PORTS_SRCS-yes += compiler_attributes.h
 PORTS_SRCS-yes += mem.h
-PORTS_SRCS-yes += msvc.h
 PORTS_SRCS-yes += static_assert.h
 PORTS_SRCS-yes += system_state.h
 PORTS_SRCS-yes += vpx_timer.h
@@ -36,7 +35,12 @@ PORTS_SRCS-yes += x86.h
 PORTS_SRCS-yes += x86_abi_support.asm
 endif
 
-PORTS_SRCS-$(VPX_ARCH_ARM) += arm_cpudetect.c
+ifeq ($(VPX_ARCH_AARCH64),yes)
+PORTS_SRCS-yes += aarch64_cpudetect.c
+else
+PORTS_SRCS-$(VPX_ARCH_ARM) += aarch32_cpudetect.c
+endif
+PORTS_SRCS-$(VPX_ARCH_ARM) += arm_cpudetect.h
 PORTS_SRCS-$(VPX_ARCH_ARM) += arm.h
 
 PORTS_SRCS-$(VPX_ARCH_PPC) += ppc_cpudetect.c

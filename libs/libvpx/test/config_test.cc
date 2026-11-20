@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/util.h"
@@ -22,24 +22,24 @@ class ConfigTest
   ConfigTest()
       : EncoderTest(GET_PARAM(0)), frame_count_in_(0), frame_count_out_(0),
         frame_count_max_(0) {}
-  virtual ~ConfigTest() {}
+  ~ConfigTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     InitializeConfig();
     SetMode(GET_PARAM(1));
   }
 
-  virtual void BeginPassHook(unsigned int /*pass*/) {
+  void BeginPassHook(unsigned int /*pass*/) override {
     frame_count_in_ = 0;
     frame_count_out_ = 0;
   }
 
-  virtual void PreEncodeFrameHook(libvpx_test::VideoSource * /*video*/) {
+  void PreEncodeFrameHook(libvpx_test::VideoSource * /*video*/) override {
     ++frame_count_in_;
     abort_ |= (frame_count_in_ >= frame_count_max_);
   }
 
-  virtual void FramePktHook(const vpx_codec_cx_pkt_t * /*pkt*/) {
+  void FramePktHook(const vpx_codec_cx_pkt_t * /*pkt*/) override {
     ++frame_count_out_;
   }
 

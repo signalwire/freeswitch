@@ -11,23 +11,23 @@
 #include "./vpx_config.h"
 #include "./vp8_rtcd.h"
 
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 
 #include "test/buffer.h"
 #include "test/clear_system_state.h"
 #include "test/register_state_check.h"
 #include "vpx/vpx_integer.h"
 
-typedef void (*IdctFunc)(int16_t *input, unsigned char *pred_ptr,
-                         int pred_stride, unsigned char *dst_ptr,
-                         int dst_stride);
+using IdctFunc = void (*)(int16_t *input, unsigned char *pred_ptr,
+                          int pred_stride, unsigned char *dst_ptr,
+                          int dst_stride);
 namespace {
 
 using libvpx_test::Buffer;
 
 class IDCTTest : public ::testing::TestWithParam<IdctFunc> {
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     UUT = GetParam();
 
     input = new Buffer<int16_t>(4, 4, 0);
@@ -41,7 +41,7 @@ class IDCTTest : public ::testing::TestWithParam<IdctFunc> {
     ASSERT_TRUE(output->Init());
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     delete input;
     delete predict;
     delete output;
@@ -163,10 +163,10 @@ INSTANTIATE_TEST_SUITE_P(NEON, IDCTTest,
                          ::testing::Values(vp8_short_idct4x4llm_neon));
 #endif  // HAVE_NEON
 
-#if HAVE_MMX
+#if HAVE_MMX && HAVE_X86_ASM
 INSTANTIATE_TEST_SUITE_P(MMX, IDCTTest,
                          ::testing::Values(vp8_short_idct4x4llm_mmx));
-#endif  // HAVE_MMX
+#endif  // HAVE_MMX && HAVE_X86_ASM
 
 #if HAVE_MSA
 INSTANTIATE_TEST_SUITE_P(MSA, IDCTTest,

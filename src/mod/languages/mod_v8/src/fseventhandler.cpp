@@ -572,7 +572,7 @@ JS_EVENTHANDLER_FUNCTION_IMPL_STATIC(Destroy)
 {
 	JS_CHECK_SCRIPT_STATE();
 
-	FSEventHandler *obj = JSBase::GetInstance<FSEventHandler>(info.Holder());
+	FSEventHandler *obj = JSBase::GetInstance<FSEventHandler>(info.This());
 
 	if (obj) {
 		delete obj;
