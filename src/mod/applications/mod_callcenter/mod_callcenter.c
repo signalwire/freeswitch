@@ -907,8 +907,8 @@ cc_status_t cc_agent_add(const char *agent, const char *type)
 		/* Add Agent */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding Agent %s with type %s with default status %s\n",
 				agent, type, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT));
-		sql = switch_mprintf("INSERT INTO agents (name, instance_id, type, status, state) VALUES('%q', 'single_box', '%q', '%q', '%q');",
-				agent, type, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), cc_agent_state2str(CC_AGENT_STATE_WAITING));
+		sql = switch_mprintf("INSERT INTO agents (name, instance_id, type, status, state) VALUES('%q', '%q', '%q', '%q', '%q');",
+				agent,globals.cc_instance_id, type, cc_agent_status2str(CC_AGENT_STATUS_LOGGED_OUT), cc_agent_state2str(CC_AGENT_STATE_WAITING));
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -1029,7 +1029,7 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 
 			/* Used to stop any active callback */
 			if (cc_agent_str2status(value) != CC_AGENT_STATUS_AVAILABLE) {
-				sql = switch_mprintf("SELECT uuid FROM members WHERE serving_agent = '%q' AND serving_system = 'single_box' AND NOT state = 'Answered'", agent);
+				sql = switch_mprintf("SELECT uuid FROM members WHERE serving_agent = '%q' AND serving_system = '%q' AND NOT state = 'Answered'", agent, globals.cc_instance_id);
 				cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 				switch_safe_free(sql);
 				if (!switch_strlen_zero(res)) {
@@ -1076,13 +1076,13 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			goto done;
 		}
 	} else if (!strcasecmp(key, "uuid")) {
-		sql = switch_mprintf("UPDATE agents SET uuid = '%q', instance_id = 'single_box' WHERE name = '%q'", value, agent);
+		sql = switch_mprintf("UPDATE agents SET uuid = '%q', instance_id = '%q' WHERE name = '%q'", value, globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "contact")) {
-		sql = switch_mprintf("UPDATE agents SET contact = '%q', instance_id = 'single_box' WHERE name = '%q'", value, agent);
+		sql = switch_mprintf("UPDATE agents SET contact = '%q', instance_id = '%q' WHERE name = '%q'", value, globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -1095,25 +1095,25 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 			switch_event_fire(&event);
 		}
 	} else if (!strcasecmp(key, "ready_time")) {
-		sql = switch_mprintf("UPDATE agents SET ready_time = '%ld', instance_id = 'single_box' WHERE name = '%q'", atol(value), agent);
+		sql = switch_mprintf("UPDATE agents SET ready_time = '%ld', instance_id = '%q' WHERE name = '%q'", atol(value), globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "busy_delay_time")) {
-		sql = switch_mprintf("UPDATE agents SET busy_delay_time = '%ld', instance_id = 'single_box' WHERE name = '%q'", atol(value), agent);
+		sql = switch_mprintf("UPDATE agents SET busy_delay_time = '%ld', instance_id = '%q' WHERE name = '%q'", atol(value), globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "reject_delay_time")) {
-		sql = switch_mprintf("UPDATE agents SET reject_delay_time = '%ld', instance_id = 'single_box' WHERE name = '%q'", atol(value), agent);
+		sql = switch_mprintf("UPDATE agents SET reject_delay_time = '%ld', instance_id = '%q' WHERE name = '%q'", atol(value), globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
 	} else if (!strcasecmp(key, "no_answer_delay_time")) {
-		sql = switch_mprintf("UPDATE agents SET no_answer_delay_time = '%ld', instance_id = 'single_box' WHERE name = '%q'", atol(value), agent);
+		sql = switch_mprintf("UPDATE agents SET no_answer_delay_time = '%ld', instance_id = '%q' WHERE name = '%q'", atol(value), globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -1131,14 +1131,14 @@ cc_status_t cc_agent_update(const char *key, const char *value, const char *agen
 		result = CC_STATUS_SUCCESS;
 
 	} else if (!strcasecmp(key, "max_no_answer")) {
-		sql = switch_mprintf("UPDATE agents SET max_no_answer = '%d', instance_id = 'single_box' WHERE name = '%q'", atoi(value), agent);
+		sql = switch_mprintf("UPDATE agents SET max_no_answer = '%d', instance_id = '%q' WHERE name = '%q'", atoi(value), globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
 		result = CC_STATUS_SUCCESS;
 
 	} else if (!strcasecmp(key, "wrap_up_time")) {
-		sql = switch_mprintf("UPDATE agents SET wrap_up_time = '%d', instance_id = 'single_box' WHERE name = '%q'", atoi(value), agent);
+		sql = switch_mprintf("UPDATE agents SET wrap_up_time = '%d', instance_id = '%q' WHERE name = '%q'", atoi(value), globals.cc_instance_id, agent);
 		cc_execute_sql(NULL, sql, NULL);
 		switch_safe_free(sql);
 
@@ -1596,11 +1596,11 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_cache_db_release_db_handle(&dbh);
 
 	/* Reset a unclean shutdown */
-	sql = switch_mprintf("update agents set state = 'Waiting', uuid = '' where instance_id = 'single_box';"
-						 "update tiers set state = 'Ready' where agent IN (select name from agents where instance_id = 'single_box');"
+	sql = switch_mprintf("update agents set state = 'Waiting', uuid = '' where instance_id = '%q';"
+						 "update tiers set state = 'Ready' where agent IN (select name from agents where instance_id = '%q');"
 						 "update members set state = '%q', session_uuid = '' where instance_id = '%q';"
-						 "update agents set external_calls_count = 0 where instance_id = 'single_box';",
-						 cc_member_state2str(CC_MEMBER_STATE_ABANDONED), globals.cc_instance_id);
+						 "update agents set external_calls_count = 0 where instance_id = '%q';",
+						 cc_member_state2str(CC_MEMBER_STATE_ABANDONED), globals.cc_instance_id, globals.cc_instance_id, globals.cc_instance_id, globals.cc_instance_id);
 	cc_execute_sql(NULL, sql, NULL);
 	switch_safe_free(sql);
 
@@ -1906,9 +1906,9 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 		if (!strcasecmp(h->queue_strategy,"ring-all") || !strcasecmp(h->queue_strategy,"ring-progressively")) {
 			char res[256];
 			/* Map the Agent to the member */
-			sql = switch_mprintf("UPDATE members SET serving_agent = '%q', serving_system = 'single_box', state = '%q'"
+			sql = switch_mprintf("UPDATE members SET serving_agent = '%q', serving_system = '%q', state = '%q'"
 					" WHERE state = '%q' AND uuid = '%q' AND instance_id = '%q' AND serving_agent = '%q'",
-					h->agent_name, cc_member_state2str(CC_MEMBER_STATE_TRYING),
+					h->agent_name, globals.cc_instance_id, cc_member_state2str(CC_MEMBER_STATE_TRYING),
 					cc_member_state2str(CC_MEMBER_STATE_TRYING), h->member_uuid, globals.cc_instance_id, h->queue_strategy);
 			cc_execute_sql(NULL, sql, NULL);
 
@@ -1916,8 +1916,8 @@ static void *SWITCH_THREAD_FUNC outbound_agent_thread_run(switch_thread_t *threa
 
 			/* Check if we won the race to get the member to our selected agent (Used for Multi system purposes) */
 			sql = switch_mprintf("SELECT count(*) FROM members"
-					" WHERE serving_agent = '%q' AND serving_system = 'single_box' AND uuid = '%q' AND instance_id = '%q'",
-					h->agent_name, h->member_uuid, globals.cc_instance_id);
+					" WHERE serving_agent = '%q' AND serving_system = '%q' AND uuid = '%q' AND instance_id = '%q'",
+					h->agent_name, globals.cc_instance_id, h->member_uuid, globals.cc_instance_id);
 			cc_execute_sql2str(NULL, NULL, sql, res, sizeof(res));
 			switch_safe_free(sql);
 
@@ -2347,7 +2347,7 @@ static int agents_callback(void *pArg, int argc, char **argv, char **columnNames
 	}
 
 	/* If agent isn't on this box */
-	if (strcasecmp(agent_system,"single_box" /* SELF */)) {
+	if (strcasecmp(agent_system, globals.cc_instance_id/* SELF */)) {
 		if (!strcasecmp(cbt->strategy, "ring-all")) {
 			return 1; /* Abort finding agent for member if we found a match but for a different Server */
 		} else {
