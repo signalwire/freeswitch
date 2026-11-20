@@ -39,7 +39,7 @@
 switch_curl_slist_t *azure_blob_append_headers(http_profile_t *profile, switch_curl_slist_t *headers,
 	const char *verb, unsigned int content_length, const char *content_type, const char *url, const unsigned int block_num, char **query_string);
 switch_status_t azure_blob_finalise_put(http_profile_t *profile, const char *url, const unsigned int num_blocks);
-switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *profile);
+switch_status_t azure_blob_config_profile(switch_xml_t xml, http_profile_t *profile, switch_memory_pool_t *pool);
 
 #endif
 
