@@ -10,9 +10,9 @@ FST_SUITE_BEGIN(switch_hold)
 {
 	FST_SETUP_BEGIN()
 	{
-		/* Give mod_sofia time to spinup profile threads */
+		/* Wait (bounded) for mod_sofia to bring its profiles up, instead of a fixed pause */
 		if (delay_start_ms) {
-			switch_sleep(delay_start_ms * 1000);
+			fst_wait_until(fst_sofia_profile_running("internal") && fst_sofia_profile_running("external"), delay_start_ms);
 			delay_start_ms = 0;
 		}
 

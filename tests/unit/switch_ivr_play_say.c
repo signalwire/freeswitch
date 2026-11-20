@@ -416,7 +416,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_test_pass"), "Expect record_start_test_pass channel variable set to true");
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_test_pass"), "Expect record_stop_test_pass channel variable set to true");
-			switch_sleep(1000 * 1000);
+			fst_wait_until(switch_channel_var_true(fst_channel, "record_start_event_test_pass") && switch_channel_var_true(fst_channel, "record_stop_event_test_pass"), 2000);
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_event_test_pass"), "Expect RECORD_START event received with Recording-Variable-ID set");
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_event_test_pass"), "Expect RECORD_STOP event received with Recording-Variable-ID set");
 			switch_event_unbind_callback(on_record_start);
@@ -444,7 +444,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_test_pass"), "Expect record_start_test_pass channel variable set to true");
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_test_pass"), "Expect record_stop_test_pass channel variable set to true");
-			switch_sleep(1000 * 1000);
+			fst_wait_until(switch_channel_var_true(fst_channel, "record_start_event_test_pass") && switch_channel_var_true(fst_channel, "record_stop_event_test_pass"), 2000);
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_event_test_pass"), "Expect RECORD_START event received with Recording-Variable-ID set");
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_event_test_pass"), "Expect RECORD_STOP event received with Recording-Variable-ID set");
 			switch_event_unbind_callback(on_record_start);
@@ -466,7 +466,7 @@ FST_CORE_BEGIN("./conf_playsay")
 			fst_check(status == SWITCH_STATUS_SUCCESS);
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_start_test_pass"), "Expect record_start_test_pass channel variable set to true");
 			fst_xcheck(switch_channel_var_true(fst_channel, "record_stop_test_pass"), "Expect record_stop_test_pass channel variable set to true");
-			switch_sleep(1000 * 1000);
+			fst_wait_until(switch_file_exists(record_filename, fst_pool) == SWITCH_STATUS_SUCCESS, 2000);
 			fst_xcheck(switch_file_exists(record_filename, fst_pool) == SWITCH_STATUS_SUCCESS, "Expect recording file to exist");
 			unlink(record_filename);
 		}
