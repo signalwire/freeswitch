@@ -967,6 +967,7 @@ void sofia_glue_set_extra_headers(switch_core_session_t *session, sip_t const *s
 
 	switch_snprintf(pstr, sizeof(pstr), "execute_on_%sprefix", prefix);
 	switch_channel_execute_on(channel, pstr);
+	switch_snprintf(pstr, sizeof(pstr), "api_on_%sprefix", prefix);
 	switch_channel_api_on(channel, pstr);
 
 	switch_channel_execute_on(channel, "execute_on_sip_extra_headers");
