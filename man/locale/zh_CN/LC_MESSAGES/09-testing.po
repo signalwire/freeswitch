@@ -1,0 +1,871 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 22:33+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../09-testing.md:1 a36ca0b4dab54b528c96bf40045bf22f
+msgid "09. Testing Strategy"
+msgstr "09. 测试策略"
+
+#: ../../09-testing.md:5 6961d845e68d4559b0a668a31f9b342e
+msgid ""
+"How this tree is validated: C unit binaries under `tests/unit/`, per-module "
+"Autotools `TESTS` collected by `make print_tests`, ESL `make check`, clang "
+"`scan-build`, then a short live-process smoke after `make install`. GitHub "
+"Actions is the source of truth for the automated path "
+"(`.github/workflows/ci.yml`). There is no published coverage percentage in "
+"this repo."
+msgstr ""
+"本仓库如何验证：`tests/unit/` 下的 C 单元二进制、由 `make print_tests` 收集的各模块 Autotools "
+"`TESTS`、ESL `make check`、clang `scan-build`，以及 `make install` "
+"之后的短时在线冒烟。自动化路径的权威来源是 GitHub "
+"Actions（`.github/workflows/ci.yml`）。本仓库没有公布覆盖率百分比。"
+
+#: ../../09-testing.md:7 3bf8a98cadff4ae0aee6da52e90af205
+msgid ""
+"New core tests must use `src/include/test/switch_test.h` "
+"(`tests/unit/README`). Do not use `scripts/debian_min_build.sh` as a test or"
+" build environment (Jessie / FreeSWITCH 1.6 pins; see [Quick "
+"Start](01-quick-start.md))."
+msgstr ""
+"新的核心测试必须使用 `src/include/test/switch_test.h`（`tests/unit/README`）。不要把 "
+"`scripts/debian_min_build.sh` 当作测试或构建环境（钉死 Jessie / FreeSWITCH 1.6；见 "
+"[快速开始](01-quick-start.md)）。"
+
+#: ../../09-testing.md:9 fa5bcf5eee354079a0a8d530f64a46a7
+msgid "Test Layers"
+msgstr "测试分层"
+
+#: ../../09-testing.md e04cdfde02634a0085a1a8af250ebb29
+msgid "Layer"
+msgstr "层级"
+
+#: ../../09-testing.md be4ba1163d634258a6273350f1a3e983
+msgid "Primary checks"
+msgstr "主要检查"
+
+#: ../../09-testing.md 8d0134199eec4cbc9fa84aa480e4c2ce
+msgid "Ownership / notes"
+msgstr "归属 / 说明"
+
+#: ../../09-testing.md 4ce699b8105f4671ba893d644e72444d
+msgid "Core C unit binaries"
+msgstr "核心 C 单元二进制"
+
+#: ../../09-testing.md d70a35a4add4495b93ed0ff1c85882f4
+msgid ""
+"`cd tests/unit && ./run-tests.sh` after configure/build/install. Programs in"
+" `tests/unit/Makefile.am` `noinst_PROGRAMS`, listed as `TESTS`."
+msgstr ""
+"configure/build/install 之后执行 `cd tests/unit && ./run-tests.sh`。程序在 "
+"`tests/unit/Makefile.am` 的 `noinst_PROGRAMS` 中，并列为 `TESTS`。"
+
+#: ../../09-testing.md 73a17110782e4346be5fd63cdc23d8ff
+msgid ""
+"libfreeswitch / core. Framework: FCT via `src/include/test/switch_test.h` "
+"and `src/include/test/switch_fct.h`. Each binary is a separate process."
+msgstr ""
+"libfreeswitch / 核心。框架：经 `src/include/test/switch_test.h` 与 "
+"`src/include/test/switch_fct.h` 的 FCT。每个二进制是独立进程。"
+
+#: ../../09-testing.md 32a8dd604c8a45dcba393d950547c8c6
+msgid "Per-module tests"
+msgstr "按模块测试"
+
+#: ../../09-testing.md b742631dd5f34a2d9084d531e1a773f6
+msgid ""
+"Same runner: top-level `make print_tests` also walks `src/mod` "
+"(`OUR_TEST_MODULES` → `<mod>-print_tests` in `configure.ac`)."
+msgstr ""
+"同一运行器：顶层 `make print_tests` 也会遍历 `src/mod`（`configure.ac` 中 "
+"`OUR_TEST_MODULES` → `<mod>-print_tests`）。"
+
+#: ../../09-testing.md b7b80c0af4654df1bef6b69d818bb433
+msgid ""
+"Module `Makefile.am` that sets `TESTS`. Only enabled modules in "
+"`modules.conf` are printed."
+msgstr "设置了 `TESTS` 的模块 `Makefile.am`。只有 `modules.conf` 中已启用的模块会被打印。"
+
+#: ../../09-testing.md 38a9658fe3b04100a6e88b37e73d1c7e
+msgid "ESL library"
+msgstr "ESL 库"
+
+#: ../../09-testing.md 76ec4c744d7847b1b7615ac5c3db00c1
+msgid "`make -C libs/esl check`"
+msgstr "`make -C libs/esl check`"
+
+#: ../../09-testing.md f56ae18ea1bc422c9fa3df39e5ffbd4c
+msgid ""
+"`libs/esl/tests/test_recv_event.c`. CI runs this only on **group 1** "
+"(`.github/workflows/unit-test.yml`)."
+msgstr ""
+"`libs/esl/tests/test_recv_event.c`。CI 仅在**第 1 组**运行（`.github/workflows/unit-"
+"test.yml`）。"
+
+#: ../../09-testing.md 12af73852f7a40e296cc9f3e421a567a
+msgid "Static analysis"
+msgstr "静态分析"
+
+#: ../../09-testing.md acedcabab1534251aa453b5d516bff24
+msgid "`./ci.sh -t scan-build -a configure|build|validate -c freeswitch`"
+msgstr "`./ci.sh -t scan-build -a configure|build|validate -c freeswitch`"
+
+#: ../../09-testing.md ecaf3c2184b241828a5ae20d0cd25205
+msgid ""
+"`.github/workflows/scan-build.yml` + `scan-build-14`. Fails if the log does "
+"not contain `scan-build: No bugs found`."
+msgstr ""
+"`.github/workflows/scan-build.yml` + `scan-build-14`。若日志中不含 `scan-build: No "
+"bugs found` 则失败。"
+
+#: ../../09-testing.md 23c23230dcb54e0b9b62e4eb437befa1
+msgid "Platform compile"
+msgstr "平台编译"
+
+#: ../../09-testing.md ea386d5a7dde49e2ab713758114b4fd5
+msgid ""
+"`macos.yml` Homebrew build; `windows.yml` MSBuild `Freeswitch.2017.sln`"
+msgstr "`macos.yml` Homebrew 构建；`windows.yml` MSBuild `Freeswitch.2017.sln`"
+
+#: ../../09-testing.md e74a02eee3ec4b119cbc7c31033487b1
+msgid ""
+"Compile/install (and Windows MSI), **not** `run-tests.sh`. A subset of unit "
+"sources have `.2017.vcxproj` entries in the solution."
+msgstr ""
+"编译/安装（以及 Windows MSI），**不是** `run-tests.sh`。部分单元源在解决方案中有 `.2017.vcxproj` 条目。"
+
+#: ../../09-testing.md a2dbd03ea0844dc7ab4b9286278bfe78
+msgid "Live smoke"
+msgstr "在线冒烟"
+
+#: ../../09-testing.md a06c254b01d94b5693d66927226f331f
+msgid "`fs_cli -x status` after a prefix install"
+msgstr "前缀安装之后执行 `fs_cli -x status`"
+
+#: ../../09-testing.md cbc355eb4d31482684edec1e0605c75b
+msgid ""
+"Manual / Docker healthcheck. Complements unit tests; does not replace them."
+msgstr "手工 / Docker 健康检查。补充单元测试，不能替代它们。"
+
+#: ../../09-testing.md 22c32995554343dbb0ee838a807d0e21
+msgid "PKB docs"
+msgstr "PKB 文档"
+
+#: ../../09-testing.md 88d5aeaa37484daca38c4fe8042acc9f
+msgid "`cd man && poetry install && make html-en && make pkb-check`"
+msgstr "`cd man && poetry install && make html-en && make pkb-check`"
+
+#: ../../09-testing.md 3817efa1fd864fdb847c95dd9a0396ad
+msgid ""
+"This Sphinx tree (`man/`), not `docs/man/` Unix pages. Not part of "
+"`.github/workflows/ci.yml`."
+msgstr ""
+"这份 Sphinx 树（`man/`），不是 `docs/man/` Unix 手册页。不属于 `.github/workflows/ci.yml`。"
+
+#: ../../09-testing.md:21 2ba76c03c8a64dd8af6765228124276e
+msgid ""
+"`tests/unit/switch_eavesdrop.c` is built as `bin_PROGRAMS` example only "
+"(`examples = switch_eavesdrop`); `Makefile.am` comments that `make check` "
+"will not run it."
+msgstr ""
+"`tests/unit/switch_eavesdrop.c` 仅作为 `bin_PROGRAMS` 示例构建（`examples = "
+"switch_eavesdrop`）；`Makefile.am` 注明 `make check` 不会运行它。"
+
+#: ../../09-testing.md:23 39ff2704150c48b295d63a8415a5f62e
+msgid "Core Regression Areas"
+msgstr "核心回归范围"
+
+#: ../../09-testing.md:25 9e2b0440b5a54e8e9fa66c95ddff1842
+msgid ""
+"These are the `tests/unit/` programs in `noinst_PROGRAMS` (plus "
+"`switch_rtp_pcap` when `pcap-config` exists — `HAVE_PCAP` in "
+"`configure.ac`). Names match the C files."
+msgstr ""
+"这些是 `noinst_PROGRAMS` 中的 `tests/unit/` 程序（若存在 `pcap-config` 则加上 "
+"`switch_rtp_pcap`——`configure.ac` 中的 `HAVE_PCAP`）。名称与 C 文件一致。"
+
+#: ../../09-testing.md ceff56c7ab7445e79391def052d3f83b
+msgid "Area"
+msgstr "领域"
+
+#: ../../09-testing.md 0a1bf089136247b68752f4f155f8c769
+msgid "Program"
+msgstr "程序"
+
+#: ../../09-testing.md 3c1e5fa473d74da89ba4a5f086210119
+msgid "What it exercises"
+msgstr "覆盖内容"
+
+#: ../../09-testing.md fd7cf351fa504261b646cfd325b05443
+msgid "Core utilities"
+msgstr "核心工具"
+
+#: ../../09-testing.md c9970f288a7f477ca2a52ad4170cb725
+msgid "`switch_core`"
+msgstr "`switch_core`"
+
+#: ../../09-testing.md 891eb9f1872c460ca4e5e9b1d6ed4f1d
+msgid ""
+"IP/CIDR, regex, hashes, UUID v4/v7, spawn vs system, XML attrs, event header"
+" leak"
+msgstr "IP/CIDR、正则、哈希、UUID v4/v7、spawn 与 system、XML 属性、事件头泄漏"
+
+#: ../../09-testing.md e6294da7324549c89895daec9c646843
+msgid "Sessions"
+msgstr "会话"
+
+#: ../../09-testing.md c1713927672f4da396f6a3061ebee003
+msgid "`switch_core_session`"
+msgstr "`switch_core_session`"
+
+#: ../../09-testing.md be7fb04d60b94d57a26286c8bf7f2232
+msgid ""
+"External session ID locate/hangup (`FST_SESSION_BEGIN(session_external_id)`)"
+msgstr "外部会话 ID 查找/挂断（`FST_SESSION_BEGIN(session_external_id)`）"
+
+#: ../../09-testing.md 39d4c5b92be2443e88618490375e8e18
+msgid "Originate / dialplan IVR"
+msgstr "发起 / 拨号计划 IVR"
+
+#: ../../09-testing.md 667fc7e0e7114835bddb92df2b244854
+msgid "`switch_ivr_originate`"
+msgstr "`switch_ivr_originate`"
+
+#: ../../09-testing.md f9900258cb594a9788b67edafdc84ee8
+msgid ""
+"Empty dial string, group-confirm legs/timeouts, JSON dial handles, video, "
+"enterprise originate"
+msgstr "空拨号串、group-confirm 腿/超时、JSON 拨号句柄、视频、enterprise originate"
+
+#: ../../09-testing.md 2fae6c6a53224c8a84272025d7715e98
+msgid "Play / record"
+msgstr "播放 / 录音"
+
+#: ../../09-testing.md 9bd2010a31ab43609d3f9179562f4dca
+msgid "`switch_ivr_play_say`, `switch_ivr_async`"
+msgstr "`switch_ivr_play_say`, `switch_ivr_async`"
+
+#: ../../09-testing.md 26ad86c0f0514e86a67f983491e05d7c
+msgid ""
+"Collect-input success/failure/partial; async record pause and channel vars"
+msgstr "收集输入的成功/失败/部分；异步录音暂停与信道变量"
+
+#: ../../09-testing.md 159f180b93694016a4ca91351e988205
+msgid "RTP / RTCP"
+msgstr "RTP / RTCP"
+
+#: ../../09-testing.md 7c4c050dd91240c5a918938f92cb89f0
+msgid "`switch_rtp`"
+msgstr "`switch_rtp`"
+
+#: ../../09-testing.md ece05475555b44798b4766eeb1263562
+msgid "RTP session, RTCP audio event, client cert verify"
+msgstr "RTP 会话、RTCP 音频事件、客户端证书校验"
+
+#: ../../09-testing.md 7e8d72f2209c4d139ec9aacb000ce7ff
+msgid "RTP pcap (optional)"
+msgstr "RTP pcap（可选）"
+
+#: ../../09-testing.md bd8c95cbd693410eb459da500174b8e5
+msgid "`switch_rtp_pcap`"
+msgstr "`switch_rtp_pcap`"
+
+#: ../../09-testing.md 18bbe7eb7f084d4ebb1fc6dc0a7cc195
+msgid ""
+"Stall with muxed RTCP, oversized NACK length, media timeout. Needs libpcap. "
+"Fixtures in `tests/unit/pcap/`"
+msgstr "带复用 RTCP 的停滞、过长 NACK、媒体超时。需要 libpcap。夹具在 `tests/unit/pcap/`"
+
+#: ../../09-testing.md df47ff7e51644af5847ebb9705c66dff
+msgid "SIP identity"
+msgstr "SIP 身份"
+
+#: ../../09-testing.md b907c96759d1460487d5977f36c53315
+msgid "`switch_sip`"
+msgstr "`switch_sip`"
+
+#: ../../09-testing.md 74165ac2049f43a98ece4ddf7611840a
+msgid "STIR/SHAKEN compact vs full Identity (`conf_sip/`)"
+msgstr "STIR/SHAKEN 紧凑与完整 Identity（`conf_sip/`）"
+
+#: ../../09-testing.md b9a394311a22418d9bf70abcc6b34031
+msgid "Sofia load"
+msgstr "Sofia 加载"
+
+#: ../../09-testing.md 37e92a6743e94e60a74f48f46c3913d8
+msgid "`test_sofia`"
+msgstr "`test_sofia`"
+
+#: ../../09-testing.md c6417095bc6047498f5fa700067840d3
+msgid ""
+"Loads `mod_sofia` (`sofia_leaks` body is empty — ASAN leak check on process "
+"exit)"
+msgstr "加载 `mod_sofia`（`sofia_leaks` 函数体为空——进程退出时做 ASAN 泄漏检查）"
+
+#: ../../09-testing.md cf8f53135f554bfe9aaec6c3d13c9864
+msgid "Event Socket"
+msgstr "Event Socket"
+
+#: ../../09-testing.md 0049e7d87f65414c8dc4befbdf629d71
+msgid "`test_mod_event_socket`"
+msgstr "`test_mod_event_socket`"
+
+#: ../../09-testing.md 4405aecac9c548f983e4d3cbf1d6eb63
+msgid ""
+"ESL Content-Length validation and `sendevent` body round-trip "
+"(`conf_event_socket/`)"
+msgstr "ESL Content-Length 校验与 `sendevent` 消息体往返（`conf_event_socket/`）"
+
+#: ../../09-testing.md d5c4a809e88e41a5941b542184d042d8
+msgid "Verto HTTP"
+msgstr "Verto HTTP"
+
+#: ../../09-testing.md 5b0486485c0d4b62a676830fd32279cf
+msgid "`test_mod_verto`"
+msgstr "`test_mod_verto`"
+
+#: ../../09-testing.md 3b93f95e7d90400e895bdc236562b8b1
+msgid "POST at cap / overflow → 413 (`conf_verto/`)"
+msgstr "达到上限 / 溢出的 POST → 413（`conf_verto/`）"
+
+#: ../../09-testing.md c135dbe2c0bf4f98a62fe7119d646c21
+msgid "XML parser"
+msgstr "XML 解析器"
+
+#: ../../09-testing.md a9ab8e9416904032bd7cfe8d09d0b59a
+msgid "`switch_xml`"
+msgstr "`switch_xml`"
+
+#: ../../09-testing.md c287de2941be4d3ca5606f3ef5db3878
+msgid "CDATA, UTF-8, DTD on/off, entity-expansion limits (XXE-style)"
+msgstr "CDATA、UTF-8、DTD 开/关、实体展开限制（XXE 风格）"
+
+#: ../../09-testing.md d2fe02db0f1a41ef962dd77705202bf8
+msgid "Events / hash / console"
+msgstr "事件 / 哈希 / 控制台"
+
+#: ../../09-testing.md 244773cd5e7247d694c98f402b277600
+msgid "`switch_event`, `switch_hash`, `switch_console`"
+msgstr "`switch_event`, `switch_hash`, `switch_console`"
+
+#: ../../09-testing.md ada41f2866b4410da3d2eaa41b358768
+msgid "Minimal core (`FST_MINCORE_BEGIN`); includes micro-benchmarks"
+msgstr "最小核心（`FST_MINCORE_BEGIN`）；含微基准"
+
+#: ../../09-testing.md efa5dcd49b6c4c79841e5b2c0510387e
+msgid "STUN"
+msgstr "STUN"
+
+#: ../../09-testing.md 94a03c4dcce2444ab7e1746af24bccd5
+msgid "`switch_stun`"
+msgstr "`switch_stun`"
+
+#: ../../09-testing.md e809c9b7a711464a8784725744d0187e
+msgid "IPv4/IPv6 mapped addresses, MESSAGE-INTEGRITY, truncated attributes"
+msgstr "IPv4/IPv6 映射地址、MESSAGE-INTEGRITY、截断属性"
+
+#: ../../09-testing.md 0328207931bc4e3aa8f8e8873e9d81e1
+msgid "Hold"
+msgstr "保持"
+
+#: ../../09-testing.md faffbd0c33454440b3c6cd0e45790767
+msgid "`switch_hold`"
+msgstr "`switch_hold`"
+
+#: ../../09-testing.md 46b345263002474681fb79bf3446fe77
+msgid "Hold/unhold restriction (`conf_test/`)"
+msgstr "保持/取消保持限制（`conf_test/`）"
+
+#: ../../09-testing.md ae9a5821906343f5810061844792ff72
+msgid "Media / codecs"
+msgstr "媒体 / 编解码器"
+
+#: ../../09-testing.md 73aa1cae93c146cd974153e4d8132f2f
+msgid ""
+"`switch_core_media`, `switch_core_codec`, `switch_vad`, `switch_packetizer`,"
+" `switch_vpx`, `switch_core_asr`"
+msgstr ""
+"`switch_core_media`, `switch_core_codec`, `switch_vad`, `switch_packetizer`,"
+" `switch_vpx`, `switch_core_asr`"
+
+#: ../../09-testing.md e68d7c1149b344e2ae7c678c3e4eb1fc
+msgid ""
+"Crypto key-salt bounds, codec copy, VAD, H.264 packetizer, VP8, ASR resample"
+msgstr "加密 key-salt 边界、编解码器拷贝、VAD、H.264 打包器、VP8、ASR 重采样"
+
+#: ../../09-testing.md 535d641c0c6547b282b011f14f1d1378
+msgid "Files / DB / log / TTS"
+msgstr "文件 / DB / 日志 / TTS"
+
+#: ../../09-testing.md a685488fd8b2458f85e741532118372d
+msgid "`switch_core_file`, `switch_core_db`, `switch_log`, `test_tts_format`"
+msgstr "`switch_core_file`, `switch_core_db`, `switch_log`, `test_tts_format`"
+
+#: ../../09-testing.md 768484bee5bf47bc8bc6abeca7cca9ec
+msgid ""
+"File close/write channels, cache DB race, JSON log metadata, `tts://` "
+"channel UUID"
+msgstr "文件关闭/写信道、缓存 DB 竞态、JSON 日志元数据、`tts://` 信道 UUID"
+
+#: ../../09-testing.md bc86c47ca07c4ebb84c47a486d9034fa
+msgid "Utils"
+msgstr "工具函数"
+
+#: ../../09-testing.md ea75fac349c548539945c814f6bad658
+msgid "`switch_utils`"
+msgstr "`switch_utils`"
+
+#: ../../09-testing.md 8df113f2a7274850ab13aace5fb8c569
+msgid "Base64 bounds and HTTP header parse"
+msgstr "Base64 边界与 HTTP 头解析"
+
+#: ../../09-testing.md 0ff3a34edcad466fa681dcbba102ae89
+msgid "Video images"
+msgstr "视频图像"
+
+#: ../../09-testing.md cb99552f99234fa5b8380ab7d97d80ed
+msgid "`switch_core_video`"
+msgstr "`switch_core_video`"
+
+#: ../../09-testing.md fea9d6d9ed824b79abc02f762e9e633a
+msgid "Patch/alpha using `tests/unit/images/`"
+msgstr "使用 `tests/unit/images/` 做 patch/alpha"
+
+#: ../../09-testing.md:48 65f18d5803244d2a9f8baab0c1b68c35
+msgid ""
+"**Module `TESTS` (also on the `print_tests` list when the module is "
+"enabled):**"
+msgstr "**模块 `TESTS`（模块启用时也会出现在 `print_tests` 列表中）：**"
+
+#: ../../09-testing.md c757a4ecaf3f4b089fb32c757337fb97
+msgid "Module"
+msgstr "模块"
+
+#: ../../09-testing.md 02d2ed02337d4fa29b7a690b17d702ff
+msgid "Tests"
+msgstr "测试"
+
+#: ../../09-testing.md 8a1bd8a706384e5baa157c38cde6f13c
+msgid "`src/mod/endpoints/mod_sofia`"
+msgstr "`src/mod/endpoints/mod_sofia`"
+
+#: ../../09-testing.md c261599a3e5944adbcc89c0d2ad205f3
+msgid ""
+"`test/test_sofia_funcs.sh`, `test/test_nuafail`, `test/test_603plus`. SIPP "
+"(`test/test_run_sipp.sh`) is **commented out** in `Makefile.am`"
+msgstr ""
+"`test/test_sofia_funcs.sh`、`test/test_nuafail`、`test/test_603plus`。SIPP（`test/test_run_sipp.sh`）在"
+" `Makefile.am` 中被**注释掉**"
+
+#: ../../09-testing.md d6c94897af5e41a4b323676c6a192453
+msgid "`src/mod/applications/mod_commands`"
+msgstr "`src/mod/applications/mod_commands`"
+
+#: ../../09-testing.md a1c171f8b1b04b8cbb7d26579d73ee03
+msgid "`test/test_mod_commands`, `test/test_interface_allowlist`"
+msgstr "`test/test_mod_commands`, `test/test_interface_allowlist`"
+
+#: ../../09-testing.md ef5cc4e0c5d3413a88f905d7ffdca927
+msgid "`src/mod/applications/mod_conference`"
+msgstr "`src/mod/applications/mod_conference`"
+
+#: ../../09-testing.md 485b4833759c4e5c98a8223d3a6e25f4
+msgid "`test/test_image`, `test/test_member`"
+msgstr "`test/test_image`, `test/test_member`"
+
+#: ../../09-testing.md e36a4a8c706f4a609e36cd76ec183cc3
+msgid "`src/mod/applications/mod_http_cache`"
+msgstr "`src/mod/applications/mod_http_cache`"
+
+#: ../../09-testing.md 675441d04e474cf6b4974ff2944c64eb
+msgid "`test/test_aws`"
+msgstr "`test/test_aws`"
+
+#: ../../09-testing.md 2e8a287611674d1885603900aa52cd36
+msgid "`src/mod/applications/mod_av`"
+msgstr "`src/mod/applications/mod_av`"
+
+#: ../../09-testing.md f68a5791544348f0a99ae2a93abdf731
+msgid "`test/test_mod_av`, `test/test_avformat`"
+msgstr "`test/test_mod_av`, `test/test_avformat`"
+
+#: ../../09-testing.md 4a7791f4a4c34de397ba2534bbf0b21d
+msgid "`src/mod/applications/mod_test`"
+msgstr "`src/mod/applications/mod_test`"
+
+#: ../../09-testing.md 33503f6ee8e04c5b8636ab4b562596b1
+msgid "`test/test_asr`, `test/test_tts`"
+msgstr "`test/test_asr`, `test/test_tts`"
+
+#: ../../09-testing.md 42e0f6f61a7c4b1681fa54a9e9de0697
+msgid "`src/mod/languages/mod_lua`"
+msgstr "`src/mod/languages/mod_lua`"
+
+#: ../../09-testing.md a63100346a7040559387c85e6c87905e
+msgid "`test/test_mod_lua`"
+msgstr "`test/test_mod_lua`"
+
+#: ../../09-testing.md a79385b59a434f5885f98b125e86900a
+msgid "`src/mod/formats/mod_sndfile`"
+msgstr "`src/mod/formats/mod_sndfile`"
+
+#: ../../09-testing.md 8630e0463cc740c286f33f4aaf59359d
+msgid "`test/test_sndfile`, `test/test_sndfile_conf`"
+msgstr "`test/test_sndfile`, `test/test_sndfile_conf`"
+
+#: ../../09-testing.md 78d43afac74c48ebb741d7b97f8cacc8
+msgid "`src/mod/formats/mod_opusfile`"
+msgstr "`src/mod/formats/mod_opusfile`"
+
+#: ../../09-testing.md b961e17903874bfc9b0f1ff9385ae4e1
+msgid "`test/test_opusfile`"
+msgstr "`test/test_opusfile`"
+
+#: ../../09-testing.md a3d69f41aa12413e8e59024f42a41e09
+msgid "`src/mod/codecs/mod_amr`"
+msgstr "`src/mod/codecs/mod_amr`"
+
+#: ../../09-testing.md 2e5f54526bf74350b9cb2b009992686d
+msgid "`test/test_amr`"
+msgstr "`test/test_amr`"
+
+#: ../../09-testing.md 203f7a2b6db74fbaa0dc7b0098f6110c
+msgid "`src/mod/codecs/mod_amrwb`"
+msgstr "`src/mod/codecs/mod_amrwb`"
+
+#: ../../09-testing.md a8e01b59a7fc48abb40bdcbcf7e51b2e
+msgid "`test/test_amrwb`"
+msgstr "`test/test_amrwb`"
+
+#: ../../09-testing.md 3d116f3532ad49e9a1d46abbfd89a648
+msgid "`src/mod/codecs/mod_openh264`"
+msgstr "`src/mod/codecs/mod_openh264`"
+
+#: ../../09-testing.md 0aa10a4d40e24fabb3657320039eb558
+msgid "`test/test_mod_openh264`"
+msgstr "`test/test_mod_openh264`"
+
+#: ../../09-testing.md:65 44966d281d9c42f8853fd6140957237a
+msgid ""
+"`src/mod/timers/mod_posix_timer/test/` has C sources but **no** `TESTS` in "
+"that module’s `Makefile.am`, so `print_tests` will not emit them."
+msgstr ""
+"`src/mod/timers/mod_posix_timer/test/` 有 C 源文件，但该模块的 `Makefile.am` 中**没有** "
+"`TESTS`，因此 `print_tests` 不会输出它们。"
+
+#: ../../09-testing.md:67 9e492f7d812a4c40a17d872d023f70b4
+msgid ""
+"CI unit-test configure (`ci.sh -t unit-test`) extra-enables "
+"`mod_http_cache`, `mod_opusfile`, `mod_lua`, and appends "
+"`codecs/mod_openh264` so those module tests can appear in the list."
+msgstr ""
+"CI 单元测试 configure（`ci.sh -t unit-test`）会额外启用 "
+"`mod_http_cache`、`mod_opusfile`、`mod_lua`，并追加 "
+"`codecs/mod_openh264`，以便这些模块测试能出现在列表中。"
+
+#: ../../09-testing.md:69 4421ed794bf341fdb4db0449a919859a
+msgid "Test Data and Environments"
+msgstr "测试数据与环境"
+
+#: ../../09-testing.md:71 b92439c47c6b4b72bf4735428c343c3f
+#, python-brace-format
+msgid ""
+"**Fixtures**: per-suite XML under `tests/unit/conf/` (shared core), "
+"`conf_sip/`, `conf_sofia/`, `conf_rtp/`, `conf_stun/`, `conf_verto/`, "
+"`conf_event_socket/`, `conf_eavesdrop/`, `conf_test/`, `conf_tts_format/`, "
+"`conf_playsay/`, `conf_async/`. RTP pcaps: "
+"`tests/unit/pcap/milliwatt*.pcap`. Images: "
+"`tests/unit/images/{banner,signalwire}.png`. Module tests often ship their "
+"own `test/conf` (for example `src/mod/endpoints/mod_sofia/test/`)."
+msgstr ""
+"**夹具**：套件 XML 在 "
+"`tests/unit/conf/`（共享核心）、`conf_sip/`、`conf_sofia/`、`conf_rtp/`、`conf_stun/`、`conf_verto/`、`conf_event_socket/`、`conf_eavesdrop/`、`conf_test/`、`conf_tts_format/`、`conf_playsay/`、`conf_async/`。RTP"
+" "
+"pcap：`tests/unit/pcap/milliwatt*.pcap`。图像：`tests/unit/images/{banner,signalwire}.png`。模块测试常常自带"
+" `test/conf`（例如 `src/mod/endpoints/mod_sofia/test/`）。"
+
+#: ../../09-testing.md:72 6bf7034432a64a1b97e2ae37d1424109
+#, python-format
+msgid ""
+"**State isolation**: `FST_CORE_BEGIN` / `FST_CORE_DB_BEGIN` / "
+"`FST_MINCORE_BEGIN` in `switch_test.h` call `fst_init_core_and_modload()`, "
+"point `conf_dir` at the suite directory, and put `log_dir` / `db_dir` under "
+"a **PID** subdirectory. `FST_CORE_END` calls `switch_core_destroy()`. Tests "
+"run **one binary at a time** inside a chunk (`run-tests.sh` sequential `make"
+" -f run-tests.mk`). CI uses `--privileged` and writes cores to "
+"`/cores/core.%s.%E.%e.%p.%t`."
+msgstr ""
+"**状态隔离**：`switch_test.h` 中的 `FST_CORE_BEGIN` / `FST_CORE_DB_BEGIN` / "
+"`FST_MINCORE_BEGIN` 会调用 `fst_init_core_and_modload()`，把 `conf_dir` 指到套件目录，并把"
+" `log_dir` / `db_dir` 放到 **PID** 子目录下。`FST_CORE_END` 调用 "
+"`switch_core_destroy()`。每个分片内测试**一次只跑一个二进制**（`run-tests.sh` 顺序执行 `make -f "
+"run-tests.mk`）。CI 使用 `--privileged`，并把 core 写到 `/cores/core.%s.%E.%e.%p.%t`。"
+
+#: ../../09-testing.md:73 d48f46aa03f5450fbe489cfc186d0967
+msgid ""
+"**External dependencies**: Sofia-SIP is cloned from `freeswitch/sofia-sip` "
+"(not vendored). Unit-test image: `signalwire/freeswitch-public-ci-"
+"base:bookworm-amd64`. Extra apt in `unit-test.yml`: `libpcre2-dev`, "
+"`libsphinxbase-dev`, `libpocketsphinx-dev`. ASAN: `--enable-address-"
+"sanitizer --enable-fake-dlclose` plus "
+"`ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0`"
+" (workflow env and `ci.sh`)."
+msgstr ""
+"**外部依赖**：Sofia-SIP 从 `freeswitch/sofia-sip` "
+"克隆（未内置）。单元测试镜像：`signalwire/freeswitch-public-ci-base:bookworm-amd64`。`unit-"
+"test.yml` 额外 apt：`libpcre2-dev`、`libsphinxbase-dev`、`libpocketsphinx-"
+"dev`。ASAN：`--enable-address-sanitizer --enable-fake-dlclose`，加上 "
+"`ASAN_OPTIONS=log_path=stdout:disable_coredump=0:unmap_shadow_on_exit=1:fast_unwind_on_malloc=0`（工作流环境和"
+" `ci.sh`）。"
+
+#: ../../09-testing.md:74 e899d03bd69449488143286edd88cff9
+msgid ""
+"**Chunking**: `./run-tests.sh [chunks] [chunk_number]` round-robins the "
+"`print_tests` list. Default CI is **2 groups** (`ci.yml` `TOTAL_GROUPS: 2`)."
+" Optional DinD (`workflow_dispatch` input `dind`) uses `tests/unit/run-"
+"tests-docker.sh` with `MAX_CONTAINERS: 8` (`.github/workflows/unit-test-"
+"dind.yml`) and `.github/docker/debian/bookworm/amd64/CI/Dockerfile`."
+msgstr ""
+"**分片**：`./run-tests.sh [chunks] [chunk_number]` 对 `print_tests` 列表做 round-"
+"robin。默认 CI 是 **2 组**（`ci.yml` 的 `TOTAL_GROUPS: 2`）。可选 "
+"DinD（`workflow_dispatch` 输入 `dind`）使用 `tests/unit/run-tests-"
+"docker.sh`，`MAX_CONTAINERS: 8`（`.github/workflows/unit-test-dind.yml`）以及 "
+"`.github/docker/debian/bookworm/amd64/CI/Dockerfile`。"
+
+#: ../../09-testing.md:76 deeb68c557bf44edb82248fc5005d59a
+msgid ""
+"Failed binaries keep `log_run-tests_*.html` (via `ansi2html` in `test.sh`); "
+"`collect-test-logs.sh --dir logs --print` builds `artifacts.html` and dumps "
+"text when `html2text` is installed."
+msgstr ""
+"失败的二进制会保留 `log_run-tests_*.html`（经 `test.sh` 中的 `ansi2html`）；`collect-test-"
+"logs.sh --dir logs --print` 生成 `artifacts.html`，并在安装了 `html2text` 时转储文本。"
+
+#: ../../09-testing.md:78 7dbaabe6278b40b5986e797957ac082a
+msgid "Validation Commands"
+msgstr "验证命令"
+
+#: ../../09-testing.md:80 9e0e9c1a6e1b4073986295396e00157b
+msgid ""
+"CI-equivalent (Sofia-SIP already built/installed; same actions as `unit-"
+"test.yml`):"
+msgstr "与 CI 等价（Sofia-SIP 已构建/安装；动作与 `unit-test.yml` 相同）："
+
+#: ../../09-testing.md:97 c4338b3f9e554315929f97acee17831a
+msgid "Sofia-SIP first (from repo root, path to a sofia-sip checkout):"
+msgstr "先构建 Sofia-SIP（从仓库根目录，指向 sofia-sip 检出路径）："
+
+#: ../../09-testing.md:105 31208b8e5e3c4360a01928b4327d05bc
+msgid ""
+"After a normal `./configure && make && make install` (without `ci.sh` ASAN "
+"flags), the same `tests/unit/run-tests.sh` still applies; `make print_tests`"
+" from the **build root** is what the runner calls (`tests/unit/run-"
+"tests.sh`). Top-level `make check` recurses `src/mod` (`check: "
+"$(OUR_CHECK_MODULES)`) and `tests/unit` (`SUBDIRS`). That runs enabled-"
+"module `TESTS` plus core unit binaries. It does **not** run `libs/esl` — "
+"that tree is not in top-level `SUBDIRS`; CI calls `make -C libs/esl check` "
+"separately."
+msgstr ""
+"在普通 `./configure && make && make install` 之后（不带 `ci.sh` 的 ASAN 标志），同样的 "
+"`tests/unit/run-tests.sh` 仍然适用；运行器调用的是**构建根目录**上的 `make "
+"print_tests`（`tests/unit/run-tests.sh`）。顶层 `make check` 会递归 "
+"`src/mod`（`check: $(OUR_CHECK_MODULES)`）和 `tests/unit`（`SUBDIRS`）。这会运行已启用模块的"
+" `TESTS` 加上核心单元二进制。它**不会**跑 `libs/esl`——该树不在顶层 `SUBDIRS` 中；CI 单独调用 `make -C "
+"libs/esl check`。"
+
+#: ../../09-testing.md:107 f8fa025b63ca4855bbd6c1f908a57f7a
+msgid "Static analysis:"
+msgstr "静态分析："
+
+#: ../../09-testing.md:118 c5bdb4ed6b164623b8ede0a73d4049a4
+msgid "Optional local Docker runner (needs a Sofia-SIP tree and Docker):"
+msgstr "可选的本地 Docker 运行器（需要 Sofia-SIP 树和 Docker）："
+
+#: ../../09-testing.md:130 0fa06daba4114946ba9687fd1c37e257
+msgid ""
+"Windows (build only in CI): unit vcxproj in `Freeswitch.2017.sln` — "
+"`test_switch_core`, `test_switch_core_db`, `test_switch_core_codec`, "
+"`test_switch_ivr_originate`, `test_switch_xml`, `test_tts_format`."
+msgstr ""
+"Windows（CI 中仅构建）：`Freeswitch.2017.sln` 中的单元 "
+"vcxproj——`test_switch_core`、`test_switch_core_db`、`test_switch_core_codec`、`test_switch_ivr_originate`、`test_switch_xml`、`test_tts_format`。"
+
+#: ../../09-testing.md:132 cf7f3513e72f4ba5b0c9259bcf596f49
+msgid "Manual Smoke Checks"
+msgstr "手工冒烟检查"
+
+#: ../../09-testing.md:134 61f226befc724814bf4594aaf670547f
+msgid ""
+"Automation does not start a long-lived vanilla PBX and place a SIP call. "
+"After [Quick Start](01-quick-start.md) install:"
+msgstr "自动化不会启动长期运行的 vanilla PBX 并打一通 SIP 电话。[快速开始](01-quick-start.md) 安装之后："
+
+#: ../../09-testing.md:136 0218b1ebec7a4851ab4575264f2450c2
+msgid ""
+"`\"$prefix/bin/freeswitch\" -ncwait -nonat` then `\"$prefix/bin/fs_cli\" -x "
+"status` — line starts with `UP` (same check as "
+"`docker/base_image/healthcheck.sh`)."
+msgstr ""
+"`\"$prefix/bin/freeswitch\" -ncwait -nonat` 然后 `\"$prefix/bin/fs_cli\" -x "
+"status` ——行以 `UP` 开头（与 `docker/base_image/healthcheck.sh` 相同的检查）。"
+
+#: ../../09-testing.md:137 ae4e82ef320c41f0b0164e76a012f6f8
+msgid ""
+"`fs_cli -x sofia status` — internal/external profiles present when "
+"`mod_sofia` is loaded."
+msgstr ""
+"`fs_cli -x sofia status` ——当 `mod_sofia` 已加载时，应有 internal/external profile。"
+
+#: ../../09-testing.md:138 1ea0c630ebdc4b5fb949cab09799c831
+msgid ""
+"`fs_cli -x \"module_exists mod_event_socket\"` and `fs_cli -x version` — ESL"
+" on `127.0.0.1:8021` password `ClueCon` unless you changed it."
+msgstr ""
+"`fs_cli -x \"module_exists mod_event_socket\"` 以及 `fs_cli -x version` ——ESL "
+"在 `127.0.0.1:8021`，密码 `ClueCon`（除非你改过）。"
+
+#: ../../09-testing.md:139 0a8d89b3b9964fcd81a517c15e0748cb
+msgid ""
+"Directory users `1000`–`1019` exist in vanilla config — **demo passwords**; "
+"do not expose on a public IP. A two-phone register/call is the usual "
+"media/SIP smoke; there is no in-tree script that places that call."
+msgstr ""
+"vanilla 配置中存在 directory 用户 `1000`–`1019`——**演示密码**；不要暴露在公网 IP "
+"上。两部电话注册/呼叫是常见的媒体/SIP 冒烟；仓库内没有脚本去打这通电话。"
+
+#: ../../09-testing.md:140 f5fd0b5b43d444588607589a64dbbaf2
+msgid ""
+"Docker: `docker/README.md` expects **host networking**; RTP/SIP published-"
+"port setups are a common false failure."
+msgstr ""
+"Docker：`docker/README.md` 期望 **host networking**；把 RTP/SIP 做成 published-port"
+" 是常见的假失败。"
+
+#: ../../09-testing.md:142 03326f6d9c374292832e3f58f2ff920d
+msgid "Documentation Verification"
+msgstr "文档校验"
+
+#: ../../09-testing.md:144 7b1337f93a0a4dac9d4d6bf912986216
+msgid "PKB lives in `man/` at the repo root (not `docs/man/`)."
+msgstr "PKB 在仓库根目录的 `man/`（不是 `docs/man/`）。"
+
+#: ../../09-testing.md:154 8eb181ebbc624d379705596e02179fd8
+msgid ""
+"Bilingual HTML: `make html-all` (see [Build](08-build.md) and [Documentation"
+" Process](12-document.md))."
+msgstr ""
+"双语 HTML：`make html-all`（见 [构建](08-build.md) 与 [文档流程](12-document.md)）。"
+
+#: ../../09-testing.md:156 31697894ed63496083834d61246287af
+msgid "Regression Additions"
+msgstr "回归用例补充"
+
+#: ../../09-testing.md:158 797fde12ea9e4eac8192fa59da782b3a
+msgid ""
+"When a bug is fixed, add the smallest check that would have failed before "
+"the fix:"
+msgstr "修复缺陷时，补上修复前本应失败的最小检查："
+
+#: ../../09-testing.md:160 4667d2cf400a4abeb71aa1082f245440
+msgid ""
+"Prefer a new `FST_TEST_BEGIN` / `FST_SESSION_BEGIN` in an existing "
+"`tests/unit/*.c` that already loads the right `conf_*` tree."
+msgstr ""
+"优先在已经加载正确 `conf_*` 树的现有 `tests/unit/*.c` 中新增 `FST_TEST_BEGIN` / "
+"`FST_SESSION_BEGIN`。"
+
+#: ../../09-testing.md:161 66f5d7c3d2e7450a8776e6f426905776
+msgid ""
+"New file: add the `.c` to `tests/unit/Makefile.am` `noinst_PROGRAMS` (that "
+"list **is** `TESTS`). Use `src/include/test/switch_test.h` only."
+msgstr ""
+"新文件：把 `.c` 加到 `tests/unit/Makefile.am` 的 `noinst_PROGRAMS`（该列表**就是** "
+"`TESTS`）。只使用 `src/include/test/switch_test.h`。"
+
+#: ../../09-testing.md:162 1878b495085548c99891ab3cfeba9ea2
+msgid ""
+"Module-specific: add `noinst_PROGRAMS` + `TESTS` in that module’s "
+"`Makefile.am` so `print_tests` emits `src/mod/.../test/...`."
+msgstr ""
+"模块相关：在该模块的 `Makefile.am` 中加入 `noinst_PROGRAMS` + `TESTS`，以便 `print_tests` 输出"
+" `src/mod/.../test/...`。"
+
+#: ../../09-testing.md:163 7c168f4e34554d40b596324e2db632e2
+msgid ""
+"ESL protocol bugs: extend `libs/esl/tests/` (Autotools `TESTS`) rather than "
+"only a live `fs_cli` check."
+msgstr "ESL 协议缺陷：扩展 `libs/esl/tests/`（Autotools `TESTS`），不要只做在线 `fs_cli` 检查。"
+
+#: ../../09-testing.md:164 9b20e5bcb3644a54a1a2ec7ed152286a
+msgid ""
+"Record here: original failure, expected behavior, and the command (`./run-"
+"tests.sh` vs `make -C libs/esl check` vs a smoke step)."
+msgstr ""
+"在此记录：原先的失败、期望行为，以及命令（`./run-tests.sh` vs `make -C libs/esl check` vs 冒烟步骤）。"
+
+#: ../../09-testing.md:166 40d58f34c6af4ae4b0b9444e1d3bf31f
+msgid ""
+"Existing tests that already look like regression/security locks: XML entity "
+"expansion (`switch_xml`), STUN integrity/truncation (`switch_stun`), ESL "
+"Content-Length (`test_mod_event_socket` and "
+"`libs/esl/tests/test_recv_event.c`), Verto POST 413 (`test_mod_verto`), RTP "
+"NACK length (`switch_rtp_pcap`), crypto key-salt bounds "
+"(`switch_core_media`)."
+msgstr ""
+"已经像回归/安全锁一样的现有测试：XML 实体展开（`switch_xml`）、STUN 完整性/截断（`switch_stun`）、ESL "
+"Content-Length（`test_mod_event_socket` 与 "
+"`libs/esl/tests/test_recv_event.c`）、Verto POST 413（`test_mod_verto`）、RTP "
+"NACK 长度（`switch_rtp_pcap`）、加密 key-salt 边界（`switch_core_media`）。"
+
+#: ../../09-testing.md:168 fa1616dc750a4a1e915c44d7ad8cf3a0
+msgid ""
+"[NEEDS INPUT: named production incidents or ticket IDs to attach to those "
+"tests — none are referenced in the C sources.]"
+msgstr "[NEEDS INPUT: 可挂到这些测试上的具名生产事故或工单 ID——C 源中没有任何引用。]"
+
+#: ../../09-testing.md:170 5a48ac0c8ac84f1c88aaee4ed5233d4c
+msgid "Related Documentation"
+msgstr "相关文档"
+
+#: ../../09-testing.md:172 a061c36f710041499eb307ec64672296
+msgid ""
+"[Quick Start](01-quick-start.md) — local install and first `run-tests.sh`"
+msgstr "[快速开始](01-quick-start.md) — 本地安装与首次 `run-tests.sh`"
+
+#: ../../09-testing.md:173 45c332a5e53f46b1a6e7bf64d3649ef5
+msgid ""
+"[Build, Release, and Publish](08-build.md) — `ci.yml` matrix, `ci.sh`, "
+"packaging"
+msgstr "[构建、发布与文档发布](08-build.md) — `ci.yml` 矩阵、`ci.sh`、打包"
+
+#: ../../09-testing.md:174 9cb46f3b976141dbae53b1d04aadfb79
+msgid "[Workflows](06-workflows.md)"
+msgstr "[工作流](06-workflows.md)"
+
+#: ../../09-testing.md:175 2e2bbb32ed674e74ba8cd0325e252699
+msgid "[Runbook](10-runbook.md)"
+msgstr "[运维手册](10-runbook.md)"
+
+#: ../../09-testing.md:176 91e3ab1b38924b89b5b5cdff8690e68d
+msgid "[Observability](11-observability.md)"
+msgstr "[可观测性](11-observability.md)"
+
+#: ../../09-testing.md:177 7e9d5583049145d69d41e5fa27dc5492
+msgid "[Documentation Process](12-document.md)"
+msgstr "[文档流程](12-document.md)"
