@@ -1845,6 +1845,32 @@ SWITCH_STANDARD_APP(multiunset_function)
 }
 
 
+SWITCH_STANDARD_APP(set_log_tag_function)
+{
+	char *name;
+	char *value = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (zstr(data)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "No log tag name specified.\n");
+		return;
+	}
+
+	name = switch_core_session_strdup(session, data);
+	if ((value = strchr(name, '='))) {
+		*value++ = '\0';
+	}
+
+	if (zstr(name)) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Invalid empty log tag name.\n");
+		return;
+	}
+
+	if (switch_channel_set_log_tag(channel, name, value) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Failed to update log tag [%s].\n", name);
+	}
+}
+
 SWITCH_STANDARD_APP(log_function)
 {
 	char *level, *log_str;
@@ -6688,6 +6714,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "bridge_export", "Export a channel variable across a bridge", EXPORT_LONG_DESC, bridge_export_function, "<varname>=<value>",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 	SWITCH_ADD_APP(app_interface, "set", "Set a channel variable", SET_LONG_DESC, set_function, "<varname>=<value>",
+				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
+	SWITCH_ADD_APP(app_interface, "set_log_tag", "Set or remove a channel log tag",
+				   "Set a tag with name=value; remove it with name= or name",
+				   set_log_tag_function, "<tagname>[=<value>]",
 				   SAF_SUPPORT_NOMEDIA | SAF_ROUTING_EXEC | SAF_ZOMBIE_EXEC);
 
 	SWITCH_ADD_APP(app_interface, "multiset", "Set many channel variables", SET_LONG_DESC, multiset_function, "[^^<delim>]<varname>=<value> <var2>=<val2>",
