@@ -1245,6 +1245,12 @@ void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, void *ob
 					switch_buffer_toss(member->audio_buffer, tmp_frame.datalen);
 				}
 				ok = switch_buffer_write(member->audio_buffer, tmp_frame.data, tmp_frame.datalen);
+				if (ok) {
+					member->last_audio_in = switch_micro_time_now();
+					if (member->audio_in_cond) {
+						switch_thread_cond_signal(member->audio_in_cond);
+					}
+				}
 				switch_mutex_unlock(member->audio_in_mutex);
 				if (!ok) {
 					switch_mutex_unlock(member->read_mutex);
