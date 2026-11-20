@@ -93,6 +93,8 @@
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <!-- File to play if you are alone in the conference -->
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <!-- File to play if you are waiting for the moderator to join -->
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <!-- File to play endlessly (nobody will ever be able to talk) -->
       <!-- <param name="perpetual-sound" value="perpetual.wav"/> -->
       <!-- File to play when you're alone (music on hold)-->
@@ -156,6 +158,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="$${hold_music}"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -181,6 +184,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="$${hold_music}"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -220,6 +224,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="$${hold_music}"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -258,6 +263,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="local_stream://video"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -293,6 +299,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="local_stream://video"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -325,6 +332,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="local_stream://video"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -358,6 +366,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="local_stream://video"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -391,6 +400,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="local_stream://video_chime"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -423,6 +433,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="moh-sound" value="local_stream://video_chime"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
@@ -456,6 +467,7 @@
       <param name="muted-sound" value="conference/conf-muted.wav"/>
       <param name="unmuted-sound" value="conference/conf-unmuted.wav"/>
       <param name="alone-sound" value="conference/conf-alone.wav"/>
+      <param name="waiting-sound" value="conference/conf-conference_will_start_shortly.wav"/>
       <param name="enter-sound" value="tone_stream://%(200,0,500,600,700)"/>
       <param name="exit-sound" value="tone_stream://%(500,0,300,200,100,50,25)"/>
       <param name="kicked-sound" value="conference/conf-kicked.wav"/>
