@@ -68,6 +68,21 @@
 			<!-- number of lagged detection threads running per each avmd session -->
 			<param name="detectors_lagged_n" value="1"/>
 
+			<!-- minimum beep frequency in hertz -->
+			<param name="min_freq" value="440.0"/>
+
+			<!-- minimum absolute pressure/amplitude -->
+			<param name="min_amp" value="17.0"/>
+
+			<!-- maximum beep frequency in hertz -->
+			<param name="max_freq" value="2000.0"/>
+
+			<!-- variance rsd threshold -->
+			<param name="var_rsd_threshold" value="0.000025"/>
+
+			<!-- amplitude rsd threshold -->
+			<param name="amp_rsd_threshold" value="0.0148"/>
+
 		<!-- Per call settings end -->
 	</settings>
 </configuration>
