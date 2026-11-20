@@ -1688,6 +1688,19 @@ SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, swi
 	return r;
 }
 
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag_or_state_flag(switch_channel_t *channel, switch_channel_flag_t flag)
+{
+	uint32_t r = 0;
+
+	switch_assert(channel != NULL);
+
+	switch_mutex_lock(channel->flag_mutex);
+	r = channel->flags[flag] || channel->state_flags[flag];
+	switch_mutex_unlock(channel->flag_mutex);
+
+	return r;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	const char *uuid;
