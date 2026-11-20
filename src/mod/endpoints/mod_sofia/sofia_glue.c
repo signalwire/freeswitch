@@ -1745,7 +1745,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 				   TAG_IF(cseq, SIPTAG_CSEQ(cseq)),
 				   TAG_IF(content_encoding, SIPTAG_CONTENT_ENCODING_STR(content_encoding)),
 				   NUTAG_MEDIA_ENABLE(0),
-				   SIPTAG_CONTENT_TYPE_STR(mp_type ? mp_type : "application/sdp"),
+				   TAG_IF(!zstr(date), SIPTAG_DATE_STR(date)),
+				   TAG_IF(mp || !zstr(tech_pvt->mparams.local_sdp_str),
+						  SIPTAG_CONTENT_TYPE_STR(mp_type ? mp_type : "application/sdp")),
 				   SIPTAG_PAYLOAD_STR(mp ? mp : tech_pvt->mparams.local_sdp_str), TAG_IF(rep, SIPTAG_REPLACES_STR(rep)), SOATAG_HOLD(holdstr), TAG_END());
 	}
 
