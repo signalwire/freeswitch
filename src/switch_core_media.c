@@ -4935,7 +4935,7 @@ SWITCH_DECLARE(uint8_t) switch_core_media_negotiate_sdp(switch_core_session_t *s
 	check_ice(smh, SWITCH_MEDIA_TYPE_VIDEO, sdp, NULL);
 	check_ice(smh, SWITCH_MEDIA_TYPE_TEXT, sdp, NULL);
 
-	if ((sdp->sdp_connection && sdp->sdp_connection->c_address && !strcmp(sdp->sdp_connection->c_address, "0.0.0.0"))) {
+	if ((sdp->sdp_connection && sdp->sdp_connection->c_address && (!strcmp(sdp->sdp_connection->c_address, "0.0.0.0") || !strcmp(sdp->sdp_connection->c_address, "0:0:0:0:0:0:0:0")))) {
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_WARNING, "RFC2543 from March 1999 called; They want their 0.0.0.0 hold method back.....\n");
 		sendonly = 2;			/* global sendonly always wins */
 	}
