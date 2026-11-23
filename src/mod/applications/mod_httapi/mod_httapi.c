@@ -3021,7 +3021,35 @@ static switch_status_t file_open(switch_file_handle_t *handle, const char *path,
 											context->cache_file,
 											handle->channels,
 											handle->samplerate,
-											handle->flags, NULL)) != SWITCH_STATUS_SUCCESS) {
+											handle->flags, NULL)) != SWITCH_STATUS_SUCCESS && context->expires != 1) {
+			/* The cached copy is missing or unreadable even though its .meta file said it was valid.
+			   Discard both and fetch the url once more, bypassing the cache. */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid cache file %s opening url %s Re-fetching file.\n", context->cache_file, path);
+			unlink(context->cache_file);
+			unlink(context->meta_file);
+
+			context->expires = 1;
+			context->metadata = NULL;
+
+			if (handle->params && !context->fh.params) {
+				/* the failed open destroyed fh.params */
+				switch_event_dup(&context->fh.params, handle->params);
+			}
+
+			lock_file(context, SWITCH_TRUE);
+			status = locate_url_file(context, context->dest_url);
+			lock_file(context, SWITCH_FALSE);
+
+			if (status == SWITCH_STATUS_SUCCESS) {
+				status = switch_core_file_open(&context->fh,
+											   context->cache_file,
+											   handle->channels,
+											   handle->samplerate,
+											   handle->flags, NULL);
+			}
+		}
+
+		if (status != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid cache file %s opening url %s Discarding file.\n", context->cache_file, path);
 			unlink(context->cache_file);
 			unlink(context->meta_file);
