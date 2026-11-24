@@ -5,6 +5,44 @@
  */
 #include <test/switch_test.h>
 
+/* Waits for the next soft timer tick (the time switch_micro_time_now() returns),
+ * then for offset_us more of real time. Fails when the timer does not tick within
+ * a second or ticks again before offset_us pass */
+static switch_status_t wait_into_tick(switch_time_t offset_us)
+{
+	switch_time_t deadline = switch_time_now() + 1000000;
+	switch_time_t tick = switch_micro_time_now();
+
+	while (switch_micro_time_now() == tick) {
+		if (switch_time_now() > deadline) {
+			return SWITCH_STATUS_TIMEOUT;
+		}
+
+		switch_os_yield();
+	}
+
+	tick = switch_micro_time_now();
+
+	while (switch_time_now() - tick < offset_us) {
+		switch_os_yield();
+	}
+
+	return switch_micro_time_now() == tick ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+}
+
+/* Encodes frame->img and reads out all of its packets */
+static switch_status_t encode_picture(switch_codec_t *codec, switch_frame_t *frame)
+{
+	switch_status_t status;
+
+	do {
+		frame->datalen = SWITCH_DEFAULT_VIDEO_SIZE;
+		status = switch_core_codec_encode_video(codec, frame);
+	} while (status == SWITCH_STATUS_MORE_DATA);
+
+	return status;
+}
+
 FST_CORE_BEGIN("./conf")
 {
 	FST_SUITE_BEGIN()
@@ -83,6 +121,58 @@ FST_CORE_BEGIN("./conf")
 
 			switch_img_free(&img);
 			switch_core_codec_destroy(&codec);
+		}
+		FST_TEST_END()
+
+		/* A bitrate change reconfigures the running VP8 encoder. The first picture
+		 * is encoded 5 ms into a soft timer tick, the picture after the bitrate
+		 * change right at the start of a tick, and both must encode */
+		FST_TEST_BEGIN(vp8_bandwidth_change)
+		{
+			uint8_t buf[SWITCH_DEFAULT_VIDEO_SIZE + 12];
+			switch_codec_t codec = { 0 };
+			switch_codec_settings_t codec_settings = { { 0 } };
+			switch_frame_t frame = { 0 };
+			switch_image_t *img = switch_img_alloc(NULL, SWITCH_IMG_FMT_I420, 640, 360, 1);
+			switch_rgb_color_t color = { 0 };
+			switch_status_t status;
+			int bandwidth = 500;
+
+			codec_settings.video.width = 640;
+			codec_settings.video.height = 360;
+
+			status = switch_core_codec_init(&codec, "VP8", NULL, NULL, 0, 0, 1, SWITCH_CODEC_FLAG_ENCODE, &codec_settings, fst_pool);
+			fst_check(status == SWITCH_STATUS_SUCCESS);
+			fst_check(img != NULL);
+
+			if (status == SWITCH_STATUS_SUCCESS && img) {
+				color.r = 255;
+				switch_img_fill(img, 0, 0, img->d_w, img->d_h, &color);
+
+				frame.packet = buf;
+				frame.data = buf + 12;
+				frame.img = img;
+
+				status = wait_into_tick(5000);
+				fst_check(status == SWITCH_STATUS_SUCCESS);
+				status = encode_picture(&codec, &frame);
+				fst_check(status == SWITCH_STATUS_SUCCESS);
+
+				switch_sleep(40000);
+
+				status = wait_into_tick(0);
+				fst_check(status == SWITCH_STATUS_SUCCESS);
+				status = switch_core_codec_control(&codec, SCC_VIDEO_BANDWIDTH, SCCT_INT, &bandwidth, SCCT_NONE, NULL, NULL, NULL);
+				fst_check(status == SWITCH_STATUS_SUCCESS);
+				status = encode_picture(&codec, &frame);
+				fst_check(status == SWITCH_STATUS_SUCCESS);
+			}
+
+			if (switch_core_codec_ready(&codec)) {
+				switch_core_codec_destroy(&codec);
+			}
+
+			switch_img_free(&img);
 		}
 		FST_TEST_END()
 

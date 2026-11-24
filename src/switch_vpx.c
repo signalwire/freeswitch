@@ -602,7 +602,10 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 		context->codec_settings.video.width, context->codec_settings.video.height, context->bandwidth);
 
 	context->pkt = NULL;
-	context->start_time = switch_micro_time_now();
+
+	if (!context->encoder_init) {
+		context->start_time = switch_micro_time_now();
+	}
 
 	*config = my_cfg->enc_cfg; // reset whole config to current defaults
 
