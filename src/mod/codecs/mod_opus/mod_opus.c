@@ -150,6 +150,7 @@ struct {
 	switch_bool_t use_vbr;
 	switch_bool_t use_dtx;
 	int complexity;
+	int decoder_complexity;
 	int maxaveragebitrate;
 	int maxplaybackrate;
 	int sprop_maxcapturerate;
@@ -716,6 +717,13 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 
 			return SWITCH_STATUS_GENERR;
 		}
+
+		if (opus_prefs.decoder_complexity) {
+			/* libopus >= 1.5 gates Deep PLC and OSCE on the decoder complexity, which opus_decoder_create() leaves at 0 */
+			if (opus_decoder_ctl(context->decoder_object, OPUS_SET_COMPLEXITY(opus_prefs.decoder_complexity)) != OPUS_OK) {
+				switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_DEBUG, "Opus decoder complexity not supported by this libopus, ignoring\n");
+			}
+		}
 	}
 
 	context->codec_settings = opus_codec_settings;
@@ -1067,6 +1075,12 @@ static switch_status_t opus_load_config(switch_bool_t reload)
 				opus_prefs.use_dtx =  switch_true(val);
 			} else if (!strcasecmp(key, "complexity")) {
 				opus_prefs.complexity = atoi(val);
+			} else if (!strcasecmp(key, "decoder-complexity")) { /* decoder, 0-10. libopus >= 1.5 runs Deep PLC at 5 and above, OSCE LACE at 6, NoLACE at 7 */
+				opus_prefs.decoder_complexity = atoi(val);
+				if (opus_prefs.decoder_complexity < 0 || opus_prefs.decoder_complexity > 10) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid decoder-complexity %d, must be 0-10, ignoring\n", opus_prefs.decoder_complexity);
+					opus_prefs.decoder_complexity = 0;
+				}
 			} else if (!strcasecmp(key, "packet-loss-percent")) {
 				opus_prefs.plpct = atoi(val);
 			} else if (!strcasecmp(key, "asymmetric-sample-rates")) {
@@ -1370,6 +1384,7 @@ SWITCH_STANDARD_API(mod_opus_debug)
 			globals.debug = 1;
 			stream->write_function(stream, "OPUS Debug: on\n");
 			stream->write_function(stream, "Library version: %s\n",opus_get_version_string());
+			stream->write_function(stream, "Decoder complexity: %d\n", opus_prefs.decoder_complexity);
 		} else if (!strcasecmp(cmd, "off")) {
 			globals.debug = 0;
 			stream->write_function(stream, "OPUS Debug: off\n");
