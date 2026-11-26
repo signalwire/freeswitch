@@ -42,8 +42,11 @@ struct http_profile {
 	char *aws_s3_access_key_id;
 	char *secret_access_key;
 	char *base_domain;
-	char *region;            // AWS region. Used by AWS S3
+	char *region;            // AWS region. Used by AWS S3 // Used by gcs as token uri
+	char *gcs_email;		 // GCS service account email 
+	char *gcs_credentials;	 // GCS credencial token 
 	switch_time_t expires;   // Expiration time in seconds for URL signature. Default is 604800 seconds. Used by AWS S3
+							 // GCS Expiration used for when the gcs_credentials expires
 	switch_size_t bytes_per_block;
 	int header_count;
 	char** header_names;
