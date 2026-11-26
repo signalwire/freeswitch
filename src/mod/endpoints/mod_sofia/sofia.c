@@ -2430,6 +2430,13 @@ void sofia_event_callback(nua_event_t event,
 
 					if (status == 403) {
 						switch_channel_set_flag(channel, CF_NO_CDR);
+						/* Detach and destroy the nua handle like the 401/407 branch does; otherwise every
+						   INVITE rejected by apply-inbound-acl leaks its nua_handle_t (~2 KB). */
+						tech_pvt->sofia_private = NULL;
+						tech_pvt->nh = NULL;
+						sofia_set_flag(tech_pvt, TFLAG_BYE);
+						nua_handle_bind(nh, NULL);
+						nua_handle_destroy(nh);
 						switch_channel_hangup(channel, SWITCH_CAUSE_CALL_REJECTED);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "detaching session %s\n", sofia_private->uuid);
