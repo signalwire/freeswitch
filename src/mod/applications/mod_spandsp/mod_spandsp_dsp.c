@@ -191,6 +191,43 @@ static int get_v18_mode(switch_core_session_t *session)
 	return r;
 }
 
+/*
+ * SpanDSP 3.0.0 ignored the nation/automoding argument and decoded the
+ * requested V.18 mode immediately. SpanDSP 3.1.x (libspandsp.so.4) treats
+ * anything other than V18_AUTOMODING_NONE as V.18 probing: current_mode is
+ * forced to V18_MODE_NONE and rx/tx stay in tone-scan states, so Baudot
+ * never reaches put_text_msg. Default to NONE to restore the 3.0.0 TTY path.
+ * Override with channel variable v18_automoding if probing is wanted.
+ */
+static int get_v18_automoding(switch_core_session_t *session)
+{
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *var;
+	int r = V18_AUTOMODING_NONE;
+
+	if ((var = switch_channel_get_variable(channel, "v18_automoding"))) {
+		if (!strcasecmp(var, "none")) {
+			r = V18_AUTOMODING_NONE;
+		} else if (!strcasecmp(var, "global")) {
+			r = V18_AUTOMODING_GLOBAL;
+		} else if (!strcasecmp(var, "usa")) {
+			r = V18_AUTOMODING_USA;
+		} else if (!strcasecmp(var, "uk")) {
+			r = V18_AUTOMODING_UK;
+		} else if (!strcasecmp(var, "australia")) {
+			r = V18_AUTOMODING_AUSTRALIA;
+		} else if (!strcasecmp(var, "germany")) {
+			r = V18_AUTOMODING_GERMANY;
+		} else if (!strcasecmp(var, "france")) {
+			r = V18_AUTOMODING_FRANCE;
+		} else if (!strcasecmp(var, "netherlands")) {
+			r = V18_AUTOMODING_NETHERLANDS;
+		}
+	}
+
+	return r;
+}
+
 
 switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const char *text)
 {
@@ -224,9 +261,9 @@ switch_status_t spandsp_tdd_send_session(switch_core_session_t *session, const c
 	}
 
 #if SPANDSP_RELEASE_DATE >= 20230620
-	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL, handle_v18_status, session);
+	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), get_v18_automoding(session), put_text_msg, NULL, handle_v18_status, session);
 #else
-	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
+	tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), get_v18_automoding(session), put_text_msg, NULL);
 #endif
 
 	v18_put(tdd_state, text, -1);
@@ -275,9 +312,9 @@ switch_status_t spandsp_tdd_encode_session(switch_core_session_t *session, const
 	pvt->session = session;
 
 #if SPANDSP_RELEASE_DATE >= 20230620
-	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL, handle_v18_status, session);
+	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), get_v18_automoding(session), put_text_msg, NULL, handle_v18_status, session);
 #else
-	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, NULL);
+	pvt->tdd_state = v18_init(NULL, TRUE, get_v18_mode(session), get_v18_automoding(session), put_text_msg, NULL);
 #endif
 
 	pvt->head_lead = TDD_LEAD;
@@ -359,9 +396,9 @@ switch_status_t spandsp_tdd_decode_session(switch_core_session_t *session)
 	pvt->session = session;
 
 #if SPANDSP_RELEASE_DATE >= 20230620
-	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, pvt, handle_v18_status, session);
+	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), get_v18_automoding(session), put_text_msg, pvt, handle_v18_status, session);
 #else
-	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), V18_AUTOMODING_GLOBAL, put_text_msg, pvt);
+	pvt->tdd_state = v18_init(NULL, FALSE, get_v18_mode(session), get_v18_automoding(session), put_text_msg, pvt);
 #endif
 
 	if ((status = switch_core_media_bug_add(session, "spandsp_tdd_decode", NULL,
