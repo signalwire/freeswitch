@@ -71,6 +71,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0, tap_only = 0;
 	switch_codec_implementation_t codec_impl;
+	switch_codec_t *read_codec = NULL;
 	unsigned int flag = 0;
 	int i;
 
@@ -80,15 +81,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	switch_os_yield();
 
-	if (switch_mutex_trylock(session->codec_read_mutex) == SWITCH_STATUS_SUCCESS) {
-		switch_mutex_unlock(session->codec_read_mutex);
-	} else {
+	if (switch_mutex_trylock(session->codec_read_mutex) != SWITCH_STATUS_SUCCESS) {
 		switch_cond_next();
 		*frame = &runtime.dummy_cng_frame;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
 	if (!(session->read_codec && session->read_codec->implementation && switch_core_codec_ready(session->read_codec))) {
+		switch_mutex_unlock(session->codec_read_mutex);
 		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_get_state(session->channel) == CS_HIBERNATE) {
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_CRIT, "%s reading on a session with no media!\n",
 							  switch_channel_get_name(session->channel));
@@ -109,17 +109,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_mutex_lock(session->codec_read_mutex);
+	read_codec = session->read_codec;
+	switch_mutex_lock(read_codec->mutex);
 
-	if (!switch_core_codec_ready(session->read_codec)) {
+	if (!switch_core_codec_ready(read_codec)) {
+		switch_mutex_unlock(read_codec->mutex);
 		switch_mutex_unlock(session->codec_read_mutex);
 		switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
 		*frame = &runtime.dummy_cng_frame;
 		return SWITCH_STATUS_FALSE;
 	}
-
-	switch_mutex_lock(session->read_codec->mutex);
 
   top:
 
@@ -170,8 +170,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	}
 
 	if (session->endpoint_interface->io_routines->read_frame) {
-		switch_mutex_unlock(session->read_codec->mutex);
+		switch_mutex_unlock(read_codec->mutex);
 		switch_mutex_unlock(session->codec_read_mutex);
+		read_codec = NULL;
 		if ((status = session->endpoint_interface->io_routines->read_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.read_frame; ptr; ptr = ptr->next) {
 				if ((status = ptr->read_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
@@ -186,14 +187,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			return SWITCH_STATUS_SUCCESS;
 		}
 
-		if (!SWITCH_READ_ACCEPTABLE(status) || !session->read_codec || !switch_core_codec_ready(session->read_codec)) {
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
 			*frame = NULL;
 			return SWITCH_STATUS_FALSE;
 		}
 
 		switch_mutex_lock(session->codec_read_mutex);
 
-		if (!switch_core_codec_ready(session->read_codec)) {
+		if (!(session->read_codec && session->read_codec->implementation && switch_core_codec_ready(session->read_codec))) {
 			switch_mutex_unlock(session->codec_read_mutex);
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
@@ -201,8 +202,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			return SWITCH_STATUS_FALSE;
 		}
 
-		switch_mutex_lock(session->read_codec->mutex);
-		if (!switch_core_codec_ready(session->read_codec)) {
+		read_codec = session->read_codec;
+		switch_mutex_lock(read_codec->mutex);
+		if (!switch_core_codec_ready(read_codec)) {
 			*frame = NULL;
 			status = SWITCH_STATUS_FALSE;
 			goto even_more_done;
@@ -933,7 +935,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		*frame = &runtime.dummy_cng_frame;
 	}
 
-	switch_mutex_unlock(session->read_codec->mutex);
+	switch_mutex_unlock(read_codec->mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 
 
