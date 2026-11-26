@@ -2575,9 +2575,20 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	const void *key;
 	switch_loadable_module_t *module;
 	int i;
+	/* time module threads get to wind down between "shutdown" and "unload".
+	   Defaults to 1 s; the unit-test harness lowers it with the core variable module_shutdown_grace_ms. */
+	switch_interval_time_t grace = 1000000;
+	const char *grace_var;
 
 	if (!loadable_modules.module_hash) {
 		return;
+	}
+
+	if ((grace_var = switch_core_get_variable("module_shutdown_grace_ms"))) {
+		int ms = atoi(grace_var);
+		if (ms >= 0 && ms <= 60000) {
+			grace = (switch_interval_time_t)ms * 1000;
+		}
 	}
 
 	chat_globals.running = 0;
@@ -2600,7 +2611,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 		}
 	}
 
-	switch_yield(1000000);
+	switch_yield(grace);
 
 	for (hi = switch_core_hash_first(loadable_modules.module_hash); hi;) {
 		switch_core_hash_this(hi, &key, NULL, &val);
@@ -2627,7 +2638,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 		}
 	}
 
-	switch_yield(1000000);
+	switch_yield(grace);
 
 	for (hi = switch_core_hash_first(loadable_modules.module_hash); hi; hi = switch_core_hash_next(&hi)) {
 		switch_core_hash_this(hi, NULL, NULL, &val);
