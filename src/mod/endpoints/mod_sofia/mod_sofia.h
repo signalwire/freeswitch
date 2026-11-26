@@ -108,6 +108,7 @@ typedef struct private_object private_object_t;
 #define MY_EVENT_INTERCEPTED "sofia::intercepted"
 
 #define MY_EVENT_BYE_RESPONSE "sofia::bye_response"
+#define MY_EVENT_ACK_REQUEST "sofia::ack_request"
 
 #define MULTICAST_EVENT "multicast::event"
 #define SOFIA_REPLACES_HEADER "_sofia_replaces_"
