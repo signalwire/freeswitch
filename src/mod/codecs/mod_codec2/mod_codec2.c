@@ -59,9 +59,7 @@ struct codec2_context {
 #ifdef LOG_DATA
 	FILE *encoder_in;
 	FILE *encoder_out;
-	FILE *encoder_out_unpacked;
 	FILE *decoder_in;
-	FILE *decoder_in_unpacked;
 	FILE *decoder_out;
 #endif
 };
@@ -112,18 +110,37 @@ static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_fl
 
 	if (encoding) {
 		context->encoder = codec2_create(context->mode);
+		if (!context->encoder) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "codec2_create() failed for encoder (mode %d)\n", context->mode);
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
 	if (decoding) {
 		context->decoder = codec2_create(context->mode);
+		if (!context->decoder) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "codec2_create() failed for decoder (mode %d)\n", context->mode);
+			if (context->encoder) {
+				codec2_destroy(context->encoder);
+				context->encoder = NULL;
+			}
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 
-	context->nsam = codec2_samples_per_frame(context->encoder);
-	if (!context->nsam) {
-		context->nsam = CODEC2_SAMPLES_PER_FRAME;
+	/* The codec may be opened for only one direction, so query frame geometry from whichever
+	   handle exists -- passing a NULL handle to codec2_samples_per_frame()/_bits_per_frame()
+	   dereferences it and crashes. */
+	{
+		struct CODEC2 *c2 = context->encoder ? context->encoder : context->decoder;
+
+		context->nsam = codec2_samples_per_frame(c2);
+		if (!context->nsam) {
+			context->nsam = CODEC2_SAMPLES_PER_FRAME;
+		}
+		context->nbit = codec2_bits_per_frame(c2);
+		context->nbyte = (context->nbit + 7) / 8;
 	}
-	context->nbit = codec2_bits_per_frame(context->encoder);
-	context->nbyte = (context->nbit + 7) / 8;
 
 	codec->private_info = context;
 
@@ -141,9 +158,6 @@ static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_fl
 
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-out", c);
 			context->encoder_out = fopen(buf, "w");
-
-			snprintf(buf, sizeof(buf), "/tmp/c2-%d-enc-out-unpacked", c);
-			context->encoder_out_unpacked = fopen(buf, "w");
 		}
 		if (decoding) {
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-in", c);
@@ -151,9 +165,6 @@ static switch_status_t switch_codec2_init(switch_codec_t *codec, switch_codec_fl
 
 			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-out", c);
 			context->decoder_out = fopen(buf, "w");
-
-			snprintf(buf, sizeof(buf), "/tmp/c2-%d-dec-out-unpacked", c);
-			context->decoder_in_unpacked = fopen(buf, "w");
 		}
 	}
 #endif
@@ -171,24 +182,36 @@ static switch_status_t switch_codec2_encode(switch_codec_t *codec, switch_codec_
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
+	int frames, i;
 
-	codec2_assert(decoded_data_len == context->nsam * 2);
+	if (!context || !context->encoder) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* The input may carry more than one frame (e.g. a larger ptime); encode each frame in turn
+	   instead of silently dropping all but the first. */
+	frames = decoded_data_len / (context->nsam * 2);
+	if (frames < 1) {
+		frames = 1;
+	}
 
 #ifdef LOG_DATA
 	fwrite(decoded_data, decoded_data_len, 1, context->encoder_in);
 	fflush(context->encoder_in);
 #endif
 
-	codec2_encode(context->encoder, encoded_data, decoded_data);
+	for (i = 0; i < frames; i++) {
+		codec2_encode(context->encoder,
+					  (unsigned char *) encoded_data + (i * context->nbyte),
+					  (short *) decoded_data + (i * context->nsam));
+	}
 
 #ifdef LOG_DATA
-	fwrite(encode_buf, sizeof(encode_buf), 1, context->encoder_out_unpacked);
-	fflush(context->encoder_out_unpacked);
-	fwrite(encoded_data, context->nbyte, 1, context->encoder_out);
+	fwrite(encoded_data, context->nbyte * frames, 1, context->encoder_out);
 	fflush(context->encoder_out);
 #endif
 
-	*encoded_data_len = context->nbyte;
+	*encoded_data_len = context->nbyte * frames;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -204,24 +227,36 @@ static switch_status_t switch_codec2_decode(switch_codec_t *codec,
 										  unsigned int *flag)
 {
 	struct codec2_context *context = codec->private_info;
+	int frames, i;
 
-	codec2_assert(encoded_data_len == 8);
+	if (!context || !context->decoder) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* A packet may carry more than one frame; decode each frame present rather than only the
+	   first. The encoded frame size depends on the mode (e.g. 8 bytes for 3200, 6 for 2400). */
+	frames = encoded_data_len / context->nbyte;
+	if (frames < 1) {
+		frames = 1;
+	}
 
 #ifdef LOG_DATA
 	fwrite(encoded_data, encoded_data_len, 1, context->decoder_in);
 	fflush(context->decoder_in);
-	fwrite(bits, sizeof(bits), 1, context->decoder_in_unpacked);
-	fflush(context->decoder_in_unpacked);
 #endif
 
-	codec2_decode(context->decoder, decoded_data, encoded_data);
+	for (i = 0; i < frames; i++) {
+		codec2_decode(context->decoder,
+					  (short *) decoded_data + (i * context->nsam),
+					  (const unsigned char *) encoded_data + (i * context->nbyte));
+	}
 
 #ifdef LOG_DATA
-	fwrite(decoded_data, context->nsam, 2, context->decoder_out);
+	fwrite(decoded_data, context->nsam * 2 * frames, 1, context->decoder_out);
 	fflush(context->decoder_out);
 #endif
 
-	*decoded_data_len = context->nsam * 2; /* eg: 160 samples for 3200,2400 */
+	*decoded_data_len = context->nsam * 2 * frames; /* eg: 160 samples -> 320 bytes for 3200,2400 */
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -230,11 +265,17 @@ static switch_status_t switch_codec2_destroy(switch_codec_t *codec)
 {
 	struct codec2_context *context = codec->private_info;
 
-	codec2_destroy(context->encoder);
-	codec2_destroy(context->decoder);
+	/* The codec may have been opened for only one direction, so only destroy the handle that was
+	   actually created -- codec2_destroy(NULL) dereferences its argument and crashes. */
+	if (context->encoder) {
+		codec2_destroy(context->encoder);
+		context->encoder = NULL;
+	}
 
-	context->encoder = NULL;
-	context->decoder = NULL;
+	if (context->decoder) {
+		codec2_destroy(context->decoder);
+		context->decoder = NULL;
+	}
 
 #ifdef LOG_DATA
 	if (context->encoder_in) {
@@ -243,14 +284,8 @@ static switch_status_t switch_codec2_destroy(switch_codec_t *codec)
 	if (context->encoder_out) {
 		fclose(context->encoder_out);
 	}
-	if (context->encoder_out_unpacked) {
-		fclose(context->encoder_out_unpacked);
-	}
 	if (context->decoder_in) {
 		fclose(context->decoder_in);
-	}
-	if (context->decoder_in_unpacked) {
-		fclose(context->decoder_in_unpacked);
 	}
 	if (context->decoder_out) {
 		fclose(context->decoder_out);
