@@ -4773,8 +4773,13 @@ static void switch_core_media_set_rmode(switch_core_session_t *session, switch_m
 	engine->rmode = rmode;
 
 	if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
+		/* Optionally stop an outbound leg's audio answer (e.g. a=inactive) overwriting the partner's send mode,
+		   as nothing restores it when this leg later re-INVITEs with sendrecv. */
+		int keep_partner_flow = type == SWITCH_MEDIA_TYPE_AUDIO &&
+			switch_channel_var_true(session->channel, "rtp_keep_partner_audio_flow_on_answer");
 
-		if (sdp_type == SDP_ANSWER && (switch_channel_test_flag(other_session->channel, CF_REINVITE) || switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND)) {
+		if (sdp_type == SDP_ANSWER && (switch_channel_test_flag(other_session->channel, CF_REINVITE) ||
+			(!keep_partner_flow && switch_channel_direction(session->channel) == SWITCH_CALL_DIRECTION_OUTBOUND))) {
 			switch_core_media_set_smode(other_session, type, rmode, sdp_type);
 		}
 
