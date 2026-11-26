@@ -1507,8 +1507,14 @@ static switch_status_t load_config(switch_memory_pool_t *pool)
 	switch_xml_t cfg, xml, settings, param, x_queues, x_queue, x_agents, x_agent, x_tiers;
 	switch_cache_db_handle_t *dbh = NULL;
 	char *sql = NULL;
+	switch_event_t *params = NULL;
 
-	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Queue", "all");
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Agent", "all");
+
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, params))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
 		status = SWITCH_STATUS_TERM;
 		goto end;
@@ -3615,7 +3621,13 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				goto done;
 			} else {
 				const char *agent = argv[0 + initial_argc];
-				switch (load_agent(agent, NULL, NULL)) {
+				switch_event_t *params = NULL;
+
+				switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+				switch_assert(params);
+				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
+
+				switch (load_agent(agent, params, NULL)) {
 					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
@@ -3805,10 +3817,18 @@ SWITCH_STANDARD_API(cc_config_api_function)
 				const char *queue = argv[0 + initial_argc];
 				const char *agent = argv[1 + initial_argc];
 				switch_bool_t load_all = SWITCH_FALSE;
+				switch_event_t *params = NULL;
+
 				if (!strcasecmp(queue, "all")) {
 					load_all = SWITCH_TRUE;
+				} else {
+					switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+					switch_assert(params);
+					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Queue", queue);
+					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "CC-Agent", agent);
 				}
-				switch (load_tiers(load_all, queue, agent, NULL, NULL)) {
+
+				switch (load_tiers(load_all, queue, agent, params, NULL)) {
 					case SWITCH_STATUS_SUCCESS:
 						stream->write_function(stream, "%s", "+OK\n");
 						break;
