@@ -121,7 +121,8 @@ struct enc_stats {
 typedef struct enc_stats enc_stats_t;
 
 struct codec_control_state {
-	int keep_fec;
+	int keep_fec;     /* this call was set up with keep-fec-enabled (and useinbandfec) */
+	int keep_fec_active; /* keep-FEC currently enforced on this call; cleared under congestion by adjust-bitrate */
 	opus_int32 current_bitrate;
 	opus_int32 wanted_bitrate;
 	uint32_t increase_step;
@@ -617,6 +618,9 @@ static switch_status_t switch_opus_init(switch_codec_t *codec, switch_codec_flag
 			switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(session), SWITCH_LOG_ERROR, "Cannot create encoder: %s\n", opus_strerror(err));
 			return SWITCH_STATUS_GENERR;
 		}
+
+		/* per-call copy: adjust-bitrate may turn keep-FEC off and on for this call only */
+		context->control_state.keep_fec_active = opus_prefs.keep_fec;
 
 		/* https://tools.ietf.org/html/rfc7587  */
 		if (opus_codec_settings.maxaveragebitrate) {
@@ -1248,14 +1252,14 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 				plpct = 100;
 			}
 
-			if (opus_prefs.keep_fec) {
+			if (context->control_state.keep_fec_active) {
 				opus_encoder_ctl(context->encoder_object, OPUS_SET_PACKET_LOSS_PERC(plpct));
 			} else {
 				calc = plpct % 10;
 				plpct = plpct - calc + ( calc ? 10 : 0);
 			}
 			if (plpct != context->old_plpct) {
-				if (opus_prefs.keep_fec) {
+				if (context->control_state.keep_fec_active) {
 					if (plpct > 10) {
 					/* this will increase bitrate a little bit, just to keep FEC enabled */
 						switch_opus_keep_fec_enabled(codec);
@@ -1310,33 +1314,43 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 					int br_step = context->control_state.increase_step?context->control_state.increase_step:400;
 					opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));
 					if (opus_prefs.maxaveragebitrate > current_bitrate) {
-						opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(current_bitrate+br_step));
+						opus_int32 new_bitrate = current_bitrate + br_step;
+
+						if (new_bitrate > opus_prefs.maxaveragebitrate) {
+							new_bitrate = opus_prefs.maxaveragebitrate; /* do not overshoot the configured ceiling */
+						}
+						opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(new_bitrate));
 						if ((context->control_state.keep_fec) && (current_bitrate > SWITCH_OPUS_MIN_FEC_BITRATE)) {
-							opus_prefs.keep_fec = 1; /* enable back FEC if it was disabled by SCC_AUDIO_ADJUST_BITRATE, we have enough network bandwidth now */
+							context->control_state.keep_fec_active = 1; /* enable back FEC if it was disabled by SCC_AUDIO_ADJUST_BITRATE, we have enough network bandwidth now */
 						}
 						if (globals.debug || context->debug) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "Opus encoder: Adjusting bitrate to %d (increase)\n", current_bitrate+br_step);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "Opus encoder: Adjusting bitrate to %d (increase)\n", new_bitrate);
 						}
 					}
 				} else if (!strcasecmp(cmd, "decrease")) {
 					int br_step = context->control_state.decrease_step?context->control_state.decrease_step:400;
 					opus_encoder_ctl(context->encoder_object, OPUS_GET_BITRATE(&current_bitrate));
 					if (current_bitrate > SWITCH_OPUS_MIN_BITRATE) {
+						opus_int32 new_bitrate = current_bitrate - br_step;
+
+						if (new_bitrate < SWITCH_OPUS_MIN_BITRATE) {
+							new_bitrate = SWITCH_OPUS_MIN_BITRATE; /* do not go below the Opus minimum */
+						}
 						if (context->control_state.keep_fec) {
 							/* no point to try to keep FEC enabled anymore,
 							 * we're low on network bandwidth (that's why we ended up here) */
-							opus_prefs.keep_fec = 0;
+							context->control_state.keep_fec_active = 0;
 						}
-						opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(current_bitrate-br_step));
+						opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(new_bitrate));
 						if (globals.debug || context->debug) {
-							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "Opus encoder: Adjusting bitrate to %d (decrease)\n", current_bitrate-br_step);
+							switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "Opus encoder: Adjusting bitrate to %d (decrease)\n", new_bitrate);
 						}
 					}
 				} else if (!strcasecmp(cmd, "default")) {
 					/*restore default bitrate */
 					opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(opus_prefs.maxaveragebitrate));
 					if (context->control_state.keep_fec) {
-						opus_prefs.keep_fec = 1; /* enable back FEC, we have enough network bandwidth now */
+						context->control_state.keep_fec_active = 1; /* enable back FEC, we have enough network bandwidth now */
 					}
 					if (globals.debug || context->debug) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "Opus encoder: Adjusting bitrate to %d (configured maxaveragebitrate)\n", opus_prefs.maxaveragebitrate);
@@ -1345,7 +1359,7 @@ static switch_status_t switch_opus_control(switch_codec_t *codec,
 					/* set Opus minimum bitrate */
 					opus_encoder_ctl(context->encoder_object, OPUS_SET_BITRATE(SWITCH_OPUS_MIN_BITRATE));
 					if (context->control_state.keep_fec) {
-						opus_prefs.keep_fec = 0; /* do not enforce FEC anymore, we're low on network bandwidth */
+						context->control_state.keep_fec_active = 0; /* do not enforce FEC anymore, we're low on network bandwidth */
 					}
 					if (globals.debug || context->debug) {
 						switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(codec->session), SWITCH_LOG_DEBUG, "Opus encoder: Adjusting bitrate to %d (minimum)\n", SWITCH_OPUS_MIN_BITRATE);
