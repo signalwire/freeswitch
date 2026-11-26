@@ -294,6 +294,16 @@ static dtls_state_t run_client_cert_verify_case(const char *verify_mode, int pre
 	return state;
 }
 
+static void *SWITCH_THREAD_FUNC break_reader_after_delay_thread(switch_thread_t *thread, void *obj)
+{
+	switch_rtp_t *rtp = (switch_rtp_t *) obj;
+
+	switch_yield(300 * 1000);
+	switch_rtp_break(rtp);
+
+	return NULL;
+}
+
 FST_CORE_BEGIN("./conf")
 {
 FST_SUITE_BEGIN(switch_rtp)
@@ -375,6 +385,45 @@ FST_TEARDOWN_END()
 		switch_core_destroy_memory_pool(&pool);
 	}
 	FST_TEST_END()
+
+	FST_TEST_BEGIN(test_rtp_break_wakes_timerless_reader)
+	{
+		switch_frame_t frame = { 0 };
+		char msg[64] = "";
+		switch_status_t tstatus = SWITCH_STATUS_FALSE;
+		switch_time_t started = 0, elapsed = 0;
+		switch_memory_pool_t *thread_pool = NULL;
+		switch_thread_t *thread = NULL;
+		switch_threadattr_t *thd_attr = NULL;
+
+		switch_core_new_memory_pool(&pool);
+
+		/* no timer: the reader parks in the 5 s socket poll, so it is woken by the
+		   break ping switch_rtp_break() sends to its own socket */
+		rtp_session = switch_rtp_new(rx_host, rx_port, tx_host, tx_port, TEST_PT, 8000, 20 * 1000, flags, "none", &err, pool, 0, 0);
+		fst_requires(rtp_session);
+		fst_requires(switch_rtp_ready(rtp_session));
+
+		switch_core_new_memory_pool(&thread_pool);
+		switch_threadattr_create(&thd_attr, thread_pool);
+		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_thread_create(&thread, thd_attr, break_reader_after_delay_thread, rtp_session, thread_pool);
+
+		started = switch_micro_time_now();
+		switch_rtp_zerocopy_read_frame(rtp_session, &frame, 0);
+		elapsed = switch_micro_time_now() - started;
+
+		/* the break must reach the reader right away, not after the poll timeout */
+		switch_snprintf(msg, sizeof(msg), "break reached the reader in %" SWITCH_TIME_T_FMT " us", elapsed);
+		fst_xcheck(elapsed < 2000000, msg);
+
+		switch_thread_join(&tstatus, thread);
+		switch_core_destroy_memory_pool(&thread_pool);
+		switch_rtp_destroy(&rtp_session);
+		switch_core_destroy_memory_pool(&pool);
+	}
+	FST_TEST_END()
+
 	FST_TEST_BEGIN(test_send_rtcp_event_audio)
 	{
 		switch_core_session_t *session = NULL;

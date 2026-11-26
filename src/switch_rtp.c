@@ -6386,6 +6386,15 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 				/* got packet which seems to not belong to us, let's make more checks */
 				switch_rtp_inject_dos_packet_t *packet = NULL;
 
+				/* the wake-up ping sent by switch_rtp_break() comes back from our own address:
+				   let it through so the pending-break check in rtp_common_read() can see it,
+				   otherwise a timerless reader sleeps through the whole poll timeout and a
+				   queued hangup is handled seconds late */
+				if (*bytes == 4 && *((int *) &rtp_session->recv_msg) == UINT_MAX &&
+					switch_cmp_addr(rtp_session->from_addr, rtp_session->local_addr, SWITCH_FALSE)) {
+					goto done_inject_dos_checks;
+				}
+
 				if ((rtp_session->has_rtp || rtp_session->has_rtcp) && !switch_rtp_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ)) {
 					/* it's RTP or RTCP (rtcpmux) packet and we aren't in auto-adjustment window anymore. Ignore it! */
 					packet = rtp_session->has_rtp ? &rtp_session->inject_dos.rtp : &rtp_session->inject_dos.rtcp;
