@@ -8105,7 +8105,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 					
 					if (rtp_session->flags[SWITCH_RTP_FLAG_RTCP_PASSTHRU]) {
 						switch_channel_t *channel = switch_core_session_get_channel(rtp_session->session);
-						const char *uuid = switch_channel_get_partner_uuid(channel);
+						char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+						const char *uuid = switch_channel_get_partner_uuid_copy(channel, uuid_str, sizeof(uuid_str));
 
 						if (uuid) {
 							switch_core_session_t *other_session;
