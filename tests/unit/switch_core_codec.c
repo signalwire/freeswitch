@@ -153,6 +153,45 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 
+		FST_TEST_BEGIN(test_opus_samples_per_packet)
+		{
+			/* RFC 7587: the Opus RTP timestamp advances at a fixed 48 kHz clock
+			   (samples_per_second == 48000) regardless of the audio rate
+			   (actual_samples_per_second). samples_per_packet must stay the TRUE
+			   decoded PCM frame count (rate * ptime), because media bugs,
+			   record_session and playback read it to size PCM frames -- inflating
+			   it to the 48 kHz value corrupts them. Guard that invariant for the
+			   8k/16k/48k Opus implementations at 20 ms. */
+			switch_codec_settings_t codec_settings = {{ 0 }};
+			int i;
+			struct { uint32_t rate; uint32_t samples_per_packet; } cases[] = {
+				{  8000, 160 },
+				{ 16000, 320 },
+				{ 48000, 960 },
+			};
+
+			for (i = 0; i < 3; i++) {
+				switch_codec_t codec = { 0 };
+				switch_status_t status = switch_core_codec_init(&codec,
+					"OPUS",
+					"mod_opus",
+					NULL,
+					cases[i].rate,
+					20,
+					1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
+					&codec_settings, fst_pool);
+				fst_check(status == SWITCH_STATUS_SUCCESS);
+				if (status == SWITCH_STATUS_SUCCESS) {
+					fst_check_int_equals(codec.implementation->actual_samples_per_second, cases[i].rate);
+					fst_check_int_equals(codec.implementation->samples_per_second, 48000);
+					fst_check_int_equals(codec.implementation->microseconds_per_packet, 20000);
+					fst_check_int_equals(codec.implementation->samples_per_packet, cases[i].samples_per_packet);
+					switch_core_codec_destroy(&codec);
+				}
+			}
+		}
+		FST_TEST_END()
+
 	}
 	FST_SUITE_END()
 }
