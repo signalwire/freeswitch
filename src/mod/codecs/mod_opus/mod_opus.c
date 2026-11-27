@@ -283,8 +283,13 @@ static switch_status_t switch_opus_fmtp_parse(const char *fmtp, switch_codec_fmt
 					}
 
 					if (!strcasecmp(data, "ptime")) {
-						codec_settings->ptime = atoi(arg);
-						codec_fmtp->microseconds_per_packet = codec_settings->ptime * 1000;
+						int ptime = atoi(arg);
+
+						/* Opus packets are at most 120 ms: ignore anything else rather than overflow ptime * 1000 */
+						if (ptime > 0 && ptime <= 120) {
+							codec_settings->ptime = ptime;
+							codec_fmtp->microseconds_per_packet = ptime * 1000;
+						}
 					}
 
 					if (!strcasecmp(data, "stereo")) {
@@ -418,7 +423,7 @@ static switch_bool_t switch_opus_has_fec(const uint8_t* payload,int payload_leng
 			nb_silk_frames = 1;
 		}
 		if ((nb_silk_frames == 1) && (nb_opus_frames == 1)) {
-			for (n = 0; n <= (payload[0]&0x4) ; n++) { /* mono or stereo: 10,20 ms */
+			for (n = 0; n <= ((payload[0] >> 2) & 0x1) ; n++) { /* mono or stereo: 10,20 ms */
 				if (frame_data[0][0] & (0x80 >> ((n + 1) * (nb_silk_frames + 1) - 1))) {
 					return SWITCH_TRUE; /* frame has FEC */
 				}
@@ -1176,10 +1181,14 @@ static switch_bool_t switch_opus_vad(struct opus_context *context, void *encoded
 	opus_packet_info_t opus_packet_info;
 	switch_bool_t debug = (globals.debug || context->debug > 1);
 
+	/* the debug logs below print the first two payload bytes; do not read past a shorter payload */
+	uint8_t byte0 = encoded_data_len > 0 ? payload[0] : 0;
+	uint8_t byte1 = encoded_data_len > 1 ? payload[1] : 0;
+
 	if (!switch_opus_packet_parse(payload, encoded_data_len, &opus_packet_info, debug)) {
 		if (debug) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "OPUS PACKET PARSING ERROR len:%d bytes:%02x %02x\n",
-							  (int)encoded_data_len, payload[0], payload[1]);
+							  (int)encoded_data_len, byte0, byte1);
 		}
 
 		return SWITCH_TRUE;
@@ -1187,7 +1196,7 @@ static switch_bool_t switch_opus_vad(struct opus_context *context, void *encoded
 
 	if (debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "OPUS EXTRACT PAYLOAD VAD len:%d vad_ms:%d bytes:%02x %02x\n",
-						  (int)encoded_data_len, opus_packet_info.vad_ms, payload[0], payload[1]);
+						  (int)encoded_data_len, opus_packet_info.vad_ms, byte0, byte1);
 	}
 
 	if (opus_packet_info.vad_ms == 0) {
