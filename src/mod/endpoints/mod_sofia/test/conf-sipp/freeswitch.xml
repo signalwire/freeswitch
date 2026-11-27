@@ -398,6 +398,29 @@
       </settings>
   </profile>
 
+    <profile name="3pcc-proxy">
+      <domains>
+        <domain name="all" alias="false" parse="true"/>
+      </domains>
+
+      <settings>
+        <param name="debug" value="1"/>
+        <param name="user-agent-string" value="Unit Test"/>
+        <param name="sip-trace" value="yes"/>
+        <param name="sip-port" value="5072"/>
+        <param name="dialplan" value="XML"/>
+        <param name="context" value="default"/>
+        <param name="auth-calls" value="false"/>
+        <param name="inbound-codec-prefs" value="PCMU"/>
+        <param name="outbound-codec-prefs" value="PCMU"/>
+        <param name="rtp-ip" value="$${local_ip_v4}"/>
+        <param name="sip-ip" value="$${local_ip_v4}"/>
+        <param name="ext-rtp-ip" value="$${local_ip_v4}"/>
+        <param name="ext-sip-ip" value="$${local_ip_v4}"/>
+        <param name="enable-3pcc" value="proxy"/>
+      </settings>
+    </profile>
+
     <profile name="internal">
         <gateways>
     </gateways>
@@ -586,6 +609,19 @@
         <action application="answer"/>
         <action application="set" data="park_after_bridge=true"/>
         <action application="park"/>
+      </condition>
+    </extension>
+
+    <extension name="unit_test_no_soa_date">
+      <condition field="destination_number" expression="^no-soa-date$">
+        <action application="bridge" data="{sip_enable_soa=false,sip_stir_shaken_attest=A}sofia/3pcc-proxy/sipp@$${local_ip_v4}:6095"/>
+      </condition>
+    </extension>
+
+    <extension name="unit_test_no_soa_late">
+      <condition field="destination_number" expression="^no-soa-late$">
+        <action application="set" data="bypass_media=true"/>
+        <action application="bridge" data="{sip_enable_soa=false}sofia/3pcc-proxy/sipp@$${local_ip_v4}:6095"/>
       </condition>
     </extension>
 

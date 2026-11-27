@@ -161,6 +161,22 @@ static int run_sipp(const char *ip, int remote_port, int listen_port, const char
 	return sys_ret;
 }
 
+static int run_sipp_uas_uac(const char *ip, int uas_port, const char *scenario_uas, int remote_port, int uac_port,
+							const char *service, const char *scenario_uac)
+{
+	char *cmd = switch_mprintf(
+		"sipp %s -p %d -nr -nostdin -m 1 -s 1001 -recv_timeout 20000 -timeout 30s -sf %s >/dev/null 2>&1 & uas=$!; "
+		"sleep 1; sipp %s:%d -nr -nostdin -p %d -m 1 -s %s -recv_timeout 20000 -timeout 30s -sf %s; uac=$?; "
+		"wait $uas; uas=$?; echo \"sipp uac=$uac uas=$uas\"; [ $uac -eq 0 ] && [ $uas -eq 0 ]",
+		ip, uas_port, scenario_uas, ip, remote_port, uac_port, service, scenario_uac);
+	int sys_ret = switch_system(cmd, SWITCH_TRUE);
+
+	printf("%s\n", cmd);
+	switch_safe_free(cmd);
+
+	return sys_ret;
+}
+
 static void kill_sipp(void)
 {
 	switch_system("pkill -x sipp", SWITCH_TRUE);
@@ -696,6 +712,23 @@ skiptest:
 				/* sipp should timeout, attempt kill, just in case.*/
 				kill_sipp();
 			}
+		}
+		FST_TEST_END()
+
+		FST_TEST_BEGIN(invite_without_soa)
+		{
+			const char *local_ip_v4 = switch_core_get_variable("local_ip_v4");
+			int sipp_ret;
+
+			sipp_ret = run_sipp_uas_uac(local_ip_v4, 6095, "sipp-scenarios/uas_no_soa_date.xml", 5072, 6096,
+										"no-soa-date", "sipp-scenarios/uac_no_soa_date.xml");
+			fst_check_int_equals(sipp_ret, 0);
+			kill_sipp();
+
+			sipp_ret = run_sipp_uas_uac(local_ip_v4, 6095, "sipp-scenarios/uas_no_soa_no_body.xml", 5072, 6096,
+										"no-soa-late", "sipp-scenarios/uac_no_soa_late.xml");
+			fst_check_int_equals(sipp_ret, 0);
+			kill_sipp();
 		}
 		FST_TEST_END()
 
