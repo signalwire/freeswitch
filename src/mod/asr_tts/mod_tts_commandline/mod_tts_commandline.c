@@ -187,6 +187,12 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 
 	assert(info != NULL);
 
+	/* feed_tts() failed, or the file was already closed at its end or by flush */
+	if (!switch_test_flag(info->fh, SWITCH_FILE_OPEN)) {
+		*datalen = 0;
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_core_file_read(info->fh, data, &my_datalen) != SWITCH_STATUS_SUCCESS) {
 		if (switch_test_flag(info->fh, SWITCH_FILE_OPEN)) {
 			switch_core_file_close(info->fh);
@@ -195,7 +201,7 @@ static switch_status_t tts_commandline_speech_read_tts(switch_speech_handle_t *s
 		return SWITCH_STATUS_FALSE;
 	}
 	*datalen = my_datalen * 2;
-	if (datalen == 0) {
+	if (*datalen == 0) {
 		if (switch_test_flag(info->fh, SWITCH_FILE_OPEN)) {
 			switch_core_file_close(info->fh);
 		}
