@@ -15,6 +15,10 @@
 		<!-- <param name="maximum-rotate" value="32"/> -->
         <!-- Prefix all log lines by the session's uuid  -->
         <param name="uuid" value="true" />
+        <!-- Include channel log tags captured by switch_log_node_t. -->
+        <!-- <param name="log-tags" value="true"/> -->
+        <!-- Add live channel variables as label:value tokens. -->
+        <!-- <param name="channel-vars" value="callid=sip_call_id,tenant"/> -->
       </settings>
       <mappings>
 	<!--
