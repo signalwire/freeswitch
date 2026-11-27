@@ -39,7 +39,7 @@
 #define DEFAULT_BASE_DOMAIN "s3.%s.amazonaws.com"
 #define DEFAULT_EXPIRATION_TIME 604800
 
-SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile);
+SWITCH_MOD_DECLARE(switch_status_t) aws_s3_config_profile(switch_xml_t xml, http_profile_t *profile, switch_memory_pool_t *pool);
 
 struct aws_s3_profile {
 	const char* base_domain;
