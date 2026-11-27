@@ -1046,7 +1046,7 @@ static switch_status_t switch_core_media_build_crypto(switch_media_handle_t *smh
 
 	engine = &smh->engines[type];
 
-	if (!force && engine->ssec[ctype].local_raw_key[0]) {
+	if (!force && !zstr(engine->ssec[ctype].local_crypto_key)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
