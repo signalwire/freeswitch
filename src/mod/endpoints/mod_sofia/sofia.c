@@ -3861,10 +3861,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag, 
 			gateway->ping_time = 0;
 			gateway->ping_count = 0;
 			gateway->ping_monitoring = SWITCH_FALSE;
-			gateway->ib_calls = 0;
-			gateway->ob_calls = 0;
-			gateway->ib_failed_calls = 0;
-			gateway->ob_failed_calls = 0;
+			sofia_reset_call_counts(gateway->profile->flag_mutex, &gateway->ib_calls, &gateway->ob_calls,
+									&gateway->ib_failed_calls, &gateway->ob_failed_calls);
 			gateway->destination_prefix = "";
 
 			if ((x_params = switch_xml_child(gateway_tag, "variables"))) {
@@ -4724,10 +4722,8 @@ switch_status_t config_sofia(sofia_config_t reload, char *profile_name)
 					profile->reg_acl_count = 0;
 					profile->proxy_acl_count = 0;
 					sofia_set_pflag(profile, PFLAG_PASS_CALLEE_ID);
-					profile->ib_calls = 0;
-					profile->ob_calls = 0;
-					profile->ib_failed_calls = 0;
-					profile->ob_failed_calls = 0;
+					sofia_reset_call_counts(profile->flag_mutex, &profile->ib_calls, &profile->ob_calls,
+											&profile->ib_failed_calls, &profile->ob_failed_calls);
 					profile->shutdown_type = "false";
 					profile->rtpip_index = 0;
 					profile->rtpip_index6 = 0;
@@ -10507,7 +10503,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 		}
 	}
 
-	profile->ib_calls++;
+	sofia_count_call(profile->flag_mutex, &profile->ib_calls);
 
 	if (sip && sip->sip_payload && sip->sip_payload->pl_data) {
 		r_sdp = sip->sip_payload->pl_data;
@@ -11421,7 +11417,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 				destination_number = sip->sip_to->a_url->url_user;
 			}
 
-			gateway->ib_calls++;
+			sofia_count_call(gateway->profile->flag_mutex, &gateway->ib_calls);
 
 			if (gateway->ib_vars) {
 				switch_event_header_t *hp;
@@ -11762,7 +11758,7 @@ void sofia_handle_sip_i_invite(switch_core_session_t *session, nua_t *nua, sofia
 	return;
 
   fail:
-	profile->ib_failed_calls++;
+	sofia_count_call(profile->flag_mutex, &profile->ib_failed_calls);
 
 	return;
 
