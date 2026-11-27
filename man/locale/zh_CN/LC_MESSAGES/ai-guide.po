@@ -1,0 +1,527 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Zoom Video Communications
+# This file is distributed under the same license as the FreeSWITCH package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: FreeSWITCH\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-17 23:38+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: zh_CN <LL@li.org>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: ../../ai-guide.md:1 0e802d0e02994df69b02972be68d5f11
+msgid "13. How to Use This Documentation for AI"
+msgstr "13. 如何用本文档驱动 AI"
+
+#: ../../ai-guide.md:5 1f2076cc70bb4b67b939725ced64c8c4
+msgid ""
+"This guide explains how AI assistants should consume and use the Project "
+"Knowledge Base."
+msgstr "本指南说明 AI 助手应如何阅读和使用项目知识库。"
+
+#: ../../ai-guide.md:7 0dcac4e30e904dbaabbac3b56034ae22
+msgid "Recommended Reading Order"
+msgstr "建议阅读顺序"
+
+#: ../../ai-guide.md:9 064e304e4eb744cf8cdaf802f3d07474
+msgid ""
+"Start with [Project Overview](00-overview.md) for purpose, scope, and users."
+" If the three configuration domains (directory / dialplan / configuration) "
+"are new, also read [Users Manual Chapter "
+"1](https://developer.signalwire.com/freeswitch/foundations/introduction)."
+msgstr ""
+"先读 [项目概述](00-overview.md) 了解目的、范围与用户。若三大配置域（directory / dialplan / "
+"configuration）还不熟，再读 [用户手册第 1 "
+"章](https://developer.signalwire.com/freeswitch/foundations/introduction)。"
+
+#: ../../ai-guide.md:10 740d4677a7234598ae50875c7f0fdeed
+msgid ""
+"Read [Repository Map](04-repo-map.md) to locate entry points and important "
+"directories."
+msgstr "再看 [仓库地图](04-repo-map.md)，定位入口和重要目录。"
+
+#: ../../ai-guide.md:11 733a85aae3e348a68bd093304ad68e3f
+msgid ""
+"Read [Architecture](02-architecture.md) and [Workflows](06-workflows.md) for"
+" cross-cutting behavior."
+msgstr "阅读 [架构](02-architecture.md) 和 [工作流](06-workflows.md)，把握横切行为。"
+
+#: ../../ai-guide.md:12 583ebbce5f1b46a39c1aae4de20352c8
+msgid ""
+"Check [Data and API](05-data-and-api.md) before changing schemas, contracts,"
+" or shared models."
+msgstr "改 schema、契约或共享模型之前，先查 [数据与 API](05-data-and-api.md)。"
+
+#: ../../ai-guide.md:13 6bc6ceb460c54efc8c9889d7f4dc9732
+msgid ""
+"Use [Testing](09-testing.md), [Runbook](10-runbook.md), and "
+"[Observability](11-observability.md) before validating or debugging changes."
+msgstr ""
+"验证或排查变更前，使用 [测试](09-testing.md)、[运维手册](10-runbook.md) 和 "
+"[可观测性](11-observability.md)。"
+
+#: ../../ai-guide.md:14 f7f19fec632e48488a8c0088bc6c1958
+msgid ""
+"Use [Build](08-build.md) when the change affects CI, packaging, release, or "
+"docs publishing."
+msgstr "变更涉及 CI、打包、发版或文档发布时，使用 [构建](08-build.md)。"
+
+#: ../../ai-guide.md:15 6c05269b203847e9b881af8795209f52
+msgid ""
+"Use [Documentation Process](12-document.md) when refreshing the PKB itself."
+msgstr "刷新 PKB 本身时，使用 [文档流程](12-document.md)。"
+
+#: ../../ai-guide.md:17 c2a71d336d6b4ffe9adfcbc6cc43c634
+msgid "The Three-Round Learning Process"
+msgstr "三轮学习过程"
+
+#: ../../ai-guide.md:19 26399eea7b65401c94d755745e431f27
+msgid "Round 1: Build the mental model"
+msgstr "第 1 轮：建立心智模型"
+
+#: ../../ai-guide.md:21 ../../ai-guide.md:35 ../../ai-guide.md:49
+#: 518b4faa4a804c7499174a36c53f3e23 6586e191babb4cfe9de4fd585593e293
+#: d742b15fa25442ff9da53063a850d010
+msgid "Read:"
+msgstr "阅读："
+
+#: ../../ai-guide.md:23 eff34b91563445e7bf8ea13e6880be32
+msgid "[Project Overview](00-overview.md)"
+msgstr "[项目概述](00-overview.md)"
+
+#: ../../ai-guide.md:24 5d8fe2436b1a4a5c8d72593742a0b083
+msgid "[Architecture](02-architecture.md)"
+msgstr "[架构](02-architecture.md)"
+
+#: ../../ai-guide.md:25 cfd278af1a424b8bacba664e5b8407c1
+msgid "[Repository Map](04-repo-map.md)"
+msgstr "[仓库地图](04-repo-map.md)"
+
+#: ../../ai-guide.md:27 ../../ai-guide.md:41 ../../ai-guide.md:56
+#: b2301bf0814c40cfae0f3528c385e37f c838542480414e1680a10f1a13612efa
+#: f5f913e2254c4925abd432d4a276fe9e
+msgid "Expected output:"
+msgstr "预期产出："
+
+#: ../../ai-guide.md:29 66a79be7ae1e4ca9b9cdf36eef311118
+msgid "A short system summary"
+msgstr "一份简短的系统摘要"
+
+#: ../../ai-guide.md:30 4d053c28f6ae4d848a487aa1dc57b9bb
+msgid "A map of entry points and high-change modules"
+msgstr "一张入口与高频变更模块地图"
+
+#: ../../ai-guide.md:31 a09e138b6f5045b0853cc3399be3e154
+msgid "A list of missing knowledge that blocks safe implementation"
+msgstr "一份会挡住安全实现的缺失知识清单"
+
+#: ../../ai-guide.md:33 840afc93914549d1bf11b42862d1ced2
+msgid "Round 2: Trace critical flows"
+msgstr "第 2 轮：追踪关键流程"
+
+#: ../../ai-guide.md:37 fc2ecab3df13479191121af61492a0c1
+msgid "[Workflows](06-workflows.md)"
+msgstr "[工作流](06-workflows.md)"
+
+#: ../../ai-guide.md:38 61705111e833469192b0213d3eef273b
+msgid "[Data and API](05-data-and-api.md)"
+msgstr "[数据与 API](05-data-and-api.md)"
+
+#: ../../ai-guide.md:39 661ba27c4f4e48f2b31503b3060fe94e
+msgid "relevant code files referenced by those docs"
+msgstr "那些文档引用的相关代码文件"
+
+#: ../../ai-guide.md:43 954460be38f943a9afcbaabf63520b48
+msgid "End-to-end call chains for 2-3 critical flows"
+msgstr "2–3 条关键流程的端到端调用链"
+
+#: ../../ai-guide.md:44 dad6cd28cf334512af77a78177e462fc
+msgid "Boundary conditions and likely failure modes"
+msgstr "边界条件与常见失败模式"
+
+#: ../../ai-guide.md:45 3fcd9af2ecb6408988afde8456431d4c
+msgid "A focused validation plan"
+msgstr "一份聚焦的验证计划"
+
+#: ../../ai-guide.md:47 b98061970baf41b48f8dec7234d73279
+msgid "Round 3: Prepare production-safe changes"
+msgstr "第 3 轮：准备可安全上线的变更"
+
+#: ../../ai-guide.md:51 84dade29f3704cbe9e0cceba9df7a6b2
+msgid "[Testing](09-testing.md)"
+msgstr "[测试](09-testing.md)"
+
+#: ../../ai-guide.md:52 73554d36bd8648269d5fc1c4d86e70fb
+msgid "[Runbook](10-runbook.md)"
+msgstr "[运维手册](10-runbook.md)"
+
+#: ../../ai-guide.md:53 faea7060691d444dbe93403f0feee228
+msgid "[Observability](11-observability.md)"
+msgstr "[可观测性](11-observability.md)"
+
+#: ../../ai-guide.md:54 5efdcdbf5cad43e78a8e8d07d0bf9ca7
+msgid "[ADRs](adr/index.md) when design rationale matters"
+msgstr "需要设计理由时看 [ADR](adr/index.md)"
+
+#: ../../ai-guide.md:58 a49b9f290c6643efa662af1655b7110c
+msgid "A contained implementation plan"
+msgstr "一份范围可控的实现计划"
+
+#: ../../ai-guide.md:59 88b15d8b2a8e43e1ba4b4ff0ef84a5dc
+msgid "Validation and rollback steps"
+msgstr "验证与回滚步骤"
+
+#: ../../ai-guide.md:60 959dd60aa5a848d7b104c2b4d1e986c4
+msgid "Any documentation that must change with the code"
+msgstr "必须随代码一起改的文档"
+
+#: ../../ai-guide.md:62 0d62d495a563459d9fc2bb7b1c9e70c1
+msgid "When to use the Users Manual vs this PKB"
+msgstr "何时用用户手册，何时用本 PKB"
+
+#: ../../ai-guide.md dd9a30457f474bb5a4805a8f7ee51ba9
+msgid "Question"
+msgstr "问题"
+
+#: ../../ai-guide.md 172bd647514e44fda06722a5608cc0ce
+msgid "Read"
+msgstr "阅读"
+
+#: ../../ai-guide.md 22a1e4340847430f8fd638fcbb9c5407
+msgid "What does this XML parameter mean? Default? Allowed values?"
+msgstr "这个 XML 参数是什么意思？默认值？允许取值？"
+
+#: ../../ai-guide.md 12ac973eb76e4fa2b058e6c5dcd64e81
+msgid ""
+"[Users Manual](https://developer.signalwire.com/freeswitch/) (Parts 1–8, "
+"Part 9 module reference)"
+msgstr ""
+"[用户手册](https://developer.signalwire.com/freeswitch/)（第 1–8 部分，第 9 部分模块参考）"
+
+#: ../../ai-guide.md ebf657e134654b59b8075d2806d062da
+msgid "Where is that implemented in **this clone**?"
+msgstr "它在**本克隆**里实现在哪？"
+
+#: ../../ai-guide.md e2b5c0d9ff764363b3691bd62c5ad697
+msgid ""
+"PKB [Repo map](04-repo-map.md), [Architecture](02-architecture.md), code "
+"references on the page"
+msgstr "PKB [仓库地图](04-repo-map.md)、[架构](02-architecture.md) 以及页内代码引用"
+
+#: ../../ai-guide.md 787a0eb2fd2e47fcaf74c042d1006456
+msgid "How do I build/test/CI this tree?"
+msgstr "如何构建/测试/跑本仓库的 CI？"
+
+#: ../../ai-guide.md 2499e55299c147a2a0fff7ba7fde293b
+msgid ""
+"PKB [Quick Start](01-quick-start.md), [Build](08-build.md), "
+"[Testing](09-testing.md)"
+msgstr "PKB [快速开始](01-quick-start.md)、[构建](08-build.md)、[测试](09-testing.md)"
+
+#: ../../ai-guide.md 1d72e89e615748128ee4e840fbbc2379
+msgid "How do I write an ESL client?"
+msgstr "如何写 ESL 客户端？"
+
+#: ../../ai-guide.md 04f6815e22b347e2a81c8de574c88a13
+msgid ""
+"Users Manual [Ch 46 Inbound "
+"ESL](https://developer.signalwire.com/freeswitch/programming/esl-inbound) "
+"plus PKB [Data and API](05-data-and-api.md) and `libs/esl/`"
+msgstr ""
+"用户手册 [第 46 章入站 "
+"ESL](https://developer.signalwire.com/freeswitch/programming/esl-inbound)，加上"
+" PKB [数据与 API](05-data-and-api.md) 与 `libs/esl/`"
+
+#: ../../ai-guide.md 205b5436086a44c4b27709a59904d222
+msgid "Historical wiki / old recipes"
+msgstr "历史 wiki / 旧配方"
+
+#: ../../ai-guide.md 81902c41312447aeae7d60f61e0d2861
+msgid ""
+"[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)"
+msgstr ""
+"[FreeSWITCH "
+"Explained](https://developer.signalwire.com/freeswitch/FreeSWITCH-"
+"Explained/)"
+
+#: ../../ai-guide.md:72 ca88b01faec140efac2439e77ed00725
+msgid ""
+"Do not paste Users Manual parameter tables into PKB pages. Link the chapter;"
+" keep PKB facts verified against this tree (file paths, C symbols, "
+"Autotools)."
+msgstr "不要把用户手册参数表粘进 PKB 页面。链到章节；PKB 事实应对本仓库核实（文件路径、C 符号、Autotools）。"
+
+#: ../../ai-guide.md:74 4ab786951ccf4a09bf5c4ce991ac3c44
+msgid "Core Capabilities"
+msgstr "核心能力"
+
+#: ../../ai-guide.md:76 728c66c940754373b34bca0aa7f0f16c
+msgid "Locate"
+msgstr "定位"
+
+#: ../../ai-guide.md:78 1ae0d9d909fa4dc681dd73116c8d7dbe
+msgid "Use [Repository Map](04-repo-map.md) to find:"
+msgstr "用 [仓库地图](04-repo-map.md) 查找："
+
+#: ../../ai-guide.md:80 bfc6b09a2cd74249875279766f1bd0e8
+msgid "startup files"
+msgstr "启动文件"
+
+#: ../../ai-guide.md:81 2053c6b193274584a5482c93f5f59dc5
+msgid "routers, handlers, and command boundaries"
+msgstr "路由、处理程序和命令边界"
+
+#: ../../ai-guide.md:82 2dcc65ba0be14eacae57f2a2543be8a7
+msgid "scripts, tests, and release config"
+msgstr "脚本、测试和发版配置"
+
+#: ../../ai-guide.md:84 3bde6d01d82a41e7a68d76ef34a7d595
+msgid "Understand"
+msgstr "理解"
+
+#: ../../ai-guide.md:86 5042df109f954f539d1f27237f95cde5
+msgid ""
+"Use [Architecture](02-architecture.md), [Tech Stack](03-tech-stack.md), and "
+"[Workflows](06-workflows.md) to understand:"
+msgstr ""
+"用 [架构](02-architecture.md)、[技术栈](03-tech-stack.md) 和 [工作流](06-workflows.md) "
+"理解："
+
+#: ../../ai-guide.md:88 4420bafa734a44beb534e495abc986f2
+msgid "why the system is shaped this way"
+msgstr "系统为何是这种形状"
+
+#: ../../ai-guide.md:89 c0f5daf182404276bf5eaa0a94d7d63d
+msgid "how the main layers interact"
+msgstr "主要层如何交互"
+
+#: ../../ai-guide.md:90 4189a81ae8e84ff1ac653731a7de24a6
+msgid "where important trade-offs live"
+msgstr "重要权衡落在何处"
+
+#: ../../ai-guide.md:92 bde34cfdfec24d3fa91fa9f99c03662b
+msgid "Execute"
+msgstr "执行"
+
+#: ../../ai-guide.md:94 2499e55299c147a2a0fff7ba7fde293b
+msgid ""
+"Use [Quick Start](01-quick-start.md), [Build](08-build.md), and "
+"[Runbook](10-runbook.md) to:"
+msgstr ""
+"用 [快速开始](01-quick-start.md)、[构建](08-build.md) 和 [运维手册](10-runbook.md) 来："
+
+#: ../../ai-guide.md:96 a82afbc3fb32417fb0efd70871c628cd
+msgid "start the project locally"
+msgstr "在本地启动项目"
+
+#: ../../ai-guide.md:97 18932dcc7f5047df8f78498ce0383817
+msgid "run builds and tests"
+msgstr "跑构建和测试"
+
+#: ../../ai-guide.md:98 d9c5d3625747497bb63279116a27324f
+msgid "inspect state and debug failures"
+msgstr "检查状态并调试失败"
+
+#: ../../ai-guide.md:100 6a848a7aeb8c45aca3351be2ab513fc5
+msgid "Verify"
+msgstr "验证"
+
+#: ../../ai-guide.md:102 fe18d36500874cb989ad2ee80856f152
+msgid ""
+"Use [Testing](09-testing.md) and [Observability](11-observability.md) to:"
+msgstr "用 [测试](09-testing.md) 和 [可观测性](11-observability.md) 来："
+
+#: ../../ai-guide.md:104 4fa27c86d68a4fccba8da58bf9821a3b
+msgid "choose the right validation depth"
+msgstr "选择合适的验证深度"
+
+#: ../../ai-guide.md:105 0234b0c1500241be883b68811b5f18bd
+msgid "inspect logs, metrics, traces, and alerts"
+msgstr "查看日志、指标、追踪和告警"
+
+#: ../../ai-guide.md:106 b0966881483943df9b674a16f30cb186
+msgid "confirm whether a fix really addressed the issue"
+msgstr "确认修复是否真正解决了问题"
+
+#: ../../ai-guide.md:108 3585ae2a80e048f68d18c47250daf870
+msgid "When Updating Docs"
+msgstr "更新文档时"
+
+#: ../../ai-guide.md:110 6f3cd95485d345a4aadd83717180862a
+msgid "Before refreshing PKB pages:"
+msgstr "刷新 PKB 页面之前："
+
+#: ../../ai-guide.md:112 20e7d6b658a04182ba4d40727140bf21
+msgid "Read [Documentation Process](12-document.md)."
+msgstr "阅读 [文档流程](12-document.md)。"
+
+#: ../../ai-guide.md:113 78dfbb62d16244a4b99c21e862f85281
+msgid "Prefer rule-based freshness checks first."
+msgstr "优先做基于规则的新鲜度检查。"
+
+#: ../../ai-guide.md:114 51dc849d5932474baff06a1b1b76bc99
+msgid ""
+"Apply zero-token Level 1 updates before asking the LLM to rewrite prose."
+msgstr "先做零 token 的 Level 1 更新，再让 LLM 改写叙述。"
+
+#: ../../ai-guide.md:115 d967a7ed338741428592f203c14357e1
+msgid ""
+"Give the LLM only the affected PKB pages, relevant diff, and source/config "
+"snippets."
+msgstr "只把受影响的 PKB 页面、相关 diff 和源码/配置片段交给 LLM。"
+
+#: ../../ai-guide.md:116 468bf347834c497685cb9082dda69dd2
+msgid "Keep ADR rationale and product intent human-led."
+msgstr "ADR 理由和产品意图由人主导。"
+
+#: ../../ai-guide.md:118 3dede069a6c843ec80891e37a032c470
+msgid "Change Checklist"
+msgstr "变更检查清单"
+
+#: ../../ai-guide.md:120 909b496a8a664c5a81260d65df35221e
+msgid "Before proposing a change:"
+msgstr "提出变更之前："
+
+#: ../../ai-guide.md:122 8fe990b3a94747d9a275a47ffcfe0505
+msgid "Have you read the relevant PKB pages?"
+msgstr "你读过相关 PKB 页面了吗？"
+
+#: ../../ai-guide.md:123 788bd0b0bb834b419612f01b77be29ae
+msgid "Have you checked related [ADRs](adr/index.md)?"
+msgstr "你查过相关 [ADR](adr/index.md) 了吗？"
+
+#: ../../ai-guide.md:124 5233b10cfced4529975e6a58a5df86c6
+msgid "Does the change follow [Conventions](07-conventions.md)?"
+msgstr "变更是否遵循 [约定](07-conventions.md)？"
+
+#: ../../ai-guide.md:125 ddf335040f2a406e85315ed944602a5a
+msgid ""
+"Do [Testing](09-testing.md) and [Runbook](10-runbook.md) suggest extra "
+"validation?"
+msgstr "[测试](09-testing.md) 和 [运维手册](10-runbook.md) 是否提示额外验证？"
+
+#: ../../ai-guide.md:126 4e39cebfcdcc4dea81487186dbe17178
+msgid ""
+"Should [12-document.md](12-document.md) or other PKB pages be refreshed too?"
+msgstr "是否也应刷新 [12-document.md](12-document.md) 或其他 PKB 页面？"
+
+#: ../../ai-guide.md:128 fd4b45127563466fa84cd93c804d6c5d
+msgid "Example Workflows"
+msgstr "示例工作流"
+
+#: ../../ai-guide.md:130 8b80846494964ee78ae9e2fb36e9887c
+msgid "Answering \"How does authentication work?\""
+msgstr "回答「认证是怎么工作的？」"
+
+#: ../../ai-guide.md:132 56ed79d9c00a4b19824a7ba9bbef56e9
+msgid "Read [Architecture](02-architecture.md)."
+msgstr "阅读 [架构](02-architecture.md)。"
+
+#: ../../ai-guide.md:133 6e0bf8dca50a4406b38f3d135fa1dd31
+msgid "Read the relevant section in [Workflows](06-workflows.md)."
+msgstr "阅读 [工作流](06-workflows.md) 中的相关章节。"
+
+#: ../../ai-guide.md:134 53d9b290dbf147269f911246a4e8eb4f
+msgid "Check [Data and API](05-data-and-api.md) for contracts and models."
+msgstr "在 [数据与 API](05-data-and-api.md) 查契约和模型。"
+
+#: ../../ai-guide.md:135 625de1b83fe1404b9130e2adfbaf3e62
+msgid "Read the code references cited by the PKB."
+msgstr "阅读 PKB 引用的代码。"
+
+#: ../../ai-guide.md:136 5cd343e07e784f43a173987ffec64495
+msgid ""
+"Use [Runbook](10-runbook.md) and [Observability](11-observability.md) for "
+"failure analysis."
+msgstr "用 [运维手册](10-runbook.md) 和 [可观测性](11-observability.md) 做失败分析。"
+
+#: ../../ai-guide.md:138 08b5241cf3d443ccb9f804d5bcd39ca9
+msgid "Implementing a new feature"
+msgstr "实现一个新功能"
+
+#: ../../ai-guide.md:140 14a48f92f10d4fcb948f10baa0a5720f
+msgid "Read [Project Overview](00-overview.md) for scope."
+msgstr "阅读 [项目概述](00-overview.md) 了解范围。"
+
+#: ../../ai-guide.md:141 8f0d829c706940fca6f40b9ddcadb578
+msgid ""
+"Read [Architecture](02-architecture.md) and [Tech Stack](03-tech-stack.md)."
+msgstr "阅读 [架构](02-architecture.md) 和 [技术栈](03-tech-stack.md)。"
+
+#: ../../ai-guide.md:142 23a9ead1293a47a9bcbd0ed3453a33ae
+msgid "Trace affected flows in [Workflows](06-workflows.md)."
+msgstr "在 [工作流](06-workflows.md) 中追踪受影响的流程。"
+
+#: ../../ai-guide.md:143 3f6fb99bcf50473eb8096d60a84604ad
+msgid "Plan validation using [Testing](09-testing.md)."
+msgstr "用 [测试](09-testing.md) 规划验证。"
+
+#: ../../ai-guide.md:144 389e07ad47b1494788b4d615b773ef5b
+msgid "Update relevant PKB pages after the change."
+msgstr "变更后更新相关 PKB 页面。"
+
+#: ../../ai-guide.md:146 dff09601bc5e448883d93605d182cf93
+msgid "Debugging an issue"
+msgstr "排查问题"
+
+#: ../../ai-guide.md:148 88f0d19b5e464b1fa093e505faec1047
+msgid ""
+"Check [Runbook](10-runbook.md) for common issues and inspection commands."
+msgstr "在 [运维手册](10-runbook.md) 查常见问题和检查命令。"
+
+#: ../../ai-guide.md:149 f3a5be7e5da4405ab2d52921b3365d93
+msgid ""
+"Check [Observability](11-observability.md) for logs, metrics, and diagnostic"
+" signals."
+msgstr "在 [可观测性](11-observability.md) 查日志、指标和诊断信号。"
+
+#: ../../ai-guide.md:150 90096ed32986414fa8f0b68fd17e7243
+msgid "Re-read the affected flow in [Workflows](06-workflows.md)."
+msgstr "重读 [工作流](06-workflows.md) 中受影响的流程。"
+
+#: ../../ai-guide.md:151 fc79f74ad7ca46b0ac117fee1e138600
+msgid "Validate the fix against [Testing](09-testing.md)."
+msgstr "对照 [测试](09-testing.md) 验证修复。"
+
+#: ../../ai-guide.md:153 2012a5410a134b4fb53ddd52bde22cf4
+msgid "Continuous Improvement"
+msgstr "持续改进"
+
+#: ../../ai-guide.md:155 8220ac1af15449e9ae08ea54e292f1bd
+msgid "When the PKB is unclear or stale:"
+msgstr "当 PKB 不清楚或过时时："
+
+#: ../../ai-guide.md:157 04cec362440e41349e40a9915464a7f6
+msgid "report the gap explicitly"
+msgstr "明确报告缺口"
+
+#: ../../ai-guide.md:158 c112b9f3c9d24e628f4dd2539c278eb3
+msgid "propose the smallest doc refresh that resolves the ambiguity"
+msgstr "提出能消解歧义的最小文档刷新"
+
+#: ../../ai-guide.md:159 a2f128759a9f480cb30994759d93f51e
+msgid "prefer targeted updates over large, generic rewrites"
+msgstr "宁可做定向更新，也不要大而空的重写"
+
+#: ../../ai-guide.md:163 333556e55e8f4ea3b717a887e3d69eb4
+msgid ""
+"**Remember**: the goal is not to memorize everything. The goal is to know "
+"where trustworthy information lives, what still needs human input, and how "
+"to keep context small enough for accurate AI work."
+msgstr "**记住**：目标不是把一切背下来。目标是知道可信信息在哪、哪些仍需人类输入，以及如何把上下文保持得足够小，好让 AI 工作准确。"
+
+#~ msgid ""
+#~ "Start with [Project Overview](00-overview.md) for purpose, scope, and users."
+#~ msgstr "先看 [项目概述](00-overview.md)，了解目的、范围和用户。"
