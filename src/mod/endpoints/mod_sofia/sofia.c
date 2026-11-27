@@ -9702,6 +9702,17 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				switch_channel_set_variable(b_channel, "blind_transfer_uuid", switch_core_session_get_uuid(session));
 				switch_channel_set_variable(channel, "blind_transfer_uuid", switch_core_session_get_uuid(b_session));
 
+				/* RFC 3515 section 2.4.4: send the initial NOTIFY immediately upon accepting
+				   the REFER; the final NOTIFY is deferred to the transfer outcome
+				   (SWITCH_MESSAGE_INDICATE_BLIND_TRANSFER_RESPONSE). Expires matches the
+				   REFER acceptance. */
+				nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag;version=2.0"),
+						   NUTAG_SUBSTATE(nua_substate_active),
+						   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=60"),
+						   SIPTAG_PAYLOAD_STR("SIP/2.0 100 Trying\r\n"), SIPTAG_EVENT_STR(etmp),
+						   TAG_IF(!zstr(session_id_header), SIPTAG_HEADER_STR(session_id_header)),
+						   TAG_END());
+
 				switch_channel_set_variable(channel, "park_timeout", "600:blind_transfer");
 				switch_channel_set_state(channel, CS_PARK);
 			} else {
