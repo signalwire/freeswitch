@@ -596,7 +596,8 @@ char *sofia_glue_session_id_header(switch_core_session_t *session, sofia_profile
 		return switch_core_session_sprintf(session, "Session-ID: %s", a_id);
 	}
 	if ((switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_INBOUND) &&
-			((switch_channel_get_state(channel) == CS_INIT) || (switch_channel_get_state(channel) == CS_EXECUTE)) && 
+			((switch_channel_get_state(channel) == CS_INIT) || (switch_channel_get_state(channel) == CS_EXECUTE)) &&
+			zstr(a_id) &&
 			sofia_glue_is_nil_session_uuid(temp_id)) {
 		/*inbound initial request*/
 		char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
