@@ -153,6 +153,22 @@ FST_CORE_BEGIN("./conf")
 		}
 		FST_TEST_END()
 
+		FST_TEST_BEGIN(test_mod_opus_fmtp_ptime)
+		{
+			switch_codec_fmtp_t codec_fmtp = { 0 };
+			switch_status_t status;
+
+			status = switch_core_codec_parse_fmtp("OPUS", "useinbandfec=1; ptime=40", 48000, &codec_fmtp);
+			fst_check_int_equals(status, SWITCH_STATUS_SUCCESS);
+			fst_check_int_equals(codec_fmtp.microseconds_per_packet, 40000);
+
+			/* an out of range ptime is ignored instead of overflowing ptime * 1000 */
+			status = switch_core_codec_parse_fmtp("OPUS", "useinbandfec=1; ptime=2147484", 48000, &codec_fmtp);
+			fst_check_int_equals(status, SWITCH_STATUS_SUCCESS);
+			fst_check_int_equals(codec_fmtp.microseconds_per_packet, 0);
+		}
+		FST_TEST_END()
+
 	}
 	FST_SUITE_END()
 }
