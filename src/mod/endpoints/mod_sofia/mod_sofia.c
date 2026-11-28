@@ -254,9 +254,17 @@ char *generate_pai_str(private_object_t *tech_pvt)
 	callee_number = switch_sanitize_number(switch_core_session_strdup(session, callee_number));
 	callee_name = switch_sanitize_number(switch_core_session_strdup(session, callee_name));
 
+/* Not RFC 3261 compliant
 	if (!zstr(callee_number) && (zstr(ua) || !switch_stristr("poly", ua))) {
 		callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, host);
 	}
+*/
+	
+if (!zstr(callee_number)) {
+    if (strncasecmp(callee_number, "sip:", 4)) {
+        callee_number = switch_core_session_sprintf(session, "sip:%s@%s", callee_number, host);
+    }
+}
 
 	header = (tech_pvt->cid_type == CID_TYPE_RPID && !switch_stristr("aastra", ua)) ? "Remote-Party-ID" : "P-Asserted-Identity";
 
