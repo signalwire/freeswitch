@@ -1422,6 +1422,7 @@ SWITCH_DECLARE(const char *) switch_inet_ntop(int af, void const *src, char *dst
 #endif
 
 SWITCH_DECLARE(char *) switch_uuid_str(char *buf, switch_size_t len);
+SWITCH_DECLARE(char *) switch_uuid_str_version(char *buf, switch_size_t len, int version);
 SWITCH_DECLARE(char *) switch_format_number(const char *num);
 
 SWITCH_DECLARE(unsigned int) switch_atoui(const char *nptr);
